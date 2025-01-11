@@ -131,7 +131,7 @@ function sendCommand(command, args){
             break;
 
         case "hello":
-            createTerminalLine("Hello, I'm froggy! ^v^", ">");
+            createTerminalLine("Hello, I'm Froggy! ^v^", ">");
             createEditableTerminalLine(config.path);
             break;
 
