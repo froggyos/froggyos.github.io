@@ -376,9 +376,16 @@ function createLilypadLine(path){
             submit.addEventListener('keydown', function(e){
                 if(e.key == "Enter"){
                     e.preventDefault();
-                    file.name = submit.textContent;
-                    createTerminalLine("File saved.", ">");
-                    createEditableTerminalLine(config.path);
+                    if(submit.textContent.trim() == "​"){
+                        createTerminalLine("Please provide a file name.", errorText);
+                        terminal.appendChild(submit);
+                        moveCaretToEnd(submit);
+                        return;
+                    } else {
+                        file.name = submit.textContent;
+                        createTerminalLine("File saved.", ">");
+                        createEditableTerminalLine(config.path);
+                    }
                 }
             });
 
