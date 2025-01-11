@@ -143,7 +143,7 @@ function sendCommand(command, args){
             createTerminalLine("hello - Displays a greeting message.", ">");
             createTerminalLine("help - Displays this message.", ">");
             createTerminalLine("pulse - Tells the user if froggyOS is working.", ">");
-            createTerminalLine("swim - Start a program.", ">");
+            createTerminalLine("swimto - Start a program.", ">");
             createEditableTerminalLine(config.path);
             break;
 
@@ -152,7 +152,7 @@ function sendCommand(command, args){
             createEditableTerminalLine(config.path);
             break;
 
-        case "swim":
+        case "swimto":
             if(args[0] == undefined){
                 createTerminalLine("Please provide a program to run.", errorText);
                 createTerminalLine("* Available programs *", "");
