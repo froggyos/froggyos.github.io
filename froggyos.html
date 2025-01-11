@@ -1,0 +1,349 @@
+<!-- mrjuice43, Rus1130, 2025/01/10 -->
+
+<style>
+    body {
+        background-color: #000000;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+    }
+
+    #screen {
+        width: 640px;
+        height: 480px;
+        background-color: #FFFFFF;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: center;
+        padding-top: 0;
+        box-sizing: border-box;
+    }
+
+    #bar {
+        background-color: #0000AA;
+        height: 10px;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 1px;
+        box-sizing: border-box;
+        position: relative;
+        cursor: none;
+        font-size: 8px;
+        font-family: "Press Start 2P", serif;
+        color: #FFFFFF;
+    }
+
+    #terminal {
+        width: 100%;
+        height: calc(100% - 20px);
+        background-color: #FFFFFF;
+        color: #FF5555;
+        display: flex;
+        flex-direction: column;
+        padding: 4px;
+        box-sizing: border-box;
+        font-family: "Press Start 2P", serif;
+        font-size: 8px;
+        cursor: none;
+        overflow-y: auto;
+        scrollbar-width: none;
+        padding-bottom: 0px;
+        padding-right: 0px;
+    }
+
+    .term-noedit, .term-edit {
+        color: #00AA00;
+        font-size: 8px;
+        outline: none;
+        text-decoration: none;
+    }
+
+    .term-noedit::before, .term-edit::before {
+        content: attr(data-path);
+        color: #00AA00;
+    }
+</style>
+<head>
+    <title>froggyOS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="screen">
+        <div id="bar"></div>
+        <div id="terminal"></div>
+    </div>
+</body>
+<script>
+    const config = {
+        path: 'C:/>',
+        commandHistory: [],
+        commandHistoryIndex: -1,
+        timeFormat: 'w. y/m/d h:n:s',
+        updateStatBar: true,
+    }
+
+    let screen = document.getElementById('screen');
+    let terminal = document.getElementById('terminal');
+
+    screen.onclick = function() {
+        terminal.lastChild.focus();
+    }
+
+    function moveCaretToEnd(element) {
+        if (typeof window.getSelection !== "undefined" && typeof document.createRange !== "undefined") {
+            const range = document.createRange();
+            range.selectNodeContents(element);
+            range.collapse(false);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+        } else if (typeof document.body.createTextRange !== "undefined") {
+            const textRange = document.body.createTextRange();
+            textRange.moveToElementText(element);
+            textRange.collapse(false);
+            textRange.select();
+        }
+    }
+
+    function updateDateTime() {
+        if(!config.updateStatBar) return;
+        const now = new Date();
+
+        // Grab the current weekday.
+        const dayOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][now.getDay()];  // Grab the live day of the week.
+        const year = now.getFullYear(); // Year
+        const month = String(now.getMonth() + 1).padStart(2, '0'); // Month
+        const day = String(now.getDate()).padStart(2, '0'); // Day
+        const hour = String(now.getHours()).padStart(2, '0'); // Hour in 24-hour format
+        const minute = String(now.getMinutes()).padStart(2, '0'); // Minutes
+        const second = String(now.getSeconds()).padStart(2, '0'); // Seconds
+
+        let dateTemplate = config.timeFormat;
+        dateTemplate = dateTemplate.replace('w', '###W###');
+        dateTemplate = dateTemplate.replace('y', '###Y###');
+        dateTemplate = dateTemplate.replace('m', '###M###');
+        dateTemplate = dateTemplate.replace('d', '###D###');
+        dateTemplate = dateTemplate.replace('h', '###H###');
+        dateTemplate = dateTemplate.replace('n', '###N###');
+        dateTemplate = dateTemplate.replace('s', '###S###');
+
+        dateTemplate = dateTemplate.replace('!###W###', 'w');
+        dateTemplate = dateTemplate.replace('!###Y###', 'y');
+        dateTemplate = dateTemplate.replace('!###M###', 'm');
+        dateTemplate = dateTemplate.replace('!###D###', 'd');
+        dateTemplate = dateTemplate.replace('!###H###', 'h');
+        dateTemplate = dateTemplate.replace('!###N###', 'n');
+        dateTemplate = dateTemplate.replace('!###S###', 's');
+
+        dateTemplate = dateTemplate.replace('###W###', dayOfWeek);
+        dateTemplate = dateTemplate.replace('###Y###', year);
+        dateTemplate = dateTemplate.replace('###M###', month);
+        dateTemplate = dateTemplate.replace('###D###', day);
+        dateTemplate = dateTemplate.replace('###H###', hour);
+        dateTemplate = dateTemplate.replace('###N###', minute);
+        dateTemplate = dateTemplate.replace('###S###', second);
+
+        const dateString = dateTemplate;
+        document.getElementById('bar').textContent = dateString;
+    }
+
+    setInterval(updateDateTime, 1000);
+    updateDateTime();
+
+    // Section 2: The terminal itself.
+    function createTerminalLine(text, path){
+        let terminalLine = document.createElement('div');
+        terminalLine.classList.add('term-noedit');
+
+        terminalLine.setAttribute('data-path', `${path} `);
+
+        terminalLine.textContent = text;
+
+        terminal.appendChild(terminalLine);
+        terminal.scrollTop = terminal.scrollHeight;
+    }
+
+    function sendCommand(command, args){
+        command = command.trim();
+        args = args.filter(arg => arg.trim() != "");
+
+        switch(command){
+            case "clear":
+                document.getElementById('terminal').innerHTML = "";
+                break;
+
+            case "ribbit":
+                if(args.length == 0){
+                    createTerminalLine("Please provide text to display.", "!!ERROR!! - ");
+                    break;
+                }
+                createTerminalLine(args.join(" "), ">")
+                break;
+
+            case "formattime":
+                if(args.length == 0){
+                    createTerminalLine("Please provide a time format. example time format below:", "!!ERROR!! - ");
+                    createTerminalLine("w. y/m/d h:n:s", "!!ERROR!! - ");
+                    createTerminalLine("If you want to include any of those key characters, prefix", "!!ERROR!! - ");
+                    createTerminalLine("the character with !. Example: !w", "!!ERROR!! - ");
+                    break;
+                }
+                if(args.join(" ").length > 63){
+                    createTerminalLine("The argument is too long.", "!!ERROR!! - ");
+                    break;
+                }
+                config.timeFormat = args.join(" ");
+                break;
+
+            case "hello":
+                createTerminalLine("Hello, I'm froggy! ^v^", ">");
+                break;
+
+            case "help":
+                createTerminalLine("* A few basic froggyOS commands *", "");
+                createTerminalLine("clear - Clears the terminal output.", ">");
+                createTerminalLine("ribbit [text] - Displays the text.", ">");
+                createTerminalLine("formattime [time format] - Changes the time format.", ">");
+                createTerminalLine("hello - Displays a greeting message.", ">");
+                createTerminalLine("pulse - Tells the user if froggyOS is working.", ">");
+                break;
+
+            case "pulse":
+                createTerminalLine("froggyOS is (probably) working as intended.", ">");
+                break;
+
+            case "[[FROG]]changepath":
+                if(args.length == 0){
+                    createTerminalLine("Please provide a path.", "!!ERROR!! - ");
+                    break;
+                }
+                config.path = args.join(" ");
+                break;
+
+            case '[[FROG]]greeting':
+                createTerminalLine("Type ‘help’ to receive support with commands, and possibly navigation.", "");
+                createTerminalLine("* Welcome to froggyOS, version 1.0 *" , "");
+                break;
+
+            case '[[FROG]]help':
+                createTerminalLine("* A few frog commands *", "");
+                createTerminalLine("[[FROG]]changepath [path] - Changes the path of the terminal", ">");
+                createTerminalLine("[[FROG]]greeting - Displays the greeting message", ">");
+                createTerminalLine("[[FROG]]setstatbar [text] - Changes the text in the status bar", ">");
+                createTerminalLine("[[FROG]]statbarlock [0/1] - Locks the status bar from updating", ">");
+                break;
+
+            case '[[FROG]]setstatbar':
+                if(args.length > 80){
+                    createTerminalLine("The argument is too long.", "!!ERROR!! - ");
+                    break;
+                }
+                document.getElementById('bar').textContent = args.join(" ");
+                break;
+
+            case '[[FROG]]statbarlock':
+                let bool = args[0];
+                if(bool == "1"){
+                    config.updateStatBar = false;
+                } else if(bool == "0"){
+                    config.updateStatBar = true;
+                } else {
+                    createTerminalLine("Invalid argument. Please provide '1' or '0'.", "!!ERROR!! - ");
+                }
+                break;
+
+            default:
+                createTerminalLine(`Froggy doesn't know "${command}", sorry.`, ">");
+                break;
+        }
+        createEditableTerminalLine(config.path);
+    }
+
+    /*
+    create a line for user input
+    path - the path
+    */
+    function createEditableTerminalLine(path){
+        let terminalLine = document.createElement('div');
+
+        terminalLine.classList.add('term-edit');
+
+        terminalLine.setAttribute('contenteditable', 'true');
+        terminalLine.setAttribute('data-path', `${path} `);
+        terminalLine.setAttribute('spellcheck', 'false');
+
+        terminalLine.textContent = "​";
+
+        terminalLine.addEventListener('keydown', function(e){
+            if(e.key == "Enter"){
+                e.preventDefault();
+                terminalLine.setAttribute('contenteditable', 'false');
+                let userInput = terminalLine.textContent.replace("​", "");
+                let args = userInput.split(" ");
+
+                terminalLine.innerHTML = terminalLine.innerHTML.replaceAll("<div>&ZeroWidthSpace;</div>", "");
+                terminalLine.innerHTML = terminalLine.innerHTML.replaceAll("<div><br></div>", "");
+
+                let command = args[0].trim();
+                args = args.slice(1);
+
+                if(userInput.trim() == ""){
+                    createTerminalLine("Froggy doesn't like that. >:(", path);
+                    createEditableTerminalLine(path);
+                } else {
+                    config.commandHistory.reverse();
+                    config.commandHistory.push(userInput);
+                    config.commandHistory.reverse();
+                    config.commandHistoryIndex = -1;
+
+                    sendCommand(command, args);
+                }
+            }
+
+            if(e.key == "Backspace"){
+                if(terminalLine.textContent.length == 0) terminalLine.textContent = "​";
+            }
+
+            if(e.key == "ArrowUp"){
+                e.preventDefault();
+                if(config.commandHistoryIndex <= config.commandHistory.length - 2) config.commandHistoryIndex++;
+                if(config.commandHistoryIndex != -1){
+                    terminalLine.textContent = config.commandHistory[config.commandHistoryIndex];
+                    moveCaretToEnd(terminalLine);
+                }
+            }
+
+            if(e.key == "ArrowDown"){
+                e.preventDefault();
+                if(config.commandHistoryIndex > 0) config.commandHistoryIndex--;
+                if(config.commandHistoryIndex == -1){
+                    terminalLine.textContent = "";
+                } else {
+                    terminalLine.textContent = config.commandHistory[config.commandHistoryIndex];
+                    moveCaretToEnd(terminalLine);
+                }
+            }
+        });
+
+        terminal.appendChild(terminalLine);
+        terminal.scrollTop = terminal.scrollHeight;
+        terminalLine.focus();
+    }
+
+    sendCommand('[[FROG]]greeting', []);
+
+    let ce = document.querySelector('[contenteditable]')
+        ce.addEventListener('paste', function (e) {
+        e.preventDefault()
+        var text = e.clipboardData.getData('text/plain')
+        document.execCommand('insertText', false, text)
+    })
+</script>
