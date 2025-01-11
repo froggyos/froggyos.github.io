@@ -142,15 +142,8 @@ function sendCommand(command, args){
             createTerminalLine("formattime [time format] - Changes the time format.", ">");
             createTerminalLine("hello - Displays a greeting message.", ">");
             createTerminalLine("help - Displays this message.", ">");
-            createTerminalLine("programs - Displays available programs.", ">");
             createTerminalLine("pulse - Tells the user if froggyOS is working.", ">");
             createTerminalLine("swim - Start a program.", ">");
-            createEditableTerminalLine(config.path);
-            break;
-
-        case "programs":
-            createTerminalLine("* Available programs *", "");
-            createTerminalLine(config.programList.join(), ">");
             createEditableTerminalLine(config.path);
             break;
 
@@ -162,11 +155,15 @@ function sendCommand(command, args){
         case "swim":
             if(args[0] == undefined){
                 createTerminalLine("Please provide a program to run.", errorText);
+                createTerminalLine("* Available programs *", "");
+                createTerminalLine(config.programList.join(), ">");
                 createEditableTerminalLine(config.path);
                 break;
             }
             if(!config.programList.includes(args[0])){
                 createTerminalLine("That program does not exist.", errorText);
+                createTerminalLine("* Available programs *", "");
+                createTerminalLine(config.programList.join(), ">");
                 createEditableTerminalLine(config.path);
                 break;
             }
@@ -323,13 +320,26 @@ function createLilypadLine(path){
 
     terminalLine.textContent = "​";
 
+    terminalLine.addEventListener('keyup', function(e){
+        if(terminalLine.textContent.length == 0) terminalLine.textContent = "​";
+    });
+
     terminalLine.addEventListener('keydown', function(e){
         if(e.key == "Enter"){
             e.preventDefault();
             createLilypadLine(">");
         }
         if(e.key == "Backspace"){
-            if(terminalLine.textContent.length == 0) terminalLine.textContent = "​";
+            if(terminalLine.textContent == "​") {
+                let lines = document.querySelectorAll(`[data-program='lilypad-session-${config.programSession}']`);
+                let focusedLine = document.activeElement;
+                let focusedLineIndex = Array.from(lines).indexOf(focusedLine);
+                if(focusedLineIndex > 0){
+                    lines[focusedLineIndex - 1].focus();
+                    moveCaretToEnd(lines[focusedLineIndex - 1]);
+                    focusedLine.remove();
+                }
+            }
         };
         if(e.key == "ArrowUp"){
             e.preventDefault();
@@ -356,6 +366,10 @@ function createLilypadLine(path){
             // this is the file data, to be stored in a path somewhere
             let file = {
                 name: null,
+                permissions: {
+                    read: true,
+                    write: true,
+                },
                 data: []
             };
             let lines = document.querySelectorAll(`[data-program='lilypad-session-${config.programSession}']`);
