@@ -1,0 +1,67 @@
+body {
+    background-color: #000000;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+#screen {
+    width: 640px;
+    height: 480px;
+    background-color: #FFFFFF;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    padding-top: 0;
+    box-sizing: border-box;
+}
+
+#bar {
+    background-color: #0000AA;
+    height: 10px;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 1px;
+    box-sizing: border-box;
+    position: relative;
+    cursor: none;
+    font-size: 8px;
+    font-family: "Press Start 2P", serif;
+    color: #FFFFFF;
+}
+
+#terminal {
+    width: 100%;
+    height: calc(100% - 20px);
+    background-color: #FFFFFF;
+    color: #FF5555;
+    display: flex;
+    flex-direction: column;
+    padding: 4px;
+    box-sizing: border-box;
+    font-family: "Press Start 2P", serif;
+    font-size: 8px;
+    cursor: none;
+    overflow-y: auto;
+    scrollbar-width: none;
+    padding-bottom: 0px;
+    padding-right: 0px;
+}
+
+.term-noedit, .term-edit {
+    color: #00AA00;
+    font-size: 8px;
+    outline: none;
+    text-decoration: none;
+}
+
+.term-noedit::before, .term-edit::before {
+    content: attr(data-path);
+    color: #00AA00;
+}
