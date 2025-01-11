@@ -82,10 +82,25 @@
 </body>
 <script src="./index.js"></script>
 <script>
-    let ce = document.querySelector('[contenteditable]')
-        ce.addEventListener('paste', function (e) {
-        e.preventDefault()
-        var text = e.clipboardData.getData('text/plain')
-        document.execCommand('insertText', false, text)
-    })
+    let ce = document.querySelector('[contenteditable]');
+    ce.addEventListener('paste', function (e) {
+        e.preventDefault();
+        const text = e.clipboardData.getData('text/plain');
+
+        // Use the Selection and Range APIs to insert the text
+        const selection = window.getSelection();
+        if (!selection.rangeCount) return;
+
+        const range = selection.getRangeAt(0);
+        range.deleteContents();
+
+        const textNode = document.createTextNode(text);
+        range.insertNode(textNode);
+
+        // Move the caret to the end of the inserted text
+        range.setStartAfter(textNode);
+        range.setEndAfter(textNode);
+        selection.removeAllRanges();
+        selection.addRange(range);
+    });
 </script>
