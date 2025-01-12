@@ -142,13 +142,7 @@ function sendCommand(command, args){
             createTerminalLine("formattime [time format] - Changes the time format.", ">");
             createTerminalLine("hello - Displays a greeting message.", ">");
             createTerminalLine("help - Displays this message.", ">");
-            createTerminalLine("pulse - Tells the user if froggyOS is working.", ">");
             createTerminalLine("swimto - Start a program.", ">");
-            createEditableTerminalLine(config.path);
-            break;
-
-        case "pulse":
-            createTerminalLine("froggyOS is (probably) working as intended.", ">");
             createEditableTerminalLine(config.path);
             break;
 
@@ -172,7 +166,7 @@ function sendCommand(command, args){
                 createEditableTerminalLine(config.path);
 
             } else if(args[0] == "lilypad"){
-                createTerminalLine("press ESC to exit program.", ">");
+                createTerminalLine("* press ESC to exit program *", "");
                 createLilypadLine(">");
             }
         break;
