@@ -147,15 +147,8 @@ function sendCommand(command, args){
             break;
 
         case "swimto":
-            if(args[0] == undefined){
-                createTerminalLine("Please provide a program to run.", errorText);
-                createTerminalLine("* Available programs *", "");
-                createTerminalLine(config.programList.join(), ">");
-                createEditableTerminalLine(config.path);
-                break;
-            }
             if(!config.programList.includes(args[0])){
-                createTerminalLine("That program does not exist.", errorText);
+                createTerminalLine("Please provide a valid program.", errorText);
                 createTerminalLine("* Available programs *", "");
                 createTerminalLine(config.programList.join(), ">");
                 createEditableTerminalLine(config.path);
@@ -392,6 +385,7 @@ function createLilypadLine(path){
                     } else {
                         file.name = submit.textContent;
                         createTerminalLine("File saved.", ">");
+                        console.log(file);
                         createEditableTerminalLine(config.path);
                     }
                 }
