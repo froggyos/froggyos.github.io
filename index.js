@@ -278,7 +278,7 @@ function sendCommand(command, args){
         case "spawn":
             directory = config.currentPath + "/" + args[0];
 
-            if(userInput == undefined){
+            if(args[0] == undefined){
                 createTerminalLine("Please provide a directory name.", config.errorText);
                 createEditableTerminalLine(`${config.currentPath}>`);
                 break;
