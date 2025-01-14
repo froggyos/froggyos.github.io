@@ -4,12 +4,13 @@ things to know about froggyOS:
  * for the `hop` command, `~` will be replaced with the root directory ("C:"), and `-` will be replaced with the previous directory
 
 Aliases:
-    * cl -> clear
-    * c -> croak
-    * ft -> formattime
-    * ch -> hatch
-    * h -> hop
-    * ls -> list
-    * m -> meta
-    * s -> spawn
-    * st -> swimto
+    * clear -> cl
+    * croak -> c
+    * formattime -> ft
+    * hatch -> ch
+    * help -> ?
+    * hop -> h
+    * list -> ls
+    * meta -> m
+    * spawn -> s
+    * swimto -> st

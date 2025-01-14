@@ -1,5 +1,5 @@
 const config = {
-    currentPath: 'C:/Docs', // C:/Docs
+    currentPath: 'C:/Home',
     commandHistory: [],
     commandHistoryIndex: -1,
     timeFormat: 'w. y/m/d h:n:s',
@@ -10,6 +10,9 @@ const config = {
     errorText: "<span style='background-color: #FF5555; color: #FFFFFF;'>!!ERROR!!</span> - ",
     fileSystem: {
         "C:": [], 
+        "C:/Home": [
+            { name: "welcome!", permissions: {read: true, write: true, hidden: false}, data: ['Hello!', "Welcome to FroggyOS.", "Type 'help' for a list of commands.", "Have fun! ^v^"] },
+        ],
         "C:/Docs": [
             { name: "testFile", permissions: {read: true, write: true, hidden: false}, data: ['test', 'test', 'multiple lines', '', '', '', '', 'test', 'ribbit!'] },
         ],
@@ -227,6 +230,7 @@ function sendCommand(command, args){
             createEditableTerminalLine(`${config.currentPath}>`);
         break;
 
+        case "?":
         case "help":
             createTerminalLine("* A few basic froggyOS commands *", "");
             createTerminalLine("clear               - Clears the terminal output.", ">");
