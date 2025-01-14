@@ -1,5 +1,5 @@
 const config = {
-    currentPath: 'C:/Docs', // C:/Docs
+    currentPath: 'C:/Docs',
     commandHistory: [],
     commandHistoryIndex: -1,
     timeFormat: 'w. y/m/d h:n:s',
@@ -7,19 +7,10 @@ const config = {
     currentProgram: "cli",
     programList: ["cli", "lilypad"],
     programSession: 0,
-    errorText: "<span style='background-color: #FF5555; color: #FFFFFF;'>!!ERROR!!</span> - ",
+    errorText: "!!ERROR!! - ",
     fileSystem: {
-        "C:": [], 
-        "C:/Docs": [
-            { name: "testFile", permissions: {read: true, write: true, hidden: false}, data: ['test', 'test', 'multiple lines', '', '', '', '', 'test', 'ribbit!'] },
-        ],
-        "C:/Docs/TestDir": [
-            { name: "testFileInTestDir", permissions: {read: true, write: true, hidden: false}, data: ['test', 'test', 'multiple lines', '', '', '', '', 'test', 'ribbit!'] },
-        ],
-        "C:/Programs": [
-            { name: "cli", permissions: {read: false, write: false, hidden: true}, data: ["cli"] },
-            { name: "lilypad", permissions: {read: false, write: false, hidden: true}, data: ["lilypad"] },
-            { name: "test", permissions: {read: false, write: true, hidden: false}, data: ["test!", "", "", "test!"] },
+        "C:/Docs/Test": [
+            { name: "test.txt", permissions: {read: true, write: false}, data: ['test', 'test', 'multiple lines', '', '', '', '', 'test', 'ribbit!'] },
         ],
     }
 };
@@ -89,14 +80,6 @@ function updateDateTime() {
     document.getElementById('bar').textContent = dateString;
 }
 
-setInterval(function() {
-    // make an array that consist of all the file names of files in the c:/programs directory
-    let files = config.fileSystem["C:/Programs"];
-    if(files == undefined) return;
-    files = files.map(file => file.name);
-    config.programList = files;
-}, 1000);
-
 setInterval(updateDateTime, 1000);
 updateDateTime();
 
@@ -108,19 +91,13 @@ function createTerminalLine(text, path){
 
     lineContainer.classList.add('line-container');
 
-    terminalPath.innerHTML = path;
+    terminalPath.textContent = path;
     terminalLine.textContent = text;
 
     lineContainer.appendChild(terminalPath);
     lineContainer.appendChild(terminalLine);
     terminal.appendChild(lineContainer);
     terminal.scrollTop = terminal.scrollHeight;
-}
-
-function getFileWithName(path, name){
-    let file = config.fileSystem[path];
-    if(file == undefined) return undefined;
-    return file.find(file => file.name == name);
 }
 
 function sendCommand(command, args){
@@ -136,14 +113,12 @@ function sendCommand(command, args){
         break;
 
         // =========================== commands ===========================
-        case "cl":
         case "clear":
             document.getElementById('terminal').innerHTML = "";
             createEditableTerminalLine(`${config.currentPath}>`);
         break;
 
         // delete files
-        case "c":
         case "croak":
             if(args.length == 0){
                 createTerminalLine("Please provide a file name.", config.errorText);
@@ -174,7 +149,7 @@ function sendCommand(command, args){
             createTerminalLine("File deleted.", ">")
             createEditableTerminalLine(`${config.currentPath}>`);
         break;
-        
+
         case "ribbit":
             if(args.length == 0){
                 createTerminalLine("Please provide text to display.", config.errorText);
@@ -185,7 +160,6 @@ function sendCommand(command, args){
             createEditableTerminalLine(`${config.currentPath}>`);
         break;
 
-        case "ft":
         case "formattime":
             if(args.length == 0){
                 createTerminalLine("Please provide a time format. example time format below:", config.errorText);
@@ -205,19 +179,19 @@ function sendCommand(command, args){
         break;
 
         // make files
-        case "ch":
         case "hatch":
             if(args.length == 0){
                 createTerminalLine("Please provide a file name.", config.errorText);
                 createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
-            if(config.fileSystem[config.currentPath].find(file => file.name == args[0]) != undefined){
+            if(config.fileSystem[config.currentPath] != undefined){
                 createTerminalLine("File already exists.", config.errorText);
                 createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
-            config.fileSystem[config.currentPath].push({name: args[0], permissions: {read: true, write: true}, data: [""]});
+            config.fileSystem[config.currentPath] = [];
+            config.fileSystem[config.currentPath].push({name: args[0], permissions: {read: true, write: true}, data: []});
             createTerminalLine("File created.", ">")
             createEditableTerminalLine(`${config.currentPath}>`);
         break;
@@ -229,75 +203,39 @@ function sendCommand(command, args){
 
         case "help":
             createTerminalLine("* A few basic froggyOS commands *", "");
-            createTerminalLine("clear               - Clears the terminal output.", ">");
-            createTerminalLine("croak [file]        - Deletes the file.", ">");
-            createTerminalLine("ribbit [text]       - Displays the text.", ">");
-            createTerminalLine("formattime [format] - Changes the time format.", ">");
-            createTerminalLine("hatch [file]        - Creates a file.", ">");
-            createTerminalLine("hello               - Displays a greeting message.", ">");
-            createTerminalLine("help                - Displays this message.", ">");
-            createTerminalLine("hop [directory]     - Moves to a directory.", ">");
-            createTerminalLine("list                - Lists files and subdirectories in the current                       directory.", ">");
-            createTerminalLine("meta [file]         - Edits a file.", ">");
-            createTerminalLine("spawn [directory]   - Creates a directory.", ">");
-            createTerminalLine("spy [file]          - Reads the file.", ">");
-            createTerminalLine("swimto [program]    - Start a program.", ">");
+            createTerminalLine("clear - Clears the terminal output.", ">");
+            createTerminalLine("croak [file] - Deletes the file.", ">");
+            createTerminalLine("ribbit [text] - Displays the text.", ">");
+            createTerminalLine("formattime [time format] - Changes the time format.", ">");
+            createTerminalLine("hatch [file] - Creates a file.", ">");
+            createTerminalLine("hello - Displays a greeting message.", ">");
+            createTerminalLine("help - Displays this message.", ">");
+            createTerminalLine("hop [directory] - Moves to a directory.", ">");
+            createTerminalLine("meta [file] - Edits a file.", ">");
+            createTerminalLine("spawn [directory] - Creates a directory.", ">");
+            createTerminalLine("swimto - Start a program.", ">");
             createEditableTerminalLine(`${config.currentPath}>`);
         break;
 
 
         // move directories
-        case "h":
         case "hop":
             directory = args[0];
-
+            directory = directory.replace(".", config.currentPath);
             if(directory == undefined){
                 createTerminalLine("Please provide a directory name.", config.errorText);
                 createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
-
-            directory = directory.replace(".", config.currentPath);
-            if(directory == "~") directory = "C:";
-            if(directory == "-") directory = config.currentPath.split("/").slice(0, -1).join("/");
-
             if(config.fileSystem[directory] == undefined){
                 createTerminalLine("Directory does not exist.", config.errorText);
                 createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
-
             sendCommand("[[FROGGY]]changepath", [directory]);
         break;
 
-        // list files
-        case "ls":
-        case "list":
-            let currentPathWithSlash = config.currentPath.endsWith('/') ? config.currentPath : config.currentPath + '/';
-
-            // Get subdirectory names under the currentPath
-            let subdirectoryNames = Object.keys(config.fileSystem)
-                .filter(path => path.startsWith(currentPathWithSlash) && path !== config.currentPath && !path.slice(currentPathWithSlash.length).includes('/'))
-                .map(path => path.slice(currentPathWithSlash.length)); // Extract only the subdirectory name
-
-            let files = config.fileSystem[config.currentPath];
-            if(files == undefined) files = [];
-            if(files.length == 0 && subdirectoryNames.length == 0){
-                createTerminalLine("This directory is empty.", ">")
-                createEditableTerminalLine(`${config.currentPath}>`);
-                break;
-            }
-            subdirectoryNames.forEach(subdirectory => {
-                createTerminalLine(` [DIR] ${subdirectory}`, ">")
-            });
-            files.forEach(file => {
-                if(file.permissions.hidden == false) createTerminalLine(`       ${file.name}`, ">")
-            });
-            createEditableTerminalLine(`${config.currentPath}>`);
-        break;
-
         // edit file
-        case "m":
         case "meta":
             if(args.length == 0){
                 createTerminalLine("Please provide a file name.", config.errorText);
@@ -322,26 +260,21 @@ function sendCommand(command, args){
                 break;
             }
             createTerminalLine("* press ESC to save and exit lilypad *", "");
-            // createLilypadLine(linetype, path, filename)
             for(let i = 0; i < file.data.length; i++){
-                if(config.currentPath == "C:/Programs") {
-                    createLilypadLine("code", String((i*10)+10).padStart(4, "0"), file.name);
-                } else createLilypadLine("normal", ">", file.name);
+                createLilypadLine(">", file.name);
                 let lines = document.querySelectorAll(`[data-program='lilypad-session-${config.programSession}']`);
                 lines[i].textContent = file.data[i];
                 moveCaretToEnd(lines[i]);
             }
         break;
 
-        // edit file permissions ===================== 
-        case "mp":
+        // edit file permissions
         case "metaperm":
             createTerminalLine("idek how u found this command lol im not doing it just yet LOL", "");
             createEditableTerminalLine(`${config.currentPath}>`);
         break;
 
         // make directories
-        case "s":
         case "spawn":
             directory = config.currentPath + "/" + args[0];
 
@@ -360,37 +293,6 @@ function sendCommand(command, args){
             sendCommand("[[FROGGY]]changepath", [directory]);
         break;
 
-        // read file contents
-        case "spy":
-            if(args.length == 0){
-                createTerminalLine("Please provide a file name.", config.errorText);
-                createEditableTerminalLine(`${config.currentPath}>`);
-                break;
-            }
-            file = config.fileSystem[config.currentPath];
-            if(file == undefined){
-                createTerminalLine("File does not exist.", config.errorText);
-                createEditableTerminalLine(`${config.currentPath}>`);
-                break;
-            }
-            file = file.find(file => file.name == args[0]);
-            if(file == undefined){
-                createTerminalLine("File does not exist.", config.errorText);
-                createEditableTerminalLine(`${config.currentPath}>`);
-                break;
-            }
-            if(file.permissions.read == false){
-                createTerminalLine("You do not have permission to read this file.", config.errorText);
-                createEditableTerminalLine(`${config.currentPath}>`);
-                break;
-            }
-            file.data.forEach(line => {
-                createTerminalLine(line, ">")
-            });
-            createEditableTerminalLine(`${config.currentPath}>`);
-        break;
-
-        case "st":
         case "swimto":
             if(!config.programList.includes(args[0])){
                 createTerminalLine("Please provide a valid program.", config.errorText);
@@ -402,18 +304,10 @@ function sendCommand(command, args){
 
             if(args[0] == "cli"){
                 createEditableTerminalLine(`${config.currentPath}>`);
+
             } else if(args[0] == "lilypad"){
                 createTerminalLine("* press ESC to exit lilypad *", "");
-                createLilypadLine("normal", ">");
-            } else {
-                let file = getFileWithName("C:/Programs", args[0]);
-                if(file.permissions.read == false){
-                    createTerminalLine("You do not have permission to run this program.", config.errorText);
-                    createEditableTerminalLine(`${config.currentPath}>`);
-                    break;
-                }
-                console.log(file);
-                createEditableTerminalLine(`${config.currentPath}>`);
+                createLilypadLine(">");
             }
         break;
 
@@ -430,7 +324,7 @@ function sendCommand(command, args){
 
         case '[[FROGGY]]greeting':
             createTerminalLine("Type ‘help’ to receive support with commands, and possibly navigation.", "");
-            createTerminalLine("* Welcome to froggyOS, version 1.3 *" , "");
+            createTerminalLine("* Welcome to froggyOS, version 1.2 *" , "");
             createEditableTerminalLine(`${config.currentPath}>`);
         break;
 
@@ -543,7 +437,7 @@ function createEditableTerminalLine(path){
 /*
 PROGRAM SPECIFIC: for program LILYPAD ===============================================================================================
 */
-function createLilypadLine(linetype, path, filename){
+function createLilypadLine(path, filename){
     let lineContainer = document.createElement('div');
     let terminalPath = document.createElement('span');
     let terminalLine = document.createElement('div');
@@ -561,14 +455,7 @@ function createLilypadLine(linetype, path, filename){
     terminalLine.addEventListener('keydown', function(e){
         if(e.key == "Enter"){
             e.preventDefault();
-            if(linetype == "code"){
-                // get the number of lines in the lilypad session
-                let lines = document.querySelectorAll(`[data-program='lilypad-session-${config.programSession}']`);
-                let lineNumber = String(+lines[lines.length - 1].previousElementSibling.textContent+10).padStart(4, '0');
-                createLilypadLine("code", lineNumber, filename);
-            } else {
-                createLilypadLine("normal", ">", filename);
-            }
+            createLilypadLine(">", filename);
         }
         if(e.key == "Backspace"){
             if(terminalLine.textContent.length == 0) {
@@ -631,6 +518,7 @@ function createLilypadLine(linetype, path, filename){
                 createEditableTerminalLine(`${config.currentPath}>`);
             }
             config.programSession++;
+            console.log(file);
         }
     });
 
