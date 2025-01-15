@@ -229,7 +229,15 @@ function sendCommand(command, args){
                 createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
-            config.fileSystem[config.currentPath].push({name: args[0], permissions: {read: true, write: true, hidden: false}, data: [""]});
+            config.fileSystem[config.currentPath].push({
+                name: args[0],
+                permissions: {
+                    read: true,
+                    write: true,
+                    hidden: false
+                }, 
+                data: [""]
+            });
             createTerminalLine("File created.", ">")
             createEditableTerminalLine(`${config.currentPath}>`);
         break;
