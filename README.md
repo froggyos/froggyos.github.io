@@ -24,8 +24,8 @@ Froggyscript documentation:
 
 function:
     define a function:
-    ```
+```
     func func_name
         code
     endfunc
-    ```
+```
