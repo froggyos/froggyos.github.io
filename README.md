@@ -1,9 +1,11 @@
-things to know about froggyOS:
+# things to know about froggyOS
+
  * in paths, "." will be replaced with the current directory
  * programs can *only* be written in the C:/Programs directory
  * for the `hop` command, `~` will be replaced with the root directory ("C:"), and `-` will be replaced with the previous directory
 
-Aliases:
+# Aliases
+
  * clear -> cl
  * croak -> c
  * formattime -> ft
@@ -15,7 +17,8 @@ Aliases:
  * spawn -> s
  * swimto -> st
 
-Froggyscript documentation:
+# Froggyscript documentation
+
 out - output text to the console
 to output the contents of a variable, prefix the variable name with v:
 ```
