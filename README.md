@@ -36,7 +36,6 @@ endfunc
 ```
 
 define a variable:
-types:
  - i - integer
  - s - string
 ```
