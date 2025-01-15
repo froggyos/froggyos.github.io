@@ -77,9 +77,9 @@ jump to a label:
 goto [label_name]
 goto start
 ```
-control flow:
+<!-- control flow:
 ```
 if {[condition]} {code}
 if {v:variable_name == 5} {goto start}
 if {6 < 7} {f: func}
-```
+``` -->
