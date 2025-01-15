@@ -5,6 +5,7 @@ const config = {
     timeFormat: 'w. y/m/d h:n:s',
     updateStatBar: true,
     currentProgram: "cli",
+    maxLabelVisits: 100,
     programList: ["cli", "lilypad"],
     programSession: 0,
     errorText: "<span style='background-color: #FF5555; color: #FFFFFF;'>!!ERROR!!</span> - ",
@@ -29,7 +30,10 @@ const config = {
                 "out v:woof",
                 "endfunc",
                 "f: meow",
-                "out ribbit...",
+                "goto meow",
+                "out this line is skipped",
+                "label meow",
+                "out woof woof meow!",
                 "endprog"
             ] },
         ],
@@ -440,18 +444,26 @@ function sendCommand(command, args){
                     createEditableTerminalLine(`${config.currentPath}>`);
                 } else {
                     let endprogFound = false;
-                    parsed.lines.forEach(line => {
+                    let lineIndex = 0;
+                    while(lineIndex < parsed.lines.length){
+                        let line = parsed.lines[lineIndex];
                         let command = line.command;
                         switch(command){
                             case "out":
                                 createTerminalLine(line.args, ">");
                             break;
+                            case "goto":
+                                let labelName = line.args;
+                                lineIndex = parsed.labels[labelName];
+                                continue;
                             case "endprog":
                                 endprogFound = true;
-                                createEditableTerminalLine(`${config.currentPath}>`);
                             break;
                         }
-                    });
+
+                        if(endprogFound) break;
+                        lineIndex++;
+                    }
                     if(endprogFound == false){
                         createTerminalLine("Program was not ended internally. Initiating failsafe.", config.errorText);
                         let decrementer = 10;
@@ -464,6 +476,8 @@ function sendCommand(command, args){
                                 createEditableTerminalLine(`${config.currentPath}>`);
                             }
                         }, 1000);
+                    } else {
+                        createEditableTerminalLine(`${config.currentPath}>`);
                     }
                 }
             }

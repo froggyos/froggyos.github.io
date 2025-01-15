@@ -23,6 +23,7 @@
 out - output text to the console
 to output the contents of a variable, prefix the variable name with "v:"
 ```
+out [input]
 out text
 out text with spaces
 out v:variable_name
@@ -30,7 +31,10 @@ out v:variable_name
 
 function:
 ```
-func func_name
+func [func_name]
+    code
+endfunc
+func name
     code
 endfunc
 ```
@@ -39,17 +43,33 @@ define a variable:
  - i - integer
  - s - string
 ```
-var variable_name:type = value
+var [variable_name]:[type] = [value]
+var test:s = single_word
+var test:s = multiple words
+var test:i = 5
 ```
 
 call a function:
 ```
-f: func_name
+f: [func_name]
+f: name
 ```
 
 end program:
 ```
 endprog
+```
+
+define a label:
+```
+label [label_name]
+label start
+```
+
+jump to a label:
+```
+goto [label_name]
+goto start
 ```
 
 [comment]: <> (goto a line number:)

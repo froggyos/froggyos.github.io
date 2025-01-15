@@ -2,6 +2,7 @@ function parse(input) {
     let parsed = {
         variables: {},
         functions: {},
+        labels: {},
         lines: [],
         errors: []
     };
@@ -88,5 +89,22 @@ function parse(input) {
         }
     }
 
+    // go through the lines and find all "label" declarations
+    for (let i = 0; i < parsed.lines.length; i++) {
+        let line = parsed.lines[i];
+        if (line.command === "label") {
+            let labelName = line.args[0];
+            parsed.labels[labelName] = i;
+            line.args = line.args[0];
+        }
+    }
+
+    for(let i = 0; i < parsed.lines.length; i++) {
+        let line = parsed.lines[i];
+        if (line.command === "goto") {
+            let labelName = line.args[0];
+            line.args = labelName;
+        }
+    }
     return parsed;
 }
