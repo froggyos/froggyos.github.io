@@ -20,9 +20,18 @@ const config = {
             { name: "testFileInTestDir", permissions: {read: true, write: true, hidden: false}, data: ['test', 'test', 'multiple lines', '', '', '', '', 'test', 'ribbit!'] },
         ],
         "C:/Programs": [
-            { name: "cli", permissions: {read: false, write: false, hidden: true}, data: ["cli"] },
-            { name: "lilypad", permissions: {read: false, write: false, hidden: true}, data: ["lilypad"] },
-            { name: "test", permissions: {read: false, write: true, hidden: false}, data: ["test!", "", "", "test!"] },
+            { name: "cli", permissions: {read: false, write: false, hidden: true}, data: ["var cli:s = this program is hardcoded into froggyOS", "endprog"] },
+            { name: "lilypad", permissions: {read: false, write: false, hidden: true}, data: ["var lilypad:s = this program is hardcoded into froggyOS", "endprog"] },
+            { name: "test", permissions: {read: true, write: true, hidden: false}, data: [
+                "var woof:i = 10",
+                "func meow",
+                "out meow meow!",
+                "out v:woof",
+                "endfunc",
+                "f: meow",
+                "out ribbit...",
+                "endprog"
+            ] },
         ],
     }
 };
@@ -416,8 +425,39 @@ function sendCommand(command, args){
                     createEditableTerminalLine(`${config.currentPath}>`);
                     break;
                 }
-                console.log(file);
-                createEditableTerminalLine(`${config.currentPath}>`);
+
+                let parsed = parse(file.data);
+                if(parsed.errors.length > 0){
+                    createTerminalLine(parsed.errors[0], config.errorText);
+                    createEditableTerminalLine(`${config.currentPath}>`);
+                } else {
+                    let endprogFound = false;
+                    parsed.lines.forEach(line => {
+                        let command = line.command;
+                        switch(command){
+                            case "out":
+                                createTerminalLine(line.args, ">");
+                            break;
+                            case "endprog":
+                                endprogFound = true;
+                                createEditableTerminalLine(`${config.currentPath}>`);
+                            break;
+                        }
+                    });
+                    if(endprogFound == false){
+                        createTerminalLine("Program was not ended internally. Initiating failsafe.", config.errorText);
+                        let decrementer = 10;
+                        let failsafe = setInterval(function(){
+                            createTerminalLine(`${decrementer}...`, ">");
+                            decrementer--;
+
+                            if(decrementer == 0){
+                                clearInterval(failsafe);
+                                createEditableTerminalLine(`${config.currentPath}>`);
+                            }
+                        }, 1000);
+                    }
+                }
             }
         break;
 
@@ -554,13 +594,22 @@ function createLilypadLine(linetype, path, filename){
 
     lineContainer.classList.add('line-container');
     terminalLine.setAttribute('contenteditable', 'true');
-    terminalLine.setAttribute('data-path', `${path} `);
     terminalLine.setAttribute('data-program', `lilypad-session-${config.programSession}`);
     terminalLine.setAttribute('data-filename', filename);
     terminalLine.setAttribute('spellcheck', 'false');
 
     terminalPath.textContent = path;
     terminalLine.textContent = "";
+
+    terminalLine.addEventListener('keyup', function(e){
+        if(linetype == "code"){
+            let lines = document.querySelectorAll(`[data-program='lilypad-session-${config.programSession}']`);
+            for(let i = 0; i < lines.length; i++){
+                let lineNumber = String((i*10)+10).padStart(4, "0");
+                lines[i].previousElementSibling.textContent = lineNumber;
+            }
+        }
+    });
 
     terminalLine.addEventListener('keydown', function(e){
         if(e.key == "Enter"){
@@ -640,7 +689,13 @@ function createLilypadLine(linetype, path, filename){
 
     lineContainer.appendChild(terminalPath);
     lineContainer.appendChild(terminalLine);
-    terminal.appendChild(lineContainer);
+
+    let focusedLine = document.activeElement;
+    
+    let lines = document.querySelectorAll(`[data-program='lilypad-session-${config.programSession}']`);
+
+    if(lines.length == 0) terminal.appendChild(lineContainer);
+    else focusedLine.parentElement.parentNode.insertBefore(lineContainer, focusedLine.parentElement.nextSibling);
 
     terminal.scrollTop = terminal.scrollHeight;
     terminalLine.focus();

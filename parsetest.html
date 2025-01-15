@@ -1,29 +1,21 @@
 <body>
 
 </body>
+<script src="./parser.js"></script>
 <script>
     let input = [
-        "var woof",
+        "var woof:i = 10",
         "func meow",
         "out meow meow!",
         "out v:woof",
         "endfunc",
         "f: meow",
-        "goto 10",
+        "out ribbit...",
+        "f: undefined_function",
+        "out v:not_defined",
         "endprog"
     ]
-    function parseFroggytype(input){
-        let output = []
-        for(let i = 0; i < input.length; i++){
-            let line = input[i]
-            let commandContent = {
-                command: line.split(" ")[0],
-            }
-            output.push({line: String((i*10)+10), content: commandContent })
-        }
-        return output
-    }
 
-    let parsed = parseFroggytype(input)
+    let parsed = parse(input)
     console.log(parsed)
 </script>

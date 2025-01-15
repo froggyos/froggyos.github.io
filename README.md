@@ -1,4 +1,5 @@
-# things to know about froggyOS
+
+# Things to know about froggyOS
 
  * in paths, "." will be replaced with the current directory
  * programs can *only* be written in the C:/Programs directory
@@ -17,10 +18,10 @@
  * spawn -> s
  * swimto -> st
 
-# Froggyscript documentation
+# FroggyScript documentation
 
 out - output text to the console
-to output the contents of a variable, prefix the variable name with v:
+to output the contents of a variable, prefix the variable name with "v:"
 ```
 out text
 out text with spaces
@@ -34,7 +35,32 @@ func func_name
 endfunc
 ```
 
+define a variable:
+types:
+ - i - integer
+ - s - string
+```
+var variable_name:type = value
+```
+
 call a function:
 ```
 f: func_name
 ```
+
+end program:
+**WARNING!** - if this is not included, the program will not end
+```
+endprog
+```
+
+[comment]: <> (goto a line number:)
+[comment]: <> (if you jump into the middle of a function, an error will be thrown and the program will close)
+[comment]: <> (```)
+[comment]: <> (goto line_number)
+[comment]: <> (```)
+[comment]: <> ()
+[comment]: <> (if goto statement:)
+[comment]: <> (```)
+[comment]: <> (if condition goto line_number)
+[comment]: <> (```)
