@@ -22,19 +22,19 @@
 out - output text to the console
 to output the contents of a variable, prefix the variable name with v:
 ```
-    out text
-    out text with spaces
-    out v:variable_name
+out text
+out text with spaces
+out v:variable_name
 ```
 
 function:
 ```
-    func func_name
-        code
-    endfunc
+func func_name
+    code
+endfunc
 ```
 
 call a function:
 ```
-    f: func_name
+f: func_name
 ```
