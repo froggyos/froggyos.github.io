@@ -28,14 +28,13 @@ to output the contents of a variable, prefix the variable name with v:
 ```
 
 function:
-    define a function:
 ```
     func func_name
         code
     endfunc
 ```
 
-    call a function:
+call a function:
 ```
     f: func_name
 ```
