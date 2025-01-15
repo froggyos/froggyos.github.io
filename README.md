@@ -34,3 +34,8 @@ function:
         code
     endfunc
 ```
+
+    call a function:
+```
+    f: func_name
+```
