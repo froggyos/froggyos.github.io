@@ -49,7 +49,6 @@ f: func_name
 ```
 
 end program:
-**WARNING!** - if this is not included, the program will not end
 ```
 endprog
 ```
