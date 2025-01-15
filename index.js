@@ -18,16 +18,22 @@ const config = {
             { name: "cli", permissions: {read: false, write: false, hidden: true}, data: ["var cli:s = this program is hardcoded into froggyOS", "endprog"] },
             { name: "lilypad", permissions: {read: false, write: false, hidden: true}, data: ["var lilypad:s = this program is hardcoded into froggyOS", "endprog"] },
             { name: "test", permissions: {read: true, write: true, hidden: false}, data: [
-                "int woof = 10",
+                "int woof = 11",
                 "func meow",
                 "out meow meow!",
-                "out v:woof",
+                "out woof....",
                 "endfunc",
-                "f: meow",
-                "goto meow",
-                'out this line is skipped',
-                "label meow",
-                "out woof woof meow!",
+                "if {v:woof > 10} {f: meow}",
+                // "int woof = 10",
+                // "func meow",
+                // "out meow meow!",
+                // "out v:woof",
+                // "endfunc",
+                // "f: meow",
+                // "goto meow",
+                // 'out this line is skipped',
+                // "label meow",
+                // "out woof woof meow!",
                 "endprog"
             ] },
         ],
@@ -465,8 +471,12 @@ function sendCommand(command, args){
                                     createTerminalLine(`Variable ${variableName} does not exist.`, config.errorText);
                                     break;
                                 }
-                                console.log(line.args);
                                 variables[variableName].value = value;
+                            break;
+                            case "if":
+                                console.log(variables);
+                                console.log(parsed);
+                                // const result = new Function(`return ${equation}`)();
                             break;
                             case "out":
                                 let out = line.args;

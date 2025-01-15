@@ -47,10 +47,17 @@ function parse(input) {
             let functionName = line.args[0];
             let functionLines = [];
             let j = i + 1;
+            let failsafe = 0;
 
             while (parsed.lines[j]?.command !== "endfunc") {
                 functionLines.push(parsed.lines[j]);
                 parsed.lines.splice(j, 1);
+                failsafe++;
+                
+                if(failsafe > parsed.lines.length){
+                    parsed.errors.push(`Function ${functionName} is not closed.`);
+                    break;
+                }
             }
 
             parsed.lines.splice(j, 1); // Remove "endfunc"
@@ -90,6 +97,28 @@ function parse(input) {
             line.args = line.args[0];
         }
     });
+
+    // if
+    parsed.lines.forEach((line) => {
+        if (line.command === "if") {
+            let input = line.args.join(" ").split("} {")
+            input[0] = input[0].replace("{", "");
+            input[1] = input[1].replace("}", "");
+
+            delete line.args 
+            line.args = {};
+            line.args.condition = input[0];
+            line.args.out = input[1];
+
+            if(line.args.out.startsWith("f: ")){
+                if(parsed.functions[line.args.out.split(" ")[1]] === undefined){
+                    parsed.errors.push(`Function ${line.args.out.split(" ")[1]} not defined.`);
+                } else {
+                    line.args.out = parsed.functions[line.args.out.split(" ")[1]];
+                }
+            }
+        }
+    })
 
     return parsed;
 }
