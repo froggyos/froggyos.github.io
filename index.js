@@ -5,7 +5,6 @@ const config = {
     timeFormat: 'w. y/m/d h:n:s',
     updateStatBar: true,
     currentProgram: "cli",
-    maxLabelVisits: 100,
     programList: ["cli", "lilypad"],
     programSession: 0,
     errorText: "<span style='background-color: #FF5555; color: #FFFFFF;'>!!ERROR!!</span> - ",
@@ -14,24 +13,19 @@ const config = {
         "C:/Home": [
             { name: "welcome!", permissions: {read: true, write: true, hidden: false}, data: ['Hello!', "Welcome to FroggyOS.", "Type 'help' for a list of commands.", "Have fun! ^v^"] },
         ],
-        "C:/Docs": [
-            { name: "testFile", permissions: {read: true, write: true, hidden: false}, data: ['test', 'test', 'multiple lines', '', '', '', '', 'test', 'ribbit!'] },
-        ],
-        "C:/Docs/TestDir": [
-            { name: "testFileInTestDir", permissions: {read: true, write: true, hidden: false}, data: ['test', 'test', 'multiple lines', '', '', '', '', 'test', 'ribbit!'] },
-        ],
+        "C:/Docs": [],
         "C:/Programs": [
             { name: "cli", permissions: {read: false, write: false, hidden: true}, data: ["var cli:s = this program is hardcoded into froggyOS", "endprog"] },
             { name: "lilypad", permissions: {read: false, write: false, hidden: true}, data: ["var lilypad:s = this program is hardcoded into froggyOS", "endprog"] },
             { name: "test", permissions: {read: true, write: true, hidden: false}, data: [
-                "var woof:i = 10",
+                "int woof = 10",
                 "func meow",
                 "out meow meow!",
                 "out v:woof",
                 "endfunc",
                 "f: meow",
                 "goto meow",
-                "out this line is skipped",
+                'out this line is skipped',
                 "label meow",
                 "out woof woof meow!",
                 "endprog"
@@ -380,6 +374,11 @@ function sendCommand(command, args){
                 createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
+            if(config.currentPath == "C:/Programs"){
+                createTerminalLine("You cannot create directories in this directory.", config.errorText);
+                createEditableTerminalLine(`${config.currentPath}>`);
+                break;
+            }
             config.fileSystem[directory] = [];
             createTerminalLine("Directory created.", ">");
             sendCommand("[[FROGGY]]changepath", [directory]);
@@ -445,12 +444,41 @@ function sendCommand(command, args){
                 } else {
                     let endprogFound = false;
                     let lineIndex = 0;
+                    let variables = {};
                     while(lineIndex < parsed.lines.length){
                         let line = parsed.lines[lineIndex];
                         let command = line.command;
                         switch(command){
+                            case "str":
+                                variables[line.args.name] = line.args;
+                            break;
+                            case "int":
+                                variables[line.args.name] = line.args;
+                            break;
+                            case "set":
+                                let variableName = line.args.variable;
+                                let value = line.args.value;
+                                if(value.startsWith("v:")){
+                                    value = variables[value.split(":")[1]];
+                                }
+                                if(variables[variableName] == undefined) {
+                                    createTerminalLine(`Variable ${variableName} does not exist.`, config.errorText);
+                                    break;
+                                }
+                                console.log(line.args);
+                                variables[variableName].value = value;
+                            break;
                             case "out":
-                                createTerminalLine(line.args, ">");
+                                let out = line.args;
+                                if(line.args.startsWith("v:")){
+                                    let variableName = line.args.split(":")[1];
+                                    if(variables[variableName] == undefined){
+                                        createTerminalLine(`Variable ${variableName} does not exist.`, config.errorText);
+                                        break;
+                                    }
+                                    out = variables[variableName].value;
+                                }
+                                createTerminalLine(out, ">");
                             break;
                             case "goto":
                                 let labelName = line.args;

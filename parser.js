@@ -1,6 +1,5 @@
 function parse(input) {
     let parsed = {
-        variables: {},
         functions: {},
         labels: {},
         lines: [],
@@ -8,44 +7,38 @@ function parse(input) {
     };
 
     // Parse lines into command objects
-    for (let i = 0; i < input.length; i++) {
-        let line = input[i];
-        let commandContent = {
-            command: line.split(" ")[0],
-            args: line.split(" ").slice(1),
-        };
+    input.forEach((line) => {
+        let [command, ...args] = line.split(" ");
+        parsed.lines.push({ command, args });
+    });
 
-        parsed.lines.push(commandContent);
-    }
-
-    // Parse variables
-    for (let i = 0; i < parsed.lines.length; i++) {
-        let line = parsed.lines[i];
-        if (line.command === "var") {
-            let variable = line.args[0].split(":")[0];
-            let type = line.args[0].split(":")[1];
-            let value = line.args[2];
-            parsed.variables[variable] = {
-                type: type,
-                value: value
+    // Parse variable declarations
+    parsed.lines.forEach((line) => {
+        if (line.command === "int" || line.command === "str") {
+            line.args = {
+                type: line.command,
+                name: line.args[0],
+                value: line.args[2]
             };
-
-            parsed.lines.splice(i, 1);
-            i--; // Adjust index after splice
         }
-    }
+    });
+
+    // Parse set commands
+    parsed.lines.forEach((line) => {
+        if (line.command === "set") {
+            line.args = {
+                variable: line.args[0],
+                value: line.args[1]
+            };
+        }
+    });
 
     // Handle `out` commands
-    for (let i = 0; i < parsed.lines.length; i++) {
-        let line = parsed.lines[i];
+    parsed.lines.forEach((line) => {
         if (line.command === "out") {
             line.args = line.args.join(" ");
-            if (line.args.startsWith("v:")) {
-                let varName = line.args.replace("v:", "");
-                line.args = parsed.variables[varName]?.value || parsed.errors.push(`Variable ${varName} not defined.`);
-            }
         }
-    }
+    });
 
     // Parse functions
     for (let i = 0; i < parsed.lines.length; i++) {
@@ -55,21 +48,15 @@ function parse(input) {
             let functionLines = [];
             let j = i + 1;
 
-            // Collect all lines within the function body
-            while (parsed.lines[j].command !== "endfunc") {
+            while (parsed.lines[j]?.command !== "endfunc") {
                 functionLines.push(parsed.lines[j]);
-                parsed.lines.splice(j, 1); // Remove processed line
+                parsed.lines.splice(j, 1);
             }
 
-            // Remove the "endfunc" command
-            parsed.lines.splice(j, 1); 
-
-            // Store the function body
+            parsed.lines.splice(j, 1); // Remove "endfunc"
             parsed.functions[functionName] = functionLines;
-
-            // Remove the "func" line
-            parsed.lines.splice(i, 1); 
-            i--; // Adjust index after splice
+            parsed.lines.splice(i, 1); // Remove "func"
+            i--; // Adjust index
         }
     }
 
@@ -79,32 +66,30 @@ function parse(input) {
         if (line.command === "f:") {
             let functionName = line.args[0];
             if (parsed.functions[functionName]) {
-                // Inject function body into lines at this point
-                let functionBody = JSON.parse(JSON.stringify(parsed.functions[functionName])); // Deep copy
+                let functionBody = JSON.parse(JSON.stringify(parsed.functions[functionName]));
                 parsed.lines.splice(i, 1, ...functionBody);
-                i += functionBody.length - 1; // Adjust index to skip added lines
+                i += functionBody.length - 1;
             } else {
                 parsed.errors.push(`Function ${functionName} not defined.`);
             }
         }
     }
 
-    // go through the lines and find all "label" declarations
-    for (let i = 0; i < parsed.lines.length; i++) {
-        let line = parsed.lines[i];
+    // Parse labels
+    parsed.lines.forEach((line, index) => {
         if (line.command === "label") {
             let labelName = line.args[0];
-            parsed.labels[labelName] = i;
-            line.args = line.args[0];
-        }
-    }
-
-    for(let i = 0; i < parsed.lines.length; i++) {
-        let line = parsed.lines[i];
-        if (line.command === "goto") {
-            let labelName = line.args[0];
+            parsed.labels[labelName] = index;
             line.args = labelName;
         }
-    }
+    });
+
+    // Parse `goto` commands
+    parsed.lines.forEach((line) => {
+        if (line.command === "goto") {
+            line.args = line.args[0];
+        }
+    });
+
     return parsed;
 }

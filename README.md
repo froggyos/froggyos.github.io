@@ -40,13 +40,19 @@ endfunc
 ```
 
 define a variable:
- - i - integer
- - s - string
 ```
-var [variable_name]:[type] = [value]
-var test:s = single_word
-var test:s = multiple words
-var test:i = 5
+str [variable_name] = [value]
+int [variable_name] = [value]
+
+str test = single_word
+str test = multiple words
+int test = 5
+```
+
+edit a variable:
+```
+set [variable_name] = [value]
+set test = 5
 ```
 
 call a function:
@@ -71,14 +77,9 @@ jump to a label:
 goto [label_name]
 goto start
 ```
-
-[comment]: <> (goto a line number:)
-[comment]: <> (if you jump into the middle of a function, an error will be thrown and the program will close)
-[comment]: <> (```)
-[comment]: <> (goto line_number)
-[comment]: <> (```)
-[comment]: <> ()
-[comment]: <> (if goto statement:)
-[comment]: <> (```)
-[comment]: <> (if condition goto line_number)
-[comment]: <> (```)
+control flow:
+```
+if {[condition]} {code}
+if {v:variable_name == 5} {goto start}
+if {6 < 7} {f: func}
+```
