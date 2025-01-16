@@ -18,21 +18,29 @@ const config = {
             { name: "cli", permissions: {read: false, write: false, hidden: true}, data: ["var cli:s = this program is hardcoded into froggyOS", "endprog"] },
             { name: "lilypad", permissions: {read: false, write: false, hidden: true}, data: ["var lilypad:s = this program is hardcoded into froggyOS", "endprog"] },
             { name: "test", permissions: {read: true, write: true, hidden: false}, data: [
-                "int woof = 11",
-                "int goob = 13",
                 "func meow",
                 "out meow meow!",
-                "out skibidi sigma",
-                "out v:woof",
-                "out v:goob",
                 "endfunc",
-                "if {v:woof < v:goob}",
+                "str woof = bark bark",
+                "if {woof == \"bark bark\"}",
                 "f: meow",
                 "endif",
-                "goto rah",
-                'out this line is skipped',
-                "label rah",
-                "out woof woof meow!",
+
+                // "int woof = 11",
+                // "int goob = 13",
+                // "func meow",
+                // "out meow meow!",
+                // "out skibidi sigma",
+                // "out v:woof",
+                // "out v:goob",
+                // "endfunc",
+                // "if {v:woof < v:goob}",
+                // "f: meow",
+                // "endif",
+                // "goto rah",
+                // 'out this line is skipped',
+                // "label rah",
+                // "out woof woof meow!",
                 "endprog"
             ] },
         ],
@@ -156,7 +164,7 @@ function sendCommand(command, args){
             createEditableTerminalLine(`${config.currentPath}>`);
         break;
 
-        // =========================== commands ===========================
+        // commands =========================================================================================================================================================
         case "cl":
         case "clear":
             document.getElementById('terminal').innerHTML = "";
@@ -453,12 +461,14 @@ function sendCommand(command, args){
                     createEditableTerminalLine(`${config.currentPath}>`);
                 } else {
                     let endprogFound = false;
+                    let endProgram = () => endprogFound = true;
                     let lineIndex = 0;
                     let variables = {};
                     while(lineIndex < parsed.lines.length){
                         let line = parsed.lines[lineIndex];
                         let command = line.command;
                         switch(command){
+                            // FroggyScript interpreter ===============================================================================================
                             case "str":
                                 if (!line.args || !line.args.name) {
                                     createTerminalLine(`Invalid declaration syntax.`, config.errorText);
@@ -468,27 +478,27 @@ function sendCommand(command, args){
                                 // if the variable already exist, throw error
                                 if(variables[line.args.name] != undefined){
                                     createTerminalLine(`String "${line.args.name}" already exists.`, config.errorText);
-                                    lineIndex = parsed.lines.length - 2;
+                                    endProgram();
                                     break;
                                 }
-                                // make sure its actually a string
+
                                 variables[line.args.name] = line.args;
                             break;
                             case "int":
                                 if (!line.args || !line.args.name) {
                                     createTerminalLine(`Invalid declaration syntax.`, config.errorText);
-                                    lineIndex = parsed.lines.length - 2;
+                                    endProgram();
                                     break;
                                 }
                                 if(variables[line.args.name] != undefined){
                                     createTerminalLine(`Integer "${line.args.name}" already exists.`, config.errorText);
-                                    lineIndex = parsed.lines.length - 2;
+                                    endProgram();
                                     break;
                                 }
                                 // make sure its actually a number
                                 if(isNaN(line.args.value)){
                                     createTerminalLine(`Invalid value for integer "${line.args.name}".`, config.errorText);
-                                    lineIndex = parsed.lines.length - 2;
+                                    endProgram();
                                     break;
                                 }
                                 variables[line.args.name] = line.args;
@@ -499,12 +509,12 @@ function sendCommand(command, args){
                     
                                 if (!variableName || !value) {
                                     createTerminalLine(`Invalid "set" syntax.`, config.errorText);
-                                    lineIndex = parsed.lines.length - 2;
+                                    endProgram();
                                     break;
                                 }
                                 if(variables[variableName] == undefined){
                                     createTerminalLine(`Variable "${variableName}" does not exist.`, config.errorText);
-                                    lineIndex = parsed.lines.length - 2;
+                                    endProgram();
                                     break;
                                 }
                                 variables[variableName].value = value;
@@ -514,27 +524,34 @@ function sendCommand(command, args){
 
                                 if(!condition){
                                     createTerminalLine(`Invalid "if" syntax.`, config.errorText);
-                                    lineIndex = parsed.lines.length - 2;
+                                    endProgram();
                                     break;
                                 }
                             
-                                if(condition.includes("v:")){
-                                    let varType = undefined;
-                                    for(let variable in variables){
-                                        if(condition.includes(variable)){
-                                            if(varType == undefined) varType = variables[variable].type;
-                                            if(varType != variables[variable].type && varType != undefined){
-                                                createTerminalLine(`Type mismatch in condition statement.`, config.errorText);
-                                                lineIndex = parsed.lines.length - 2;
-                                                break;
-                                            }
-                                            condition = condition.replaceAll(variable, variables[variable].value);
-                                            condition = condition.replaceAll("v:", "");
+                                let varType = undefined;
+                                for(let variable in variables){
+                                    if(condition.includes(variable)){
+                                        if(varType == undefined) varType = variables[variable].type;
+                                        if(varType != variables[variable].type && varType != undefined){
+                                            createTerminalLine(`Type mismatch in condition statement.`, config.errorText);
+                                            endProgram();
+                                            break;
                                         }
+                                        condition = condition.replaceAll(variable, `¶v¬${varType}¦${variables[variable].value}¶v¬${varType}¦`);
                                     }
                                 }
 
-                                let parsedCondition = new Function(`return ${condition}`)();
+                                let parsedCondition;
+                                try {
+                                    condition = condition.replaceAll("¶v¬str¦", "\"");
+                                    condition = condition.replaceAll("¶v¬int¦", "");
+                                    parsedCondition = new Function(`return (${condition});`)();
+                                } catch (err) {
+                                    createTerminalLine(`Error evaluating condition: "${condition}".`, config.errorText);
+                                    endProgram();
+                                    break;
+                                }
+
                                 if(parsedCondition == false){
                                     let endifIndex = parsed.lines.findIndex((line, index) => line.command == "endif" && index > lineIndex);
                                     if(endifIndex == -1){
@@ -548,7 +565,7 @@ function sendCommand(command, args){
                                 let out = line.args;
                                 if(line.args == undefined){
                                     createTerminalLine(`Invalid "out" syntax.`, config.errorText);
-                                    lineIndex = parsed.lines.length - 2;
+                                    endProgram();
                                     break;
                                 }
 
@@ -556,7 +573,7 @@ function sendCommand(command, args){
                                     let variableName = line.args.split(":")[1];
                                     if(variables[variableName] == undefined){
                                         createTerminalLine(`Variable ${variableName} does not exist.`, config.errorText);
-                                        lineIndex = parsed.lines.length - 2;
+                                        endProgram();
                                         break;
                                     }
                                     out = variables[variableName].value;
@@ -566,14 +583,14 @@ function sendCommand(command, args){
                             case "goto":
                                 if(line.args == undefined){
                                     createTerminalLine(`Invalid "goto" syntax.`, config.errorText);
-                                    lineIndex = parsed.lines.length - 2;
+                                    endProgram();
                                     break;
                                 }
 
                                 lineIndex = line.args;
                                 continue;
                             case "endprog":
-                                endprogFound = true;
+                                endProgram();
                             break;
                         }
 
@@ -599,7 +616,7 @@ function sendCommand(command, args){
             }
         break;
 
-        // =========================== hidden commands ===========================
+        // hidden commands =======================================================================================================================================
         case "[[FROGGY]]changepath":
             if(args.length == 0){
                 createTerminalLine("Please provide a path.", config.errorText);
@@ -798,12 +815,12 @@ function createLilypadLine(linetype, path, filename){
             };
         };
         if(e.key == "Escape"){
-            // this is the file data, to be stored in a path somewhere
             let file = {
                 name: null,
                 permissions: {
                     read: true,
                     write: true,
+                    hidden: false
                 },
                 data: []
             };

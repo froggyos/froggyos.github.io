@@ -20,8 +20,8 @@
 
 # FroggyScript documentation
 **Note: spaces are part of syntax, and must be used as shown**
-out - output text to the console
-to output the contents of a variable, prefix the variable name with "v:"
+
+output text to the console:
 ```
 out [input]
 out text
@@ -82,7 +82,7 @@ control flow:
 if {[condition]}
     code
 endif
-if {v:variable_name == 5}
+if {variable_name == "value"}
     goto start
 endif
 if {6 < 7} 

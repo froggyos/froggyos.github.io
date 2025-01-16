@@ -15,10 +15,11 @@ function parse(input) {
     // Parse variable declarations
     parsed.lines.forEach((line) => {
         if (line.command === "int" || line.command === "str") {
+            let value = line.args.slice(2).join(" ");
             line.args = {
                 type: line.command,
                 name: line.args[0],
-                value: line.args[2]
+                value: value
             };
         }
     });
