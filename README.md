@@ -24,6 +24,7 @@
 output text:
 ```
 out [input]
+
 out text
 out text with spaces
 out v:variable_name
