@@ -21,7 +21,7 @@
 # FroggyScript documentation
 **Note: spaces are part of syntax, and must be used as shown**
 
-output text to the console:
+output text:
 ```
 out [input]
 out text
@@ -34,6 +34,7 @@ function:
 func [func_name]
     code
 endfunc
+
 func name
     code
 endfunc
@@ -52,12 +53,14 @@ int test = 5
 edit a variable:
 ```
 set [variable_name] = [value]
+
 set test = 5
 ```
 
 call a function:
 ```
 f: [func_name]
+
 f: name
 ```
 
@@ -69,12 +72,14 @@ endprog
 define a label:
 ```
 label [label_name]
+
 label start
 ```
 
 jump to a label:
 ```
 goto [label_name]
+
 goto start
 ```
 control flow:
@@ -82,9 +87,11 @@ control flow:
 if {[condition]}
     code
 endif
+
 if {variable_name == "value"}
     goto start
 endif
+
 if {6 < 7} 
     f: name
 endif
