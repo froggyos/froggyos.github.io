@@ -19,21 +19,20 @@ const config = {
             { name: "lilypad", permissions: {read: false, write: false, hidden: true}, data: ["var lilypad:s = this program is hardcoded into froggyOS", "endprog"] },
             { name: "test", permissions: {read: true, write: true, hidden: false}, data: [
                 "int woof = 11",
+                "int goob = 13",
                 "func meow",
                 "out meow meow!",
-                "out woof....",
+                "out skibidi sigma",
+                "out v:woof",
+                "out v:goob",
                 "endfunc",
-                "if {v:woof > 10} {f: meow}",
-                // "int woof = 10",
-                // "func meow",
-                // "out meow meow!",
-                // "out v:woof",
-                // "endfunc",
-                // "f: meow",
-                // "goto meow",
-                // 'out this line is skipped',
-                // "label meow",
-                // "out woof woof meow!",
+                "if {v:woof < v:goob}",
+                "f: meow",
+                "endif",
+                "goto rah",
+                'out this line is skipped',
+                "label rah",
+                "out woof woof meow!",
                 "endprog"
             ] },
         ],
@@ -55,11 +54,17 @@ function moveCaretToEnd(element) {
         const selection = window.getSelection();
         selection.removeAllRanges();
         selection.addRange(range);
+        if (element.getBoundingClientRect().bottom > window.innerHeight) element.scrollIntoView(false);
+        if (element.getBoundingClientRect().top < 0) element.scrollIntoView(true);
+        
     } else if (typeof document.body.createTextRange !== "undefined") {
         const textRange = document.body.createTextRange();
         textRange.moveToElementText(element);
         textRange.collapse(false);
         textRange.select();
+
+        if (element.getBoundingClientRect().bottom > window.innerHeight) element.scrollIntoView(false);
+        if (element.getBoundingClientRect().top < 0) element.scrollIntoView(true);
     }
 }
 
@@ -347,10 +352,9 @@ function sendCommand(command, args){
                 break;
             }
             createTerminalLine("* press ESC to save and exit lilypad *", "");
-            // createLilypadLine(linetype, path, filename)
             for(let i = 0; i < file.data.length; i++){
                 if(config.currentPath == "C:/Programs") {
-                    createLilypadLine("code", String((i*10)+10).padStart(4, "0"), file.name);
+                    createLilypadLine("code", String(i+1).padStart(3, "0"), file.name);
                 } else createLilypadLine("normal", ">", file.name);
                 let lines = document.querySelectorAll(`[data-program='lilypad-session-${config.programSession}']`);
                 lines[i].textContent = file.data[i];
@@ -456,34 +460,103 @@ function sendCommand(command, args){
                         let command = line.command;
                         switch(command){
                             case "str":
+                                if (!line.args || !line.args.name) {
+                                    createTerminalLine(`Invalid declaration syntax.`, config.errorText);
+                                    lineIndex = parsed.lines.length - 2;
+                                    break;
+                                }
+                                // if the variable already exist, throw error
+                                if(variables[line.args.name] != undefined){
+                                    createTerminalLine(`String "${line.args.name}" already exists.`, config.errorText);
+                                    lineIndex = parsed.lines.length - 2;
+                                    break;
+                                }
+                                // make sure its actually a string
                                 variables[line.args.name] = line.args;
                             break;
                             case "int":
+                                if (!line.args || !line.args.name) {
+                                    createTerminalLine(`Invalid declaration syntax.`, config.errorText);
+                                    lineIndex = parsed.lines.length - 2;
+                                    break;
+                                }
+                                if(variables[line.args.name] != undefined){
+                                    createTerminalLine(`Integer "${line.args.name}" already exists.`, config.errorText);
+                                    lineIndex = parsed.lines.length - 2;
+                                    break;
+                                }
+                                // make sure its actually a number
+                                if(isNaN(line.args.value)){
+                                    createTerminalLine(`Invalid value for integer "${line.args.name}".`, config.errorText);
+                                    lineIndex = parsed.lines.length - 2;
+                                    break;
+                                }
                                 variables[line.args.name] = line.args;
                             break;
                             case "set":
-                                let variableName = line.args.variable;
-                                let value = line.args.value;
-                                if(value.startsWith("v:")){
-                                    value = variables[value.split(":")[1]];
+                                let variableName = line.args?.variable;
+                                let value = line.args?.value;
+                    
+                                if (!variableName || !value) {
+                                    createTerminalLine(`Invalid "set" syntax.`, config.errorText);
+                                    lineIndex = parsed.lines.length - 2;
+                                    break;
                                 }
-                                if(variables[variableName] == undefined) {
-                                    createTerminalLine(`Variable ${variableName} does not exist.`, config.errorText);
+                                if(variables[variableName] == undefined){
+                                    createTerminalLine(`Variable "${variableName}" does not exist.`, config.errorText);
+                                    lineIndex = parsed.lines.length - 2;
                                     break;
                                 }
                                 variables[variableName].value = value;
                             break;
                             case "if":
-                                console.log(variables);
-                                console.log(parsed);
-                                // const result = new Function(`return ${equation}`)();
+                                let condition = line.args.condition;
+
+                                if(!condition){
+                                    createTerminalLine(`Invalid "if" syntax.`, config.errorText);
+                                    lineIndex = parsed.lines.length - 2;
+                                    break;
+                                }
+                            
+                                if(condition.includes("v:")){
+                                    let varType = undefined;
+                                    for(let variable in variables){
+                                        if(condition.includes(variable)){
+                                            if(varType == undefined) varType = variables[variable].type;
+                                            if(varType != variables[variable].type && varType != undefined){
+                                                createTerminalLine(`Type mismatch in condition statement.`, config.errorText);
+                                                lineIndex = parsed.lines.length - 2;
+                                                break;
+                                            }
+                                            condition = condition.replaceAll(variable, variables[variable].value);
+                                            condition = condition.replaceAll("v:", "");
+                                        }
+                                    }
+                                }
+
+                                let parsedCondition = new Function(`return ${condition}`)();
+                                if(parsedCondition == false){
+                                    let endifIndex = parsed.lines.findIndex((line, index) => line.command == "endif" && index > lineIndex);
+                                    if(endifIndex == -1){
+                                        createTerminalLine(`"endif" not found.`, config.errorText);
+                                    }
+
+                                    lineIndex = endifIndex;
+                                }
                             break;
                             case "out":
                                 let out = line.args;
+                                if(line.args == undefined){
+                                    createTerminalLine(`Invalid "out" syntax.`, config.errorText);
+                                    lineIndex = parsed.lines.length - 2;
+                                    break;
+                                }
+
                                 if(line.args.startsWith("v:")){
                                     let variableName = line.args.split(":")[1];
                                     if(variables[variableName] == undefined){
                                         createTerminalLine(`Variable ${variableName} does not exist.`, config.errorText);
+                                        lineIndex = parsed.lines.length - 2;
                                         break;
                                     }
                                     out = variables[variableName].value;
@@ -491,8 +564,13 @@ function sendCommand(command, args){
                                 createTerminalLine(out, ">");
                             break;
                             case "goto":
-                                let labelName = line.args;
-                                lineIndex = parsed.labels[labelName];
+                                if(line.args == undefined){
+                                    createTerminalLine(`Invalid "goto" syntax.`, config.errorText);
+                                    lineIndex = parsed.lines.length - 2;
+                                    break;
+                                }
+
+                                lineIndex = line.args;
                                 continue;
                             case "endprog":
                                 endprogFound = true;
@@ -665,7 +743,7 @@ function createLilypadLine(linetype, path, filename){
         if(linetype == "code"){
             let lines = document.querySelectorAll(`[data-program='lilypad-session-${config.programSession}']`);
             for(let i = 0; i < lines.length; i++){
-                let lineNumber = String((i*10)+10).padStart(4, "0");
+                let lineNumber = String(i+1).padStart(3, "0");
                 lines[i].previousElementSibling.textContent = lineNumber;
             }
         }
@@ -677,7 +755,7 @@ function createLilypadLine(linetype, path, filename){
             if(linetype == "code"){
                 // get the number of lines in the lilypad session
                 let lines = document.querySelectorAll(`[data-program='lilypad-session-${config.programSession}']`);
-                let lineNumber = String(+lines[lines.length - 1].previousElementSibling.textContent+10).padStart(4, '0');
+                let lineNumber = String(+lines[lines.length - 1].previousElementSibling.textContent+1).padStart(3, '0');
                 createLilypadLine("code", lineNumber, filename);
             } else {
                 createLilypadLine("normal", ">", filename);

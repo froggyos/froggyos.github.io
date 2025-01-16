@@ -28,7 +28,7 @@ function parse(input) {
         if (line.command === "set") {
             line.args = {
                 variable: line.args[0],
-                value: line.args[1]
+                value: line.args[2]
             };
         }
     });
@@ -48,6 +48,11 @@ function parse(input) {
             let functionLines = [];
             let j = i + 1;
             let failsafe = 0;
+
+            if(parsed.functions[functionName] !== undefined){
+                parsed.errors.push(`Function ${functionName} already exists.`);
+                break;
+            }
 
             while (parsed.lines[j]?.command !== "endfunc") {
                 functionLines.push(parsed.lines[j]);
@@ -94,29 +99,24 @@ function parse(input) {
     // Parse `goto` commands
     parsed.lines.forEach((line) => {
         if (line.command === "goto") {
-            line.args = line.args[0];
+            if (parsed.labels[line.args[0]] === undefined) {
+                parsed.errors.push(`Label ${line.args[0]} not defined.`);
+            } else {
+                line.args = parsed.labels[line.args[0]];
+            }
         }
     });
 
     // if
     parsed.lines.forEach((line) => {
         if (line.command === "if") {
-            let input = line.args.join(" ").split("} {")
-            input[0] = input[0].replace("{", "");
-            input[1] = input[1].replace("}", "");
+            let input = line.args.join(" ");
+            input = input.replace("{", "");
+            input = input.replace("}", "");
 
             delete line.args 
             line.args = {};
-            line.args.condition = input[0];
-            line.args.out = input[1];
-
-            if(line.args.out.startsWith("f: ")){
-                if(parsed.functions[line.args.out.split(" ")[1]] === undefined){
-                    parsed.errors.push(`Function ${line.args.out.split(" ")[1]} not defined.`);
-                } else {
-                    line.args.out = parsed.functions[line.args.out.split(" ")[1]];
-                }
-            }
+            line.args.condition = input;
         }
     })
 
