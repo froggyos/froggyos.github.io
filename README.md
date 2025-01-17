@@ -28,9 +28,9 @@ output text:
 ```
 out "[input]"
 
-out \"text"
-out \"text with spaces"
-out \'more text'
+out "text"
+out "text with spaces"
+out 'more text'
 out v:variable_name
 ```
 
