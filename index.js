@@ -143,6 +143,9 @@ setInterval(function() {
     let files = [];
     for(let directory of config.allowedProgramDirectories){
         if(config.fileSystem[directory] == undefined) continue;
+        // if the files havent changed, do not update the program list
+        if(config.fileSystem[directory].length == files.length && config.fileSystem[directory].every((file, index) => file.name == files[index])) continue;
+
         files = files.concat(config.fileSystem[directory]);
     }
     files = files.map(file => file.name);
@@ -274,6 +277,10 @@ function sendCommand(command, args){
                 createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
+            if(config.fileSystem[config.currentPath] == undefined){
+                createTerminalLine("Directory does not exist.", config.errorText);
+                createEditableTerminalLine(`${config.currentPath}>`);
+            }
             if(config.fileSystem[config.currentPath].find(file => file.name == args[0]) != undefined){
                 createTerminalLine("File already exists.", config.errorText);
                 createEditableTerminalLine(`${config.currentPath}>`);
@@ -309,8 +316,10 @@ function sendCommand(command, args){
             createTerminalLine("help . . . . . . . . . . . . . Displays this message.", ">");
             createTerminalLine("hop [directory]. . . . . . . . Moves to a directory.", ">");
             createTerminalLine("list . . . . . . . . . . . . . Lists files and subdirectories in the current                                directory.", ">");
+            createTerminalLine("loadstate. . . . . . . . . . . Load froggyOS state.", ">");
             createTerminalLine("meta [file]. . . . . . . . . . Edits a file.", ">");
             createTerminalLine("metaperm [file] [perm] [0/1] . Edits a file's permissions.", ">");
+            createTerminalLine("savestate. . . . . . . . . . . Save froggyOS state.", ">");
             createTerminalLine("spawn [directory]. . . . . . . Creates a directory.", ">");
             createTerminalLine("spy [file] . . . . . . . . . . Reads the file.", ">");
             createTerminalLine("swimto [program] . . . . . . . Start a program.", ">");
@@ -371,6 +380,23 @@ function sendCommand(command, args){
             createEditableTerminalLine(`${config.currentPath}>`);
         break;
 
+        // load state
+        case "lds":
+        case "loadstate":
+            let state = localStorage.getItem("froggyOS-state");
+            if(state == null){
+                createTerminalLine("No state found.", config.errorText);
+                createEditableTerminalLine(`${config.currentPath}>`);
+                break;
+            }
+            for(let key in JSON.parse(state)){
+                config[key] = JSON.parse(state)[key];
+            }
+
+            createTerminalLine("State loaded.", ">")
+            createEditableTerminalLine(`${config.currentPath}>`);
+        break;
+
         // edit file
         case "m":
         case "meta":
@@ -407,7 +433,7 @@ function sendCommand(command, args){
             }
         break;
 
-        // edit file permissions ===================== 
+        // edit file permissions
         case "mp":
         case "metaperm":
             file = getFileWithName(config.currentPath, args[0]);
@@ -446,6 +472,14 @@ function sendCommand(command, args){
             createTerminalLine("Permissions updated.", ">")
                 
 
+            createEditableTerminalLine(`${config.currentPath}>`);
+        break;
+
+        // save state
+        case "svs":
+        case "savestate":
+            localStorage.setItem("froggyOS-state", JSON.stringify(config));
+            createTerminalLine("State saved.", ">")
             createEditableTerminalLine(`${config.currentPath}>`);
         break;
 
@@ -580,7 +614,7 @@ function sendCommand(command, args){
                                 defineCount++;
 
                                 if(args.length - 1 < defineCount){
-                                    createTerminalLine(`Not enough arguments provided.`, config.errorText);
+                                    createTerminalLine(`Missing argument ${defineCount} (type ${type}).`, config.errorText);
                                     endProgram();
                                     break;
                                 }

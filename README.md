@@ -14,8 +14,10 @@
  * help -> ?
  * hop -> h
  * list -> ls
+ * loadstate -> lds
  * meta -> m
  * metaperm -> mp
+ * savestate -> svs
  * spawn -> s
  * swimto -> st
 
@@ -68,13 +70,13 @@ str out = "i am v:age years old"
 define a file argument:
 ```
 define [variable_name] [type]
-define age int
 define name str
+define age int
 out "hello I am v:name and I am v:age years old"
 
 -- when running the program
 C:/Home> st [program_name] [arg1] [arg2]
-C:/Home> st profile 7 froggy
+C:/Home> st profile froggy 7
 > hello I am froggy and I am 7 years old
 ```
 
