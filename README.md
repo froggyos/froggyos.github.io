@@ -28,9 +28,9 @@ output text:
 ```
 out "[input]"
 
-out "text"
-out "text with spaces"
-out 'more text'
+out \"text"
+out \"text with spaces"
+out \'more text'
 out v:variable_name
 ```
 
@@ -61,6 +61,8 @@ edit a variable:
 set [variable_name] = [value]
 
 set test = 5
+set test = 'text'
+set test = "many word"
 ```
 
 call a function:
