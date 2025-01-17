@@ -5,6 +5,10 @@ function parse(input) {
         lines: [],
         errors: []
     };
+    
+    const disallowedVariableNames = [
+        "int", "str", "set", "out", "func", "endfunc", "f:", "label", "goto", "if", "endif", "and", "or", "not", "true", "false"
+    ]
 
     // Parse lines into command objects
     input.forEach((line) => {
@@ -16,6 +20,9 @@ function parse(input) {
     parsed.lines.forEach((line) => {
         if (line.command === "int" || line.command === "str") {
             let value = line.args.slice(2).join(" ");
+            if(disallowedVariableNames.includes(line.args[0])){
+                parsed.errors.push(`Variable name "${line.args[0]}" is not allowed.`);
+            }
             line.args = {
                 type: line.command,
                 name: line.args[0],
@@ -27,9 +34,10 @@ function parse(input) {
     // Parse set commands
     parsed.lines.forEach((line) => {
         if (line.command === "set") {
+            let value = line.args.slice(2).join(" ");
             line.args = {
                 variable: line.args[0],
-                value: line.args[2]
+                value: value
             };
         }
     });
@@ -51,7 +59,7 @@ function parse(input) {
             let failsafe = 0;
 
             if(parsed.functions[functionName] !== undefined){
-                parsed.errors.push(`Function ${functionName} already exists.`);
+                parsed.errors.push(`Function "${functionName}" already exists.`);
                 break;
             }
 
@@ -61,7 +69,7 @@ function parse(input) {
                 failsafe++;
                 
                 if(failsafe > parsed.lines.length){
-                    parsed.errors.push(`Function ${functionName} is not closed.`);
+                    parsed.errors.push(`Function "${functionName}" is not closed.`);
                     break;
                 }
             }
@@ -83,7 +91,7 @@ function parse(input) {
                 parsed.lines.splice(i, 1, ...functionBody);
                 i += functionBody.length - 1;
             } else {
-                parsed.errors.push(`Function ${functionName} not defined.`);
+                parsed.errors.push(`Function "${functionName}" not defined.`);
             }
         }
     }
@@ -101,7 +109,7 @@ function parse(input) {
     parsed.lines.forEach((line) => {
         if (line.command === "goto") {
             if (parsed.labels[line.args[0]] === undefined) {
-                parsed.errors.push(`Label ${line.args[0]} not defined.`);
+                parsed.errors.push(`Label "${line.args[0]}" not defined.`);
             } else {
                 line.args = parsed.labels[line.args[0]];
             }

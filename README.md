@@ -21,12 +21,16 @@
 # FroggyScript documentation
 **Note: spaces are part of syntax, and must be used as shown**
 
+Operators:
+* All JavaScript operators are valid
+
 output text:
 ```
-out [input]
+out "[input]"
 
-out text
-out text with spaces
+out "text"
+out "text with spaces"
+out 'more text'
 out v:variable_name
 ```
 
@@ -46,8 +50,9 @@ define a variable:
 str [variable_name] = [value]
 int [variable_name] = [value]
 
-str test = single_word
-str test = multiple words
+str test = 'single'
+str test = "double"
+str test = "multiple words"
 int test = 5
 ```
 

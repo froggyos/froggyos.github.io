@@ -17,30 +17,27 @@ const config = {
         "C:/Programs": [
             { name: "cli", permissions: {read: false, write: false, hidden: true}, data: ["var cli:s = this program is hardcoded into froggyOS", "endprog"] },
             { name: "lilypad", permissions: {read: false, write: false, hidden: true}, data: ["var lilypad:s = this program is hardcoded into froggyOS", "endprog"] },
-            { name: "test", permissions: {read: true, write: true, hidden: false}, data: [
-                "func meow",
-                "out meow meow!",
+            { name: "demo", permissions: {read: true, write: true, hidden: false}, data: [
+                "int number_1 = 11",
+                "int number_2 = 13",
+                "str string_1 = \"this is a string, wow!\"",
+                "out v:string_1",
+                "func function",
+                "out 'this is a function'",
                 "endfunc",
-                "str woof = bark bark",
-                "if {woof == \"bark bark\"}",
-                "f: meow",
+                "f: function",
+                "func condition_demo",
+                "out 'if number_1 is less than number_2, this should output!'",
+                "endfunc",
+                "if {v:number_1 < v:number_2}",
+                "f: condition_demo",
                 "endif",
-
-                // "int woof = 11",
-                // "int goob = 13",
-                // "func meow",
-                // "out meow meow!",
-                // "out skibidi sigma",
-                // "out v:woof",
-                // "out v:goob",
-                // "endfunc",
-                // "if {v:woof < v:goob}",
-                // "f: meow",
-                // "endif",
-                // "goto rah",
-                // 'out this line is skipped',
-                // "label rah",
-                // "out woof woof meow!",
+                "goto a_label",
+                'out "this line is skipped"',
+                "label a_label",
+                "set number_1 = v:number_1 + 3",
+                "out v:number_1",
+                "out 'the end!'",
                 "endprog"
             ] },
         ],
@@ -462,6 +459,18 @@ function sendCommand(command, args){
                 } else {
                     let endprogFound = false;
                     let endProgram = () => endprogFound = true;
+
+                    function evalutate(string){
+                        let parsedString;
+                        try {
+                            parsedString = new Function(`return (${string});`)();
+                        } catch (err) {
+                            createTerminalLine(`Error evaluating statement: "${string}".`, config.errorText);
+                            endProgram();
+                        }
+                        return parsedString;
+                    }
+
                     let lineIndex = 0;
                     let variables = {};
                     while(lineIndex < parsed.lines.length){
@@ -482,7 +491,7 @@ function sendCommand(command, args){
                                     break;
                                 }
 
-                                variables[line.args.name] = line.args;
+                                variables["v:" + line.args.name] = line.args;
                             break;
                             case "int":
                                 if (!line.args || !line.args.name) {
@@ -495,16 +504,20 @@ function sendCommand(command, args){
                                     endProgram();
                                     break;
                                 }
-                                // make sure its actually a number
-                                if(isNaN(line.args.value)){
-                                    createTerminalLine(`Invalid value for integer "${line.args.name}".`, config.errorText);
+
+                                let argument = line.args.value;
+                                if(argument.includes("\"")){
+                                    createTerminalLine(`Type mismatch.`, config.errorText);
                                     endProgram();
                                     break;
                                 }
-                                variables[line.args.name] = line.args;
+                                let parsedArgument = evalutate(argument);
+
+                                line.args.value = parsedArgument + [];
+                                variables["v:" + line.args.name] = line.args;
                             break;
                             case "set":
-                                let variableName = line.args?.variable;
+                                let variableName = "v:" + line.args?.variable;
                                 let value = line.args?.value;
                     
                                 if (!variableName || !value) {
@@ -512,12 +525,36 @@ function sendCommand(command, args){
                                     endProgram();
                                     break;
                                 }
+
                                 if(variables[variableName] == undefined){
                                     createTerminalLine(`Variable "${variableName}" does not exist.`, config.errorText);
                                     endProgram();
                                     break;
                                 }
-                                variables[variableName].value = value;
+
+                                for(let variable in variables){
+                                    if(variable == variableName){
+                                        if(variables[variable].type == "int"){
+                                            if(value.includes("\"")){
+                                                createTerminalLine(`Type mismatch.`, config.errorText);
+                                                endProgram();
+                                                break;
+                                            }
+                                        }
+                                        value = value.replaceAll(variableName, variables[variableName].value);
+                                    }
+                                }
+
+                                let parsedValue;
+                                try {
+                                    parsedValue = new Function(`return (${value});`)();
+                                } catch (err) {
+                                    createTerminalLine(`Error evaluating statement: "${value}".`, config.errorText);
+                                    endProgram();
+                                    break;
+                                }
+
+                                variables[variableName].value = parsedValue;
                             break;
                             case "if":
                                 let condition = line.args.condition;
@@ -541,16 +578,12 @@ function sendCommand(command, args){
                                     }
                                 }
 
-                                let parsedCondition;
-                                try {
-                                    condition = condition.replaceAll("¶v¬str¦", "\"");
-                                    condition = condition.replaceAll("¶v¬int¦", "");
-                                    parsedCondition = new Function(`return (${condition});`)();
-                                } catch (err) {
-                                    createTerminalLine(`Error evaluating condition: "${condition}".`, config.errorText);
-                                    endProgram();
-                                    break;
-                                }
+                                
+
+                                condition = condition.replaceAll("¶v¬str¦", "\"");
+                                condition = condition.replaceAll("¶v¬int¦", "");
+
+                                let parsedCondition = evalutate(condition);
 
                                 if(parsedCondition == false){
                                     let endifIndex = parsed.lines.findIndex((line, index) => line.command == "endif" && index > lineIndex);
@@ -569,16 +602,20 @@ function sendCommand(command, args){
                                     break;
                                 }
 
-                                if(line.args.startsWith("v:")){
-                                    let variableName = line.args.split(":")[1];
-                                    if(variables[variableName] == undefined){
-                                        createTerminalLine(`Variable ${variableName} does not exist.`, config.errorText);
-                                        endProgram();
-                                        break;
+                                for(let variable in variables){
+                                    if(out.includes(variable)){
+                                        out = out.replaceAll(variable, variables[variable].value);
                                     }
-                                    out = variables[variableName].value;
                                 }
-                                createTerminalLine(out, ">");
+                                let parsedOut;
+                                try {
+                                    parsedOut = new Function(`return (${out});`)();
+                                } catch (err) {
+                                    createTerminalLine(`Error evaluating statement: "${out}".`, config.errorText);
+                                    endProgram();
+                                    break;
+                                }
+                                createTerminalLine(parsedOut, ">");
                             break;
                             case "goto":
                                 if(line.args == undefined){
