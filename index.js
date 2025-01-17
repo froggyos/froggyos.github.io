@@ -40,6 +40,22 @@ const config = {
                 "out 'the end!'",
                 "endprog"
             ] },
+            {name: "if-else-demo", permissions: {read: true, write: true, hidden: false}, data: [
+                "int number = 11",
+                "int number_to_compare = 14",
+                "if {v:number > v:number_to_compare}",
+                "out 'v:number is greater than v:number_to_compare'",
+                "else",
+                "out 'v:number is less than or equal to v:number_to_compare'",
+                "endif",
+                "endprog"
+            ] },
+            {name: "template-string-demo", permissions: {read: true, write: true, hidden: false}, data: [
+                "int age = 20", 
+                "str string = `i am v:age years old`",
+                "out v:string",
+                "endprog"
+            ]},
         ],
     }
 };
@@ -491,6 +507,12 @@ function sendCommand(command, args){
                                     break;
                                 }
 
+                                for(let variable in variables){
+                                    if(line.args.value.includes(variable)){
+                                        line.args.value = line.args.value.replaceAll(new RegExp(`\\b${variable}\\b`, 'g'), variables[variable].value);
+                                    }
+                                }
+
                                 variables["v:" + line.args.name] = line.args;
                             break;
                             case "int":
@@ -541,7 +563,7 @@ function sendCommand(command, args){
                                                 break;
                                             }
                                         }
-                                        value = value.replaceAll(variableName, variables[variableName].value);
+                                        value = value.replaceAll(new RegExp(`\\b${variableName}\\b`, 'g'), variables[variableName].value);
                                     }
                                 }
 
@@ -574,24 +596,39 @@ function sendCommand(command, args){
                                             endProgram();
                                             break;
                                         }
-                                        condition = condition.replaceAll(variable, `¶v¬${varType}¦${variables[variable].value}¶v¬${varType}¦`);
+                                        condition = condition.replaceAll(new RegExp(`\\b${variable}\\b`, 'g'), `¶v¬${varType}¦${variables[variable].value}¶v¬${varType}¦`);
                                     }
                                 }
 
                                 
-
                                 condition = condition.replaceAll("¶v¬str¦", "\"");
                                 condition = condition.replaceAll("¶v¬int¦", "");
 
                                 let parsedCondition = evalutate(condition);
 
-                                if(parsedCondition == false){
-                                    let endifIndex = parsed.lines.findIndex((line, index) => line.command == "endif" && index > lineIndex);
-                                    if(endifIndex == -1){
-                                        createTerminalLine(`"endif" not found.`, config.errorText);
-                                    }
+                                // find the else statement
+                                let elseIndex = parsed.lines.findIndex((line, index) => line.command == "else" && index > lineIndex);
+                                let endifIndex = parsed.lines.findIndex((line, index) => line.command == "endif" && index > lineIndex);
 
-                                    lineIndex = endifIndex;
+                                if(endifIndex == -1){
+                                    createTerminalLine(`"endif" not found.`, config.errorText);
+                                    endProgram();
+                                    break;
+                                }
+
+                                console.log(elseIndex, endifIndex);
+                                if(parsedCondition){
+                                    if(elseIndex != -1){
+                                        parsed.lines.splice(elseIndex, endifIndex - elseIndex);
+                                    } else {
+                                        parsed.lines.splice(endifIndex, 1);
+                                    }
+                                } else {
+                                    if(elseIndex != -1){
+                                        parsed.lines.splice(lineIndex, elseIndex - lineIndex);
+                                    } else {
+                                        parsed.lines.splice(lineIndex, endifIndex - lineIndex);
+                                    }
                                 }
                             break;
                             case "out":
@@ -604,7 +641,7 @@ function sendCommand(command, args){
 
                                 for(let variable in variables){
                                     if(out.includes(variable)){
-                                        out = out.replaceAll(variable, variables[variable].value);
+                                        out = out.replaceAll(new RegExp(`\\b${variable}\\b`, 'g'), variables[variable].value);
                                     }
                                 }
                                 let parsedOut;

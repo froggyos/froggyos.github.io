@@ -28,10 +28,11 @@ output text:
 ```
 out "[input]"
 
+out v:variable_name
 out "text"
 out "text with spaces"
 out 'more text'
-out v:variable_name
+out "i can output a v:variable inside a string"
 ```
 
 function:
@@ -53,7 +54,9 @@ int [variable_name] = [value]
 str test = 'single'
 str test = "double"
 str test = "multiple words"
-int test = 5
+
+int age = 20
+str out = "i am v:age years old"
 ```
 
 edit a variable:
@@ -101,6 +104,18 @@ if {variable_name == "value"}
 endif
 
 if {6 < 7} 
+    f: name
+endif
+
+if {[condition]}
+    code_if_true
+else
+    code_if_false
+endif
+
+if {variable_name == "value"}
+    goto start
+else
     f: name
 endif
 ```
