@@ -7,6 +7,7 @@ const config = {
     currentProgram: null, // do something with this later
     programList: ["cli", "lilypad"],
     allowedProgramDirectories: ["C:/Programs", "C:/Demo-Programs"],
+    dissallowSubdirectoriesIn: ["C:/Programs", "C:/Demo-Programs", "C:/Macros"],
     programSession: 0,
     errorText: "<span style='background-color: #FF5555; color: #FFFFFF;'>!!ERROR!!</span> - ",
     fileSystem: {
@@ -29,6 +30,13 @@ const config = {
                 "out 'v:num1 is less than or equal to v:num2'",
                 "endif",
                 "endprog"
+            ] },
+        ],
+        "C:/Macros": [
+            { name: "createprogram", permissions: {read: true, write: true, hidden: false}, data: [
+                "h C:/Programs",
+                "ch $1",
+                "m $1"
             ] },
         ],
         "C:/Demo-Programs": [
@@ -66,6 +74,11 @@ const config = {
         ],
     }
 };
+
+/*
+todo: macro and ask keyword
+
+*/
 
 let screen = document.getElementById('screen');
 let terminal = document.getElementById('terminal');
@@ -488,7 +501,7 @@ function sendCommand(command, args){
         case "spawn":
             directory = config.currentPath + "/" + args[0];
 
-            if(config.allowedProgramDirectories.includes(config.currentPath)){
+            if(config.dissallowSubdirectoriesIn.includes(config.currentPath)){
                 createTerminalLine("You cannot create directories in this directory.", config.errorText);
                 createEditableTerminalLine(`${config.currentPath}>`);
                 break;
