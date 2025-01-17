@@ -16,8 +16,20 @@ const config = {
         ],
         "C:/Docs": [],
         "C:/Programs": [
-            { name: "cli", permissions: {read: false, write: false, hidden: true}, data: ["var cli:s = this program is hardcoded into froggyOS", "endprog"] },
-            { name: "lilypad", permissions: {read: false, write: false, hidden: true}, data: ["var lilypad:s = this program is hardcoded into froggyOS", "endprog"] },
+            { name: "cli", permissions: {read: false, write: false, hidden: true}, data: ["str cli = 'this program is hardcoded into froggyOS'", "endprog"] },
+            { name: "lilypad", permissions: {read: false, write: false, hidden: true}, data: ["str lilypad = 'this program is hardcoded into froggyOS'", "endprog"] },
+            { name: "test", permissions: {read: true, write: true, hidden: false}, data: [
+                "define num1 int",
+                "define num2 int",
+                "out 'first number: v:num1'",
+                "out 'second number: v:num2'",
+                "if {v:num1 > v:num2}",
+                "out 'v:num1 is greater than v:num2'",
+                "else",
+                "out 'v:num1 is less than or equal to v:num2'",
+                "endif",
+                "endprog"
+            ] },
         ],
         "C:/Demo-Programs": [
             { name: "demo-output", permissions: {read: true, write: true, hidden: false}, data: [
@@ -288,19 +300,20 @@ function sendCommand(command, args){
         case "?":
         case "help":
             createTerminalLine("* A few basic froggyOS commands *", "");
-            createTerminalLine("clear               - Clears the terminal output.", ">");
-            createTerminalLine("croak [file]        - Deletes the file.", ">");
-            createTerminalLine("ribbit [text]       - Displays the text.", ">");
-            createTerminalLine("formattime [format] - Changes the time format.", ">");
-            createTerminalLine("hatch [file]        - Creates a file.", ">");
-            createTerminalLine("hello               - Displays a greeting message.", ">");
-            createTerminalLine("help                - Displays this message.", ">");
-            createTerminalLine("hop [directory]     - Moves to a directory.", ">");
-            createTerminalLine("list                - Lists files and subdirectories in the current                       directory.", ">");
-            createTerminalLine("meta [file]         - Edits a file.", ">");
-            createTerminalLine("spawn [directory]   - Creates a directory.", ">");
-            createTerminalLine("spy [file]          - Reads the file.", ">");
-            createTerminalLine("swimto [program]    - Start a program.", ">");
+            createTerminalLine("clear. . . . . . . . . . . . . Clears the terminal output.", ">");
+            createTerminalLine("croak [file] . . . . . . . . . Deletes the file.", ">");
+            createTerminalLine("ribbit [text]. . . . . . . . . Displays the text.", ">");
+            createTerminalLine("formattime [format]. . . . . . Changes the time format.", ">");
+            createTerminalLine("hatch [file] . . . . . . . . . Creates a file.", ">");
+            createTerminalLine("hello. . . . . . . . . . . . . Displays a greeting message.", ">");
+            createTerminalLine("help . . . . . . . . . . . . . Displays this message.", ">");
+            createTerminalLine("hop [directory]. . . . . . . . Moves to a directory.", ">");
+            createTerminalLine("list . . . . . . . . . . . . . Lists files and subdirectories in the current                                directory.", ">");
+            createTerminalLine("meta [file]. . . . . . . . . . Edits a file.", ">");
+            createTerminalLine("metaperm [file] [perm] [0/1] . Edits a file's permissions.", ">");
+            createTerminalLine("spawn [directory]. . . . . . . Creates a directory.", ">");
+            createTerminalLine("spy [file] . . . . . . . . . . Reads the file.", ">");
+            createTerminalLine("swimto [program] . . . . . . . Start a program.", ">");
             createEditableTerminalLine(`${config.currentPath}>`);
         break;
 
@@ -341,6 +354,9 @@ function sendCommand(command, args){
 
             let files = config.fileSystem[config.currentPath];
             if(files == undefined) files = [];
+            // remove all files that are hidden
+            files = files.filter(file => file.permissions.hidden == false);
+
             if(files.length == 0 && subdirectoryNames.length == 0){
                 createTerminalLine("This directory is empty.", ">")
                 createEditableTerminalLine(`${config.currentPath}>`);
@@ -350,7 +366,7 @@ function sendCommand(command, args){
                 createTerminalLine(` [DIR] ${subdirectory}`, ">")
             });
             files.forEach(file => {
-                if(file.permissions.hidden == false) createTerminalLine(`       ${file.name}`, ">")
+                createTerminalLine(`       ${file.name}`, ">")
             });
             createEditableTerminalLine(`${config.currentPath}>`);
         break;
@@ -394,7 +410,42 @@ function sendCommand(command, args){
         // edit file permissions ===================== 
         case "mp":
         case "metaperm":
-            createTerminalLine("idek how u found this command lol im not doing it just yet LOL", "");
+            file = getFileWithName(config.currentPath, args[0]);
+
+            let permission = args[1];
+            let value = args[2];
+            if(file == undefined){
+                createTerminalLine("File does not exist.", config.errorText);
+                createEditableTerminalLine(`${config.currentPath}>`);
+                break;
+            }
+
+            let permissionType = Object.keys(file.permissions);
+
+            if(permission == undefined || permissionType.includes(permission) == false){
+                createTerminalLine("Please provide a valid permission type.", config.errorText);
+                createTerminalLine("* Available permissions *", "");
+                createTerminalLine(permissionType.join(", "), ">");
+                createEditableTerminalLine(`${config.currentPath}>`);
+                break;
+            }
+
+            if(value == undefined || (value != "0" && value != "1")){
+                createTerminalLine("Please provide a valid value. 0 or 1.", config.errorText);
+                createEditableTerminalLine(`${config.currentPath}>`);
+                break
+            }
+
+            if(file.permissions.write == false){
+                createTerminalLine("You do not have permission to edit this file.", config.errorText);
+                createEditableTerminalLine(`${config.currentPath}>`);
+                break;
+            }
+
+            file.permissions[permission] = value == "1" ? true : false;
+            createTerminalLine("Permissions updated.", ">")
+                
+
             createEditableTerminalLine(`${config.currentPath}>`);
         break;
 
@@ -501,12 +552,46 @@ function sendCommand(command, args){
 
                     let lineIndex = 0;
                     let variables = {};
+                    let defineCount = 0;
                     while(lineIndex < parsed.lines.length){
                         let line = parsed.lines[lineIndex];
                         let command = line.command;
                         switch(command){
                             // FroggyScript interpreter ===============================================================================================
                             case "--":
+                            break;
+                            case "define":
+                                if (!line.args || !line.args.name || !line.args.type || !line.args.value) {
+                                    createTerminalLine(`Invalid declaration syntax.`, config.errorText);
+                                    endProgram();
+                                    break;
+                                }
+
+                                let name = line.args.name;
+                                let type = line.args.value;  
+
+                                if(variables["v:" + name] != undefined){
+                                    createTerminalLine(`Variable "${name}" already exists.`, config.errorText);
+                                    endProgram();
+                                    break;
+                                }
+
+                                // count the number of variables with the type of "define"
+                                defineCount++;
+
+                                if(args.length - 1 < defineCount){
+                                    createTerminalLine(`Not enough arguments provided.`, config.errorText);
+                                    endProgram();
+                                    break;
+                                }
+
+                                let varVal = args[defineCount];
+
+                                variables["v:" + name] = {
+                                    type: type,
+                                    value: varVal,
+                                    name: name,
+                                };
                             break;
                             case "str":
                                 if (!line.args || !line.args.name) {
@@ -663,6 +748,11 @@ function sendCommand(command, args){
                                     }
                                 }
 
+                                if(out.includes("v:")){
+                                    createTerminalLine(`Variable does not exist in out statement.`, config.errorText);
+                                    endProgram();
+                                    break;
+                                }
                                 
 
                                 let parsedOut;

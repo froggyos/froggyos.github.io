@@ -7,7 +7,7 @@ function parse(input) {
     };
     
     const disallowedVariableNames = [
-        "int", "str", "set", "out", "func", "endfunc", "f:", "label", "goto", "if", "endif", "and", "or", "not", "true", "false"
+        "int", "str", "set", "out", "func", "endfunc", "f:", "label", "goto", "if", "endif", "and", "or", "not", "true", "false", "else"
     ]
 
     // Parse lines into command objects
@@ -30,6 +30,17 @@ function parse(input) {
             };
         }
     });
+
+    // file argument definitions
+    parsed.lines.forEach((line) => {
+        if (line.command === "define") {
+            line.args = {
+                type: line.command,
+                name: line.args[0],
+                value: line.args[1]
+            };
+        }
+    })
 
     // Parse set commands
     parsed.lines.forEach((line) => {

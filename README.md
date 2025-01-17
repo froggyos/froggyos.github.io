@@ -15,6 +15,7 @@
  * hop -> h
  * list -> ls
  * meta -> m
+ * metaperm -> mp
  * spawn -> s
  * swimto -> st
 
@@ -62,6 +63,19 @@ str test = "multiple words"
 
 int age = 20
 str out = "i am v:age years old"
+```
+
+define a file argument:
+```
+define [variable_name] [type]
+define age int
+define name str
+out "hello I am v:name and I am v:age years old"
+
+-- when running the program
+C:/Home> st [program_name] [arg1] [arg2]
+C:/Home> st profile 7 froggy
+> hello I am froggy and I am 7 years old
 ```
 
 edit a variable:
