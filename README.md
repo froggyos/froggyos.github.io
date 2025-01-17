@@ -24,6 +24,11 @@
 Operators:
 * All JavaScript operators are valid
 
+comments:
+```
+-- comment
+```
+
 output text:
 ```
 out "[input]"

@@ -4,8 +4,9 @@ const config = {
     commandHistoryIndex: -1,
     timeFormat: 'w. y/m/d h:n:s',
     updateStatBar: true,
-    currentProgram: "cli",
+    currentProgram: null, // do something with this later
     programList: ["cli", "lilypad"],
+    allowedProgramDirectories: ["C:/Programs", "C:/Demo-Programs"],
     programSession: 0,
     errorText: "<span style='background-color: #FF5555; color: #FFFFFF;'>!!ERROR!!</span> - ",
     fileSystem: {
@@ -17,30 +18,30 @@ const config = {
         "C:/Programs": [
             { name: "cli", permissions: {read: false, write: false, hidden: true}, data: ["var cli:s = this program is hardcoded into froggyOS", "endprog"] },
             { name: "lilypad", permissions: {read: false, write: false, hidden: true}, data: ["var lilypad:s = this program is hardcoded into froggyOS", "endprog"] },
-            { name: "demo", permissions: {read: true, write: true, hidden: false}, data: [
-                "int number_1 = 11",
-                "int number_2 = 13",
-                "str string_1 = \"this is a string, wow!\"",
-                "out v:string_1",
-                "func function",
-                "out 'this is a function'",
-                "endfunc",
-                "f: function",
-                "func condition_demo",
-                "out 'if number_1 is less than number_2, this should output!'",
-                "endfunc",
-                "if {v:number_1 < v:number_2}",
-                "f: condition_demo",
-                "endif",
-                "goto a_label",
-                'out "this line is skipped"',
-                "label a_label",
-                "set number_1 = v:number_1 + 3",
-                "out v:number_1",
-                "out 'the end!'",
+        ],
+        "C:/Demo-Programs": [
+            { name: "demo-output", permissions: {read: true, write: true, hidden: false}, data: [
+                "out 'You can output strings directly.'",
+                "str text = 'You can also output variables.'",
+                "out v:text",
+                "str embed = 'embed variables in'",
+                "int number = 10",
+                "out 'You can v:embed strings.'",
+                "out 'You can also embed integers. I have v:number apples.'",
                 "endprog"
             ] },
-            {name: "if-else-demo", permissions: {read: true, write: true, hidden: false}, data: [
+            { name: "demo-variables", permissions: {read: true, write: true, hidden: false}, data: [
+                "str string = 'Froggy'",
+                "int number = 10",
+                "out v:string",
+                "out v:number",
+                "set string = 'Froggy's value has changed'",
+                "set number = 20",
+                "out v:string",
+                "out v:number",
+                "endprog"
+            ] },
+            {name: "demo-if-else", permissions: {read: true, write: true, hidden: false}, data: [
                 "int number = 11",
                 "int number_to_compare = 14",
                 "if {v:number > v:number_to_compare}",
@@ -50,12 +51,6 @@ const config = {
                 "endif",
                 "endprog"
             ] },
-            {name: "template-string-demo", permissions: {read: true, write: true, hidden: false}, data: [
-                "int age = 20", 
-                "str string = `i am v:age years old`",
-                "out v:string",
-                "endprog"
-            ]},
         ],
     }
 };
@@ -132,9 +127,12 @@ function updateDateTime() {
 }
 
 setInterval(function() {
-    // make an array that consist of all the file names of files in the c:/programs directory
-    let files = config.fileSystem["C:/Programs"];
-    if(files == undefined) return;
+    // make an array that consist of all the file names of files in the all the allowed program directories
+    let files = [];
+    for(let directory of config.allowedProgramDirectories){
+        if(config.fileSystem[directory] == undefined) continue;
+        files = files.concat(config.fileSystem[directory]);
+    }
     files = files.map(file => file.name);
     config.programList = files;
 }, 1000);
@@ -163,6 +161,16 @@ function getFileWithName(path, name){
     let file = config.fileSystem[path];
     if(file == undefined) return undefined;
     return file.find(file => file.name == name);
+}
+
+function cleanInnerQuotes(input) {
+    if ((input.startsWith('"') && input.endsWith('"')) || (input.startsWith("'") && input.endsWith("'"))) {
+        let quoteType = input[0];
+        let innerContent = input.slice(1, -1);
+        let cleanedContent = innerContent.replace(/["']/g, '');
+        return quoteType + cleanedContent + quoteType;
+    }
+    return input;
 }
 
 function sendCommand(command, args){
@@ -374,7 +382,7 @@ function sendCommand(command, args){
             }
             createTerminalLine("* press ESC to save and exit lilypad *", "");
             for(let i = 0; i < file.data.length; i++){
-                if(config.currentPath == "C:/Programs") {
+                if(config.allowedProgramDirectories.includes(config.currentPath)){
                     createLilypadLine("code", String(i+1).padStart(3, "0"), file.name);
                 } else createLilypadLine("normal", ">", file.name);
                 let lines = document.querySelectorAll(`[data-program='lilypad-session-${config.programSession}']`);
@@ -395,6 +403,11 @@ function sendCommand(command, args){
         case "spawn":
             directory = config.currentPath + "/" + args[0];
 
+            if(config.allowedProgramDirectories.includes(config.currentPath)){
+                createTerminalLine("You cannot create directories in this directory.", config.errorText);
+                createEditableTerminalLine(`${config.currentPath}>`);
+                break;
+            }
             if(args[0] == undefined){
                 createTerminalLine("Please provide a directory name.", config.errorText);
                 createEditableTerminalLine(`${config.currentPath}>`);
@@ -402,11 +415,6 @@ function sendCommand(command, args){
             }
             if(config.fileSystem[directory] != undefined){
                 createTerminalLine("Directory already exists.", config.errorText);
-                createEditableTerminalLine(`${config.currentPath}>`);
-                break;
-            }
-            if(config.currentPath == "C:/Programs"){
-                createTerminalLine("You cannot create directories in this directory.", config.errorText);
                 createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
@@ -450,7 +458,7 @@ function sendCommand(command, args){
             if(!config.programList.includes(args[0])){
                 createTerminalLine("Please provide a valid program.", config.errorText);
                 createTerminalLine("* Available programs *", "");
-                createTerminalLine(config.programList.join(), ">");
+                createTerminalLine(config.programList.join(", "), ">");
                 createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
@@ -461,7 +469,11 @@ function sendCommand(command, args){
                 createTerminalLine("* press ESC to exit lilypad *", "");
                 createLilypadLine("normal", ">");
             } else {
-                let file = getFileWithName("C:/Programs", args[0]);
+                let file;
+                for(let directory of config.allowedProgramDirectories){
+                    file = getFileWithName(directory, args[0]);
+                    if(file != undefined) break;
+                }
                 if(file.permissions.read == false){
                     createTerminalLine("You do not have permission to run this program.", config.errorText);
                     createEditableTerminalLine(`${config.currentPath}>`);
@@ -494,6 +506,8 @@ function sendCommand(command, args){
                         let command = line.command;
                         switch(command){
                             // FroggyScript interpreter ===============================================================================================
+                            case "--":
+                            break;
                             case "str":
                                 if (!line.args || !line.args.name) {
                                     createTerminalLine(`Invalid declaration syntax.`, config.errorText);
@@ -563,6 +577,7 @@ function sendCommand(command, args){
                                                 break;
                                             }
                                         }
+
                                         value = value.replaceAll(new RegExp(`\\b${variableName}\\b`, 'g'), variables[variableName].value);
                                     }
                                 }
@@ -616,7 +631,6 @@ function sendCommand(command, args){
                                     break;
                                 }
 
-                                console.log(elseIndex, endifIndex);
                                 if(parsedCondition){
                                     if(elseIndex != -1){
                                         parsed.lines.splice(elseIndex, endifIndex - elseIndex);
@@ -641,13 +655,22 @@ function sendCommand(command, args){
 
                                 for(let variable in variables){
                                     if(out.includes(variable)){
-                                        out = out.replaceAll(new RegExp(`\\b${variable}\\b`, 'g'), variables[variable].value);
+                                        if(variables[variable].type == "str"){  
+                                            out = out.replaceAll(new RegExp(`\\b${variable}\\b`, 'g'), `'${variables[variable].value}'`);
+                                        } else {
+                                            out = out.replaceAll(new RegExp(`\\b${variable}\\b`, 'g'), variables[variable].value);
+                                        };
                                     }
                                 }
+
+                                
+
                                 let parsedOut;
                                 try {
+                                    out = cleanInnerQuotes(out);
                                     parsedOut = new Function(`return (${out});`)();
                                 } catch (err) {
+                                    console.log(err);
                                     createTerminalLine(`Error evaluating statement: "${out}".`, config.errorText);
                                     endProgram();
                                     break;
