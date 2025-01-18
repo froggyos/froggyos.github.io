@@ -16,27 +16,31 @@ const config = {
             { name: "welcome!", permissions: {read: true, write: true, hidden: false}, data: ['Hello!', "Welcome to FroggyOS.", "Type 'help' for a list of commands.", "Have fun! ^v^"] },
         ],
         "C:/Docs": [],
+        "C:/Macros": [
+            { name: "program", permissions: {read: true, write: true, hidden: false}, data: [
+                "!p",
+                "h C:/Programs",
+                "ch $1",
+                "m $1"
+            ] },
+        ],
         "C:/Programs": [
             { name: "cli", permissions: {read: false, write: false, hidden: true}, data: ["str cli = 'this program is hardcoded into froggyOS'", "endprog"] },
             { name: "lilypad", permissions: {read: false, write: false, hidden: true}, data: ["str lilypad = 'this program is hardcoded into froggyOS'", "endprog"] },
             { name: "test", permissions: {read: true, write: true, hidden: false}, data: [
-                "define num1 int",
-                "define num2 int",
-                "out 'first number: v:num1'",
-                "out 'second number: v:num2'",
-                "if {v:num1 > v:num2}",
-                "out 'v:num1 is greater than v:num2'",
-                "else",
-                "out 'v:num1 is less than or equal to v:num2'",
-                "endif",
+                "int num1 = 7",
+                "set num1 = 8 + 7",
+                'out v:num1',
+                // "filearg num1 int",
+                // "filearg num2 int",
+                // "out 'first number: v:num1'",
+                // "out 'second number: v:num2'",
+                // "if {v:num1 > v:num2}",
+                // "out 'v:num1 is greater than v:num2'",
+                // "else",
+                // "out 'v:num1 is less than or equal to v:num2'",
+                // "endif",
                 "endprog"
-            ] },
-        ],
-        "C:/Macros": [
-            { name: "createprogram", permissions: {read: true, write: true, hidden: false}, data: [
-                "h C:/Programs",
-                "ch $1",
-                "m $1"
             ] },
         ],
         "C:/Demo-Programs": [
@@ -152,7 +156,6 @@ function updateDateTime() {
 }
 
 setInterval(function() {
-    // make an array that consist of all the file names of files in the all the allowed program directories
     let files = [];
     for(let directory of config.allowedProgramDirectories){
         if(config.fileSystem[directory] == undefined) continue;
@@ -201,7 +204,8 @@ function cleanInnerQuotes(input) {
     return input;
 }
 
-function sendCommand(command, args){
+function sendCommand(command, args, createEditableLineAfter){
+    if(createEditableLineAfter == undefined) createEditableLineAfter = true;
     command = command.trim();
     args = args.filter(arg => arg.trim() != "");
     let directory;
@@ -210,14 +214,22 @@ function sendCommand(command, args){
     switch(command){
         case "":
             createTerminalLine("Froggy doesn't like that. >:(", "");
-            createEditableTerminalLine(`${config.currentPath}>`);
+            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
 
         // commands =========================================================================================================================================================
         case "cl":
         case "clear":
             document.getElementById('terminal').innerHTML = "";
-            createEditableTerminalLine(`${config.currentPath}>`);
+            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+        break;
+
+        // clear froggyOS state
+        case "cls":
+        case "clearstate":
+            localStorage.removeItem("froggyOS-state");
+            createTerminalLine("State cleared.", ">")
+            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
 
         // delete files
@@ -250,7 +262,7 @@ function sendCommand(command, args){
             config.fileSystem[config.currentPath] = config.fileSystem[config.currentPath].filter(file => file != undefined);
 
             createTerminalLine("File deleted.", ">")
-            createEditableTerminalLine(`${config.currentPath}>`);
+            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
         
         case "ribbit":
@@ -260,7 +272,7 @@ function sendCommand(command, args){
                 break;
             }
             createTerminalLine(args.join(" "), ">")
-            createEditableTerminalLine(`${config.currentPath}>`);
+            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
 
         case "ft":
@@ -279,7 +291,7 @@ function sendCommand(command, args){
                 break;
             }
             config.timeFormat = args.join(" ");
-            createEditableTerminalLine(`${config.currentPath}>`);
+            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
 
         // make files
@@ -309,18 +321,19 @@ function sendCommand(command, args){
                 data: [""]
             });
             createTerminalLine("File created.", ">")
-            createEditableTerminalLine(`${config.currentPath}>`);
+            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
 
         case "hello":
             createTerminalLine("Hello, I'm Froggy! ^v^", ">");
-            createEditableTerminalLine(`${config.currentPath}>`);
+            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
 
         case "?":
         case "help":
             createTerminalLine("* A few basic froggyOS commands *", "");
             createTerminalLine("clear. . . . . . . . . . . . . Clears the terminal output.", ">");
+            createTerminalLine("clearstate . . . . . . . . . . Clears froggyOS state.", ">");
             createTerminalLine("croak [file] . . . . . . . . . Deletes the file.", ">");
             createTerminalLine("ribbit [text]. . . . . . . . . Displays the text.", ">");
             createTerminalLine("formattime [format]. . . . . . Changes the time format.", ">");
@@ -336,7 +349,7 @@ function sendCommand(command, args){
             createTerminalLine("spawn [directory]. . . . . . . Creates a directory.", ">");
             createTerminalLine("spy [file] . . . . . . . . . . Reads the file.", ">");
             createTerminalLine("swimto [program] . . . . . . . Start a program.", ">");
-            createEditableTerminalLine(`${config.currentPath}>`);
+            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
 
 
@@ -390,7 +403,7 @@ function sendCommand(command, args){
             files.forEach(file => {
                 createTerminalLine(`       ${file.name}`, ">")
             });
-            createEditableTerminalLine(`${config.currentPath}>`);
+            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
 
         // load state
@@ -407,7 +420,78 @@ function sendCommand(command, args){
             }
 
             createTerminalLine("State loaded.", ">")
-            createEditableTerminalLine(`${config.currentPath}>`);
+            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+        break;
+
+        case "/":
+        case "macro":
+            if(args.length == 0){
+                createTerminalLine("Please provide a macro name.", config.errorText);
+                createTerminalLine(`* Available macros *`, "");
+                let macros = config.fileSystem["C:/Macros"];
+                if(macros == undefined){
+                    createTerminalLine("No macros found.", config.errorText);
+                } else {
+                    createTerminalLine(macros.map(macro => macro.name).join(", "), ">")
+                }
+                createEditableTerminalLine(`${config.currentPath}>`);
+                break;
+            }
+
+            let macro = getFileWithName("C:/Macros", args[0]);
+
+            config.fileSystem["C:/Macros"].forEach(_macro => {
+                if(_macro.data[0].startsWith("!") && _macro.data[0].slice(1).trim() == args[0]){
+                    macro = _macro;
+                }
+            });
+            
+            if(macro == undefined){
+                createTerminalLine("Macro does not exist.", config.errorText);
+                createEditableTerminalLine(`${config.currentPath}>`);
+                break;
+            }
+
+            macro = JSON.parse(JSON.stringify(macro));
+            let totalFileArguments = 0;
+
+            macro.data.forEach(line => {
+                if(line.includes("$")){
+                    // if the number behind $ is greater than the totalFileArguments, set totalFileArguments to that number
+                    let fileArgument = parseInt(line.split("$")[1].split(" ")[0]);
+                    if(fileArgument > totalFileArguments) totalFileArguments = fileArgument;
+                }
+            });
+
+            console.log(totalFileArguments);
+            if(args.length - 1 < totalFileArguments){
+                createTerminalLine(`Missing file argument(s).`, config.errorText);
+                createEditableTerminalLine(`${config.currentPath}>`);
+                break;
+            }
+
+            let fileArguments = {};
+
+            for(let i = 1; i < args.length; i++){
+                fileArguments["$" + i] = args[i];
+            }
+
+            // go through each line, replace the file arguments
+            macro.data = macro.data.map(line => {
+                for(let fileArgument in fileArguments){
+                    line = line.replaceAll(fileArgument, fileArguments[fileArgument]);
+                }
+                return line;
+            });
+
+
+            macro.data.shift();
+
+            macro.data.forEach(line => {
+                sendCommand(line.split(" ")[0], line.split(" ").slice(1), false);
+            });
+
+            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
 
         // edit file
@@ -483,9 +567,8 @@ function sendCommand(command, args){
 
             file.permissions[permission] = value == "1" ? true : false;
             createTerminalLine("Permissions updated.", ">")
-                
 
-            createEditableTerminalLine(`${config.currentPath}>`);
+            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
 
         // save state
@@ -493,7 +576,7 @@ function sendCommand(command, args){
         case "savestate":
             localStorage.setItem("froggyOS-state", JSON.stringify(config));
             createTerminalLine("State saved.", ">")
-            createEditableTerminalLine(`${config.currentPath}>`);
+            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
 
         // make directories
@@ -548,7 +631,7 @@ function sendCommand(command, args){
             file.data.forEach(line => {
                 createTerminalLine(line, ">")
             });
-            createEditableTerminalLine(`${config.currentPath}>`);
+            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
 
         case "st":
@@ -607,7 +690,7 @@ function sendCommand(command, args){
                             // FroggyScript interpreter ===============================================================================================
                             case "--":
                             break;
-                            case "define":
+                            case "filearg":
                                 if (!line.args || !line.args.name || !line.args.type || !line.args.value) {
                                     createTerminalLine(`Invalid declaration syntax.`, config.errorText);
                                     endProgram();
@@ -674,12 +757,14 @@ function sendCommand(command, args){
                                 }
 
                                 let argument = line.args.value;
-                                if(argument.includes("\"")){
-                                    createTerminalLine(`Type mismatch.`, config.errorText);
+                                let parsedArgument = evalutate(argument);
+
+                                // check if parsedArgument is a number
+                                if(isNaN(parsedArgument)){
+                                    createTerminalLine(`Invalid integer value.`, config.errorText);
                                     endProgram();
                                     break;
                                 }
-                                let parsedArgument = evalutate(argument);
 
                                 line.args.value = parsedArgument + [];
                                 variables["v:" + line.args.name] = line.args;
@@ -702,16 +787,18 @@ function sendCommand(command, args){
 
                                 for(let variable in variables){
                                     if(variable == variableName){
+                                        value = value.replaceAll(new RegExp(`\\b${variableName}\\b`, 'g'), variables[variableName].value);
+
                                         if(variables[variable].type == "int"){
-                                            if(value.includes("\"")){
-                                                createTerminalLine(`Type mismatch.`, config.errorText);
+                                            // evaluate value
+                                            let parsedValue = evalutate(value);
+                                            if(isNaN(parsedValue)){
+                                                createTerminalLine(`Invalid integer value.`, config.errorText);
                                                 endProgram();
                                                 break;
                                             }
                                         }
-
-                                        value = value.replaceAll(new RegExp(`\\b${variableName}\\b`, 'g'), variables[variableName].value);
-                                    }
+                                    }   
                                 }
 
                                 let parsedValue;
@@ -858,13 +945,13 @@ function sendCommand(command, args){
                 break;
             }
             config.currentPath = args.join(" ");
-            createEditableTerminalLine(`${config.currentPath}>`);
+            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
 
         case '[[FROGGY]]greeting':
             createTerminalLine("Type ‘help’ to receive support with commands, and possibly navigation.", "");
             createTerminalLine("* Welcome to froggyOS, version 1.3 *" , "");
-            createEditableTerminalLine(`${config.currentPath}>`);
+            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
 
         case '[[FROGGY]]help':
@@ -874,7 +961,7 @@ function sendCommand(command, args){
             createTerminalLine("[[FROGGY]]help - Displays this message", ">");
             createTerminalLine("[[FROGGY]]setstatbar [text] - Changes the text in the status bar", ">");
             createTerminalLine("[[FROGGY]]statbarlock [0/1] - Locks the status bar from updating", ">");
-            createEditableTerminalLine(`${config.currentPath}>`);
+            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
 
         case '[[FROGGY]]setstatbar':
@@ -884,7 +971,7 @@ function sendCommand(command, args){
                 break;
             }
             document.getElementById('bar').textContent = args.join(" ");
-            createEditableTerminalLine(`${config.currentPath}>`);
+            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
 
         case '[[FROGGY]]statbarlock':
@@ -896,7 +983,7 @@ function sendCommand(command, args){
             } else {
                 createTerminalLine("Invalid argument. Please provide '1' or '0'.", config.errorText);
             }
-            createEditableTerminalLine(`${config.currentPath}>`);
+            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
 
         default:

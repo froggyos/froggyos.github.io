@@ -1,13 +1,14 @@
 
 # Things to know about froggyOS
 
- * in paths, "." will be replaced with the current directory
+ * in paths, `.` will be replaced with the current directory
  * programs can *only* be written in designated directories
  * for the `hop` command, `~` will be replaced with the root directory ("C:"), and `-` will be replaced with the previous directory
 
 # Aliases
 
  * clear -> cl
+ * clearstate -> cls
  * croak -> c
  * formattime -> ft
  * hatch -> ch
@@ -15,11 +16,18 @@
  * hop -> h
  * list -> ls
  * loadstate -> lds
+ * macro -> /
  * meta -> m
- * metaperm -> mp
  * savestate -> svs
  * spawn -> s
  * swimto -> st
+
+# Macros
+
+ * Macros are written in the `C:/Macros` directory
+ * each line in a macro file is a command that will be executed
+ * to add an alias to a macro, the **first** line must be `![alias]`
+ * to use file arguments inside of a macro, use `$[file argument number]`
 
 # FroggyScript documentation
 **Note: spaces are part of syntax, and must be used as shown**
@@ -34,7 +42,7 @@ comments:
 
 output text:
 ```
-out "[input]"
+out [input]
 
 out v:variable_name
 out "text"
@@ -64,19 +72,19 @@ str test = "double"
 str test = "multiple words"
 
 int age = 20
-str out = "i am v:age years old"
+str output = "i am v:age years old"
 ```
 
 define a file argument:
 ```
-define [variable_name] [type]
-define name str
-define age int
+filearg [variable_name] [type]
+filearg name str
+filearg age int
 out "hello I am v:name and I am v:age years old"
 
 -- when running the program
 C:/Home> st [program_name] [arg1] [arg2]
-C:/Home> st profile froggy 7
+C:/Home> st about_froggy froggy 7
 > hello I am froggy and I am 7 years old
 ```
 
@@ -120,7 +128,7 @@ if {[condition]}
     code
 endif
 
-if {variable_name == "value"}
+if {v:variable_name == "value"}
     goto start
 endif
 
@@ -134,7 +142,7 @@ else
     code_if_false
 endif
 
-if {variable_name == "value"}
+if {v:variable_name == "value"}
     goto start
 else
     f: name
