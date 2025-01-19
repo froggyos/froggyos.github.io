@@ -1,4 +1,3 @@
-
 # Things to know about froggyOS
 
  * in paths, `.` will be replaced with the current directory
@@ -26,7 +25,7 @@
 
  * Macros are written in the `C:/Macros` directory
  * each line in a macro file is a command that will be executed
- * to add an alias to a macro, the **first** line must be `![alias]`
+ * to add an alias to a macro, the **first** line must be `![alias]`. You can add only one alias per macro.
  * to use file arguments inside of a macro, use `$[file argument number]`
 
 # FroggyScript documentation
@@ -147,4 +146,24 @@ if {v:variable_name == "value"}
 else
     f: name
 endif
+```
+
+user input:
+```
+ask [variable] [message?]
+
+ask name
+ask name What is your name?
+
+-- example usage
+str name = ''
+ask name What is your name?
+out 'Hello v:name.'
+endprog
+
+-- when running the program
+C:/Home> st [program_name]
+> What is your name?
+> Froggy
+> Hello Froggy.
 ```

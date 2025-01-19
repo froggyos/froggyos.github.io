@@ -140,5 +140,31 @@ function parse(input) {
         }
     })
 
+    // ask
+    parsed.lines.forEach((line) => {
+        if (line.command === "ask") {
+            // ask [variable] [output]
+            let variable = line.args[0];
+            let output = line.args.slice(1).join(" ");
+            line.args = {
+                variable: variable,
+                output: output
+            }
+        }
+    })
+
+    // prompt
+    parsed.lines.forEach((line) => {
+        if (line.command === "prompt") {
+            // prompt [variable] [output]
+            let variable = line.args[0];
+            let output = line.args.slice(1);
+            line.args = {
+                variable: variable,
+                output: output
+            }
+        }
+    })
+
     return parsed;
 }
