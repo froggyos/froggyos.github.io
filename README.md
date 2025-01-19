@@ -150,14 +150,14 @@ endif
 
 user input:
 ```
-ask [variable] [message?]
+ask [variable]
 
 ask name
-ask name What is your name?
 
 -- example usage
 str name = ''
-ask name What is your name?
+out "What is your name?"
+ask name
 out 'Hello v:name.'
 endprog
 

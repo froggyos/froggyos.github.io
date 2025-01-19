@@ -28,11 +28,17 @@ const config = {
             { name: "cli", permissions: {read: false, write: false, hidden: true}, data: ["str cli = 'this program is hardcoded into froggyOS'", "endprog"] },
             { name: "lilypad", permissions: {read: false, write: false, hidden: true}, data: ["str lilypad = 'this program is hardcoded into froggyOS'", "endprog"] },
             { name: "test", permissions: {read: true, write: true, hidden: false}, data: [
-                "str name = ''",
-                "int age = 0",
-                "ask name What is your name?",
-                "ask age How old are you?",
-                "out 'you are v:name and you are v:age years old'",
+                "str result = ''",
+                "out 'Whats your name?'",
+                "prompt result Froggy Todd Jerry",
+                "out 'Hello v:result!'",
+                // "int age = 0",
+                // "str name = ''",
+                // "out 'what is your name?'",
+                // "ask name",
+                // "out 'what is your age?'",
+                // "ask age",
+                // "out 'you are v:name and you are v:age years old'",
                 "endprog"
             ] },
         ],
@@ -77,7 +83,7 @@ todo: macro and ask keyword
 
 */
 
-let INTERPRETER_PAUSED = false;
+const FROGGY_GREEN = "#00FF00";
 
 let screen = document.getElementById('screen');
 let terminal = document.getElementById('terminal');
@@ -197,6 +203,10 @@ function cleanInnerQuotes(input) {
         return quoteType + cleanedContent + quoteType;
     }
     return input;
+}
+
+function cleanQuotes(input){
+    return input.replaceAll(/["']/g, '');
 }
 
 function sendCommand(command, args, createEditableLineAfter){
@@ -638,7 +648,9 @@ function sendCommand(command, args, createEditableLineAfter){
                 createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
-            config.programSession++;
+
+
+            config.programSession++
             if(args[0] == "cli"){
                 createEditableTerminalLine(`${config.currentPath}>`);
             } else if(args[0] == "lilypad"){
@@ -678,6 +690,7 @@ function sendCommand(command, args, createEditableLineAfter){
                     let lineIndex = 0;
                     let variables = {};
                     let defineCount = 0;
+                    let cliPromptCount = 0;
 
                     function createPause() {
                         let resume;
@@ -698,29 +711,101 @@ function sendCommand(command, args, createEditableLineAfter){
                                 case "--":
                                 break;
                                 case "prompt":
-                                    console.log(line);
+                                    let options = line.args.output;
+                                    let variable = line.args.variable;
+                                    
+                                    if(options == undefined || options == ''){
+                                        createTerminalLine(`Invalid "prompt" syntax.`, config.errorText);
+                                        endProgram();
+                                        break;
+                                    }
+                                    if(variable == undefined || variable == ''){
+                                        createTerminalLine(`Invalid "prompt" syntax.`, config.errorText);
+                                        endProgram();
+                                        break;
+                                    }
+
+                                    if(variables["v:" + variable] == undefined){
+                                        createTerminalLine(`Variable "${variable}" does not exist.`, config.errorText);
+                                        endProgram();
+                                        break;
+                                    }
+                                    
+                                    // go through each variable and each option, if an option is a variable, replace it with the variable value
+                                    for(let variable in variables){
+                                        options = options.map(option => {
+                                            if(option.includes(variable)){
+                                                return option.replaceAll(new RegExp(`\\b${variable}\\b`, 'g'), variables[variable].value);
+                                            }
+                                            return option;
+                                        })
+                                    }
+
+                                    cliPromptCount++;
+
+                                    let terminalLineElement = document.createElement('div');
+                                    terminalLineElement.classList.add('line-container');
+
+                                    let spanElement = document.createElement('span');
+                                    spanElement.textContent = ">";
+
+                                    terminalLineElement.appendChild(spanElement);
+
+                                    let promptOptionNumber = 0;
+
+                                    for(let i = 0; i < options.length; i++){
+                                        let option = document.createElement('span');
+                                        option.setAttribute("data-program", `cli-session-${config.programSession}-${cliPromptCount}`);
+                                        option.textContent = options[i];
+                                        if(i == 0) {
+                                            option.classList.add('selected');
+                                        }
+                                        option.style.paddingLeft = 0;
+                                        terminalLineElement.appendChild(option);
+                                        terminalLineElement.appendChild(document.createTextNode(" "));
+                                    }
+
+                                    let enterFailsafe = 0;
+
+                                    function promptHandler(e){
+                                        let options = document.querySelectorAll(`[data-program='cli-session-${config.programSession}-${cliPromptCount}']`);
+                                        e.preventDefault();
+
+                                        if(e.key == "ArrowLeft"){
+                                            if(promptOptionNumber > 0) promptOptionNumber--;
+                                            options.forEach(option => option.classList.remove('selected'));
+                                            options[promptOptionNumber].classList.add('selected');
+                                        }
+
+                                        if(e.key == "ArrowRight"){
+                                            if(promptOptionNumber < options.length - 1) promptOptionNumber++;
+                                            options.forEach(option => option.classList.remove('selected'));
+                                            options[promptOptionNumber].classList.add('selected');
+                                        }
+
+                                        if(e.key == "Enter"){
+                                            e.preventDefault();
+                                            enterFailsafe++;
+                                            if(enterFailsafe > 1){
+                                                variables["v:" + variable].value = options[promptOptionNumber].textContent;
+                                                document.body.removeEventListener('keydown', promptHandler);
+                                                pauseControl.resume();
+                                            }
+
+                                        }
+                                    };
+
+                                    document.body.addEventListener('keydown', promptHandler);
+                                    terminal.appendChild(terminalLineElement);
+
+                                    pauseControl = createPause();
+                                    await pauseControl.promise;
                                 break;
                                 case "ask":
                                     if (!line.args || !line.args.variable) {
                                         createTerminalLine(`Invalid "ask" syntax.`, config.errorText);
                                         endProgram();
                                         break;
-                                    }
-                                    let output = line.args.output;
-                                    if(output != ''){
-                                        let span = document.createElement('span');
-                                        let textElement = document.createElement('div');
-                                        let elementToAppend = document.createElement('div');
-
-                                        textElement.textContent = output;
-                                        span.textContent = ">";
-                                        
-                                        elementToAppend.appendChild(span);
-                                        elementToAppend.appendChild(textElement);
-
-                                        elementToAppend.classList.add('line-container');
-
-                                        terminal.appendChild(elementToAppend);
                                     }
 
                                     let span = document.createElement('span');
@@ -822,10 +907,11 @@ function sendCommand(command, args, createEditableLineAfter){
 
                                     for(let variable in variables){
                                         if(line.args.value.includes(variable)){
-                                            line.args.value = line.args.value.replaceAll(new RegExp(`\\b${variable}\\b`, 'g'), variables[variable].value);
+                                            line.args.value = line.args.value.replaceAll(new RegExp(`\\b${variable}\\b`, 'g'), cleanQuotes(variables[variable].value));
                                         }
                                     }
 
+                                    line.args.value = cleanQuotes(line.args.value);
                                     variables["v:" + line.args.name] = line.args;
                                 break;
                                 case "int":

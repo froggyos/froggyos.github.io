@@ -145,10 +145,8 @@ function parse(input) {
         if (line.command === "ask") {
             // ask [variable] [output]
             let variable = line.args[0];
-            let output = line.args.slice(1).join(" ");
             line.args = {
                 variable: variable,
-                output: output
             }
         }
     })
