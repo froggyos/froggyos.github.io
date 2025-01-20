@@ -90,7 +90,7 @@ C:/Home> st [program_name] [arg1] [arg2]
 C:/Home> st about_froggy froggy 7
 > hello I am froggy and I am 7 years old
 ```
-### Ask for User to Type Input
+### Typeable User Input
 ```
 ask [variable]
 
@@ -109,7 +109,7 @@ C:/Home> st [program_name]
 > Froggy
 > Hello Froggy.
 ```
-### User Chooses From a List
+### User Input with Navigable Options
 ```
 ==================================== do this lol
 ```

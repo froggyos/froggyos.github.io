@@ -28,10 +28,14 @@ const config = {
             { name: "cli", permissions: {read: false, write: false, hidden: true}, data: ["str cli = 'this program is hardcoded into froggyOS'", "endprog"] },
             { name: "lilypad", permissions: {read: false, write: false, hidden: true}, data: ["str lilypad = 'this program is hardcoded into froggyOS'", "endprog"] },
             { name: "test", permissions: {read: true, write: true, hidden: false}, data: [
-                "str result = ''",
+                "str name = ''",
                 "out 'Whats your name?'",
-                "prompt result Froggy Todd Jerry",
-                "out 'Hello v:result!'",
+                "prompt name Froggy Todd Other",
+                "if {v:name == 'Other'}",
+                "out 'Well then, what is it?'",
+                "ask name",
+                "endif",
+                "out 'Hello v:name!'",
                 // "int age = 0",
                 // "str name = ''",
                 // "out 'what is your name?'",
@@ -89,7 +93,9 @@ let screen = document.getElementById('screen');
 let terminal = document.getElementById('terminal');
 
 screen.onclick = function() {
-    terminal.lastChild.lastChild.focus();
+    try {
+        terminal.lastChild.lastChild.focus();
+    } catch (err) { };
 }
 
 function moveCaretToEnd(element) {
