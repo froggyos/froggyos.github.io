@@ -34,12 +34,17 @@
 Operators:
 * All JavaScript operators are valid
 
-comments:
+## General Stuff
+### Comments
 ```
 -- comment
 ```
+### end program
+```
+endprog
+```
 
-output text:
+## Output
 ```
 out [input]
 
@@ -50,18 +55,8 @@ out 'more text'
 out "i can output a v:variable inside a string"
 ```
 
-function:
-```
-func [func_name]
-    code
-endfunc
-
-func name
-    code
-endfunc
-```
-
-define a variable:
+## Variable
+### Create a variable
 ```
 str [variable_name] = [value]
 int [variable_name] = [value]
@@ -73,8 +68,17 @@ str test = "multiple words"
 int age = 20
 str output = "i am v:age years old"
 ```
+### edit a variable
+```
+set [variable_name] = [value]
 
-define a file argument:
+set test = 5
+set test = 'text'
+set test = "many word"
+```
+
+## User input
+### define a file argument
 ```
 filearg [variable_name] [type]
 filearg name str
@@ -86,42 +90,66 @@ C:/Home> st [program_name] [arg1] [arg2]
 C:/Home> st about_froggy froggy 7
 > hello I am froggy and I am 7 years old
 ```
-
-edit a variable:
+### Ask for user to type input
 ```
-set [variable_name] = [value]
+ask [variable]
 
-set test = 5
-set test = 'text'
-set test = "many word"
+ask name
+
+-- example usage
+str name = ''
+out "What is your name?"
+ask name
+out 'Hello v:name.'
+endprog
+
+-- when running the program
+C:/Home> st [program_name]
+> What is your name?
+> Froggy
+> Hello Froggy.
 ```
+### User chooses from a list
+```
+...
+```
+## Functions
+### Create a function
+```
+func [func_name]
+    code
+endfunc
 
-call a function:
+func name
+    code
+endfunc
+```
+### call a function
 ```
 f: [func_name]
 
 f: name
 ```
 
-end program:
-```
-endprog
-```
 
-define a label:
+
+## Control Flow
+### Labels
+####  define a label:
 ```
 label [label_name]
 
 label start
 ```
 
-jump to a label:
+#### jump to a label:
 ```
 goto [label_name]
 
 goto start
 ```
-control flow:
+
+### If statements
 ```
 if {[condition]}
     code
@@ -146,24 +174,4 @@ if {v:variable_name == "value"}
 else
     f: name
 endif
-```
-
-user input:
-```
-ask [variable]
-
-ask name
-
--- example usage
-str name = ''
-out "What is your name?"
-ask name
-out 'Hello v:name.'
-endprog
-
--- when running the program
-C:/Home> st [program_name]
-> What is your name?
-> Froggy
-> Hello Froggy.
 ```
