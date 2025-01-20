@@ -56,7 +56,7 @@ out "i can output a v:variable inside a string"
 ```
 
 ## Variable
-### Create a variable
+### Create a Variable
 ```
 str [variable_name] = [value]
 int [variable_name] = [value]
@@ -68,7 +68,7 @@ str test = "multiple words"
 int age = 20
 str output = "i am v:age years old"
 ```
-### edit a variable
+### Edit a Variable
 ```
 set [variable_name] = [value]
 
@@ -78,7 +78,7 @@ set test = "many word"
 ```
 
 ## User input
-### define a file argument
+### Define a File Argument
 ```
 filearg [variable_name] [type]
 filearg name str
@@ -90,7 +90,7 @@ C:/Home> st [program_name] [arg1] [arg2]
 C:/Home> st about_froggy froggy 7
 > hello I am froggy and I am 7 years old
 ```
-### Ask for user to type input
+### Ask for User to Type Input
 ```
 ask [variable]
 
@@ -109,12 +109,12 @@ C:/Home> st [program_name]
 > Froggy
 > Hello Froggy.
 ```
-### User chooses from a list
+### User Chooses From a List
 ```
 ...
 ```
 ## Functions
-### Create a function
+### Create a Function
 ```
 func [func_name]
     code
@@ -124,32 +124,15 @@ func name
     code
 endfunc
 ```
-### call a function
+### Call a Function
 ```
 f: [func_name]
 
 f: name
 ```
 
-
-
 ## Control Flow
-### Labels
-####  define a label:
-```
-label [label_name]
-
-label start
-```
-
-#### jump to a label:
-```
-goto [label_name]
-
-goto start
-```
-
-### If statements
+### If Statements
 ```
 if {[condition]}
     code
@@ -174,4 +157,17 @@ if {v:variable_name == "value"}
 else
     f: name
 endif
+```
+### Labels
+####  Define a Label
+```
+label [label_name]
+
+label start
+```
+#### Jump to a Label
+```
+goto [label_name]
+
+goto start
 ```
