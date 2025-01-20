@@ -107,26 +107,6 @@ function parse(input) {
         }
     }
 
-    // Parse labels
-    parsed.lines.forEach((line, index) => {
-        if (line.command === "label") {
-            let labelName = line.args[0];
-            parsed.labels[labelName] = index;
-            line.args = labelName;
-        }
-    });
-
-    // Parse `goto` commands
-    parsed.lines.forEach((line) => {
-        if (line.command === "goto") {
-            if (parsed.labels[line.args[0]] === undefined) {
-                parsed.errors.push(`Label "${line.args[0]}" not defined.`);
-            } else {
-                line.args = parsed.labels[line.args[0]];
-            }
-        }
-    });
-
     // if
     parsed.lines.forEach((line) => {
         if (line.command === "if") {

@@ -139,7 +139,7 @@ if {[condition]}
 endif
 
 if {v:variable_name == "value"}
-    goto start
+    set variable_name = 'new value'
 endif
 
 if {6 < 7} 
@@ -152,22 +152,9 @@ else
     code_if_false
 endif
 
-if {v:variable_name == "value"}
-    goto start
+if {v:variable_name == 4}
+    set variable_name = 7
 else
     f: name
 endif
-```
-### Labels
-####  Define a Label
-```
-label [label_name]
-
-label start
-```
-#### Jump to a Label
-```
-goto [label_name]
-
-goto start
 ```

@@ -468,7 +468,6 @@ function sendCommand(command, args, createEditableLineAfter){
                 }
             });
 
-            console.log(totalFileArguments);
             if(args.length - 1 < totalFileArguments){
                 createTerminalLine(`Missing file argument(s).`, config.errorText);
                 createEditableTerminalLine(`${config.currentPath}>`);
@@ -1070,15 +1069,6 @@ function sendCommand(command, args, createEditableLineAfter){
                                     }
                                     createTerminalLine(parsedOut, ">");
                                 break;
-                                case "goto":
-                                    if(line.args == undefined){
-                                        createTerminalLine(`Invalid "goto" syntax.`, config.errorText);
-                                        endProgram();
-                                        break;
-                                    }
-
-                                    lineIndex = line.args;
-                                    continue;
                                 case "endprog":
                                     endProgram();
                                 break;
