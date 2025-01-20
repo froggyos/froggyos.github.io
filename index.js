@@ -30,12 +30,14 @@ const config = {
             { name: "test", permissions: {read: true, write: true, hidden: false}, data: [
                 "str name = ''",
                 "out 'Whats your name?'",
-                "prompt name Froggy Todd Other",
+                "prompt name Froggy Nyanko Other",
                 "if {v:name == 'Other'}",
                 "out 'Well then, what is it?'",
                 "ask name",
                 "endif",
                 "out 'Hello v:name!'",
+
+
                 // "int age = 0",
                 // "str name = ''",
                 // "out 'what is your name?'",
