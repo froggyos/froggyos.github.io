@@ -28,14 +28,19 @@ const config = {
             { name: "cli", permissions: {read: false, write: false, hidden: true}, data: ["str cli = 'this program is hardcoded into froggyOS'", "endprog"] },
             { name: "lilypad", permissions: {read: false, write: false, hidden: true}, data: ["str lilypad = 'this program is hardcoded into froggyOS'", "endprog"] },
             { name: "test", permissions: {read: true, write: true, hidden: false}, data: [
-                "str name = ''",
-                "out 'Whats your name?'",
-                "prompt name Froggy Nyanko Other",
-                "if {v:name == 'Other'}",
-                "out 'Well then, what is it?'",
-                "ask name",
-                "endif",
-                "out 'Hello v:name!'",
+                "str string = 'Hello!'",
+                "loop { true }",
+                "out v:string",
+                "endloop",
+
+                // "str name = ''",
+                // "out 'Whats your name?'",
+                // "prompt name Froggy Nyanko Other",
+                // "if {v:name == 'Other'}",
+                // "out 'Well then, what is it?'",
+                // "ask name",
+                // "endif",
+                // "out 'Hello v:name!'",
 
 
                 // "int age = 0",
@@ -713,9 +718,13 @@ function sendCommand(command, args, createEditableLineAfter){
                         while(lineIndex < parsed.lines.length){
                             let line = parsed.lines[lineIndex];
                             let command = line.command;
+
                             switch(command){
                                 // FroggyScript interpreter =========================================================================================================================================
                                 case "--":
+                                break;
+                                case "endloop":
+                                    lineIndex = line.args.startOfLoop - 1;
                                 break;
                                 case "prompt":
                                     let options = line.args.output;

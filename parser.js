@@ -144,5 +144,53 @@ function parse(input) {
         }
     })
 
+    // loop
+    parsed.lines.forEach((line, currentIndex) => {
+        if (line.command === "loop") {
+            let input = line.args.join(" ");
+            input = input.replace("{", "");
+            input = input.replace("}", "");
+
+            // find the next endloop index, starting at this line
+            let endLoopIndex = parsed.lines.findIndex(
+                (item, index) => index > currentIndex && item.command === "endloop"
+            );
+
+            line.args = {
+                condition: input,
+                endOfLoop: endLoopIndex
+            };
+        }
+    })
+
+    parsed.lines.forEach((line, endIndex) => {
+        if (line.command === "endloop") {
+            // Use a stack to track open loops
+            let loopIndex = -1;
+            let openLoops = 0;
+
+            for (let i = endIndex - 1; i >= 0; i--) {
+                if (parsed.lines[i].command === "endloop") {
+                    openLoops++;
+                } else if (parsed.lines[i].command === "loop") {
+                    if (openLoops === 0) {
+                        loopIndex = i;
+                        break;
+                    } else {
+                        openLoops--;
+                    }
+                }
+            }
+
+            if (loopIndex !== -1) {
+                line.args = {
+                    startOfLoop: loopIndex,
+                };
+            } else {
+                console.error(`No matching "loop" found for "endloop".`);
+            }
+        }
+    });
+
     return parsed;
 }
