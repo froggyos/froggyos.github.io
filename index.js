@@ -724,6 +724,7 @@ function sendCommand(command, args, createEditableLineAfter){
                                 case "--":
                                 break;
                                 case "endloop":
+                                    // fix
                                     lineIndex = line.args.startOfLoop - 1;
                                 break;
                                 case "prompt":
