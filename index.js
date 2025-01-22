@@ -719,14 +719,18 @@ function sendCommand(command, args, createEditableLineAfter){
                             let line = parsed.lines[lineIndex];
                             let command = line.command;
 
+                            console.log(command);
+
                             switch(command){
                                 // FroggyScript interpreter =========================================================================================================================================
                                 case "--":
                                 break;
-                                case "endloop":
-                                    // fix
-                                    lineIndex = line.args.startOfLoop - 1;
+                                case "loop":
+                                    // use ai!!!
                                 break;
+                                case "endloop":
+                                    // use ai!!!
+                                break
                                 case "prompt":
                                     let options = line.args.output;
                                     let variable = line.args.variable;
@@ -992,7 +996,7 @@ function sendCommand(command, args, createEditableLineAfter){
                                     try {
                                         parsedValue = new Function(`return (${value});`)();
                                     } catch (err) {
-                                        createTerminalLine(`Error evaluating statement: "${value}".`, config.errorText);
+                                        createTerminalLine(`Error evaluating: "${value}".`, config.errorText);
                                         endProgram();
                                         break;
                                     }
@@ -1081,7 +1085,7 @@ function sendCommand(command, args, createEditableLineAfter){
                                         parsedOut = new Function(`return (${out});`)();
                                     } catch (err) {
                                         console.log(err);
-                                        createTerminalLine(`Error evaluating statement: "${out}".`, config.errorText);
+                                        createTerminalLine(`Error evaluating: "${out}".`, config.errorText);
                                         endProgram();
                                         break;
                                     }
@@ -1090,6 +1094,9 @@ function sendCommand(command, args, createEditableLineAfter){
                                 case "endprog":
                                     endProgram();
                                 break;
+                                default:
+                                    createTerminalLine(`Error: Unknown statement "${command}".`, config.errorText);
+                                    endProgram();
                             }
 
                             if(endprogFound) break;
