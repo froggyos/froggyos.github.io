@@ -30,8 +30,7 @@ const config = {
             { name: "test", permissions: {read: true, write: true, hidden: false}, data: [
                 "out 'before loop'",
                 "int i = 0",
-                "loop { v:i < 5 }",
-                "out 'loop'",
+                "loop { v:i < 1000 }",
                 "out v:i",
                 "set i = v:i + 1",
                 "endloop",
@@ -170,7 +169,7 @@ function updateDateTime() {
     dateTemplate = dateTemplate.replace('###S###', second);
 
     const dateString = dateTemplate;
-    document.getElementById('bar').textContent = dateString;
+    document.getElementById('bar').textContent = dateString.padEnd(79," ");
 }
 
 setInterval(function() {
@@ -729,12 +728,25 @@ function sendCommand(command, args, createEditableLineAfter){
                                 break;
                                 case "endloop":
                                     let loopCondition = parsed.lines[line.args.startOfLoop].args.condition;
-                                    console.log(parsed.lines[line.args.startOfLoop]);
 
-                                    // change the start of loop position
-
+                                    // count the number of times theres an "endloop" command
                                     let loopLines = parsed.lines.slice(line.args.startOfLoop, lineIndex + 1);
-                                    console.log(loopLines)
+                                    if(loopLines.filter(line => line.command == "endloop").length > 1){
+                                        // get everything between the second to last "endloop" and last "endloop"
+                                        let endloopIndices = loopLines
+                                        .map((line, index) => (line.command === "endloop" ? index : -1))
+                                        .filter(index => index !== -1);
+                                    
+                                        // Ensure there are at least two "endloop" commands
+                                        // Get the second-to-last and last indices of "endloop"
+                                        let secondToLastIndex = endloopIndices[endloopIndices.length - 2];
+                                        let lastIndex = endloopIndices[endloopIndices.length - 1];
+                                    
+                                        // Get everything between the second-to-last and last "endloop"
+                                        let betweenEndloops = loopLines.slice(secondToLastIndex + 1, lastIndex + 1);
+
+                                        loopLines = betweenEndloops
+                                    };
 
                                     if(loopCondition.includes("v:")){
                                         loopCondition = loopCondition.replaceAll(/v:(\w+)/g, (match, variable) => {
@@ -745,6 +757,7 @@ function sendCommand(command, args, createEditableLineAfter){
                                             return variables["v:" + variable].value;
                                         });
                                     }
+
                                     if(evaluate(loopCondition)) parsed.lines.splice(lineIndex + 1, 0, ...loopLines);
                                 break
                                 case "prompt":

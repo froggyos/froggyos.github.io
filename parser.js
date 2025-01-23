@@ -3,7 +3,8 @@ function parse(input) {
         functions: {},
         labels: {},
         lines: [],
-        errors: []
+        errors: [],
+        warnings: []
     };
     
     const disallowedVariableNames = [
