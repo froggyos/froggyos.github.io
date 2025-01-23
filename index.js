@@ -28,10 +28,14 @@ const config = {
             { name: "cli", permissions: {read: false, write: false, hidden: true}, data: ["str cli = 'this program is hardcoded into froggyOS'", "endprog"] },
             { name: "lilypad", permissions: {read: false, write: false, hidden: true}, data: ["str lilypad = 'this program is hardcoded into froggyOS'", "endprog"] },
             { name: "test", permissions: {read: true, write: true, hidden: false}, data: [
-                "str string = 'Hello!'",
-                "loop { true }",
-                "out v:string",
+                "out 'before loop'",
+                "int i = 0",
+                "loop { v:i < 5 }",
+                "out 'loop'",
+                "out v:i",
+                "set i = v:i + 1",
                 "endloop",
+                "out 'after loop'",
 
                 // "str name = ''",
                 // "out 'Whats your name?'",
@@ -688,7 +692,12 @@ function sendCommand(command, args, createEditableLineAfter){
                     let endprogFound = false;
                     let endProgram = () => endprogFound = true;
 
-                    function evalutate(string){
+                    let lineIndex = 0;
+                    let variables = {};
+                    let defineCount = 0;
+                    let cliPromptCount = 0;
+
+                    function evaluate(string){
                         let parsedString;
                         try {
                             parsedString = new Function(`return (${string});`)();
@@ -698,11 +707,6 @@ function sendCommand(command, args, createEditableLineAfter){
                         }
                         return parsedString;
                     }
-
-                    let lineIndex = 0;
-                    let variables = {};
-                    let defineCount = 0;
-                    let cliPromptCount = 0;
 
                     function createPause() {
                         let resume;
@@ -719,17 +723,29 @@ function sendCommand(command, args, createEditableLineAfter){
                             let line = parsed.lines[lineIndex];
                             let command = line.command;
 
-                            console.log(command);
-
                             switch(command){
                                 // FroggyScript interpreter =========================================================================================================================================
                                 case "--":
                                 break;
-                                case "loop":
-                                    // use ai!!!
-                                break;
                                 case "endloop":
-                                    // use ai!!!
+                                    let loopCondition = parsed.lines[line.args.startOfLoop].args.condition;
+                                    console.log(parsed.lines[line.args.startOfLoop]);
+
+                                    // change the start of loop position
+
+                                    let loopLines = parsed.lines.slice(line.args.startOfLoop, lineIndex + 1);
+                                    console.log(loopLines)
+
+                                    if(loopCondition.includes("v:")){
+                                        loopCondition = loopCondition.replaceAll(/v:(\w+)/g, (match, variable) => {
+                                            if(variables["v:" + variable] == undefined){
+                                                createTerminalLine(`Variable "${variable}" does not exist.`, config.errorText);
+                                                endProgram();
+                                            }
+                                            return variables["v:" + variable].value;
+                                        });
+                                    }
+                                    if(evaluate(loopCondition)) parsed.lines.splice(lineIndex + 1, 0, ...loopLines);
                                 break
                                 case "prompt":
                                     let options = line.args.output;
@@ -948,7 +964,7 @@ function sendCommand(command, args, createEditableLineAfter){
                                     }
 
                                     let argument = line.args.value;
-                                    let parsedArgument = evalutate(argument);
+                                    let parsedArgument = evaluate(argument);
 
                                     // check if parsedArgument is a number
                                     if(isNaN(parsedArgument)){
@@ -982,7 +998,7 @@ function sendCommand(command, args, createEditableLineAfter){
 
                                             if(variables[variable].type == "int"){
                                                 // evaluate value
-                                                let parsedValue = evalutate(value);
+                                                let parsedValue = evaluate(value);
                                                 if(isNaN(parsedValue)){
                                                     createTerminalLine(`Invalid integer value.`, config.errorText);
                                                     endProgram();
@@ -1029,7 +1045,7 @@ function sendCommand(command, args, createEditableLineAfter){
                                     condition = condition.replaceAll("¶v¬str¦", "\"");
                                     condition = condition.replaceAll("¶v¬int¦", "");
 
-                                    let parsedCondition = evalutate(condition);
+                                    let parsedCondition = evaluate(condition);
 
                                     // find the else statement
                                     let elseIndex = parsed.lines.findIndex((line, index) => line.command == "else" && index > lineIndex);
@@ -1094,9 +1110,6 @@ function sendCommand(command, args, createEditableLineAfter){
                                 case "endprog":
                                     endProgram();
                                 break;
-                                default:
-                                    createTerminalLine(`Error: Unknown statement "${command}".`, config.errorText);
-                                    endProgram();
                             }
 
                             if(endprogFound) break;

@@ -52,7 +52,7 @@ out v:variable_name
 out "text"
 out "text with spaces"
 out 'more text'
-out "i can output a v:variable inside a string"
+out "i can put a v:variable inside a string"
 ```
 
 ## Variable
