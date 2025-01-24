@@ -35,6 +35,7 @@ const config = {
                 // "endfunc",
                 // "f: test",
 
+
                 // "int i = 0",
                 // "out 'before loop'",
                 // "loop { v:i < 580 }",
@@ -718,6 +719,7 @@ function sendCommand(command, args, createEditableLineAfter){
                             function endProgram(error){
                                 createTerminalLine(`${error}`, config.errorText);
                                 createEditableTerminalLine(`${config.currentPath}>`);
+                                config.showLoadingSpinner = false;
                             }
 
                             function evaluate(string){
@@ -749,6 +751,7 @@ function sendCommand(command, args, createEditableLineAfter){
                                         break;
                                     }
                                     if(evaluate(loopCondition)){
+                                        config.showLoadingSpinner = true;
                                         lineIndex = line.args.startOfLoop;
 
                                         try {
@@ -757,6 +760,7 @@ function sendCommand(command, args, createEditableLineAfter){
                                             endProgram(`Callstack size exceeded. This is a JavaScript problem.`);
                                         }
                                     } else {
+                                        config.showLoadingSpinner = false;
                                         parseNext();
                                     }
                                 break;
@@ -836,7 +840,7 @@ function sendCommand(command, args, createEditableLineAfter){
                                             if(enterFailsafe > 1){
                                                 variables["v:" + variable].value = options[promptOptionNumber].textContent;
                                                 document.body.removeEventListener('keydown', promptHandler);
-
+                                                config.showLoadingSpinner = false;
                                                 // RESUME PAUSE HERE
                                                 parseNext();
                                             }
@@ -846,6 +850,7 @@ function sendCommand(command, args, createEditableLineAfter){
 
                                     document.body.addEventListener('keydown', promptHandler);
                                     terminal.appendChild(terminalLineElement);
+                                    config.showLoadingSpinner = true;
                                     // PAUSE HERE
                                 break;
                                 case "ask":
@@ -877,6 +882,7 @@ function sendCommand(command, args, createEditableLineAfter){
                                             inputElement.setAttribute('contenteditable', 'false');
 
                                             // RESUME PAUSE HERE
+                                            config.showLoadingSpinner = false;
 
                                             let userInput = inputElement.textContent;
                                             let variable = line.args.variable;
@@ -904,6 +910,7 @@ function sendCommand(command, args, createEditableLineAfter){
                                     });
 
                                     // PAUSE HERE
+                                    config.showLoadingSpinner = true;
                                 break;
                                 case "filearg":
                                     if (!line.args || !line.args.name || !line.args.type || !line.args.value) {
@@ -1161,15 +1168,19 @@ function sendCommand(command, args, createEditableLineAfter){
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
 
-        case '[[FROGGY]]statbarlock':
+        case '[[FROGGY]]spinner':
             let bool = args[0];
-            if(bool == "1"){
-                config.updateStatBar = false;
-            } else if(bool == "0"){
-                config.updateStatBar = true;
-            } else {
-                createTerminalLine("Invalid argument. Please provide '1' or '0'.", config.errorText);
-            }
+            if(bool == "1") config.showLoadingSpinner = true;
+            else if(bool == "0") config.showLoadingSpinner = false;
+            else createTerminalLine("Invalid argument. Please provide '1' or '0'.", config.errorText);
+            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+        break;
+
+        case '[[FROGGY]]statbarlock':
+            let bool_ = args[0];
+            if(bool_ == "1") config.updateStatBar = false;
+            else if(bool_ == "0") config.updateStatBar = true;
+            else createTerminalLine("Invalid argument. Please provide '1' or '0'.", config.errorText);
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
 
