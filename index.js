@@ -29,11 +29,10 @@ const config = {
             { name: "cli", permissions: {read: false, write: false, hidden: true}, data: ["str cli = 'this program is hardcoded into froggyOS'", "endprog"] },
             { name: "lilypad", permissions: {read: false, write: false, hidden: true}, data: ["str lilypad = 'this program is hardcoded into froggyOS'", "endprog"] },
             { name: "test", permissions: {read: true, write: true, hidden: false}, data: [
-                "func test",
-                "out 'Hello, world!'",
-                "f: test",
-                "endfunc",
-                "f: test",
+                // "func test",
+                // "out 'Hello, world!'",
+                // "endfunc",
+                // "f: test",
 
                 // "int i = 0",
                 // "out 'before loop'",
@@ -43,14 +42,14 @@ const config = {
                 // "endloop",
                 // "out 'after loop'",
 
-                // "str name = ''",
-                // "out 'Whats your name?'",
-                // "prompt name Froggy Nyanko Other",
-                // "if {v:name == 'Other'}",
-                // "out 'Well then, what is it?'",
-                // "ask name",
-                // "endif",
-                // "out 'Hello v:name!'",
+                "str name = ''",
+                "out 'Whats your name?'",
+                "prompt name Froggy Nyanko Other",
+                "if {v:name == 'Other'}",
+                "out 'Well then, what is it?'",
+                "ask name",
+                "endif",
+                "out 'Hello v:name!'",
 
 
                 // "int age = 0",
@@ -176,7 +175,11 @@ function updateDateTime() {
 
     const dateString = dateTemplate;
 
-    document.getElementById('bar').textContent = dateString.padEnd(79,"_").slice(0, -1) + "#";
+    if(!showLoadingSpinner) document.getElementById('bar').textContent = dateString.padEnd(79," ");
+    else {
+        document.getElementById('bar').textContent = dateString.padEnd(79," ").slice(0, -1) + loadingSpinnerAnimFrames[loadingSpinnerIndex % 4];
+        loadingSpinnerIndex++;
+    }
 }
 
 setInterval(function() {
@@ -192,7 +195,7 @@ setInterval(function() {
     config.programList = files;
 }, 1000);
 
-setInterval(updateDateTime, 1000);
+setInterval(updateDateTime, 100);
 updateDateTime();
 
 // Section 2: The terminal itself.
@@ -230,6 +233,10 @@ function cleanInnerQuotes(input) {
 
 function cleanQuotes(input){
     return input.replaceAll(/["']/g, '');
+}
+
+function toggleLoadingSpinner(){
+    showLoadingSpinner = !showLoadingSpinner
 }
 
 function sendCommand(command, args, createEditableLineAfter){
@@ -729,15 +736,6 @@ function sendCommand(command, args, createEditableLineAfter){
 
                             switch(command){
                                 // FroggyScript interpreter =========================================================================================================================================
-                                case "f:":
-                                    endProgram("Function does not exist.");
-                                break;
-                                case "--":
-                                    parseNext();
-                                break;
-                                case "loop":
-                                    parseNext();
-                                break;
                                 case "endloop":
                                     let loopCondition = formatted.lines[line.args.startOfLoop].args.condition;
 
@@ -763,7 +761,7 @@ function sendCommand(command, args, createEditableLineAfter){
                                             endProgram(`Callstack size exceeded. This is a JavaScript problem.`);
                                         }
                                     } else {
-                                            parseNext();
+                                        parseNext();
                                     }
                                 break;
                                 case "prompt":
@@ -852,8 +850,6 @@ function sendCommand(command, args, createEditableLineAfter){
 
                                     document.body.addEventListener('keydown', promptHandler);
                                     terminal.appendChild(terminalLineElement);
-
-
                                     // PAUSE HERE
                                 break;
                                 case "ask":
@@ -1070,7 +1066,7 @@ function sendCommand(command, args, createEditableLineAfter){
 
                                     if(parsedCondition) {
                                         // Skip to "endif" or the next line after "else"
-                                        lineIndex = elseIndex !== -1 ? elseIndex + 1 : lineIndex + 1;
+                                        lineIndex = elseIndex !== -1 ? elseIndex : lineIndex;
                                     } else {
                                         // Skip to "else" or "endif"
                                         lineIndex = elseIndex !== -1 ? elseIndex : endifIndex;
@@ -1116,43 +1112,11 @@ function sendCommand(command, args, createEditableLineAfter){
                                     createTerminalLine(parsedOut, ">");
                                     parseNext();
                                 break;
-
-                                // case "out":
-                                //     let out = line.args;
-                                //     if(line.args == undefined){
-                                //         createTerminalLine(`Invalid "out" syntax.`, config.errorText);
-                                //         break;
-                                //     }
-
-                                //     for(let variable in variables){
-                                //         if(out.includes(variable)){
-                                //             if(variables[variable].type == "str"){  
-                                //                 out = out.replaceAll(new RegExp(`\\b${variable}\\b`, 'g'), `'${variables[variable].value}'`);
-                                //             } else {
-                                //                 out = out.replaceAll(new RegExp(`\\b${variable}\\b`, 'g'), variables[variable].value);
-                                //             };
-                                //         }
-                                //     }
-
-                                //     if(out.includes("v:")){
-                                //         createTerminalLine(`Variable does not exist in out statement.`, config.errorText);
-                                //         break;
-                                //     }
-
-                                //     let parsedOut;
-                                //     try {
-                                //         out = cleanInnerQuotes(out);
-                                //         parsedOut = new Function(`return (${out});`)();
-                                //     } catch (err) {
-                                //         console.log(err);
-                                //         createTerminalLine(`Error evaluating: "${out}".`, config.errorText);
-                                //         break;
-                                //     }
-                                //     createTerminalLine(parsedOut, ">");
-                                //     parseNext();
-                                // break;
                                 case "endprog":
                                     createEditableTerminalLine(`${config.currentPath}>`);
+                                break;
+                                default:
+                                    parseNext();
                                 break;
                             }
                         }
@@ -1160,6 +1124,7 @@ function sendCommand(command, args, createEditableLineAfter){
                     }
                     // END OF INTERPRETER FUNCTION =============
                     interpreter();
+                    showLoadingSpinner = false;
                 }
             }
         break;
