@@ -34,14 +34,14 @@
 Operators:
 * All JavaScript operators are valid
 
-## General Stuff
+## General Utilities
+### End Program
+```
+endprog
+```
 ### Comments
 ```
 -- comment
-```
-### end program
-```
-endprog
 ```
 
 ## Output
@@ -157,4 +157,17 @@ if {v:variable_name == 4}
 else
     f: name
 endif
+```
+
+### Loops
+the maximum allowed loop count is 543.
+```
+loop {[condition]}
+    code
+endloop
+
+loop {v:i < 5}
+    out v:i
+    set i = v:i + 1
+endloop
 ```

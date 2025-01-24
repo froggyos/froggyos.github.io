@@ -29,10 +29,10 @@ const config = {
             { name: "cli", permissions: {read: false, write: false, hidden: true}, data: ["str cli = 'this program is hardcoded into froggyOS'", "endprog"] },
             { name: "lilypad", permissions: {read: false, write: false, hidden: true}, data: ["str lilypad = 'this program is hardcoded into froggyOS'", "endprog"] },
             { name: "test", permissions: {read: true, write: true, hidden: false}, data: [
-                "out 'before loop'",
                 "int i = 0",
-                "loop { v:i < 1000 }",
-                "out v:i",
+                "out 'before loop'",
+                "loop { v:i < 580 }",
+                "out 'v:i'",
                 "set i = v:i + 1",
                 "endloop",
                 "out 'after loop'",
@@ -689,94 +689,92 @@ function sendCommand(command, args, createEditableLineAfter){
                     createTerminalLine(formatted.errors[0], config.errorText);
                     createEditableTerminalLine(`${config.currentPath}>`);
                 } else {
-                    let endprogFound = false;
-                    let endProgram = () => endprogFound = true;
+                    function interpreter(){
 
-                    let lineIndex = 0;
-                    let variables = {};
-                    let defineCount = 0;
-                    let cliPromptCount = 0;
+                        let lineIndex = 0;
 
-                    function evaluate(string){
-                        let parsedString;
-                        try {
-                            parsedString = new Function(`return (${string});`)();
-                        } catch (err) {
-                            createTerminalLine(`Error evaluating statement: "${string}".`, config.errorText);
-                            endProgram();
-                        }
-                        return parsedString;
-                    }
+                        let variables = {};
+                        let defineCount = 0;
+                        let cliPromptCount = 0;
 
-                    function createPause() {
-                        let resume;
-                        const promise = new Promise(resolve => {
-                            resume = resolve;
-                        });
-                        return { promise, resume };
-                    }
-
-                    async function interpreter(){
-                        let pauseControl = createPause();
-
-                        while(lineIndex < formatted.lines.length){
+                        function runParser(){
                             let line = formatted.lines[lineIndex];
                             let command = line.command;
+
+                            function parseNext(){
+                                lineIndex++;
+                                runParser();
+                            }
+
+                            function endProgram(error){
+                                createTerminalLine(`${error}`, config.errorText);
+                                createEditableTerminalLine(`${config.currentPath}>`);
+                            }
+
+                            function evaluate(string){
+                                let parsedString;
+                                try {
+                                    parsedString = new Function(`return (${string});`)();
+                                    return parsedString;
+                                } catch (err) {
+                                    return null;
+                                }
+                            }
 
                             switch(command){
                                 // FroggyScript interpreter =========================================================================================================================================
                                 case "--":
+                                    parseNext();
+                                break;
+                                case "loop":
+                                    parseNext();
                                 break;
                                 case "endloop":
                                     let loopCondition = formatted.lines[line.args.startOfLoop].args.condition;
 
-                                    let loopLines = formatted.lines.slice(line.args.startOfLoop, lineIndex + 1);
-                                    if(loopLines.filter(line => line.command == "endloop").length > 1){
-                                        let endloopIndices = loopLines
-                                        .map((line, index) => (line.command === "endloop" ? index : -1))
-                                        .filter(index => index !== -1);
-                                    
-                                        let secondToLastIndex = endloopIndices[endloopIndices.length - 2];
-                                        let lastIndex = endloopIndices[endloopIndices.length - 1];
-                                    
-                                        let betweenEndloops = loopLines.slice(secondToLastIndex + 1, lastIndex + 1);
-
-                                        loopLines = betweenEndloops
-                                    };
-
                                     if(loopCondition.includes("v:")){
                                         loopCondition = loopCondition.replaceAll(/v:(\w+)/g, (match, variable) => {
                                             if(variables["v:" + variable] == undefined){
-                                                createTerminalLine(`Variable "${variable}" does not exist.`, config.errorText);
-                                                endProgram();
+                                                endProgram(`Variable "${variable}" does not exist.`);
                                             }
                                             return variables["v:" + variable].value;
                                         });
                                     }
 
-                                    if(evaluate(loopCondition)) formatted.lines.splice(lineIndex + 1, 0, ...loopLines);
-                                break
+                                    if(evaluate(loopCondition) == null) {
+                                        endProgram(`Invalid loop condition.`);
+                                        break;
+                                    }
+                                    if(evaluate(loopCondition)){
+                                        lineIndex = line.args.startOfLoop;
+
+                                        try {
+                                            parseNext();
+                                        } catch (err) {
+                                            endProgram(`Callstack size exceeded. This is a JavaScript problem.`);
+                                        }
+                                    } else {
+                                            parseNext();
+                                    }
+                                break;
                                 case "prompt":
                                     let options = line.args.output;
                                     let variable = line.args.variable;
-                                    
+
                                     if(options == undefined || options == ''){
-                                        createTerminalLine(`Invalid "prompt" syntax.`, config.errorText);
-                                        endProgram();
+                                        endProgram(`Invalid "prompt" syntax.`);
                                         break;
                                     }
                                     if(variable == undefined || variable == ''){
-                                        createTerminalLine(`Invalid "prompt" syntax.`, config.errorText);
-                                        endProgram();
+                                        endProgram(`Invalid "prompt" syntax.`);
                                         break;
                                     }
 
                                     if(variables["v:" + variable] == undefined){
-                                        createTerminalLine(`Variable "${variable}" does not exist.`, config.errorText);
-                                        endProgram();
+                                        endProgram(`Variable "${variable}" does not exist.`);
                                         break;
                                     }
-                                    
+
                                     // go through each variable and each option, if an option is a variable, replace it with the variable value
                                     for(let variable in variables){
                                         options = options.map(option => {
@@ -837,7 +835,7 @@ function sendCommand(command, args, createEditableLineAfter){
                                                 document.body.removeEventListener('keydown', promptHandler);
 
                                                 // RESUME PAUSE HERE
-                                                pauseControl.resume();
+                                                parseNext();
                                             }
 
                                         }
@@ -848,20 +846,17 @@ function sendCommand(command, args, createEditableLineAfter){
 
 
                                     // PAUSE HERE
-                                    pauseControl = createPause();
-                                    await pauseControl.promise;
                                 break;
                                 case "ask":
                                     if (!line.args || !line.args.variable) {
-                                        createTerminalLine(`Invalid "ask" syntax.`, config.errorText);
-                                        endProgram();
+                                        endProgram(`Invalid "ask" syntax.`);
                                         break;
                                     }
 
                                     let span = document.createElement('span');
                                     let inputElement = document.createElement('div');
                                     let elementToAppend = document.createElement('div');
-                                    
+
                                     inputElement.setAttribute('contenteditable', 'true');
                                     inputElement.setAttribute('spellcheck', 'true');
 
@@ -881,14 +876,12 @@ function sendCommand(command, args, createEditableLineAfter){
                                             inputElement.setAttribute('contenteditable', 'false');
 
                                             // RESUME PAUSE HERE
-                                            pauseControl.resume();
 
                                             let userInput = inputElement.textContent;
                                             let variable = line.args.variable;
 
                                             if(variables["v:" + variable] == undefined){
-                                                createTerminalLine(`Variable "${variable}" does not exist.`, config.errorText);
-                                                endProgram();
+                                                endProgram(`Variable "${variable}" does not exist.`);
                                                 return;
                                             }
 
@@ -898,24 +891,22 @@ function sendCommand(command, args, createEditableLineAfter){
 
                                             if(variables["v:" + variable].type == "int"){
                                                 if(isNaN(userInput)){
-                                                    createTerminalLine(`Invalid integer value.`, config.errorText);
-                                                    endProgram();
+                                                    endProgram(`Invalid integer value.`);
                                                     return;
                                                 } else {
                                                     variables["v:" + variable].value = parseInt(userInput);
                                                 }
-                                            }                         
+                                            }
+                                            
+                                            parseNext();
                                         }
                                     });
 
                                     // PAUSE HERE
-                                    pauseControl = createPause();
-                                    await pauseControl.promise;
                                 break;
                                 case "filearg":
                                     if (!line.args || !line.args.name || !line.args.type || !line.args.value) {
-                                        createTerminalLine(`Invalid declaration syntax.`, config.errorText);
-                                        endProgram();
+                                        endProgram(`Invalid filearg syntax.`);
                                         break;
                                     }
 
@@ -923,8 +914,7 @@ function sendCommand(command, args, createEditableLineAfter){
                                     let type = line.args.value;  
 
                                     if(variables["v:" + name] != undefined){
-                                        createTerminalLine(`Variable "${name}" already exists.`, config.errorText);
-                                        endProgram();
+                                        endProgram(`Variable "${name}" already exists.`);
                                         break;
                                     }
 
@@ -932,8 +922,7 @@ function sendCommand(command, args, createEditableLineAfter){
                                     defineCount++;
 
                                     if(args.length - 1 < defineCount){
-                                        createTerminalLine(`Missing argument ${defineCount} (type ${type}).`, config.errorText);
-                                        endProgram();
+                                        endProgram(`Missing argument ${defineCount} (type ${type}).`);
                                         break;
                                     }
 
@@ -944,17 +933,16 @@ function sendCommand(command, args, createEditableLineAfter){
                                         value: varVal,
                                         name: name,
                                     };
+                                    parseNext();
                                 break;
                                 case "str":
                                     if (!line.args || !line.args.name) {
-                                        createTerminalLine(`Invalid declaration syntax.`, config.errorText);
-                                        lineIndex = formatted.lines.length - 2;
+                                        endProgram(`Invalid str declaration syntax.`);
                                         break;
                                     }
                                     // if the variable already exist, throw error
                                     if(variables[line.args.name] != undefined){
-                                        createTerminalLine(`String "${line.args.name}" already exists.`, config.errorText);
-                                        endProgram();
+                                        endProgram(`String "${line.args.name}" already exists.`);
                                         break;
                                     }
 
@@ -966,45 +954,42 @@ function sendCommand(command, args, createEditableLineAfter){
 
                                     line.args.value = cleanQuotes(line.args.value);
                                     variables["v:" + line.args.name] = line.args;
+                                    parseNext();
                                 break;
                                 case "int":
                                     if (!line.args || !line.args.name) {
-                                        createTerminalLine(`Invalid declaration syntax.`, config.errorText);
-                                        endProgram();
+                                        endProgram(`Invalid int declaration syntax.`);
                                         break;
                                     }
                                     if(variables[line.args.name] != undefined){
-                                        createTerminalLine(`Integer "${line.args.name}" already exists.`, config.errorText);
-                                        endProgram();
+                                        endProgram(`Integer "${line.args.name}" already exists.`);
                                         break;
                                     }
 
                                     let argument = line.args.value;
                                     let parsedArgument = evaluate(argument);
-
+                                    
                                     // check if parsedArgument is a number
-                                    if(isNaN(parsedArgument)){
-                                        createTerminalLine(`Invalid integer value.`, config.errorText);
-                                        endProgram();
+                                    if(isNaN(parsedArgument) || parsedArgument == null){
+                                        endProgram(`Invalid integer value.`);
                                         break;
                                     }
 
                                     line.args.value = parsedArgument + [];
                                     variables["v:" + line.args.name] = line.args;
+                                    parseNext();
                                 break;
                                 case "set":
                                     let variableName = "v:" + line.args?.variable;
                                     let value = line.args?.value;
-                        
+                            
                                     if (!variableName || !value) {
-                                        createTerminalLine(`Invalid "set" syntax.`, config.errorText);
-                                        endProgram();
+                                        endProgram(`Invalid "set" declaration syntax.`);;
                                         break;
                                     }
 
                                     if(variables[variableName] == undefined){
-                                        createTerminalLine(`Variable "${variableName}" does not exist.`, config.errorText);
-                                        endProgram();
+                                        endProgram(`Variable "${variableName}" does not exist.`);
                                         break;
                                     }
 
@@ -1015,9 +1000,8 @@ function sendCommand(command, args, createEditableLineAfter){
                                             if(variables[variable].type == "int"){
                                                 // evaluate value
                                                 let parsedValue = evaluate(value);
-                                                if(isNaN(parsedValue)){
-                                                    createTerminalLine(`Invalid integer value.`, config.errorText);
-                                                    endProgram();
+                                                if(isNaN(parsedValue) || parsedValue == null){
+                                                    endProgram(`Invalid integer value.`);
                                                     break;
                                                 }
                                             }
@@ -1028,124 +1012,142 @@ function sendCommand(command, args, createEditableLineAfter){
                                     try {
                                         parsedValue = new Function(`return (${value});`)();
                                     } catch (err) {
-                                        createTerminalLine(`Error evaluating: "${value}".`, config.errorText);
-                                        endProgram();
+                                        endProgram(`Error evaluating: "${value}".`);
                                         break;
                                     }
 
                                     variables[variableName].value = parsedValue;
+                                    parseNext();
                                 break;
                                 case "if":
                                     let condition = line.args.condition;
 
                                     if(!condition){
-                                        createTerminalLine(`Invalid "if" syntax.`, config.errorText);
-                                        endProgram();
+                                        endProgram(`Invalid "if" syntax.`);
                                         break;
                                     }
-                                
+                            
                                     let varType = undefined;
                                     for(let variable in variables){
                                         if(condition.includes(variable)){
                                             if(varType == undefined) varType = variables[variable].type;
                                             if(varType != variables[variable].type && varType != undefined){
-                                                createTerminalLine(`Type mismatch in condition statement.`, config.errorText);
-                                                endProgram();
+                                                endProgram(`Type mismatch in condition statement.`);
                                                 break;
                                             }
                                             condition = condition.replaceAll(new RegExp(`\\b${variable}\\b`, 'g'), `¶v¬${varType}¦${variables[variable].value}¶v¬${varType}¦`);
                                         }
                                     }
 
-                                    
+
                                     condition = condition.replaceAll("¶v¬str¦", "\"");
                                     condition = condition.replaceAll("¶v¬int¦", "");
 
                                     let parsedCondition = evaluate(condition);
+
+                                    if(parsedCondition == null){
+                                        endProgram(`Invalid condition.`);
+                                        break;
+                                    }
 
                                     // find the else statement
                                     let elseIndex = formatted.lines.findIndex((line, index) => line.command == "else" && index > lineIndex);
                                     let endifIndex = formatted.lines.findIndex((line, index) => line.command == "endif" && index > lineIndex);
 
                                     if(endifIndex == -1){
-                                        createTerminalLine(`"endif" not found.`, config.errorText);
-                                        endProgram();
+                                        endProgram(`"endif" not found.`);
                                         break;
                                     }
 
-                                    if(parsedCondition){
-                                        if(elseIndex != -1){
-                                            formatted.lines.splice(elseIndex, endifIndex - elseIndex);
-                                        } else {
-                                            formatted.lines.splice(endifIndex, 1);
-                                        }
+                                    if(parsedCondition) {
+                                        // Skip to "endif" or the next line after "else"
+                                        lineIndex = elseIndex !== -1 ? elseIndex + 1 : lineIndex + 1;
                                     } else {
-                                        if(elseIndex != -1){
-                                            formatted.lines.splice(lineIndex, elseIndex - lineIndex);
-                                        } else {
-                                            formatted.lines.splice(lineIndex, endifIndex - lineIndex);
-                                        }
+                                        // Skip to "else" or "endif"
+                                        lineIndex = elseIndex !== -1 ? elseIndex : endifIndex;
                                     }
+                                    parseNext();
                                 break;
                                 case "out":
-                                    let out = line.args;
-                                    if(line.args == undefined){
-                                        createTerminalLine(`Invalid "out" syntax.`, config.errorText);
-                                        endProgram();
+                                    if (!line.args) {
+                                        endProgram(`Invalid "out" syntax.`);
                                         break;
                                     }
 
-                                    for(let variable in variables){
-                                        if(out.includes(variable)){
-                                            if(variables[variable].type == "str"){  
-                                                out = out.replaceAll(new RegExp(`\\b${variable}\\b`, 'g'), `'${variables[variable].value}'`);
-                                            } else {
-                                                out = out.replaceAll(new RegExp(`\\b${variable}\\b`, 'g'), variables[variable].value);
-                                            };
+                                    let out = line.args;
+
+                                    // Replace variables in the "out" statement
+                                    for (let variable in variables) {
+                                        let variableRegex = new RegExp(`\\b${variable}\\b`, "g"); // Ensure full match for variable name
+                                        if (variableRegex.test(out)) {
+                                            let value = variables[variable].value;
+                                            if (variables[variable].type === "str") {
+                                                value = `'${value}'`; // Wrap string variables in quotes
+                                            }
+                                            out = out.replace(variableRegex, value);
                                         }
                                     }
 
-                                    if(out.includes("v:")){
-                                        createTerminalLine(`Variable does not exist in out statement.`, config.errorText);
-                                        endProgram();
+                                    // Check for unresolved variables
+                                    if (/v:\w+/.test(out)) {
+                                        endProgram(`Unresolved variable.`);
                                         break;
                                     }
 
                                     let parsedOut;
                                     try {
-                                        out = cleanInnerQuotes(out);
-                                        parsedOut = new Function(`return (${out});`)();
+                                        out = cleanInnerQuotes(out); // Clean any nested or extra quotes
+                                        parsedOut = new Function(`return (${out});`)(); // Evaluate the expression
                                     } catch (err) {
-                                        console.log(err);
-                                        createTerminalLine(`Error evaluating: "${out}".`, config.errorText);
-                                        endProgram();
+                                        endProgram(`Error evaluating statement: "${out}".`);
                                         break;
                                     }
+
+                                    // Output the parsed result to the terminal
                                     createTerminalLine(parsedOut, ">");
+                                    parseNext();
                                 break;
+
+                                // case "out":
+                                //     let out = line.args;
+                                //     if(line.args == undefined){
+                                //         createTerminalLine(`Invalid "out" syntax.`, config.errorText);
+                                //         break;
+                                //     }
+
+                                //     for(let variable in variables){
+                                //         if(out.includes(variable)){
+                                //             if(variables[variable].type == "str"){  
+                                //                 out = out.replaceAll(new RegExp(`\\b${variable}\\b`, 'g'), `'${variables[variable].value}'`);
+                                //             } else {
+                                //                 out = out.replaceAll(new RegExp(`\\b${variable}\\b`, 'g'), variables[variable].value);
+                                //             };
+                                //         }
+                                //     }
+
+                                //     if(out.includes("v:")){
+                                //         createTerminalLine(`Variable does not exist in out statement.`, config.errorText);
+                                //         break;
+                                //     }
+
+                                //     let parsedOut;
+                                //     try {
+                                //         out = cleanInnerQuotes(out);
+                                //         parsedOut = new Function(`return (${out});`)();
+                                //     } catch (err) {
+                                //         console.log(err);
+                                //         createTerminalLine(`Error evaluating: "${out}".`, config.errorText);
+                                //         break;
+                                //     }
+                                //     createTerminalLine(parsedOut, ">");
+                                //     parseNext();
+                                // break;
                                 case "endprog":
-                                    endProgram();
+                                    createEditableTerminalLine(`${config.currentPath}>`);
                                 break;
                             }
-
-                            if(endprogFound) break;
-                            lineIndex++;
                         }
-                        if(endprogFound == false){
-                            createTerminalLine("Program was not ended internally. Initiating failsafe.", config.errorText);
-                            let decrementer = 10;
-                            let failsafe = setInterval(function(){
-                                createTerminalLine(`${decrementer}...`, ">");
-                                decrementer--;
-
-                                if(decrementer == 0){
-                                    clearInterval(failsafe);
-                                    createEditableTerminalLine(`${config.currentPath}>`);
-                                }
-                            }, 1000);
-                        } else {
-                            createEditableTerminalLine(`${config.currentPath}>`);
-                        }
+                        runParser();
                     }
                     // END OF INTERPRETER FUNCTION =============
                     interpreter();
