@@ -3,6 +3,7 @@ const config = {
     currentPath: 'C:/Home',
     commandHistory: [],
     commandHistoryIndex: -1,
+    showLoadingSpinner: false,
     timeFormat: 'w. y/m/d h:n:s',
     updateStatBar: true,
     currentProgram: null, // do something with this later
@@ -131,7 +132,6 @@ function moveCaretToEnd(element) {
     }
 }
 
-let showLoadingSpinner = false;
 const loadingSpinnerAnimFrames = ['-', '\\', '|', '/'];
 let loadingSpinnerIndex = 0;
 
@@ -175,7 +175,7 @@ function updateDateTime() {
 
     const dateString = dateTemplate;
 
-    if(!showLoadingSpinner) document.getElementById('bar').textContent = dateString.padEnd(79," ");
+    if(!config.showLoadingSpinner) document.getElementById('bar').textContent = dateString.padEnd(79," ");
     else {
         document.getElementById('bar').textContent = dateString.padEnd(79," ").slice(0, -1) + loadingSpinnerAnimFrames[loadingSpinnerIndex % 4];
         loadingSpinnerIndex++;
@@ -233,10 +233,6 @@ function cleanInnerQuotes(input) {
 
 function cleanQuotes(input){
     return input.replaceAll(/["']/g, '');
-}
-
-function toggleLoadingSpinner(){
-    showLoadingSpinner = !showLoadingSpinner
 }
 
 function sendCommand(command, args, createEditableLineAfter){
@@ -1124,7 +1120,6 @@ function sendCommand(command, args, createEditableLineAfter){
                     }
                     // END OF INTERPRETER FUNCTION =============
                     interpreter();
-                    showLoadingSpinner = false;
                 }
             }
         break;
@@ -1157,7 +1152,7 @@ function sendCommand(command, args, createEditableLineAfter){
         break;
 
         case '[[FROGGY]]setstatbar':
-            if(args.length > 80){
+            if(args.length > 79){
                 createTerminalLine("The argument is too long.", config.errorText);
                 createEditableTerminalLine(`${config.currentPath}>`);
                 break;
