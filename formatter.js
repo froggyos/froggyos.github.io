@@ -188,8 +188,21 @@ function format(input) {
                     startOfLoop: loopIndex,
                 };
             } else {
-                console.error(`No matching "loop" found for "endloop".`);
+                formatted.errors.push(`No matching "loop" found for "endloop".`);
             }
+        }
+    });
+
+    // wait keyword
+    formatted.lines.forEach((line) => {
+        if (line.command === "wait") {
+            let input = line.args.join(" ");
+            input = input.replace("{", "");
+            input = input.replace("}", "");
+
+            line.args = {
+                time: input
+            };
         }
     });
 

@@ -36,22 +36,28 @@ const config = {
                 // "f: test",
 
 
-                // "int i = 0",
-                // "out 'before loop'",
-                // "loop { v:i < 580 }",
-                // "out 'v:i'",
-                // "set i = v:i + 1",
-                // "endloop",
-                // "out 'after loop'",
+                "int i = 0",
+                "int j = 0",
+                "out 'before loop'",
+                "loop { v:i < 100 }",
+                "out 'v:i'",
+                "set i = v:i + 1",
+                "wait 1",
+                "endloop",
+                "out 'after loop'",
+                "loop { v:j < 100 }", // BUG !!!!!!!!!!!!! ====================== WONT PROCESS
+                "out 'v:j'",
+                "set j = v:j + 1",
+                "endloop",
 
-                "str name = ''",
-                "out 'Whats your name?'",
-                "prompt name Froggy Nyanko Other",
-                "if {v:name == 'Other'}",
-                "out 'Well then, what is it?'",
-                "ask name",
-                "endif",
-                "out 'Hello v:name!'",
+                // "str name = ''",
+                // "out 'Whats your name?'",
+                // "prompt name Froggy Nyanko Other",
+                // "if {v:name == 'Other'}",
+                // "out 'Well then, what is it?'",
+                // "ask name",
+                // "endif",
+                // "out 'Hello v:name!'",
 
 
                 // "int age = 0",
@@ -734,6 +740,36 @@ function sendCommand(command, args, createEditableLineAfter){
 
                             switch(command){
                                 // FroggyScript interpreter =========================================================================================================================================
+                                case "wait":
+                                    let time = line.args.time;
+                                    if(time == undefined){
+                                        endProgram(`Invalid "wait" syntax.`);
+                                        break;
+                                    }
+                                    // check if its a variable, must be type int
+                                    if(time.includes("v:")){
+                                        time = time.replaceAll(/v:(\w+)/g, (match, variable) => {
+                                            if(variables["v:" + variable] == undefined){
+                                                endProgram(`Variable "${variable}" does not exist.`);
+                                                return;
+                                            }
+                                            if(variables["v:" + variable].type != "int"){
+                                                endProgram(`Variable "${variable}" must be of type int.`);
+                                                return;
+                                            }
+                                            return variables["v:" + variable].value;
+                                        });
+                                    }
+                                    if(isNaN(time)){
+                                        endProgram(`Invalid time value.`);
+                                        break;
+                                    }
+                                    setTimeout(() => {
+                                        config.showLoadingSpinner = false;
+                                        parseNext();
+                                    }, time);
+                                    config.showLoadingSpinner = true;
+                                break;
                                 case "endloop":
                                     let loopCondition = formatted.lines[line.args.startOfLoop].args.condition;
 
