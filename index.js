@@ -93,11 +93,6 @@ const config = {
     }
 };
 
-/*
-todo: macro and ask keyword
-
-*/
-
 const FROGGY_GREEN = "#00FF00";
 
 let screen = document.getElementById('screen');
