@@ -1352,10 +1352,25 @@ function createLilypadLine(linetype, path, filename){
             if(filename == undefined){
                 createEditableTerminalLine(`${config.currentPath}>`);
             } else {
+                config.showLoadingSpinner = true;
+                createTerminalLine(`Saving file...`, ">");
+
+                let dataLength = 0;
+
                 file.name = filename;
                 let fileIndex = config.fileSystem[config.currentPath].findIndex(file => file.name == filename);
                 config.fileSystem[config.currentPath][fileIndex].data = file.data;
-                createEditableTerminalLine(`${config.currentPath}>`);
+
+                file.data.forEach(line => {
+                    dataLength += line.length;
+                });
+                
+                setTimeout(function(){
+                    config.showLoadingSpinner = false;
+                    createTerminalLine(`Done! ^v^`, ">");
+                    createEditableTerminalLine(`${config.currentPath}>`);
+                }, dataLength * 10);
+                
             }
         }
     });
