@@ -29,13 +29,19 @@ const config = {
             { name: "cli", permissions: {read: false, write: false, hidden: true}, data: ["str cli = 'this program is hardcoded into froggyOS'", "endprog"] },
             { name: "lilypad", permissions: {read: false, write: false, hidden: true}, data: ["str lilypad = 'this program is hardcoded into froggyOS'", "endprog"] },
             { name: "test", permissions: {read: true, write: true, hidden: false}, data: [
-                "int i = 0",
-                "out 'before loop'",
-                "loop { v:i < 580 }",
-                "out 'v:i'",
-                "set i = v:i + 1",
-                "endloop",
-                "out 'after loop'",
+                "func test",
+                "out 'Hello, world!'",
+                "f: test",
+                "endfunc",
+                "f: test",
+
+                // "int i = 0",
+                // "out 'before loop'",
+                // "loop { v:i < 580 }",
+                // "out 'v:i'",
+                // "set i = v:i + 1",
+                // "endloop",
+                // "out 'after loop'",
 
                 // "str name = ''",
                 // "out 'Whats your name?'",
@@ -126,6 +132,10 @@ function moveCaretToEnd(element) {
     }
 }
 
+let showLoadingSpinner = false;
+const loadingSpinnerAnimFrames = ['-', '\\', '|', '/'];
+let loadingSpinnerIndex = 0;
+
 function updateDateTime() {
     if(!config.updateStatBar) return;
     const now = new Date();
@@ -165,7 +175,8 @@ function updateDateTime() {
     dateTemplate = dateTemplate.replace('###S###', second);
 
     const dateString = dateTemplate;
-    document.getElementById('bar').textContent = dateString.padEnd(79," ");
+
+    document.getElementById('bar').textContent = dateString.padEnd(79,"_").slice(0, -1) + "#";
 }
 
 setInterval(function() {
@@ -718,6 +729,9 @@ function sendCommand(command, args, createEditableLineAfter){
 
                             switch(command){
                                 // FroggyScript interpreter =========================================================================================================================================
+                                case "f:":
+                                    endProgram("Function does not exist.");
+                                break;
                                 case "--":
                                     parseNext();
                                 break;
