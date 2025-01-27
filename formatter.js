@@ -11,6 +11,14 @@ function format(input) {
         "int", "str", "set", "out", "func", "endfunc", "f:", "label", "goto", "if", "endif", "and", "or", "not", "true", "false", "else"
     ]
 
+    // for each index in input, if it equals "endloop", insert "wait 0" before it
+    for (let i = 0; i < input.length; i++) {
+        if (input[i] === "endloop") {
+            input.splice(i, 0, "wait 0");
+            i++;
+        }
+    }
+
     // Parse lines into command objects
     input.forEach((line) => {
         let [command, ...args] = line.split(" ");
@@ -109,7 +117,7 @@ function format(input) {
     }
 
     // if
-    formatted.lines.forEach((line) => {
+    formatted.lines.forEach((line, i) => {
         if (line.command === "if") {
             let input = line.args.join(" ");
             input = input.replace("{", "");
@@ -118,6 +126,15 @@ function format(input) {
             delete line.args 
             line.args = {};
             line.args.condition = input;
+        }
+
+        if (line.command === "else") {
+            line.args = {
+                endifIndex: formatted.lines.findIndex(
+                    (item, index) => index > i && item.command === "endif"
+                ),
+                skip: false
+            };
         }
     })
 

@@ -167,7 +167,7 @@ endif
 ```
 
 ### Loops
-the maximum allowed loop count is 543.
+There may be a maximum loop count of 543.
 ```
 loop {[condition]}
     [code]

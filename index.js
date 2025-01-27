@@ -59,23 +59,30 @@ const config = {
                 "endprog",
             ] },
             { name: "test", permissions: {read: true, write: true, hidden: false}, data: [
-                // "func test",
-                // "out 'Hello, world!'",
+                "func test",
+                "out 'Hello, world!'",
+                //"f: test",
+                "endfunc",
                 // "f: test",
-                // "endfunc",
-                // "f: test",
-                "int i = 5000",
-                "out 'before'",
-                "wait v:i",
-                "out 'after'",
+                // "int i = 5000",
+                // "out 'before'",
+                // "wait v:i",
+                // "out 'after'",
 
-                // "int i = 0",
-                // "int j = 100",
-                // "loop { v:i < 100 }",
-                // "out 'v:i'",
-                // "set i = v:i + 1",
-                // "wait 1",
-                // "endloop",
+                "int i = 0",
+                "str direction = ''",
+                "loop { v:i < 1000000000000000000000000000000 }",
+                "out 'which direction?'",
+                "prompt direction left right",
+                "if { v:direction == 'left' }",
+                "out 'left!'",
+                "else",
+                "out 'right!'",
+                "endif",
+                "clearterminal",
+                "endloop",
+                //"set i = v:i + 1",
+                //"endloop",
                 // "loop { v:j > 0 }",
                 // "out 'v:j'",
                 // "set j = v:j - 1",
@@ -738,6 +745,10 @@ function sendCommand(command, args, createEditableLineAfter){
 
                             switch(command){
                                 // FroggyScript interpreter =========================================================================================================================================
+                                case "clearterminal": // DOCUMENT! ==============================================================================
+                                    sendCommand("cl", [], false);
+                                    parseNext();
+                                break;
                                 case "wait":
                                     let time = line.args.time;
                                     if(time == undefined){
@@ -850,6 +861,7 @@ function sendCommand(command, args, createEditableLineAfter){
                                         terminalLineElement.appendChild(document.createTextNode(" "));
                                     }
 
+
                                     let enterFailsafe = 0;
 
                                     function promptHandler(e){
@@ -868,12 +880,12 @@ function sendCommand(command, args, createEditableLineAfter){
                                             options[promptOptionNumber].classList.add('selected');
                                         }
 
-                                        if(e.key == "Enter"){
+                                        if(e.key == "Enter"){ // BUG !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!================================================================= its required to press enter twice when the prompt is in a loop, figure out how to make the failsafe not required at all
                                             e.preventDefault();
                                             enterFailsafe++;
                                             if(enterFailsafe > 1){
                                                 variables["v:" + variable].value = options[promptOptionNumber].textContent;
-                                                document.body.removeEventListener('keydown', promptHandler);
+                                                document.body.removeEventListener('keyup', promptHandler);
                                                 config.showLoadingSpinner = false;
                                                 parseNext();
                                             }
@@ -881,7 +893,7 @@ function sendCommand(command, args, createEditableLineAfter){
                                         }
                                     };
 
-                                    document.body.addEventListener('keydown', promptHandler);
+                                    document.body.addEventListener('keyup', promptHandler);
                                     terminal.appendChild(terminalLineElement);
                                     config.showLoadingSpinner = true;
                                     // PAUSE HERE
@@ -1100,12 +1112,22 @@ function sendCommand(command, args, createEditableLineAfter){
                                         break;
                                     }
 
-                                    if(parsedCondition) {
-                                        // Skip to "endif" or the next line after "else"
-                                        lineIndex = elseIndex !== -1 ? elseIndex : lineIndex;
+                                    if (parsedCondition) {
+                                        if(elseIndex != -1){
+                                            formatted.lines[elseIndex].args.skip = true;
+                                        }
                                     } else {
-                                        // Skip to "else" or "endif"
-                                        lineIndex = elseIndex !== -1 ? elseIndex : endifIndex;
+                                        if(elseIndex != -1){
+                                            lineIndex = elseIndex;
+                                        } else {
+                                            lineIndex = endifIndex;
+                                        }
+                                    }
+                                    parseNext();
+                                break;
+                                case "else":
+                                    if(formatted.lines[lineIndex].args.skip){
+                                        lineIndex = formatted.lines[lineIndex].args.endifIndex;
                                     }
                                     parseNext();
                                 break;
