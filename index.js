@@ -29,26 +29,52 @@ const config = {
         "C:/Programs": [
             { name: "cli", permissions: {read: false, write: false, hidden: true}, data: ["str cli = 'this program is hardcoded into froggyOS'", "endprog"] },
             { name: "lilypad", permissions: {read: false, write: false, hidden: true}, data: ["str lilypad = 'this program is hardcoded into froggyOS'", "endprog"] },
+            { name: "help", permissions: {read: true, write: false, hidden: false}, data: [
+                "str category = ''",
+                "out 'Choose a category: '",
+                "prompt category OS File-Manipulation Directory-Manipulation Other",
+                "if {v:category == 'OS'}",
+                "out 'clearstate. . . .clears froggyOS state'",
+                "out 'loadstate . . . .loads froggyOS state'",
+                "out 'savestate . . . .saves froggyOS state'",
+                "out 'swimto [program] start a program'",
+                "endif",
+                "if {v:category == 'File-Manipulation'}",
+                "out 'croak [file]. . . . . . . . .deletes the file'",
+                "out 'hatch [file]. . . . . . . . .creates a file'",
+                "out 'meta [file] . . . . . . . . .edits a file'",
+                "out 'metaperm [file] [perm] [0/1] edits a file\'s permissions'",
+                "out 'spy [file]. . . . . . . . . .reads the file'",
+                "endif",
+                "if {v:category == 'Directory-Manipulation'}",
+                "out 'spawn [directory]. . . . . .creates a directory'",
+                "out 'hop [directory]. . . . . . .moves to a directory'",
+                "endif",
+                "if {v:category == 'Other'}",
+                "out 'clear clears the terminal output'",
+                "out 'macro [macro]. . . . . . . .runs a macro'",
+                "out 'ribbit [text]. . . . . . . .displays the text'",
+                "out 'formattime [format]. . . . .changes the time format'",
+                "endif",
+                "endprog",
+            ] },
             { name: "test", permissions: {read: true, write: true, hidden: false}, data: [
                 // "func test",
                 // "out 'Hello, world!'",
                 // "endfunc",
                 // "f: test",
 
-
-                "int i = 0",
-                "int j = 0",
-                "out 'before loop'",
-                "loop { v:i < 100 }",
-                "out 'v:i'",
-                "set i = v:i + 1",
-                "wait 1",
-                "endloop",
-                "out 'after loop'",
-                "loop { v:j < 100 }", // BUG !!!!!!!!!!!!! ====================== WONT PROCESS
-                "out 'v:j'",
-                "set j = v:j + 1",
-                "endloop",
+                // "int i = 0",
+                // "int j = 100",
+                // "loop { v:i < 100 }",
+                // "out 'v:i'",
+                // "set i = v:i + 1",
+                // "wait 1",
+                // "endloop",
+                // "loop { v:j > 0 }",
+                // "out 'v:j'",
+                // "set j = v:j - 1",
+                // "endloop",
 
                 // "str name = ''",
                 // "out 'Whats your name?'",
@@ -60,46 +86,13 @@ const config = {
                 // "out 'Hello v:name!'",
 
 
-                // "int age = 0",
-                // "str name = ''",
-                // "out 'what is your name?'",
-                // "ask name",
-                // "out 'what is your age?'",
-                // "ask age",
-                // "out 'you are v:name and you are v:age years old'",
-                "endprog"
-            ] },
-        ],
-        "C:/Demo-Programs": [
-            { name: "demo-output", permissions: {read: true, write: true, hidden: false}, data: [
-                "out 'You can output strings directly.'",
-                "str text = 'You can also output variables.'",
-                "out v:text",
-                "str embed = 'embed variables in'",
-                "int number = 10",
-                "out 'You can v:embed strings.'",
-                "out 'You can also embed integers. I have v:number apples.'",
-                "endprog"
-            ] },
-            { name: "demo-variables", permissions: {read: true, write: true, hidden: false}, data: [
-                "str string = 'Froggy'",
-                "int number = 10",
-                "out v:string",
-                "out v:number",
-                "set string = 'Froggy's value has changed'",
-                "set number = 20",
-                "out v:string",
-                "out v:number",
-                "endprog"
-            ] },
-            {name: "demo-if-else", permissions: {read: true, write: true, hidden: false}, data: [
-                "int number = 11",
-                "int number_to_compare = 14",
-                "if {v:number > v:number_to_compare}",
-                "out 'v:number is greater than v:number_to_compare'",
-                "else",
-                "out 'v:number is less than or equal to v:number_to_compare'",
-                "endif",
+                "int age = 0",
+                "str name = ''",
+                "out 'what is your name?'",
+                "ask name",
+                "out 'what is your age?'",
+                "ask age",
+                "out 'you are v:name and you are v:age years old'",
                 "endprog"
             ] },
         ],
@@ -528,7 +521,7 @@ function sendCommand(command, args, createEditableLineAfter){
                 sendCommand(line.split(" ")[0], line.split(" ").slice(1), false);
             });
 
-            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+            // if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
 
         // edit file
@@ -877,7 +870,6 @@ function sendCommand(command, args, createEditableLineAfter){
                                                 variables["v:" + variable].value = options[promptOptionNumber].textContent;
                                                 document.body.removeEventListener('keydown', promptHandler);
                                                 config.showLoadingSpinner = false;
-                                                // RESUME PAUSE HERE
                                                 parseNext();
                                             }
 
@@ -902,7 +894,7 @@ function sendCommand(command, args, createEditableLineAfter){
                                     inputElement.setAttribute('contenteditable', 'true');
                                     inputElement.setAttribute('spellcheck', 'true');
 
-                                    span.textContent = ">";
+                                    span.textContent = "?";
 
                                     elementToAppend.appendChild(span);
                                     elementToAppend.appendChild(inputElement);

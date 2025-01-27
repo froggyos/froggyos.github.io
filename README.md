@@ -106,7 +106,7 @@ endprog
 -- when running the program
 C:/Home> st [program_name]
 > What is your name?
-> Froggy
+? Froggy
 > Hello Froggy.
 ```
 ### User Input with Navigable Options
@@ -117,11 +117,11 @@ C:/Home> st [program_name]
 ### Create a Function
 ```
 func [func_name]
-    code
+    [code]
 endfunc
 
 func name
-    code
+    out "hello"
 endfunc
 ```
 ### Call a Function
@@ -135,7 +135,7 @@ f: name
 ### If Statements
 ```
 if {[condition]}
-    code
+    [code]
 endif
 
 if {v:variable_name == "value"}
@@ -147,15 +147,15 @@ if {6 < 7}
 endif
 
 if {[condition]}
-    code_if_true
+    [if true]
 else
-    code_if_false
+    [if false]
 endif
 
 if {v:variable_name == 4}
-    set variable_name = 7
+    f: something
 else
-    f: name
+    f: somethingElse
 endif
 ```
 
@@ -163,7 +163,7 @@ endif
 the maximum allowed loop count is 543.
 ```
 loop {[condition]}
-    code
+    [code]
 endloop
 
 loop {v:i < 5}
