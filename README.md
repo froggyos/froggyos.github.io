@@ -43,6 +43,13 @@ endprog
 ```
 -- comment
 ```
+### Wait
+```
+wait [time in milliseconds]
+
+wait 1000
+wait v:number
+```
 
 ## Output
 ```
