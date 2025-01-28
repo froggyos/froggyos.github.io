@@ -62,6 +62,7 @@ const config = {
             { name: "test", permissions: {read: true, write: true, hidden: false}, data: [
                 "int i = 0",
                 "int j = 0",
+                "out v:i",
                 "loop { v:i < 5 }",
                 "loop { v:j < 4 }",
                 "out 'v:i v:j'",
@@ -712,11 +713,24 @@ function sendCommand(command, args, createEditableLineAfter){
 
                             switch(command){
                                 // FroggyScript interpreter =========================================================================================================================================
-                                case "clearterminal":
+                                case "free": {
+                                    let variable = line.args.variable;
+                                    if(variable == undefined){
+                                        endProgram(`Invalid "free" syntax.`);
+                                        break;
+                                    }
+                                    if(variables[variable] == undefined){
+                                        endProgram(`Variable "${variable}" does not exist.`);
+                                        break;
+                                    }
+                                    delete variables[variable];
+                                    parseNext();
+                                } break;
+                                case "clearterminal": {
                                     sendCommand("cl", [], false);
                                     parseNext();
-                                break;
-                                case "wait":
+                                } break;
+                                case "wait": {
                                     let time = line.args.time;
                                     if(time == undefined){
                                         endProgram(`Invalid "wait" syntax.`);
@@ -745,7 +759,7 @@ function sendCommand(command, args, createEditableLineAfter){
                                         parseNext();
                                     }, time);
                                     config.showLoadingSpinner = true;
-                                break;
+                                } break;
                                 case "endloop":
                                     let loopCondition = formatted.lines[line.args.startOfLoop].args.condition;
 
@@ -1114,7 +1128,7 @@ function sendCommand(command, args, createEditableLineAfter){
 
                                     // Check for unresolved variables
                                     if (/v:\w+/.test(out)) {
-                                        endProgram(`Unresolved variable.`);
+                                        endProgram(`Variable does not exist in "out" statement.`);
                                         break;
                                     }
 

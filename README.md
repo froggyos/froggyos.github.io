@@ -88,6 +88,13 @@ set test = 'text'
 set test = "many word"
 ```
 
+### Delete a Variable
+```
+free v:[variable_name]
+
+free v:test
+```
+
 ## User input
 ### Define a File Argument
 ```

@@ -223,5 +223,16 @@ function format(input) {
         }
     });
 
+    // free keyword
+    formatted.lines.forEach((line) => {
+        if (line.command === "free") {
+            let input = line.args[0];
+
+            line.args = {
+                variable: input
+            };
+        }
+    });
+
     return formatted;
 }
