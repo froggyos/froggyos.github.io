@@ -59,7 +59,48 @@ const config = {
                 "endif",
                 "endprog",
             ] },
-            { name: "test", permissions: {read: true, write: true, hidden: false}, data: [
+            { name: "demo", permissions: {read: true, write: true, hidden: false}, data: [
+                "str field = ''",
+                "int fieldIncrement = 0",
+                "int playerPos = 0",
+                "str playerDir = 'right'",
+
+                "str fieldBackground = '#'",
+                "str playerChar = '^-^'",
+
+
+                "loop { true }",
+                    "loop {v:fieldIncrement < 60}",
+                        "if {v:fieldIncrement == v:playerPos}",
+                            "append field v:playerChar",
+                        "else",
+                            "append field v:fieldBackground",
+                        "endif",
+                        "set fieldIncrement = v:fieldIncrement + 1",
+                    "endloop",
+                    "clearterminal",
+
+                    "out v:field",
+
+                    "set fieldIncrement = 0",
+
+                    "prompt playerDir left right [[QUIT]]",
+                    "if {v:playerDir == 'right' && v:playerPos < 59}",
+                        "set playerDir = 'right'",
+                        "set playerPos = v:playerPos + 1",
+                    "endif",
+
+                    "if {v:playerDir == 'left' && v:playerPos > 0}",
+                        "set playerDir = 'left'",
+                        "set playerPos = v:playerPos - 1",
+                    "endif",
+
+                    "if {v:playerDir == '[[QUIT]]'}",
+                        "endprog",
+                    "endif",
+
+                    "set field = ''",
+                "endloop",
                 "endprog"
             ] },
         ],
@@ -677,8 +718,7 @@ function sendCommand(command, args, createEditableLineAfter){
                     createTerminalLine(formatted.errors[0], config.errorText);
                     createEditableTerminalLine(`${config.currentPath}>`);
                 } else {
-                    
-                    // END OF INTERPRETER FUNCTION =============
+                    // interpret the formatted code
                     interpreter(formatted);
                 }
             }

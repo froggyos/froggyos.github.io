@@ -66,7 +66,7 @@ out 'more text'
 out "i can put a v:variable inside a string"
 ```
 
-## Variable
+## Variables
 ### Create a Variable
 ```
 str [variable_name] = [value]
@@ -95,7 +95,15 @@ free v:[variable_name]
 
 free v:test
 ```
+## String Manipulation
+### Append
+```
+append [variable] [value]
 
+append test 'ing'
+append test "ing"
+append test v:variable
+```
 ## User input
 ### Define a File Argument
 ```

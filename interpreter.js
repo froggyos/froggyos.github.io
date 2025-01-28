@@ -22,6 +22,32 @@ function interpreter(formatted){
         }
 
         switch(command){
+            case "append": {
+                let variable = line.args.variable;
+                let value = line.args.value;
+
+                if(variable == undefined || value == undefined){
+                    endProgram(`Invalid "append" syntax.`);
+                    break;
+                }
+
+                if(variables["v:" + variable] == undefined){
+                    endProgram(`Variable "${variable}" does not exist.`);
+                    break;
+                }
+
+                if(variables["v:" + variable].type != "str"){
+                    endProgram(`Variable "${variable}" must be of type str.`);
+                    break;
+                }
+
+                for(let variable in variables){
+                    value = value.replaceAll(new RegExp(`\\b${variable}\\b`, 'g'), variables[variable].value);
+                }
+
+                variables["v:" + variable].value += value;
+                parseNext();
+            } break;
             case "free": {
                 let variable = line.args.variable;
                 if(variable == undefined){
@@ -364,14 +390,9 @@ function interpreter(formatted){
                     break;
                 }
         
-                let varType = undefined;
                 for(let variable in variables){
                     if(condition.includes(variable)){
-                        if(varType == undefined) varType = variables[variable].type;
-                        if(varType != variables[variable].type && varType != undefined){
-                            endProgram(`Type mismatch in condition statement.`);
-                            break;
-                        }
+                        let varType = variables[variable].type;
                         condition = condition.replaceAll(new RegExp(`\\b${variable}\\b`, 'g'), `¶v¬${varType}¦${variables[variable].value}¶v¬${varType}¦`);
                     }
                 }

@@ -234,5 +234,17 @@ function format(input) {
         }
     });
 
+    // append keyword
+    formatted.lines.forEach((line) => {
+        if (line.command === "append") {
+            let input = line.args.splice(1).join(" ");
+
+            line.args = {
+                variable: line.args[0],
+                value: input
+            };
+        }
+    });
+
     return formatted;
 }
