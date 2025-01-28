@@ -59,34 +59,19 @@ const config = {
                 "endprog",
             ] },
             { name: "test", permissions: {read: true, write: true, hidden: false}, data: [
-                "func test",
-                "out 'Hello, world!'",
-                //"f: test",
-                "endfunc",
-                // "f: test",
-                // "int i = 5000",
-                // "out 'before'",
-                // "wait v:i",
-                // "out 'after'",
-
                 "int i = 0",
-                "str direction = ''",
+                "str direction = '#'",
+                "clearterminal",
                 "loop { v:i < 1000000000000000000000000000000 }",
+                "out v:direction",
                 "out 'which direction?'",
-                "prompt direction left right",
-                "if { v:direction == 'left' }",
-                "out 'left!'",
-                "else",
-                "out 'right!'",
+                "prompt direction left right end_program",
+                "if {v:direction == 'end_program'}",
+                "endprog",
                 "endif",
                 "clearterminal",
+                "set i = v:i + 1",
                 "endloop",
-                //"set i = v:i + 1",
-                //"endloop",
-                // "loop { v:j > 0 }",
-                // "out 'v:j'",
-                // "set j = v:j - 1",
-                // "endloop",
 
                 // "str name = ''",
                 // "out 'Whats your name?'",
@@ -245,6 +230,18 @@ function cleanInnerQuotes(input) {
 
 function cleanQuotes(input){
     return input.replaceAll(/["']/g, '');
+}
+
+function evaluate(string){
+    try {
+        if(/`([^`\\]*(\\.[^`\\]*)*)`/g.test(string)){
+            throw new Error();
+        }
+        parsedString = new Function(`return (${string});`)();
+        return parsedString;
+    } catch (err) {
+        return null;
+    }
 }
 
 function sendCommand(command, args, createEditableLineAfter){
@@ -733,16 +730,6 @@ function sendCommand(command, args, createEditableLineAfter){
                                 config.showLoadingSpinner = false;
                             }
 
-                            function evaluate(string){
-                                let parsedString;
-                                try {
-                                    parsedString = new Function(`return (${string});`)();
-                                    return parsedString;
-                                } catch (err) {
-                                    return null;
-                                }
-                            }
-
                             switch(command){
                                 // FroggyScript interpreter =========================================================================================================================================
                                 case "clearterminal": // DOCUMENT! ==============================================================================
@@ -861,9 +848,6 @@ function sendCommand(command, args, createEditableLineAfter){
                                         terminalLineElement.appendChild(document.createTextNode(" "));
                                     }
 
-
-                                    let enterFailsafe = 0;
-
                                     function promptHandler(e){
                                         let options = document.querySelectorAll(`[data-program='cli-session-${config.programSession}-${cliPromptCount}']`);
                                         e.preventDefault();
@@ -880,15 +864,12 @@ function sendCommand(command, args, createEditableLineAfter){
                                             options[promptOptionNumber].classList.add('selected');
                                         }
 
-                                        if(e.key == "Enter"){ // BUG !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!================================================================= its required to press enter twice when the prompt is in a loop, figure out how to make the failsafe not required at all
+                                        if(e.key == "Enter"){
                                             e.preventDefault();
-                                            enterFailsafe++;
-                                            if(enterFailsafe > 1){
-                                                variables["v:" + variable].value = options[promptOptionNumber].textContent;
-                                                document.body.removeEventListener('keyup', promptHandler);
-                                                config.showLoadingSpinner = false;
-                                                parseNext();
-                                            }
+                                            variables["v:" + variable].value = options[promptOptionNumber].textContent;
+                                            document.body.removeEventListener('keyup', promptHandler);
+                                            config.showLoadingSpinner = false;
+                                            parseNext();
 
                                         }
                                     };
@@ -1265,7 +1246,15 @@ function createEditableTerminalLine(path){
     terminalLine.textContent = "";
 
     terminalLine.addEventListener('keydown', function(e){
+        if(e.key == "Enter"){
+            e.preventDefault();
+        }
+    });
+
+    terminalLine.addEventListener('keyup', function(e){
         let userInput = terminalLine.textContent;
+        
+        e.stopImmediatePropagation();
         if(e.key == "Enter"){
             e.preventDefault();
             terminalLine.setAttribute('contenteditable', 'false');
@@ -1355,7 +1344,13 @@ function createLilypadLine(linetype, path, filename){
         if(e.key == "Backspace"){
             if(terminalLine.textContent.length == 0) {
                 let lines = document.querySelectorAll(`[data-program='lilypad-session-${config.programSession}']`);
-                if(lines.length > 1){
+                let currentLineIndex = Array.from(lines).indexOf(document.activeElement);
+                if(lines.length > 1 && currentLineIndex != 0){
+                    if(currentLineIndex == 0){
+                        let nextLine = lines[currentLineIndex + 1];
+                        moveCaretToEnd(nextLine);
+
+                    }
                     let parent = document.activeElement.parentElement;
 
                     let previousLine = parent.previousElementSibling.children[1];
@@ -1363,7 +1358,6 @@ function createLilypadLine(linetype, path, filename){
 
                     moveCaretToEnd(previousLine);
                     parent.remove();
-
                 }
             }
         };

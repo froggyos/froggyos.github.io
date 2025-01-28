@@ -50,6 +50,10 @@ wait [time in milliseconds]
 wait 1000
 wait v:number
 ```
+### Clear Screen
+```
+clearterminal
+```
 
 ## Output
 ```
