@@ -181,4 +181,15 @@ loop {v:i < 5}
     out v:i
     set i = v:i + 1
 endloop
+
+int i = 0
+int j = 0
+loop { v:i < 5 }
+    loop { v:j < 4 }
+        out v:i * v:j
+        set j = v:j + 1
+    endloop
+    set i = v:i + 1
+    set j = 0
+endloop
 ```

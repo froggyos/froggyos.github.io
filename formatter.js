@@ -8,7 +8,7 @@ function format(input) {
     };
     
     const disallowedVariableNames = [
-        "int", "str", "set", "out", "func", "endfunc", "f:", "label", "goto", "if", "endif", "and", "or", "not", "true", "false", "else"
+        //"int", "str", "set", "out", "func", "endfunc", "f:", "label", "goto", "if", "endif", "and", "or", "not", "true", "false", "else"
     ]
 
     // for each index in input, if it equals "endloop", insert "wait 0" before it
@@ -42,7 +42,7 @@ function format(input) {
 
     // file argument definitions
     formatted.lines.forEach((line) => {
-        if (line.command === "define") {
+        if (line.command === "filearg") {
             line.args = {
                 type: line.command,
                 name: line.args[0],
