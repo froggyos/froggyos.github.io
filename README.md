@@ -101,7 +101,7 @@ free v:test
 append [variable] [value]
 
 append test 'ing'
-append test "ing"
+append test "er"
 append test v:variable
 ```
 ## User input
@@ -138,7 +138,10 @@ C:/Home> st [program_name]
 ```
 ### User Input with Navigable Options
 ```
-==================================== do this lol
+prompt [default highlighted option] [variable] [...options]
+
+prompt 0 output 1 2 3 4
+prompt highlightedOption outputVariable the_options cannot_have spaces_in them
 ```
 ## Functions
 ### Create a Function

@@ -127,10 +127,14 @@ function interpreter(formatted){
             } break;
             case "prompt": {
                 let options = line.args.output;
-                let selectedOptionNumber = line.args.selectedOption;
+                let selectedOption = line.args.selectedOption;
                 let variable = line.args.variable;
 
                 if(options == undefined || options == ''){
+                    endProgram(`Invalid "prompt" syntax.`);
+                    break;
+                }
+                if(selectedOption == undefined || selectedOption == ''){
                     endProgram(`Invalid "prompt" syntax.`);
                     break;
                 }
@@ -138,38 +142,45 @@ function interpreter(formatted){
                     endProgram(`Invalid "prompt" syntax.`);
                     break;
                 }
-                if(selectedOptionNumber == undefined || selectedOptionNumber == ''){
-                    endProgram(`Invalid "prompt" syntax.`);
+
+
+
+                // check if variable is a valid variable
+                if(variables["v:" + variable] == undefined){
+                    endProgram(`Variable "${variable}" does not exist.`);
                     break;
                 }
-                for(let variable in variables){
-                    selectedOptionNumber = selectedOptionNumber.replaceAll(/v:(\w+)/g, (match, variable) => {
-                        if(variables["v:" + variable] == undefined){
-                            endProgram(`Variable "${variable}" does not exist.`);
-                            return;
-                        }
-                        console.log(variables["v:" + variable].value);
-                        return variables["v:" + variable].value;
-                    });
-                }
 
-                console.log(selectedOptionNumber);
-
-
-                // go through each variable and each option, if an option is a variable, replace it with the variable value
-                for(let variable in variables){
-                    options = options.map(option => {
-                        if(option.includes(variable)){
-                            return option.replaceAll(new RegExp(`\\b${variable}\\b`, 'g'), variables[variable].value);
-                        }
-                        return option;
-                    })
+                if(variables["v:" + variable].type != "str"){
+                    endProgram(`Variable "${variable}" must be of type str.`);
+                    break;
                 }
 
 
-                // BUG!!!!!!!!!!!!!!!!!!!!!! ========================================== random shit with this stuff here gotta fix gotta fix!!!!!!!!
+
+                let selectedIndex = 0;
+
+                if(typeof +selectedOption == "number" && !isNaN(+selectedOption)){
+                    selectedIndex = +selectedOption;
+                } else {
+                    if(variables["v:" + selectedOption] == undefined){
+                        endProgram(`Variable "${selectedOption}" does not exist.`);
+                        break;
+                    }
+                    if(variables["v:" + selectedOption].type != "int"){
+                        endProgram(`Variable "${selectedOption}" must be of type int.`);
+                        break;
+                    }
+                    selectedIndex = variables["v:" + selectedOption].value;
+                }
+
+
+                if(selectedIndex < 0 || selectedIndex >= options.length){
+                    endProgram(`Selected option is out of range.`);
+                    break;
+                }
+
                 
-                let promptOptionNumber = selectedOptionNumber - 1;
 
                 cliPromptCount++;
 
@@ -185,7 +196,7 @@ function interpreter(formatted){
                     let option = document.createElement('span');
                     option.setAttribute("data-program", `cli-session-${config.programSession}-${cliPromptCount}`);
                     option.textContent = options[i];
-                    if(i == promptOptionNumber) {
+                    if(i == selectedIndex) {
                         option.classList.add('selected');
                     }
                     option.style.paddingLeft = 0;
@@ -198,20 +209,20 @@ function interpreter(formatted){
                     e.preventDefault();
 
                     if(e.key == "ArrowLeft"){
-                        if(promptOptionNumber > 0) promptOptionNumber--;
+                        if(selectedIndex > 0) selectedIndex--;
                         options.forEach(option => option.classList.remove('selected'));
-                        options[promptOptionNumber].classList.add('selected');
+                        options[selectedIndex].classList.add('selected');
                     }
 
                     if(e.key == "ArrowRight"){
-                        if(promptOptionNumber < options.length - 1) promptOptionNumber++;
+                        if(selectedIndex < options.length - 1) selectedIndex++;
                         options.forEach(option => option.classList.remove('selected'));
-                        options[promptOptionNumber].classList.add('selected');
+                        options[selectedIndex].classList.add('selected');
                     }
 
                     if(e.key == "Enter"){
                         e.preventDefault();
-                        variables["v:" + variable].value = options[promptOptionNumber].textContent;
+                        variables["v:" + variable].value = options[selectedIndex].textContent;
                         document.body.removeEventListener('keyup', promptHandler);
                         config.showLoadingSpinner = false;
                         parseNext();
