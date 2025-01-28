@@ -732,7 +732,7 @@ function sendCommand(command, args, createEditableLineAfter){
 
                             switch(command){
                                 // FroggyScript interpreter =========================================================================================================================================
-                                case "clearterminal": // DOCUMENT! ==============================================================================
+                                case "clearterminal":
                                     sendCommand("cl", [], false);
                                     parseNext();
                                 break;
