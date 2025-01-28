@@ -86,6 +86,7 @@ set [variable_name] = [value]
 set test = 5
 set test = 'text'
 set test = "many word"
+set i = v:i + 1
 ```
 
 ### Delete a Variable

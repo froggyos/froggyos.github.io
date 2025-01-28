@@ -60,17 +60,6 @@ const config = {
                 "endprog",
             ] },
             { name: "test", permissions: {read: true, write: true, hidden: false}, data: [
-                "int i = 0",
-                "int j = 0",
-                "out v:i",
-                "loop { v:i < 5 }",
-                "loop { v:j < 4 }",
-                "out 'v:i v:j'",
-                "set j = v:j + 1",
-                "endloop",
-                "set i = v:i + 1",
-                "set j = 0",
-                "endloop",
                 "endprog"
             ] },
         ],
@@ -760,7 +749,7 @@ function sendCommand(command, args, createEditableLineAfter){
                                     }, time);
                                     config.showLoadingSpinner = true;
                                 } break;
-                                case "endloop":
+                                case "endloop": {
                                     let loopCondition = formatted.lines[line.args.startOfLoop].args.condition;
 
                                     if(loopCondition.includes("v:")){
@@ -789,8 +778,8 @@ function sendCommand(command, args, createEditableLineAfter){
                                         config.showLoadingSpinner = false;
                                         parseNext();
                                     }
-                                break;
-                                case "prompt":
+                                } break;
+                                case "prompt": {
                                     let options = line.args.output;
                                     let variable = line.args.variable;
 
@@ -872,7 +861,7 @@ function sendCommand(command, args, createEditableLineAfter){
                                     terminal.appendChild(terminalLineElement);
                                     config.showLoadingSpinner = true;
                                     // PAUSE HERE
-                                break;
+                                } break;
                                 case "ask":
                                     if (!line.args || !line.args.variable) {
                                         endProgram(`Invalid "ask" syntax.`);
@@ -1327,7 +1316,6 @@ function createLilypadLine(linetype, path, filename){
         if(e.key == "Enter"){
             e.preventDefault();
             if(linetype == "code"){
-                // get the number of lines in the lilypad session
                 let lines = document.querySelectorAll(`[data-program='lilypad-session-${config.programSession}']`);
                 let lineNumber = String(+lines[lines.length - 1].previousElementSibling.textContent+1).padStart(3, '0');
                 createLilypadLine("code", lineNumber, filename);
