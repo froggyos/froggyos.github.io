@@ -127,6 +127,7 @@ function interpreter(formatted){
             } break;
             case "prompt": {
                 let options = line.args.output;
+                let selectedOptionNumber = line.args.selectedOption;
                 let variable = line.args.variable;
 
                 if(options == undefined || options == ''){
@@ -137,11 +138,23 @@ function interpreter(formatted){
                     endProgram(`Invalid "prompt" syntax.`);
                     break;
                 }
-
-                if(variables["v:" + variable] == undefined){
-                    endProgram(`Variable "${variable}" does not exist.`);
+                if(selectedOptionNumber == undefined || selectedOptionNumber == ''){
+                    endProgram(`Invalid "prompt" syntax.`);
                     break;
                 }
+                for(let variable in variables){
+                    selectedOptionNumber = selectedOptionNumber.replaceAll(/v:(\w+)/g, (match, variable) => {
+                        if(variables["v:" + variable] == undefined){
+                            endProgram(`Variable "${variable}" does not exist.`);
+                            return;
+                        }
+                        console.log(variables["v:" + variable].value);
+                        return variables["v:" + variable].value;
+                    });
+                }
+
+                console.log(selectedOptionNumber);
+
 
                 // go through each variable and each option, if an option is a variable, replace it with the variable value
                 for(let variable in variables){
@@ -153,6 +166,11 @@ function interpreter(formatted){
                     })
                 }
 
+
+                // BUG!!!!!!!!!!!!!!!!!!!!!! ========================================== random shit with this stuff here gotta fix gotta fix!!!!!!!!
+                
+                let promptOptionNumber = selectedOptionNumber - 1;
+
                 cliPromptCount++;
 
                 let terminalLineElement = document.createElement('div');
@@ -163,13 +181,11 @@ function interpreter(formatted){
 
                 terminalLineElement.appendChild(spanElement);
 
-                let promptOptionNumber = 0;
-
                 for(let i = 0; i < options.length; i++){
                     let option = document.createElement('span');
                     option.setAttribute("data-program", `cli-session-${config.programSession}-${cliPromptCount}`);
                     option.textContent = options[i];
-                    if(i == 0) {
+                    if(i == promptOptionNumber) {
                         option.classList.add('selected');
                     }
                     option.style.paddingLeft = 0;

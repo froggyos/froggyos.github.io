@@ -19,6 +19,10 @@ function format(input) {
         }
     }
 
+    input.forEach((line, i) => {
+        input[i] = line.trim();
+    });
+
     // Parse lines into command objects
     input.forEach((line) => {
         let [command, ...args] = line.split(" ");
@@ -152,11 +156,12 @@ function format(input) {
     // prompt
     formatted.lines.forEach((line) => {
         if (line.command === "prompt") {
-            // prompt [variable] [output]
-            let variable = line.args[0];
-            let output = line.args.slice(1);
+            let selectedOption = line.args[0];
+            let variable = line.args[1];
+            let output = line.args.slice(2);
             line.args = {
                 variable: variable,
+                selectedOption: selectedOption,
                 output: output
             }
         }

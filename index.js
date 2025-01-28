@@ -1,3 +1,4 @@
+//new AllSniffer({timerOptions: {intervalIDsToExclude: [2]}});
 const config = {
     version: "1.4",
     currentPath: 'C:/Home',
@@ -59,49 +60,83 @@ const config = {
                 "endif",
                 "endprog",
             ] },
+            { name: "test", permissions: {read: true, write: true, hidden: false}, data: [
+                "int promptOptionNumber = -1",
+                "str promptOption = ''",
+                "loop { true }",
+                "    out 'Choose an option: '",
+                "    prompt v:promptOptionNumber promptOption uno два three",
+                "    if {v:promptOption == 'uno'}",
+                "        out 'You chose uno'",
+                "        set promptOptionNumber = 1",
+                "    endif",
+                "    if {v:promptOption == 'два'}",
+                "        out 'You chose два'",
+                "        set promptOptionNumber = 2",
+                "    endif",
+                "    if {v:promptOption == 'three'}",
+                "        out 'You chose three'",
+                "        set promptOptionNumber = 3",
+                "    endif",
+                "endloop",
+
+
+            ] },
             { name: "demo", permissions: {read: true, write: true, hidden: false}, data: [
                 "str field = ''",
                 "int fieldIncrement = 0",
                 "int playerPos = 0",
-                "str playerDir = 'right'",
+                "str playerAction = 'right'",
+                "int promptOptionNumber = 0",
 
-                "str fieldBackground = '#'",
+                "str fieldBackground = '.'",
                 "str playerChar = '^-^'",
+
+                "str quitConfirm = ''",
 
 
                 "loop { true }",
-                    "loop {v:fieldIncrement < 60}",
-                        "if {v:fieldIncrement == v:playerPos}",
-                            "append field v:playerChar",
-                        "else",
-                            "append field v:fieldBackground",
-                        "endif",
-                        "set fieldIncrement = v:fieldIncrement + 1",
-                    "endloop",
-                    "clearterminal",
+                "    -- field generation",
+                "    loop {v:fieldIncrement < 60}",
+                "        if {v:fieldIncrement == v:playerPos}",
+                "            append field v:playerChar",
+                "        else",
+                "            append field v:fieldBackground",
+                "        endif",
+                "        set fieldIncrement = v:fieldIncrement + 1",
+                "    endloop",
+                "    clearterminal",
 
-                    "out v:field",
+                "    out v:field",
+                "    out ''",
 
-                    "set fieldIncrement = 0",
+                "    set fieldIncrement = 0",
 
-                    "prompt playerDir left right [[QUIT]]",
-                    "if {v:playerDir == 'right' && v:playerPos < 59}",
-                        "set playerDir = 'right'",
-                        "set playerPos = v:playerPos + 1",
-                    "endif",
+                "    prompt v:promptOptionNumber playerAction left right attackLeft attackRight [[QUIT]]",
+                "    if {v:playerAction == 'right' && v:playerPos < 59}",
+                "        set playerAction = 'right'",
+                "        set playerPos = v:playerPos + 1",
+                "        set promptOptionNumber = 2",
+                "    endif",
 
-                    "if {v:playerDir == 'left' && v:playerPos > 0}",
-                        "set playerDir = 'left'",
-                        "set playerPos = v:playerPos - 1",
-                    "endif",
+                "    if {v:playerAction == 'left' && v:playerPos > 0}",
+                "        set playerAction = 'left'",
+                "        set playerPos = v:playerPos - 1",
+                "        set promptOptionNumber = 1",
+                "    endif",
 
-                    "if {v:playerDir == '[[QUIT]]'}",
-                        "endprog",
-                    "endif",
+                "    if {v:playerAction == '[[QUIT]]'}",
+                "        out 'Are you sure you want to quit?'",
+                "        prompt quitConfirm no yes",
+                "        if {v:quitConfirm == 'yes'}",
+                "            clearterminal",
+                "            endprog",
+                "        endif",
+                "        set quitConfirm = ''",
+                "    endif",
 
-                    "set field = ''",
+                "    set field = ''",
                 "endloop",
-                "endprog"
             ] },
         ],
     }
@@ -974,7 +1009,8 @@ function createLilypadLine(linetype, path, filename){
                     config.showLoadingSpinner = false;
                     createTerminalLine(`Done! ^v^`, ">");
                     createEditableTerminalLine(`${config.currentPath}>`);
-                }, dataLength * 10);
+                    config.programSession++;
+                }, dataLength * 2);
                 
             }
         }
@@ -988,7 +1024,7 @@ function createLilypadLine(linetype, path, filename){
     let lines = document.querySelectorAll(`[data-program='lilypad-session-${config.programSession}']`);
 
     if(lines.length == 0) terminal.appendChild(lineContainer);
-    else focusedLine.parentElement.parentNode.insertBefore(lineContainer, focusedLine.parentElement.nextSibling);
+    else terminal.insertBefore(lineContainer, focusedLine.parentElement.nextSibling);
 
     terminal.scrollTop = terminal.scrollHeight;
     terminalLine.focus();
