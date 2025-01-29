@@ -26,11 +26,6 @@ function interpreter(formatted){
                 let variable = line.args.variable;
                 let value = line.args.value;
 
-                if(variable == undefined || value == undefined){
-                    endProgram(`Invalid "append" syntax.`);
-                    break;
-                }
-
                 if(variables["v:" + variable] == undefined){
                     endProgram(`Variable "${variable}" does not exist.`);
                     break;

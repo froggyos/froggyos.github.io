@@ -35,13 +35,15 @@ Operators:
 * All JavaScript operators are valid
 
 ## General Utilities
-### End Program
+### End the Program
+If this isn't called anywhere, once execution reaches the end of the file, froggyOS **will** brick itself. I could make it *not* do that, but that would be boring.
 ```
 endprog
 ```
 ### Comments
 ```
--- comment
+you can just write if it doesnt start with a keyword
+-- or you can (and are recommended to) use the comment keyword just to be safe
 ```
 ### Wait
 ```
@@ -100,8 +102,10 @@ free v:test
 ```
 append [variable] [value]
 
-append test 'ing'
-append test "er"
+append test ing
+append test ing the append keyword
+append test ' ing it some more'
+append test "AND MORE"
 append test v:variable
 ```
 ## User input
@@ -162,7 +166,7 @@ f: name
 ```
 
 ## Control Flow
-### If Statements
+### If Statement
 ```
 if {[condition]}
     [code]
@@ -189,8 +193,7 @@ else
 endif
 ```
 
-### Loops
-There may be a maximum loop count of 543.
+### Loop
 ```
 loop {[condition]}
     [code]

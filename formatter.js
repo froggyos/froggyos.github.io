@@ -33,9 +33,6 @@ function format(input) {
     formatted.lines.forEach((line) => {
         if (line.command === "int" || line.command === "str") {
             let value = line.args.slice(2).join(" ");
-            if(disallowedVariableNames.includes(line.args[0])){
-                formatted.errors.push(`Variable name "${line.args[0]}" is not allowed.`);
-            }
             line.args = {
                 type: line.command,
                 name: line.args[0],
@@ -83,7 +80,7 @@ function format(input) {
             let failsafe = 0;
 
             if(formatted.functions[functionName] !== undefined){
-                formatted.errors.push(`Function "${functionName}" already exists.`);
+                formatted.errors.push(`FormatError: Function "${functionName}" already exists.`);
                 break;
             }
 
@@ -93,7 +90,7 @@ function format(input) {
                 failsafe++;
                 
                 if(failsafe > formatted.lines.length){
-                    formatted.errors.push(`Function "${functionName}" is not closed.`);
+                    formatted.errors.push(`FormatError: Function "${functionName}" is not closed.`);
                     break;
                 }
             }
@@ -115,7 +112,7 @@ function format(input) {
                 formatted.lines.splice(i, 1, ...functionBody);
                 i += functionBody.length - 1;
             } else {
-                formatted.errors.push(`Function "${functionName}" not defined.`);
+                formatted.errors.push(`FormatError: Function "${functionName}" not defined.`);
             }
         }
     }
@@ -210,7 +207,7 @@ function format(input) {
                     startOfLoop: loopIndex,
                 };
             } else {
-                formatted.errors.push(`No matching "loop" found for "endloop".`);
+                formatted.errors.push(`FormatError: No matching "loop" found for "endloop".`);
             }
         }
     });
@@ -243,6 +240,15 @@ function format(input) {
     formatted.lines.forEach((line) => {
         if (line.command === "append") {
             let input = line.args.splice(1).join(" ");
+
+            // make sure variable is present
+            if (line.args[0] === undefined) {
+                formatted.errors.push(`FormatError: Missing variable for "append" keyword.`);
+            }
+
+            if (input === "") {
+                formatted.errors.push(`FormatError: Missing input for "append" keyword.`);
+            }
 
             line.args = {
                 variable: line.args[0],
