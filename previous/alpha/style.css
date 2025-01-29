@@ -40,8 +40,43 @@ body {
     color: #FFFFFF;
 }
 
-.path {
-    font-size: 8px;
+#terminal {
+    width: 100%;
+    height: calc(100% - 20px);
+    background-color: #FFFFFF;
+    color: #FF5555;
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
+    box-sizing: border-box;
     font-family: "Press Start 2P", serif;
+    font-size: 8px;
+    overflow-y: auto;
+}
+
+.output {
+    flex-grow: 1;
+    margin-bottom: 10px;
+}
+
+.path {
+    color: #00AA00;
+    font-size: 8px;
+}
+
+#cursor {
+    display: inline;
+    color: #00AA00;
+    border-right: 2px solid #FFFFFF;
+    padding: 0 2px;
+    white-space: nowrap;
+}
+
+#cursor:focus {
+    outline: none;
+}
+
+#cursor:empty:before {
+    content: "_";
     color: #00AA00;
 }
