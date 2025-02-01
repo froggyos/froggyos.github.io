@@ -1,7 +1,8 @@
-# Things to Know About froggyOS
+# Things to know about froggyOS
 
  * in paths, `.` will be replaced with the current directory
  * programs can *only* be written in designated directories
+ * for the `hop` command, `~` will be replaced with the root directory ("C:"), and `-` will be replaced with the previous directory
 
 # Aliases
 
@@ -20,24 +21,6 @@
  * spawn -> s
  * swimto -> st
 
-# Command Help That froggyOS Doesn't Tell You
-
-## formattime
-The first instance of the follow characters will be replaced with their respective values. Place a "!" before the character to escape it.
- * w - weekday
- * d - day
- * M - month
- * y - year
- * h - hour (24 hour)
- * H - hour (12 hour)
- * m - minute
- * s - second
- * a - AM/PM
-
-## hop
- * `hop ~` will take you to the root directory
- * `hop -` will take you to the previous directory
-
 # Macros
 
  * Macros are written in the `C:/Macros` directory
@@ -45,7 +28,7 @@ The first instance of the follow characters will be replaced with their respecti
  * to add an alias to a macro, the **first** line must be `![alias]`. You can add only one alias per macro.
  * to use file arguments inside of a macro, use `$[file argument number]`
 
-# FroggyScript Documentation
+# FroggyScript documentation
 **Note: spaces are part of syntax, and must be used as shown**
 
 Operators:

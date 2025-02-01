@@ -1,27 +1,13 @@
 <!--mrjuice43, Rus1130, 2025/01/10-->
 <style>
-    :root {
-        --void-space: var(--black);
-        --bar-background: var(--blue);
-        --terminal-background: var(--white);
-        --terminal-text: var(--green);
-        --selection-background: var(--green);
-        --selection-text: var(--white);
-        --error-background: var(--lRed);
-        --error-text: var(--white);
-        --prompt-selected-background: var(--green);
-        --prompt-selected-text: var(--white);
-    }
-
     * {
         font-variant-ligatures: none;
         font-family: "Press Start 2P", serif;
         font-size: 8px;
-        cursor: none;
     }
 
     body {
-        background-color: var(--void-space);
+        background-color: #000000;
         margin: 0;
         padding: 0;
         display: flex;
@@ -33,7 +19,7 @@
     #screen {
         width: 640px;
         height: 480px;
-        background-color: var(--terminal-background);
+        background-color: #FFFFFF;
         display: flex;
         flex-direction: column;
         justify-content: flex-start;
@@ -43,7 +29,7 @@
     }
 
     #bar {
-        background-color: var(--bar-background);
+        background-color: #0000AA;
         height: 10px;
         width: 100%;
         display: flex;
@@ -62,12 +48,13 @@
     #terminal {
         width: 100%;
         height: calc(100% - 20px);
-        background-color: var(--terminal-background);
+        background-color: #FFFFFF;
         display: flex;
         flex-direction: column;
         padding: 4px;
         box-sizing: border-box;
         font-size: 8px;
+        cursor: none;
         overflow-y: auto;
         scrollbar-width: none;
         padding-bottom: 0px;
@@ -77,7 +64,7 @@
     .line-container {
         display: flex;
         flex-direction: row;
-        color: var(--terminal-text);
+        color: #00AA00;
         font-size: 8px;
         outline: none;
         text-decoration: none;
@@ -97,13 +84,13 @@
     }
 
     ::selection {
-        background-color: var(--selection-background);
-        color: var(--selection-text);
+        background-color: #00AA00;
+        color: #FFFFFF;
     }
 
     .selected {
-        background-color: var(--prompt-selected-background);
-        color: var(--prompt-selected-text);
+        background-color: #00AA00;
+        color: #FFFFFF;
     }
 </style>
 <head>

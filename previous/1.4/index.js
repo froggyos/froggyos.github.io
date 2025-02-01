@@ -1,19 +1,18 @@
 //new AllSniffer({timerOptions: {intervalIDsToExclude: [2]}});
 const config = {
-    version: "1.5",
-    colorPalette: "standard",
+    version: "1.4",
     currentPath: 'C:/Home',
     commandHistory: [],
     commandHistoryIndex: -1,
     showLoadingSpinner: false,
-    timeFormat: 'w. y/M/d h:m:s',
+    timeFormat: 'w. y/m/d h:n:s',
     updateStatBar: true,
     currentProgram: null, // do something with this later
     programList: ["cli", "lilypad"],
-    allowedProgramDirectories: ["C:/Programs"],
-    dissallowSubdirectoriesIn: ["C:/Programs", "C:/Macros"],
+    allowedProgramDirectories: ["C:/Programs", "C:/Demo-Programs"],
+    dissallowSubdirectoriesIn: ["C:/Programs", "C:/Demo-Programs", "C:/Macros"],
     programSession: 0,
-    errorText: "<span style='background-color: var(--error-background); color: var(--error-text);'>!!ERROR!!</span> - ",
+    errorText: "<span style='background-color: #FF5555; color: #FFFFFF;'>!!ERROR!!</span> - ",
     fileSystem: {
         "C:": [], 
         "C:/Home": [
@@ -131,196 +130,17 @@ const config = {
     }
 };
 
-const colorPalettes = {
-    // standard and revised palettes:  https://int10h.org/blog/2022/06/ibm-5153-color-true-cga-palette/
-    standard: {
-        black: "#000000",
-        blue: "#0000AA",
-        green: "#00AA00",
-        cyan: "#00AAAA",
-        red: "#AA0000",
-        magenta: "#AA00AA",
-        orange: "#AA5500",
-        lGrey: "#AAAAAA",
-        dGrey: "#555555",
-        lBlue: "#5555FF",
-        lGreen: "#55FF55",
-        lCyan: "#55FFFF",
-        lRed: "#FF5555",
-        lMagenta: "#FF55FF",
-        lOrange: "#FFFF55",
-        white: "#FFFFFF",
-    },
-    revised: {
-        black: "#000000",
-        blue: "#0000C4",
-        green: "#00C400",
-        cyan: "#00C4C4",
-        red: "#C40000",
-        magenta: "#C400C4",
-        orange: "#C47E00",
-        lGrey: "#C4C4C4",
-        dGrey: "#4E4E4E",
-        lBlue: "#4E4EDC",
-        lGreen: "#4EDC4E",
-        lCyan: "#4EF3F3",
-        lRed: "#DC4E4E",
-        lMagenta: "#F34EF3",
-        lOrange: "#F3F34E",
-        white: "#FFFFFF",
-    },
-    cherry: {
-        black: "#000000",
-        blue: "#1C219F",
-        green: "#348847",
-        cyan: "#17ABAE",
-        red: "#831326",
-        magenta: "#980C6C",
-        orange: "#BC3517",
-        lGrey: "#C2C5C6",
-        dGrey: "#464C50",
-        lBlue: "#5790E4",
-        lGreen: "#B7EA8A",
-        lCyan: "#68DCCD",
-        lRed: "#E48579",
-        lMagenta: "#D97BC7",
-        lOrange: "#FF9F58",
-        white: "#FFFFFF",
-    }
-}
+const FROGGY_GREEN = "#00FF00";
 
 let screen = document.getElementById('screen');
 let terminal = document.getElementById('terminal');
 
-document.body.onclick = function() {
+screen.onclick = function() {
     try {
         terminal.lastChild.lastChild.focus();
     } catch (err) { };
 }
 
-const loadingSpinnerAnimFrames = ['-', '\\', '|', '/'];
-let loadingSpinnerIndex = 0;
-
-function updateDateTime() {
-    if(!config.updateStatBar) return;
-    const now = new Date();
-
-    // Grab the current weekday.
-    const dayOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][now.getDay()];  // Grab the live day of the week.
-    const year = now.getFullYear(); // Year
-    const month = String(now.getMonth() + 1).padStart(2, '0'); // Month
-    const day = String(now.getDate()).padStart(2, '0'); // Day
-    const hour24 = String(now.getHours()).padStart(2, '0'); // Hour in 24-hour format
-    const hour12 = String((now.getHours() + 11) % 12 + 1).padStart(2, '0'); // Hour in 12-hour format
-    const minute = String(now.getMinutes()).padStart(2, '0'); // Minutes
-    const second = String(now.getSeconds()).padStart(2, '0'); // Seconds
-    const ampm = now.getHours() >= 12 ? 'PM' : 'AM'; // AM or PM
-
-    let dateTemplate = config.timeFormat;
-    dateTemplate = dateTemplate.replace('w', '###w###');
-    dateTemplate = dateTemplate.replace('y', '###y###');
-    dateTemplate = dateTemplate.replace('M', '###M###');
-    dateTemplate = dateTemplate.replace('d', '###d###');
-    dateTemplate = dateTemplate.replace('h', '###h###');
-    dateTemplate = dateTemplate.replace('H', '###H###');
-    dateTemplate = dateTemplate.replace('m', '###m###');
-    dateTemplate = dateTemplate.replace('s', '###s###');
-    dateTemplate = dateTemplate.replace('a', '###a###');
-
-    dateTemplate = dateTemplate.replace('!###y###', 'y');
-    dateTemplate = dateTemplate.replace('!###M###', 'M');
-    dateTemplate = dateTemplate.replace('!###d###', 'd');
-    dateTemplate = dateTemplate.replace('!###h###', 'h');
-    dateTemplate = dateTemplate.replace('!###H###', 'H');
-    dateTemplate = dateTemplate.replace('!###m###', 'm');
-    dateTemplate = dateTemplate.replace('!###s###', 's');
-    dateTemplate = dateTemplate.replace('!###a###', 'a');
-    dateTemplate = dateTemplate.replace('!###w###', 'w');
-
-    dateTemplate = dateTemplate.replace('###y###', year);
-    dateTemplate = dateTemplate.replace('###M###', month);
-    dateTemplate = dateTemplate.replace('###d###', day);
-    dateTemplate = dateTemplate.replace('###h###', hour24);
-    dateTemplate = dateTemplate.replace('###H###', hour12);
-    dateTemplate = dateTemplate.replace('###m###', minute);
-    dateTemplate = dateTemplate.replace('###s###', second);
-    dateTemplate = dateTemplate.replace('###a###', ampm);
-    dateTemplate = dateTemplate.replace('###w###', dayOfWeek);
-
-    const dateString = dateTemplate;
-
-    if(!config.showLoadingSpinner) document.getElementById('bar').textContent = dateString.padEnd(79," ");
-    else {
-        document.getElementById('bar').textContent = dateString.padEnd(79," ").slice(0, -1) + loadingSpinnerAnimFrames[loadingSpinnerIndex % 4];
-        loadingSpinnerIndex++;
-    }
-}
-
-setInterval(updateDateTime, 100);
-updateDateTime();
-
-setInterval(function() {
-    let files = [];
-    for(let directory of config.allowedProgramDirectories){
-        if(config.fileSystem[directory] == undefined) continue;
-        // if the files havent changed, do not update the program list
-        if(config.fileSystem[directory].length == files.length && config.fileSystem[directory].every((file, index) => file.name == files[index])) continue;
-
-        files = files.concat(config.fileSystem[directory]);
-    }
-    files = files.map(file => file.name);
-    config.programList = files;
-}, 1000);
-
-function changeColorPalette(name){
-    let palette = colorPalettes[name];
-    for(let color in palette){
-        document.querySelector(':root').style.setProperty(`--${color}`, palette[color]);
-    }
-}
-
-function createColorTestBar(){
-    function getContrastYIQ(hexColor) {
-        if (!/^#([0-9A-F]{3}|[0-9A-F]{6})$/i.test(hexColor)) {
-            throw new Error("Invalid hex color code");
-        }
-        
-        if (hexColor.length === 4) {
-            hexColor = `#${hexColor[1]}${hexColor[1]}${hexColor[2]}${hexColor[2]}${hexColor[3]}${hexColor[3]}`;
-        }
-        
-        const r = parseInt(hexColor.slice(1, 3), 16);
-        const g = parseInt(hexColor.slice(3, 5), 16);
-        const b = parseInt(hexColor.slice(5, 7), 16);
-        
-        const yiq = (r * 299 + g * 587 + b * 114) / 1000;
-        
-        return yiq >= 128 ? "black" : "white";
-    }
-    let squareContainer = document.createElement('div');
-    squareContainer.style.position = "absolute";
-    squareContainer.style.top = "0px";
-    squareContainer.style.left = "0px";
-
-    for(let i = 0; i < Object.keys(colorPalettes[config.colorPalette]).length; i++){
-        let color = Object.keys(colorPalettes[config.colorPalette])[i];
-        let square = document.createElement('div');
-        let text = `<br><br><br><br><br><br>${color}<br>${colorPalettes[config.colorPalette][color].replace("#","")}`
-        square.innerHTML = text;
-
-        square.style.backgroundColor = `var(--${color})`;
-        square.style.color = `var(--${getContrastYIQ(colorPalettes[config.colorPalette][color])})`;
-        square.style.width = "48px";
-        square.style.height = "48px";
-        square.style.position = "absolute";
-        square.style.left = `${i * 48}px`;
-        square.style.fontSize = "6px";
-        squareContainer.appendChild(square);
-    }
-    document.body.appendChild(squareContainer);
-}
-
-// helper functions
 function moveCaretToEnd(element) {
     if (typeof window.getSelection !== "undefined" && typeof document.createRange !== "undefined") {
         const range = document.createRange();
@@ -343,6 +163,73 @@ function moveCaretToEnd(element) {
     }
 }
 
+const loadingSpinnerAnimFrames = ['-', '\\', '|', '/'];
+let loadingSpinnerIndex = 0;
+
+function updateDateTime() {
+    if(!config.updateStatBar) return;
+    const now = new Date();
+
+    // Grab the current weekday.
+    const dayOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][now.getDay()];  // Grab the live day of the week.
+    const year = now.getFullYear(); // Year
+    const month = String(now.getMonth() + 1).padStart(2, '0'); // Month
+    const day = String(now.getDate()).padStart(2, '0'); // Day
+    const hour = String(now.getHours()).padStart(2, '0'); // Hour in 24-hour format
+    const minute = String(now.getMinutes()).padStart(2, '0'); // Minutes
+    const second = String(now.getSeconds()).padStart(2, '0'); // Seconds
+
+    let dateTemplate = config.timeFormat;
+    dateTemplate = dateTemplate.replace('w', '###W###');
+    dateTemplate = dateTemplate.replace('y', '###Y###');
+    dateTemplate = dateTemplate.replace('m', '###M###');
+    dateTemplate = dateTemplate.replace('d', '###D###');
+    dateTemplate = dateTemplate.replace('h', '###H###');
+    dateTemplate = dateTemplate.replace('n', '###N###');
+    dateTemplate = dateTemplate.replace('s', '###S###');
+
+    dateTemplate = dateTemplate.replace('!###W###', 'w');
+    dateTemplate = dateTemplate.replace('!###Y###', 'y');
+    dateTemplate = dateTemplate.replace('!###M###', 'm');
+    dateTemplate = dateTemplate.replace('!###D###', 'd');
+    dateTemplate = dateTemplate.replace('!###H###', 'h');
+    dateTemplate = dateTemplate.replace('!###N###', 'n');
+    dateTemplate = dateTemplate.replace('!###S###', 's');
+
+    dateTemplate = dateTemplate.replace('###W###', dayOfWeek);
+    dateTemplate = dateTemplate.replace('###Y###', year);
+    dateTemplate = dateTemplate.replace('###M###', month);
+    dateTemplate = dateTemplate.replace('###D###', day);
+    dateTemplate = dateTemplate.replace('###H###', hour);
+    dateTemplate = dateTemplate.replace('###N###', minute);
+    dateTemplate = dateTemplate.replace('###S###', second);
+
+    const dateString = dateTemplate;
+
+    if(!config.showLoadingSpinner) document.getElementById('bar').textContent = dateString.padEnd(79," ");
+    else {
+        document.getElementById('bar').textContent = dateString.padEnd(79," ").slice(0, -1) + loadingSpinnerAnimFrames[loadingSpinnerIndex % 4];
+        loadingSpinnerIndex++;
+    }
+}
+
+setInterval(function() {
+    let files = [];
+    for(let directory of config.allowedProgramDirectories){
+        if(config.fileSystem[directory] == undefined) continue;
+        // if the files havent changed, do not update the program list
+        if(config.fileSystem[directory].length == files.length && config.fileSystem[directory].every((file, index) => file.name == files[index])) continue;
+
+        files = files.concat(config.fileSystem[directory]);
+    }
+    files = files.map(file => file.name);
+    config.programList = files;
+}, 1000);
+
+setInterval(updateDateTime, 100);
+updateDateTime();
+
+// Section 2: The terminal itself.
 function createTerminalLine(text, path){
     let lineContainer = document.createElement('div');
     let terminalPath = document.createElement('span');
@@ -405,24 +292,6 @@ function sendCommand(command, args, createEditableLineAfter){
         break;
 
         // commands =========================================================================================================================================================
-        // change color palette
-        case "changepalette": {
-            if(args.length == 0){
-                createTerminalLine("Please provide a color palette name.", config.errorText);
-                createTerminalLine(`* Available color palettes *`, "");
-                createTerminalLine(Object.keys(colorPalettes).join(", "), ">");
-                createEditableTerminalLine(`${config.currentPath}>`);
-                break;
-            }
-            if(colorPalettes[args[0]] == undefined){
-                createTerminalLine("Color palette does not exist.", config.errorText);
-                createEditableTerminalLine(`${config.currentPath}>`);
-                break;
-            }
-            changeColorPalette(args[0]);
-            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
-        } break;
-
         case "cl":
         case "clear":
             document.getElementById('terminal').innerHTML = "";
@@ -469,15 +338,28 @@ function sendCommand(command, args, createEditableLineAfter){
             createTerminalLine("File deleted.", ">")
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
+        
+        case "ribbit":
+            if(args.length == 0){
+                createTerminalLine("Please provide text to display.", config.errorText);
+                createEditableTerminalLine(`${config.currentPath}>`);
+                break;
+            }
+            createTerminalLine(args.join(" "), ">")
+            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+        break;
 
         case "ft":
         case "formattime":
             if(args.length == 0){
-                createTerminalLine("Please provide a time format.", config.errorText);
+                createTerminalLine("Please provide a time format. example time format below:", config.errorText);
+                createTerminalLine("w. y/m/d h:n:s", config.errorText);
+                createTerminalLine("If you want to include any of those key characters, prefix", config.errorText);
+                createTerminalLine("the character with !. Example: !w", config.errorText);
                 createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
-            if(args.join(" ").length > 59){
+            if(args.join(" ").length > 63){
                 createTerminalLine("The argument is too long.", config.errorText);
                 createEditableTerminalLine(`${config.currentPath}>`);
                 break;
@@ -524,7 +406,6 @@ function sendCommand(command, args, createEditableLineAfter){
         case "?":
         case "help":
             createTerminalLine("* A few basic froggyOS commands *", "");
-            createTerminalLine("changepalette [palette]. . . . Changes the color palette.", ">");
             createTerminalLine("clear. . . . . . . . . . . . . Clears the terminal output.", ">");
             createTerminalLine("clearstate . . . . . . . . . . Clears froggyOS state.", ">");
             createTerminalLine("croak [file] . . . . . . . . . Deletes the file.", ">");
@@ -617,7 +498,7 @@ function sendCommand(command, args, createEditableLineAfter){
         break;
 
         case "/":
-        case "macro": {
+        case "macro":
             if(args.length == 0){
                 createTerminalLine("Please provide a macro name.", config.errorText);
                 createTerminalLine(`* Available macros *`, "");
@@ -684,7 +565,7 @@ function sendCommand(command, args, createEditableLineAfter){
             });
 
             // if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
-        } break;
+        break;
 
         // edit file
         case "m":
@@ -763,16 +644,6 @@ function sendCommand(command, args, createEditableLineAfter){
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
 
-        case "ribbit":
-            if(args.length == 0){
-                createTerminalLine("Please provide text to display.", config.errorText);
-                createEditableTerminalLine(`${config.currentPath}>`);
-                break;
-            }
-            createTerminalLine(args.join(" "), ">")
-            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
-        break;
-
         // save state
         case "svs":
         case "savestate":
@@ -845,6 +716,7 @@ function sendCommand(command, args, createEditableLineAfter){
                 createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
+
 
             config.programSession++
             if(args[0] == "cli"){
@@ -1146,6 +1018,4 @@ function createLilypadLine(linetype, path, filename){
     terminalLine.focus();
 }
 
-changeColorPalette(config.colorPalette);
-createColorTestBar();
 sendCommand('[[FROGGY]]greeting', []);
