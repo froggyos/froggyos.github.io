@@ -161,7 +161,7 @@ C:/Home> st [program_name]
 ```
 prompt [default highlighted option] [variable] [...options]
 
-prompt 0 output 1 2 3 4
+prompt 0 output 0 1 2 3
 prompt highlightedOption outputVariable the_options cannot_have spaces_in them
 ```
 ## Functions

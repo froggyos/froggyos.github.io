@@ -45,10 +45,6 @@ function interpreter(formatted){
             } break;
             case "free": {
                 let variable = line.args.variable;
-                if(variable == undefined){
-                    endProgram(`Invalid "free" syntax.`);
-                    break;
-                }
                 if(variables[variable] == undefined){
                     endProgram(`Variable "${variable}" does not exist.`);
                     break;
@@ -62,10 +58,6 @@ function interpreter(formatted){
             } break;
             case "wait": {
                 let time = line.args.time;
-                if(time == undefined){
-                    endProgram(`Invalid "wait" syntax.`);
-                    break;
-                }
                 // check if its a variable, must be type int
                 if(time.includes("v:")){
                     time = time.replaceAll(/v:(\w+)/g, (match, variable) => {
@@ -82,6 +74,10 @@ function interpreter(formatted){
                 }
                 if(isNaN(time)){
                     endProgram(`Invalid time value.`);
+                    break;
+                }
+                if(time < 0){
+                    endProgram(`Time value cannot be negative.`);
                     break;
                 }
                 setTimeout(() => {
@@ -125,21 +121,6 @@ function interpreter(formatted){
                 let selectedOption = line.args.selectedOption;
                 let variable = line.args.variable;
 
-                if(options == undefined || options == ''){
-                    endProgram(`Invalid "prompt" syntax.`);
-                    break;
-                }
-                if(selectedOption == undefined || selectedOption == ''){
-                    endProgram(`Invalid "prompt" syntax.`);
-                    break;
-                }
-                if(variable == undefined || variable == ''){
-                    endProgram(`Invalid "prompt" syntax.`);
-                    break;
-                }
-
-
-
                 // check if variable is a valid variable
                 if(variables["v:" + variable] == undefined){
                     endProgram(`Variable "${variable}" does not exist.`);
@@ -151,10 +132,7 @@ function interpreter(formatted){
                     break;
                 }
 
-
-
                 let selectedIndex = 0;
-
                 if(typeof +selectedOption == "number" && !isNaN(+selectedOption)){
                     selectedIndex = +selectedOption;
                 } else {
@@ -231,11 +209,6 @@ function interpreter(formatted){
                 // PAUSE HERE
             } break;
             case "ask":
-                if (!line.args || !line.args.variable) {
-                    endProgram(`Invalid "ask" syntax.`);
-                    break;
-                }
-
                 let span = document.createElement('span');
                 let inputElement = document.createElement('div');
                 let elementToAppend = document.createElement('div');

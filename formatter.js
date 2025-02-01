@@ -144,6 +144,11 @@ function format(input) {
         if (line.command === "ask") {
             // ask [variable] [output]
             let variable = line.args[0];
+
+            if (variable === undefined || variable === "") {
+                formatted.errors.push(`FormatError: Missing variable for "ask" keyword.`);
+            }
+
             line.args = {
                 variable: variable,
             }
@@ -156,6 +161,19 @@ function format(input) {
             let selectedOption = line.args[0];
             let variable = line.args[1];
             let output = line.args.slice(2);
+
+            if (selectedOption === undefined || selectedOption === "") {
+                formatted.errors.push(`FormatError: Missing selected option for "prompt" keyword.`);
+            }
+
+            if (variable === undefined || variable === "") {
+                formatted.errors.push(`FormatError: Missing variable for "prompt" keyword.`);
+            }
+
+            if (output === undefined || output === "") {
+                formatted.errors.push(`FormatError: Missing output for "prompt" keyword.`);
+            }
+
             line.args = {
                 variable: variable,
                 selectedOption: selectedOption,
@@ -219,6 +237,10 @@ function format(input) {
             input = input.replace("{", "");
             input = input.replace("}", "");
 
+            if (input === "") {
+                formatted.errors.push(`FormatError: Missing time for "wait" keyword.`);
+            }
+
             line.args = {
                 time: input
             };
@@ -229,6 +251,10 @@ function format(input) {
     formatted.lines.forEach((line) => {
         if (line.command === "free") {
             let input = line.args[0];
+
+            if (input === undefined) {
+                formatted.errors.push(`FormatError: Missing variable for "free" keyword.`);
+            }
 
             line.args = {
                 variable: input
@@ -241,7 +267,6 @@ function format(input) {
         if (line.command === "append") {
             let input = line.args.splice(1).join(" ");
 
-            // make sure variable is present
             if (line.args[0] === undefined) {
                 formatted.errors.push(`FormatError: Missing variable for "append" keyword.`);
             }
