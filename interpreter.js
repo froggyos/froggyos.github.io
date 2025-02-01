@@ -19,6 +19,7 @@ function interpreter(formatted){
             createTerminalLine(`${error}`, config.errorText);
             createEditableTerminalLine(`${config.currentPath}>`);
             config.showLoadingSpinner = false;
+            config.currentProgram = null;
         }
 
         switch(command){

@@ -38,9 +38,15 @@ The first instance of the follow characters will be replaced with their respecti
  * `hop ~` will take you to the root directory
  * `hop -` will take you to the previous directory
 
+## metaprop
+Properties:
+ * read - If this file can be read. This includes being able to run the program or list file contents with the `spy` command.
+ * write - If this file can be written to. This includes being able to edit the file or delete it.
+ * hidden - If this file is hidden. This will *not* prevent you from editing the file.
+
 # Macros
 
- * Macros are written in the `C:/Macros` directory
+ * Macros are written in the `D:/Macros` directory
  * each line in a macro file is a command that will be executed
  * to add an alias to a macro, the **first** line must be `![alias]`. You can add only one alias per macro.
  * to use file arguments inside of a macro, use `$[file argument number]`

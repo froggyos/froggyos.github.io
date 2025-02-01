@@ -8,30 +8,22 @@ const config = {
     showLoadingSpinner: false,
     timeFormat: 'w. y/M/d h:m:s',
     updateStatBar: true,
-    currentProgram: null, // do something with this later
+    currentProgram: "cli", // do something with this later
     programList: ["cli", "lilypad"],
-    allowedProgramDirectories: ["C:/Programs"],
-    dissallowSubdirectoriesIn: ["C:/Programs", "C:/Macros"],
+    allowedProgramDirectories: ["D:/Programs"],
+    dissallowSubdirectoriesIn: ["D:/Programs", "D:/Macros", "D:/Program-Data"],
     programSession: 0,
     errorText: "<span style='background-color: var(--error-background); color: var(--error-text);'>!!ERROR!!</span> - ",
     fileSystem: {
         "C:": [], 
         "C:/Home": [
-            { name: "welcome!", permissions: {read: true, write: true, hidden: false}, data: ['Hello!', "Welcome to FroggyOS.", "Type 'help' for a list of commands.", "Have fun! ^v^"] },
+            { name: "welcome!", properties: {read: true, write: true, hidden: false}, data: ['Hello!', "Welcome to FroggyOS.", "Type 'help' for a list of commands.", "Have fun! ^v^"] },
         ],
         "C:/Docs": [],
-        "C:/Macros": [
-            { name: "program", permissions: {read: true, write: true, hidden: false}, data: [
-                "!p",
-                "h C:/Programs",
-                "ch $1",
-                "m $1"
-            ] },
-        ],
-        "C:/Programs": [
-            { name: "cli", permissions: {read: false, write: false, hidden: true}, data: ["str cli = 'this program is hardcoded into froggyOS'", "endprog"] },
-            { name: "lilypad", permissions: {read: false, write: false, hidden: true}, data: ["str lilypad = 'this program is hardcoded into froggyOS'", "endprog"] },
-            { name: "help", permissions: {read: true, write: false, hidden: false}, data: [
+        "D:/Programs": [
+            { name: "cli", properties: {read: false, write: false, hidden: true}, data: ["str cli = 'this program is hardcoded into froggyOS'", "endprog"] },
+            { name: "lilypad", properties: {read: false, write: false, hidden: true}, data: ["str lilypad = 'this program is hardcoded into froggyOS'", "endprog"] },
+            { name: "help", properties: {read: true, write: false, hidden: false}, data: [
                 "str category = ''",
                 "out 'Choose a category: '",
                 "prompt category OS File Directory Other",
@@ -45,7 +37,7 @@ const config = {
                 "out 'croak [file]. . . . . . . . .deletes the file'",
                 "out 'hatch [file]. . . . . . . . .creates a file'",
                 "out 'meta [file] . . . . . . . . .edits a file'",
-                "out 'metaperm [file] [perm] [0/1] edits a file\'s permissions'",
+                "out 'metaprop [file] [perm] [0/1] edits a file\'s properties'",
                 "out 'spy [file]. . . . . . . . . .reads the file'",
                 "endif",
                 "if {v:category == 'Directory'}",
@@ -53,22 +45,23 @@ const config = {
                 "out 'hop [directory]. .moves to a directory'",
                 "endif",
                 "if {v:category == 'Other'}",
-                "out 'clear clears the terminal output'",
-                "out 'macro [macro]. . . .runs a macro'",
-                "out 'ribbit [text]. . . .displays the text'",
-                "out 'formattime [format] changes the time format'",
-                "out 'clearterminal' . . .clears the terminal output'",
+                "out 'changepalette [palette] changes the color palette'",
+                "out 'clear. . . . . . . . . .clears the terminal output'",
+                "out 'macro [macro]. . . . . .runs a macro'",
+                "out 'ribbit [text]. . . . . .displays the text'",
+                "out 'formattime [format]. . .changes the time format'",
+                "out 'clearterminal' . . . . .clears the terminal output'",
                 "endif",
                 "endprog",
             ] },
-            { name: "test", permissions: {read: true, write: true, hidden: false}, data: [
+            { name: "test", properties: {read: true, write: true, hidden: false}, data: [
                 "str meow = 'meow'",
                 "append meow 'woof woof gyatt'",
                 "out v:meow",
                 "endprog",
 
             ] },
-            { name: "demo", permissions: {read: true, write: true, hidden: false}, data: [
+            { name: "demo", properties: {read: true, write: true, hidden: false}, data: [
                 "str field = ''",
 
                 "int field_x = 0",
@@ -128,6 +121,16 @@ const config = {
                 "endloop",
             ] },
         ],
+        "D:": [], 
+        "D:/Macros": [
+            { name: "program", properties: {read: true, write: true, hidden: false}, data: [
+                "!p",
+                "h D:/Programs",
+                "ch $1",
+                "m $1"
+            ] },
+        ],
+        "D:/Program-Data": [],
     }
 };
 
@@ -277,9 +280,12 @@ function changeColorPalette(name){
     for(let color in palette){
         document.querySelector(':root').style.setProperty(`--${color}`, palette[color]);
     }
+    config.colorPalette = name;
 }
 
 function createColorTestBar(){
+    // remove all the children of the color test bar
+    document.getElementById('color-test-bar').innerHTML = "";
     function getContrastYIQ(hexColor) {
         if (!/^#([0-9A-F]{3}|[0-9A-F]{6})$/i.test(hexColor)) {
             throw new Error("Invalid hex color code");
@@ -297,7 +303,7 @@ function createColorTestBar(){
         
         return yiq >= 128 ? "black" : "white";
     }
-    let squareContainer = document.createElement('div');
+    let squareContainer = document.getElementById('color-test-bar');
     squareContainer.style.position = "absolute";
     squareContainer.style.top = "0px";
     squareContainer.style.left = "0px";
@@ -420,6 +426,7 @@ function sendCommand(command, args, createEditableLineAfter){
                 break;
             }
             changeColorPalette(args[0]);
+            createColorTestBar()
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         } break;
 
@@ -457,7 +464,7 @@ function sendCommand(command, args, createEditableLineAfter){
                 createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
-            if(file.permissions.write == false){
+            if(file.properties.write == false){
                 createTerminalLine("You do not have permission to delete this file.", config.errorText);
                 createEditableTerminalLine(`${config.currentPath}>`);
                 break;
@@ -505,7 +512,7 @@ function sendCommand(command, args, createEditableLineAfter){
             }
             config.fileSystem[config.currentPath].push({
                 name: args[0],
-                permissions: {
+                properties: {
                     read: true,
                     write: true,
                     hidden: false
@@ -537,7 +544,7 @@ function sendCommand(command, args, createEditableLineAfter){
             createTerminalLine("list . . . . . . . . . . . . . Lists files and subdirectories in the current                                directory.", ">");
             createTerminalLine("loadstate. . . . . . . . . . . Load froggyOS state.", ">");
             createTerminalLine("meta [file]. . . . . . . . . . Edits a file.", ">");
-            createTerminalLine("metaperm [file] [perm] [0/1] . Edits a file's permissions.", ">");
+            createTerminalLine("metaprop [file] [perm] [0/1] . Edits a file's properties.", ">");
             createTerminalLine("savestate. . . . . . . . . . . Save froggyOS state.", ">");
             createTerminalLine("spawn [directory]. . . . . . . Creates a directory.", ">");
             createTerminalLine("spy [file] . . . . . . . . . . Reads the file.", ">");
@@ -567,7 +574,7 @@ function sendCommand(command, args, createEditableLineAfter){
                 break;
             }
 
-            sendCommand("[[FROGGY]]changepath", [directory]);
+            sendCommand("[[FROGGY]]changepath", [directory], createEditableLineAfter);
         break;
 
         // list files
@@ -583,7 +590,7 @@ function sendCommand(command, args, createEditableLineAfter){
             let files = config.fileSystem[config.currentPath];
             if(files == undefined) files = [];
             // remove all files that are hidden
-            files = files.filter(file => file.permissions.hidden == false);
+            files = files.filter(file => file.properties.hidden == false);
 
             if(files.length == 0 && subdirectoryNames.length == 0){
                 createTerminalLine("This directory is empty.", ">")
@@ -612,6 +619,8 @@ function sendCommand(command, args, createEditableLineAfter){
                 config[key] = JSON.parse(state)[key];
             }
 
+            changeColorPalette(config.colorPalette);
+
             createTerminalLine("State loaded.", ">")
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
@@ -621,7 +630,7 @@ function sendCommand(command, args, createEditableLineAfter){
             if(args.length == 0){
                 createTerminalLine("Please provide a macro name.", config.errorText);
                 createTerminalLine(`* Available macros *`, "");
-                let macros = config.fileSystem["C:/Macros"];
+                let macros = config.fileSystem["D:/Macros"];
                 if(macros == undefined){
                     createTerminalLine("No macros found.", config.errorText);
                 } else {
@@ -631,9 +640,9 @@ function sendCommand(command, args, createEditableLineAfter){
                 break;
             }
 
-            let macro = getFileWithName("C:/Macros", args[0]);
+            let macro = getFileWithName("D:/Macros", args[0]);
 
-            config.fileSystem["C:/Macros"].forEach(_macro => {
+            config.fileSystem["D:/Macros"].forEach(_macro => {
                 if(_macro.data[0].startsWith("!") && _macro.data[0].slice(1).trim() == args[0]){
                     macro = _macro;
                 }
@@ -676,14 +685,13 @@ function sendCommand(command, args, createEditableLineAfter){
                 return line;
             });
 
-
             macro.data.shift();
 
             macro.data.forEach(line => {
                 sendCommand(line.split(" ")[0], line.split(" ").slice(1), false);
             });
 
-            // if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+            if(createEditableLineAfter && config.currentProgram == "cli") createEditableTerminalLine(`${config.currentPath}>`);
         } break;
 
         // edit file
@@ -706,7 +714,7 @@ function sendCommand(command, args, createEditableLineAfter){
                 createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
-            if(file.permissions.write == false){
+            if(file.properties.write == false){
                 createTerminalLine("You do not have permission to edit this file.", config.errorText);
                 createEditableTerminalLine(`${config.currentPath}>`);
                 break;
@@ -722,12 +730,12 @@ function sendCommand(command, args, createEditableLineAfter){
             }
         break;
 
-        // edit file permissions
+        // edit file properties
         case "mp":
-        case "metaperm":
+        case "metaprop":
             file = getFileWithName(config.currentPath, args[0]);
 
-            let permission = args[1];
+            let property = args[1];
             let value = args[2];
             if(file == undefined){
                 createTerminalLine("File does not exist.", config.errorText);
@@ -735,12 +743,12 @@ function sendCommand(command, args, createEditableLineAfter){
                 break;
             }
 
-            let permissionType = Object.keys(file.permissions);
+            let propertyTypes = Object.keys(file.properties);
 
-            if(permission == undefined || permissionType.includes(permission) == false){
-                createTerminalLine("Please provide a valid permission type.", config.errorText);
-                createTerminalLine("* Available permissions *", "");
-                createTerminalLine(permissionType.join(", "), ">");
+            if(property == undefined || propertyTypes.includes(property) == false){
+                createTerminalLine("Please provide a valid property type.", config.errorText);
+                createTerminalLine("* Available properties *", "");
+                createTerminalLine(propertyTypes.join(", "), ">");
                 createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
@@ -751,14 +759,14 @@ function sendCommand(command, args, createEditableLineAfter){
                 break
             }
 
-            if(file.permissions.write == false){
+            if(file.properties.write == false){
                 createTerminalLine("You do not have permission to edit this file.", config.errorText);
                 createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
 
-            file.permissions[permission] = value == "1" ? true : false;
-            createTerminalLine("Permissions updated.", ">")
+            file.properties[property] = value == "1" ? true : false;
+            createTerminalLine("properties updated.", ">")
 
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
@@ -803,7 +811,7 @@ function sendCommand(command, args, createEditableLineAfter){
             }
             config.fileSystem[directory] = [];
             createTerminalLine("Directory created.", ">");
-            sendCommand("[[FROGGY]]changepath", [directory]);
+            sendCommand("[[FROGGY]]changepath", [directory], createEditableLineAfter);
         break;
 
         // read file contents
@@ -825,7 +833,7 @@ function sendCommand(command, args, createEditableLineAfter){
                 createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
-            if(file.permissions.read == false){
+            if(file.properties.read == false){
                 createTerminalLine("You do not have permission to read this file.", config.errorText);
                 createEditableTerminalLine(`${config.currentPath}>`);
                 break;
@@ -848,8 +856,10 @@ function sendCommand(command, args, createEditableLineAfter){
 
             config.programSession++
             if(args[0] == "cli"){
+                config.currentProgram = "cli";
                 createEditableTerminalLine(`${config.currentPath}>`);
             } else if(args[0] == "lilypad"){
+                config.currentProgram = "lilypad";
                 createTerminalLine("* press ESC to exit lilypad *", "");
                 createLilypadLine("normal", ">");
             } else {
@@ -858,7 +868,7 @@ function sendCommand(command, args, createEditableLineAfter){
                     file = getFileWithName(directory, args[0]);
                     if(file != undefined) break;
                 }
-                if(file.permissions.read == false){
+                if(file.properties.read == false){
                     createTerminalLine("You do not have permission to run this program.", config.errorText);
                     createEditableTerminalLine(`${config.currentPath}>`);
                     break;
@@ -1014,6 +1024,7 @@ function createEditableTerminalLine(path){
 PROGRAM SPECIFIC: for program LILYPAD ===============================================================================================
 */
 function createLilypadLine(linetype, path, filename){
+    config.currentProgram = "lilypad";
     let lineContainer = document.createElement('div');
     let terminalPath = document.createElement('span');
     let terminalLine = document.createElement('div');
@@ -1090,9 +1101,10 @@ function createLilypadLine(linetype, path, filename){
             };
         };
         if(e.key == "Escape"){
+            config.currentProgram = "cli";
             let file = {
                 name: null,
-                permissions: {
+                properties: {
                     read: true,
                     write: true,
                     hidden: false
