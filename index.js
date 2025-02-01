@@ -61,7 +61,7 @@ const config = {
                 "endprog",
 
             ] },
-            { name: "demo", properties: {read: true, write: true, hidden: false}, data: [
+            { name: "demo", properties: {read: true, write: true, hidden: true}, data: [
                 "str field = ''",
 
                 "int field_x = 0",
@@ -565,7 +565,7 @@ function sendCommand(command, args, createEditableLineAfter){
             }
 
             directory = directory.replace(".", config.currentPath);
-            if(directory == "~") directory = "C:";
+            if(directory == "~") directory = config.currentPath.split("/")[0];
             if(directory == "-") directory = config.currentPath.split("/").slice(0, -1).join("/");
 
             if(config.fileSystem[directory] == undefined){
@@ -847,9 +847,18 @@ function sendCommand(command, args, createEditableLineAfter){
         case "st":
         case "swimto":
             if(!config.programList.includes(args[0])){
+
+                let programList = [];
+
+                // if the file is hidden, do not show it in the program list
+                for(let directory of config.allowedProgramDirectories){
+                    programList = programList.concat(config.fileSystem[directory].filter(file => file.properties.hidden == false).map(file => file.name));
+                }
+
+
                 createTerminalLine("Please provide a valid program.", config.errorText);
                 createTerminalLine("* Available programs *", "");
-                createTerminalLine(config.programList.join(", "), ">");
+                createTerminalLine(programList.join(", "), ">");
                 createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
@@ -879,6 +888,7 @@ function sendCommand(command, args, createEditableLineAfter){
                     createTerminalLine(formatted.errors[0], config.errorText);
                     createEditableTerminalLine(`${config.currentPath}>`);
                 } else {
+                    config.currentProgram = args[0];
                     // interpret the formatted code
                     interpreter(formatted);
                 }

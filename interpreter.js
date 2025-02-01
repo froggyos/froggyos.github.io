@@ -472,6 +472,7 @@ function interpreter(formatted){
                 parseNext();
             break;
             case "endprog":
+                config.currentProgram = "cli";
                 createEditableTerminalLine(`${config.currentPath}>`);
             break;
             default:
