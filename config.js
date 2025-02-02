@@ -13,7 +13,7 @@ const config = {
     allowedProgramDirectories: ["D:/Programs"],
     dissallowSubdirectoriesIn: ["D:/Programs", "D:/Macros", "D:/Program-Data", "D:/Palettes"],
     programSession: 0,
-    errorText: "<span style='background-color: var(--error-background); color: var(--error-text);'>!!ERROR!!</span>\u2003-",
+    errorText: "<span class='error'><span class='error-text'>!!ERROR!!</span> -</span>",
     fileSystem: {
         "C:": [], 
         "C:/Home": [

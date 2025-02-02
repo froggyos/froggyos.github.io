@@ -194,11 +194,16 @@ function createPalettesObject(){
 
     const colorArray = ["black", "blue", "green", "cyan", "red", "magenta", "orange", "lGrey", "dGrey", "lBlue", "lGreen", "lCyan", "lRed", "lMagenta", "lOrange", "white"];
 
-    for(let palette of paletteDir){
-        palettes[palette.name] = {};
-        for(let i = 0; i < palette.data.length; i++){
-            palettes[palette.name][colorArray[i]] = "#"+palette.data[i];
+    // weird ass bug?????? load state doesnt work with palettes, just crashes. Adding a try/catch block to stop from crashing
+    try {
+        for(let palette of paletteDir){
+            palettes[palette.name] = {};
+            for(let i = 0; i < palette.data.length; i++){
+                palettes[palette.name][colorArray[i]] = "#"+palette.data[i];
+            }
         }
+    } catch (err) {
+        createTerminalLine("Could not load palette from save state.", config.errorText)
     }
 
     return palettes;

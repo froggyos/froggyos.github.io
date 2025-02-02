@@ -32,7 +32,6 @@
         padding-top: 0;
         box-sizing: border-box;
     }
-
     #bar {
         background-color: var(--bar-background);
         height: 10px;
@@ -47,7 +46,6 @@
         cursor: none;
         color: var(--bar-text);
     }
-
     #terminal {
         width: 100%;
         height: calc(100% - 20px);
@@ -61,7 +59,6 @@
         padding-bottom: 0px;
         padding-right: 0px;
     }
-
     #color-test-bar {
         position: absolute;
         top: 0;
@@ -86,15 +83,21 @@
     .line-container > div:focus {
         outline: none;
     }
+    .selected {
+        background-color: var(--prompt-selected-background);
+        color: var(--prompt-selected-text);
+    }
+    .error {
+        white-space: nowrap;
+    }
+    .error-text {
+        background-color: var(--error-background);
+        color: var(--error-text);
+    }
 
     ::selection {
         background-color: var(--terminal-line-selection-background);
         color: var(--terminal-line-selection-text);
-    }
-
-    .selected {
-        background-color: var(--prompt-selected-background);
-        color: var(--prompt-selected-text);
     }
 </style>
 <head>
