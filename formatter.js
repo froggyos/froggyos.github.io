@@ -98,11 +98,15 @@ function format(input) {
             formatted.lines.splice(j, 1); // Remove "endfunc"
             formatted.functions[functionName] = functionLines;
             formatted.lines.splice(i, 1); // Remove "func"
-            i--; // Adjust index
+            i--;
         }
     }
 
     // Execute `f:` commands
+    // !!!!!!!!!!!!!!!!!!!!!!!! CHANGE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    // change from just inserting, to running a separate thread, because this is possible with the new system
+    // it isnt self explanatory and not correct words, but you'll know what it means
+    // if u dont, ur dumb
     for (let i = 0; i < formatted.lines.length; i++) {
         let line = formatted.lines[i];
         if (line.command === "f:") {

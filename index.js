@@ -123,10 +123,15 @@ const config = {
         ],
         "D:": [], 
         "D:/Macros": [
-            { name: "program", properties: {read: true, write: true, hidden: false}, data: [
+            { name: "create-program", properties: {read: true, write: true, hidden: false}, data: [
                 "!p",
                 "h D:/Programs",
                 "ch $1",
+                "m $1"
+            ] },
+            { name: "edit-program", properties: {read: true, write: true, hidden: false}, data: [
+                "!e",
+                "h D:/Programs",
                 "m $1"
             ] },
         ],
@@ -175,7 +180,7 @@ const colorPalettes = {
     cherry: {
         black: "#000000",
         blue: "#1C219F",
-        green: "#348847",
+        green: "#289E42",
         cyan: "#17ABAE",
         red: "#831326",
         magenta: "#980C6C",
@@ -189,7 +194,7 @@ const colorPalettes = {
         lMagenta: "#D97BC7",
         lOrange: "#FF9F58",
         white: "#FFFFFF",
-    }
+    },
 }
 
 let screen = document.getElementById('screen');
@@ -277,9 +282,17 @@ setInterval(function() {
 
 function changeColorPalette(name){
     let palette = colorPalettes[name];
+    let root = document.querySelector(':root');
     for(let color in palette){
-        document.querySelector(':root').style.setProperty(`--${color}`, palette[color]);
+        root.style.setProperty(`--${color}`, palette[color]);
     }
+
+    // palette specific color changes
+    if(name == "cherry"){
+        root.style.setProperty(`--terminal-line-highlighted-background`, "var(--lGreen)");
+    }
+
+    createColorTestBar()
     config.colorPalette = name;
 }
 
@@ -397,6 +410,17 @@ function evaluate(string){
     }
 }
 
+function updateLineHighlighting() {
+    let lines = document.querySelectorAll(`[data-program='lilypad-session-${config.programSession}']`);
+    lines.forEach(line => {
+        if (document.activeElement === line) {
+            line.style.background = "var(--terminal-line-highlighted-background)";
+        } else {
+            line.style.background = "var(--terminal-line-background)";
+        }
+    });
+}
+
 function sendCommand(command, args, createEditableLineAfter){
     if(createEditableLineAfter == undefined) createEditableLineAfter = true;
     command = command.trim();
@@ -426,7 +450,6 @@ function sendCommand(command, args, createEditableLineAfter){
                 break;
             }
             changeColorPalette(args[0]);
-            createColorTestBar()
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         } break;
 
@@ -722,8 +745,8 @@ function sendCommand(command, args, createEditableLineAfter){
             createTerminalLine("* press ESC to save and exit lilypad *", "");
             for(let i = 0; i < file.data.length; i++){
                 if(config.allowedProgramDirectories.includes(config.currentPath)){
-                    createLilypadLine("code", String(i+1).padStart(3, "0"), file.name);
-                } else createLilypadLine("normal", ">", file.name);
+                    createLilypadLine(String(i+1).padStart(3, "0"), "code", file.name);
+                } else createLilypadLine(">", undefined, file.name);
                 let lines = document.querySelectorAll(`[data-program='lilypad-session-${config.programSession}']`);
                 lines[i].textContent = file.data[i];
                 moveCaretToEnd(lines[i]);
@@ -855,7 +878,6 @@ function sendCommand(command, args, createEditableLineAfter){
                     programList = programList.concat(config.fileSystem[directory].filter(file => file.properties.hidden == false).map(file => file.name));
                 }
 
-
                 createTerminalLine("Please provide a valid program.", config.errorText);
                 createTerminalLine("* Available programs *", "");
                 createTerminalLine(programList.join(", "), ">");
@@ -870,7 +892,7 @@ function sendCommand(command, args, createEditableLineAfter){
             } else if(args[0] == "lilypad"){
                 config.currentProgram = "lilypad";
                 createTerminalLine("* press ESC to exit lilypad *", "");
-                createLilypadLine("normal", ">");
+                createLilypadLine(">", undefined, undefined);
             } else {
                 let file;
                 for(let directory of config.allowedProgramDirectories){
@@ -1033,7 +1055,7 @@ function createEditableTerminalLine(path){
 /*
 PROGRAM SPECIFIC: for program LILYPAD ===============================================================================================
 */
-function createLilypadLine(linetype, path, filename){
+function createLilypadLine(path, linetype, filename){
     config.currentProgram = "lilypad";
     let lineContainer = document.createElement('div');
     let terminalPath = document.createElement('span');
@@ -1047,6 +1069,8 @@ function createLilypadLine(linetype, path, filename){
 
     terminalPath.textContent = path;
     terminalLine.textContent = "";
+
+    let highlightedLineUpdater = setInterval(updateLineHighlighting, 1);
 
     terminalLine.addEventListener('keyup', function(e){
         if(linetype == "code"){
@@ -1064,9 +1088,9 @@ function createLilypadLine(linetype, path, filename){
             if(linetype == "code"){
                 let lines = document.querySelectorAll(`[data-program='lilypad-session-${config.programSession}']`);
                 let lineNumber = String(+lines[lines.length - 1].previousElementSibling.textContent+1).padStart(3, '0');
-                createLilypadLine("code", lineNumber, filename);
+                createLilypadLine(lineNumber, "code", filename);
             } else {
-                createLilypadLine("normal", ">", filename);
+                createLilypadLine(">", undefined, filename);
             }
         }
         if(e.key == "Backspace"){
@@ -1077,13 +1101,11 @@ function createLilypadLine(linetype, path, filename){
                     if(currentLineIndex == 0){
                         let nextLine = lines[currentLineIndex + 1];
                         moveCaretToEnd(nextLine);
-
                     }
-                    let parent = document.activeElement.parentElement;
 
+                    let parent = document.activeElement.parentElement;
                     let previousLine = parent.previousElementSibling.children[1];
                     previousLine.textContent = previousLine.textContent + "​";
-
                     moveCaretToEnd(previousLine);
                     parent.remove();
                 }
@@ -1110,8 +1132,10 @@ function createLilypadLine(linetype, path, filename){
                 moveCaretToEnd(lines[focusedLineIndex + 1]);
             };
         };
+
         if(e.key == "Escape"){
             config.currentProgram = "cli";
+            clearInterval(highlightedLineUpdater);
             let file = {
                 name: null,
                 properties: {
@@ -1156,13 +1180,11 @@ function createLilypadLine(linetype, path, filename){
 
     lineContainer.appendChild(terminalPath);
     lineContainer.appendChild(terminalLine);
-
-    let focusedLine = document.activeElement;
     
     let lines = document.querySelectorAll(`[data-program='lilypad-session-${config.programSession}']`);
 
     if(lines.length == 0) terminal.appendChild(lineContainer);
-    else terminal.insertBefore(lineContainer, focusedLine.parentElement.nextSibling);
+    else terminal.insertBefore(lineContainer, document.activeElement.parentElement.nextSibling);
 
     terminal.scrollTop = terminal.scrollHeight;
     terminalLine.focus();
