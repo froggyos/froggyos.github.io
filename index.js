@@ -1,4 +1,4 @@
-new AllSniffer({timerOptions: {intervalIDsToExclude: [2,3]}});
+// new AllSniffer({timerOptions: {intervalIDsToExclude: [2,3]}});
 
 let screen = document.getElementById('screen');
 let terminal = document.getElementById('terminal');
