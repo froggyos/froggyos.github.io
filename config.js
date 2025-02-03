@@ -56,8 +56,7 @@ const config = {
             ] },
             { name: "test", properties: {read: true, write: true, hidden: false}, data: [
                 "str meow = 'meow'",
-                "append meow 'woof woof gyatt'",
-                "out v:meow",
+                "outc c06 'meow woof bark chirp'",
                 "endprog",
 
             ] },
@@ -211,9 +210,9 @@ const config = {
                 "    endloop",
                 "",
                 "",
-                "    out v:energyDisplay",
-                "    out v:hungerDisplay",
-                "    out v:happinessDisplay",
+                "    outc c09 v:energyDisplay",
+                "    outc c10 v:hungerDisplay",
+                "    outc c06 v:happinessDisplay",
                 "",
                 "    out ''",
                 "    if {v:currentEmotion == 'default'}",

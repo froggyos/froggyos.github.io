@@ -105,6 +105,7 @@ clearterminal
 ```
 
 ## Output
+### Output
 ```
 out [input]
 
@@ -113,6 +114,14 @@ out "text"
 out "text with spaces"
 out 'more text'
 out "i can put a v:variable inside a string"
+```
+### Colored Output
+```
+outc [color] [input]
+
+outc c00 "this is black"
+outc c01 "this is blue"
+outc c02 "this is green"
 ```
 
 ## Variables

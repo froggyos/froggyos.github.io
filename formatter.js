@@ -68,6 +68,19 @@ function format(input) {
         if (line.command === "out") {
             line.args = line.args.join(" ");
         }
+        if(line.command === "outc"){
+            let color = line.args[0];
+            let output = line.args.slice(1).join(" ");
+
+            if(color === undefined || output === undefined){
+                formatted.errors.push(`FormatError: Missing arguments for "outc" keyword.`);
+            }
+
+            line.args = {
+                color: color,
+                output: output
+            }
+        }
     });
 
     // Parse functions

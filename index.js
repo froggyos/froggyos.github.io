@@ -180,9 +180,13 @@ function createColorTestBar(){
         square.style.width = "48px";
         square.style.height = "48px";
         square.style.position = "absolute";
-        square.style.left = `${i * 48}px`;
+        square.style.left = `${(i % 8) * 48}px`;
+        square.style.top = `${Math.floor(i / 8) * 48}px`;
         square.style.fontSize = "6px";
         squareContainer.appendChild(square);
+        if(i == Object.keys(colorPalettes[config.colorPalette]).length / 2){
+            squareContainer.appendChild(document.createElement('br'));
+        }
     }
     document.body.appendChild(squareContainer);
 }
@@ -202,7 +206,7 @@ function createPalettesObject(){
             }
         }
     } catch (err) {
-        createTerminalLine("Could not load palette from save state.", config.errorText)
+        createTerminalLine("Could create palette.", config.errorText)
     }
 
     return palettes;
@@ -230,7 +234,7 @@ function moveCaretToEnd(element) {
     }
 }
 
-function createTerminalLine(text, path){
+function createTerminalLine(text, path, color){
     let lineContainer = document.createElement('div');
     let terminalPath = document.createElement('span');
     let terminalLine = document.createElement('div');
@@ -239,6 +243,10 @@ function createTerminalLine(text, path){
 
     terminalPath.innerHTML = path;
     terminalLine.textContent = text;
+
+    if(color != undefined){
+        terminalLine.style.color = `var(--${color})`;
+    }
 
     lineContainer.appendChild(terminalPath);
     lineContainer.appendChild(terminalLine);

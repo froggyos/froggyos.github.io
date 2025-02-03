@@ -432,7 +432,42 @@ function interpreter(formatted){
                 }
                 parseNext();
             break;
-            case "out":
+            case "outc": {
+                let color = line.args.color;
+                let out = line.args.output;
+
+                // Replace variables in the "out" statement
+                for (let variable in variables) {
+                    let variableRegex = new RegExp(`\\b${variable}\\b`, "g"); // Ensure full match for variable name
+                    if (variableRegex.test(out)) {
+                        let value = variables[variable].value;
+                        if (variables[variable].type === "str") {
+                            value = `'${value}'`; // Wrap string variables in quotes
+                        }
+                        out = out.replace(variableRegex, value);
+                    }
+                }
+
+                // Check for unresolved variables
+                if (/v:\w+/.test(out)) {
+                    endProgram(`Variable does not exist in "out" statement.`);
+                    break;
+                }
+
+                let parsedOut;
+                try {
+                    out = cleanInnerQuotes(out); // Clean any nested or extra quotes
+                    parsedOut = new Function(`return (${out});`)(); // Evaluate the expression
+                } catch (err) {
+                    endProgram(`Error evaluating statement: "${out}".`);
+                    break;
+                }
+
+                // Output the parsed result to the terminal
+                createTerminalLine(parsedOut, ">", color);
+                parseNext();
+            } break;
+            case "out": {
                 if (!line.args) {
                     endProgram(`Invalid "out" syntax.`);
                     break;
@@ -470,7 +505,7 @@ function interpreter(formatted){
                 // Output the parsed result to the terminal
                 createTerminalLine(parsedOut, ">");
                 parseNext();
-            break;
+            } break;
             case "endprog":
                 config.currentProgram = "cli";
                 createEditableTerminalLine(`${config.currentPath}>`);
