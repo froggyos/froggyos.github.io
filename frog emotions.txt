@@ -1,6 +1,6 @@
 kaerugotchi
 
-  @..@ default
+  o..o default
  (____)
 (>____<)
  ^^~~^^
@@ -20,7 +20,7 @@ kaerugotchi
 (>____<)
  ^^~~^^
 
-  o..o wat
+  O..o wat
  (____)
 (>____<)
  ^^~~^^
