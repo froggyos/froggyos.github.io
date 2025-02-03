@@ -1,4 +1,4 @@
-//new AllSniffer({timerOptions: {intervalIDsToExclude: [2]}});
+new AllSniffer({timerOptions: {intervalIDsToExclude: [2,3]}});
 
 let screen = document.getElementById('screen');
 let terminal = document.getElementById('terminal');
@@ -85,24 +85,24 @@ setInterval(function() {
 
 // CSS STYLING ==============================================================================================
 const defaultStyling = `
-    --void-space: var(--black);
+    --void-space: var(--c00);
 
-    --bar-background: var(--blue);
-    --bar-text: var(--white);
+    --bar-background: var(--c01);
+    --bar-text: var(--c15);
 
-    --terminal-background: var(--white);
+    --terminal-background: var(--c15);
 
-    --terminal-line-background: var(--white);
-    --terminal-line-highlighted-background: var(--lOrange);
-    --terminal-line-text: var(--green);
-    --terminal-line-selection-background: var(--green);
-    --terminal-line-selection-text: var(--white);
+    --terminal-line-background: var(--c15);
+    --terminal-line-highlighted-background: var(--c14);
+    --terminal-line-text: var(--c02);
+    --terminal-line-selection-background: var(--c02);
+    --terminal-line-selection-text: var(--c15);
 
-    --error-background: var(--lRed);
-    --error-text: var(--white);
+    --error-background: var(--c12);
+    --error-text: var(--c15);
 
-    --prompt-selected-background: var(--green);
-    --prompt-selected-text: var(--white);
+    --prompt-selected-background: var(--c02);
+    --prompt-selected-text: var(--c15);
 `
 
 let resetStyling = () => {
@@ -129,14 +129,14 @@ function changeColorPalette(name){
     if(name == "revised"){
     }
     if(name == "cherry"){
-        root.style.setProperty(`--terminal-line-highlighted-background`, "var(--lGreen)");
-        root.style.setProperty(`--error-background`, "var(--red)");
+        root.style.setProperty(`--terminal-line-highlighted-background`, "var(--c10)");
+        root.style.setProperty(`--error-background`, "var(--c04)");
     }
     if(name == "swamp"){
-        root.style.setProperty(`--error-background`, "var(--red)");
+        root.style.setProperty(`--error-background`, "var(--c04)");
     }
     if(name == "swamp-revised"){
-        root.style.setProperty(`--error-background`, "var(--red)");
+        root.style.setProperty(`--error-background`, "var(--c04)");
     }
 
     config.colorPalette = name;
@@ -162,7 +162,7 @@ function createColorTestBar(){
         
         const yiq = (r * 299 + g * 587 + b * 114) / 1000;
         
-        return yiq >= 128 ? "black" : "white";
+        return yiq >= 128 ? "c00" : "c15";
     }
     let squareContainer = document.getElementById('color-test-bar');
     squareContainer.style.position = "absolute";
@@ -173,8 +173,8 @@ function createColorTestBar(){
         let color = Object.keys(colorPalettes[config.colorPalette])[i];
         let square = document.createElement('div');
         let text = `<br><br><br><br><br><br>${color}<br>${colorPalettes[config.colorPalette][color].replace("#","")}`
-        square.innerHTML = text;
 
+        square.innerHTML = text;
         square.style.backgroundColor = `var(--${color})`;
         square.style.color = `var(--${getContrastYIQ(colorPalettes[config.colorPalette][color])})`;
         square.style.width = "48px";
@@ -192,7 +192,7 @@ function createPalettesObject(){
     let paletteDir = config.fileSystem["D:/Palettes"];
     let palettes = {};
 
-    const colorArray = ["black", "blue", "green", "cyan", "red", "magenta", "orange", "lGrey", "dGrey", "lBlue", "lGreen", "lCyan", "lRed", "lMagenta", "lOrange", "white"];
+    const colorArray = ["c00", "c01", "c02", "c03", "c04", "c05", "c06", "c07", "c08", "c09", "c10", "c11", "c12", "c13", "c14", "c15"];
 
     // weird ass bug?????? load state doesnt work with palettes, just crashes. Adding a try/catch block to stop from crashing
     try {
@@ -617,6 +617,8 @@ function sendCommand(command, args, createEditableLineAfter){
             for(let i = 0; i < file.data.length; i++){
                 if(config.allowedProgramDirectories.includes(config.currentPath)){
                     createLilypadLine(String(i+1).padStart(3, "0"), "code", file.name);
+                } else if (config.currentPath == "D:/Palettes") {
+                    createLilypadLine(String(i).padStart(2, "0"), "palette", file.name);
                 } else createLilypadLine(">", undefined, file.name);
                 let lines = document.querySelectorAll(`[data-program='lilypad-session-${config.programSession}']`);
                 lines[i].textContent = file.data[i];
@@ -950,6 +952,12 @@ function createLilypadLine(path, linetype, filename){
                 let lineNumber = String(i+1).padStart(3, "0");
                 lines[i].previousElementSibling.textContent = lineNumber;
             }
+        } else if (linetype == "palette"){
+            let lines = document.querySelectorAll(`[data-program='lilypad-session-${config.programSession}']`);
+            for(let i = 0; i < lines.length; i++){
+                let lineNumber = String(i).padStart(2, "0");
+                lines[i].previousElementSibling.textContent = lineNumber;
+            }
         }
     });
 
@@ -960,6 +968,10 @@ function createLilypadLine(path, linetype, filename){
                 let lines = document.querySelectorAll(`[data-program='lilypad-session-${config.programSession}']`);
                 let lineNumber = String(+lines[lines.length - 1].previousElementSibling.textContent+1).padStart(3, '0');
                 createLilypadLine(lineNumber, "code", filename);
+            } else if (linetype == "palette") {
+                let lines = document.querySelectorAll(`[data-program='lilypad-session-${config.programSession}']`);
+                let lineNumber = String(+lines[lines.length - 1].previousElementSibling.textContent).padStart(2, '0');
+                if(+lineNumber < 15) createLilypadLine(lineNumber, "palette", filename);
             } else {
                 createLilypadLine(">", undefined, filename);
             }

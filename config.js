@@ -5,7 +5,6 @@ const config = {
     commandHistory: [],
     commandHistoryIndex: -1,
     showLoadingSpinner: false,
-    privelegeLevel: 99,
     timeFormat: 'w. y/M/d h:m:s',
     updateStatBar: true,
     currentProgram: "cli", // do something with this later
@@ -124,7 +123,7 @@ const config = {
         ],
         "D:/Macros": [
             { name: "create-program", properties: {read: true, write: true, hidden: false}, data: [
-                "!p",
+                "!c",
                 "h D:/Programs",
                 "ch $1",
                 "m $1"
@@ -138,25 +137,25 @@ const config = {
         "D:/Program-Data": [],
         "D:/Palettes": [
             // standard and revised palettes:  https://int10h.org/blog/2022/06/ibm-5153-color-true-cga-palette/
-            { name: "standard", properties: {read: true, write: false, hidden: false}, data: [
-                "000000", // black
-                "0000AA", // blue
-                "00AA00", // green
-                "00AAAA", // cyan
-                "AA0000", // red
-                "AA00AA", // magenta
-                "AA5500", // orange
-                "AAAAAA", // light grey
-                "555555", // dark grey
-                "5555FF", // light blue
-                "55FF55", // light green
-                "55FFFF", // light cyan
-                "FF5555", // light red
-                "FF55FF", // light magenta
-                "FFFF55", // light orange
-                "FFFFFF", // white
+            { name: "standard", properties: {read: true, write: true, hidden: false}, data: [
+                "000000", // 00 black
+                "0000AA", // 01 blue
+                "00AA00", // 02 green
+                "00AAAA", // 03 cyan
+                "AA0000", // 04 red
+                "AA00AA", // 05 magenta
+                "AA5500", // 06 brown
+                "AAAAAA", // 07 light grey
+                "555555", // 08 dark grey
+                "5555FF", // 09 light blue
+                "55FF55", // 10 light green
+                "55FFFF", // 11 light cyan
+                "FF5555", // 12 light red
+                "FF55FF", // 13 light magenta
+                "FFFF55", // 14 yellow
+                "FFFFFF", // 15 white
             ] },
-            { name: "revised", properties: {read: true, write: false, hidden: false}, data: [
+            { name: "revised", properties: {read: true, write: true, hidden: false}, data: [
                 "000000",
                 "0000C4",
                 "00C400",
@@ -174,30 +173,30 @@ const config = {
                 "F3F34E",
                 "FFFFFF",
             ] },
-            { name: "cherry", properties: {read: true, write: false, hidden: false}, data: [
+            { name: "cherry", properties: {read: true, write: true, hidden: false}, data: [
                 "000000",
                 "1C219F",
                 "289E42",
                 "17ABAE",
-                "831326",
+                "E48579",
                 "980C6C",
                 "BC3517",
                 "C2C5C6",
                 "464C50",
                 "5790E4",
-                "B7EA8A",
-                "68DCCD",
-                "E48579",
-                "D97BC7",
                 "FF9F58",
+                "68DCCD",
+                "831326",
+                "D97BC7",
+                "B7EA8A",
                 "FFFFFF",
             ] },
-            { name: "swamp", properties: {read: true, write: false, hidden: false}, data: [
+            { name: "swamp", properties: {read: true, write: true, hidden: false}, data: [
                 "000000",
                 "4B71AF",
                 "3F9A44",
                 "3B9994",
-                "984547",
+                "DEA4A5",
                 "9A3F95",
                 "C27E4B",
                 "B2B2B2",
@@ -205,17 +204,17 @@ const config = {
                 "96A2CF",
                 "93C495",
                 "AECFCD",
-                "DEA4A5",
+                "984547",
                 "D7ABD4",
                 "D6B87B",
                 "FFFFFF",
             ] },
-            { name: "swamp-revised", properties: {read: true, write: false, hidden: false}, data: [
+            { name: "swamp-revised", properties: {read: true, write: true, hidden: false}, data: [
                 "000000",
                 "31618D",
                 "298B27",
                 "268B67",
-                "753B29",
+                "D3977F",
                 "773669",
                 "BF833A",
                 "97A791",
@@ -223,9 +222,27 @@ const config = {
                 "8DBDD5",
                 "81CB7D",
                 "91C9B9",
-                "D3977F",
+                "753B29",
                 "CBA9DB",
                 "D7D357",
+                "FFFFFF",
+            ] },
+            { name: "neon", properties: {read: true, write: true, hidden: false}, data: [
+                "000000",
+                "0000FF",
+                "00FF00",
+                "00FFFF",
+                "FF0000",
+                "FF00FF",
+                "FFA500",
+                "ABABAB",
+                "757575",
+                "5555FF",
+                "55FF55",
+                "55FFFF",
+                "FF5555",
+                "FF55FF",
+                "FFFF55",
                 "FFFFFF",
             ] },
         ]

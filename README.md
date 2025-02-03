@@ -1,9 +1,28 @@
-# Things to Know About froggyOS
+# Things to Know
 
  * in paths, `.` will be replaced with the current directory
  * programs can *only* be written in designated directories
 
-# Aliases
+## Palette Conventions
+There is no set colors that you must have, but these are the color conventions.
+ * 00 - black, the void surrounding the terminal
+ * 01 - blue, the top bar background color
+ * 02 - green, text color, as well as selected text and option background color
+ * 03 - cyan
+ * 04 - red
+ * 05 - magenta
+ * 06 - orange/brown
+ * 07 - light grey
+ * 08 - dark grey
+ * 09 - light blue
+ * 10 - light green
+ * 11 - light cyan
+ * 12 - light red, error background color
+ * 13 - light magenta
+ * 14 - light orange/yellow
+ * 15 - white, the terminal background color, top bar and error text color, and the selected text and option color
+
+## Aliases
 
  * clear -> cl
  * clearstate -> cls
@@ -20,9 +39,9 @@
  * spawn -> s
  * swimto -> st
 
-# Command Help That froggyOS Doesn't Tell You
+## Command Help
 
-## formattime
+### formattime
 The first instance of the follow characters will be replaced with their respective values. Place a "!" before the character to escape it.
  * w - weekday
  * d - day
@@ -34,17 +53,17 @@ The first instance of the follow characters will be replaced with their respecti
  * s - second
  * a - AM/PM
 
-## hop
+### hop
  * `hop ~` will take you to the root directory
  * `hop -` will take you to the previous directory
 
-## metaprop
+### metaprop
 Properties:
  * read - If this file can be read. This includes being able to run the program or list file contents with the `spy` command.
  * write - If this file can be written to. This includes being able to edit the file or delete it.
  * hidden - If this file is hidden. This will *not* prevent you from editing the file.
 
-# Macros
+### Macros
 
  * Macros are written in the `D:/Macros` directory
  * each line in a macro file is a command that will be executed
