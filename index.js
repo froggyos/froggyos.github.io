@@ -194,7 +194,6 @@ function createPalettesObject(){
 
     const colorArray = ["c00", "c01", "c02", "c03", "c04", "c05", "c06", "c07", "c08", "c09", "c10", "c11", "c12", "c13", "c14", "c15"];
 
-    // weird ass bug?????? load state doesnt work with palettes, just crashes. Adding a try/catch block to stop from crashing
     try {
         for(let palette of paletteDir){
             palettes[palette.name] = {};

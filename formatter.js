@@ -103,10 +103,6 @@ function format(input) {
     }
 
     // Execute `f:` commands
-    // !!!!!!!!!!!!!!!!!!!!!!!! CHANGE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    // change from just inserting, to running a separate thread, because this is possible with the new system
-    // it isnt self explanatory and not correct words, but you'll know what it means
-    // if u dont, ur dumb
     for (let i = 0; i < formatted.lines.length; i++) {
         let line = formatted.lines[i];
         if (line.command === "f:") {

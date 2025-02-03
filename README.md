@@ -39,6 +39,11 @@ There is no set colors that you must have, but these are the color conventions.
  * spawn -> s
  * swimto -> st
 
+## Bugs
+ * cannot use recursive functions
+ * something with if statements???? check it out later
+ * load state doesnt work with palettes
+
 ## Command Help
 
 ### formattime
