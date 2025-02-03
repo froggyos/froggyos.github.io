@@ -7,7 +7,7 @@ const config = {
     showLoadingSpinner: false,
     timeFormat: 'w. y/M/d h:m:s',
     updateStatBar: true,
-    currentProgram: "cli", // do something with this later
+    currentProgram: "cli",
     programList: ["cli", "lilypad"],
     allowedProgramDirectories: ["D:/Programs"],
     dissallowSubdirectoriesIn: ["D:/Programs", "D:/Macros", "D:/Program-Data", "D:/Palettes"],
