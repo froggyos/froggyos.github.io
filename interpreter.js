@@ -408,6 +408,9 @@ function interpreter(formatted){
                 let elseIndex = formatted.lines.findIndex((line, index) => line.command == "else" && index > lineIndex);
                 let endifIndex = formatted.lines.findIndex((line, index) => line.command == "endif" && index > lineIndex);
 
+
+                console.log(formatted, parsedCondition, elseIndex, endifIndex);
+
                 if(endifIndex == -1){
                     endProgram(`"endif" not found.`);
                     break;
@@ -416,6 +419,8 @@ function interpreter(formatted){
                 if (parsedCondition) {
                     if(elseIndex != -1){
                         formatted.lines[elseIndex].args.skip = true;
+                    } else {
+                        // SOMETHING HERE =====================================================
                     }
                 } else {
                     if(elseIndex != -1){
