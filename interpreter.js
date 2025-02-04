@@ -380,11 +380,6 @@ function interpreter(formatted){
             break;
             case "if":
                 let condition = line.args.condition;
-
-                if(!condition){
-                    endProgram(`Invalid "if" syntax.`);
-                    break;
-                }
         
                 for(let variable in variables){
                     if(condition.includes(variable)){
@@ -406,10 +401,7 @@ function interpreter(formatted){
 
                 // find the else statement
                 let elseIndex = formatted.lines.findIndex((line, index) => line.command == "else" && index > lineIndex);
-                let endifIndex = formatted.lines.findIndex((line, index) => line.command == "endif" && index > lineIndex);
-
-
-                console.log(formatted, parsedCondition, elseIndex, endifIndex);
+                let endifIndex = line.args.pairedIf;
 
                 if(endifIndex == -1){
                     endProgram(`"endif" not found.`);
@@ -419,8 +411,6 @@ function interpreter(formatted){
                 if (parsedCondition) {
                     if(elseIndex != -1){
                         formatted.lines[elseIndex].args.skip = true;
-                    } else {
-                        // SOMETHING HERE =====================================================
                     }
                 } else {
                     if(elseIndex != -1){

@@ -137,9 +137,34 @@ function format(input) {
             input = input.replace("{", "");
             input = input.replace("}", "");
 
-            delete line.args 
-            line.args = {};
-            line.args.condition = input;
+            if(input === ""){
+                formatted.errors.push(`FormatError: Missing condition for "if" keyword.`);
+            }
+
+            let pairedIf = 0;
+            let count = 1;
+
+            for (let j = i + 1; j < formatted.lines.length; j++) {
+                if (formatted.lines[j].command === "if") {
+                    count++;
+                } else if (formatted.lines[j].command === "endif") {
+                    count--;
+                }
+
+                if (count === 0) {
+                    pairedIf = j;
+                    break;
+                }
+            }
+
+            if (count !== 0) {
+                formatted.errors.push(`FormatError: No matching "endif" found for "if".`);
+            }
+
+            line.args = {
+                condition: input,
+                pairedIf: pairedIf
+            };
         }
 
         if (line.command === "else") {
@@ -294,6 +319,6 @@ function format(input) {
             };
         }
     });
-
+    
     return formatted;
 }
