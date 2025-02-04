@@ -70,7 +70,7 @@ Properties:
  * write - If this file can be written to. This includes being able to edit the file or delete it.
  * hidden - If this file is hidden. This will *not* prevent you from editing the file.
 
-### Macros
+## Macros
 
  * Macros are written in the `D:/Macros` directory
  * each line in a macro file is a command that will be executed
