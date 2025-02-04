@@ -2,7 +2,7 @@ function interpreter(formatted, vars){
 
     let lineIndex = 0;
 
-    let variables = vars == undefined ? {} : vars;
+    let variables = {};
     let defineCount = 0;
     let cliPromptCount = 0;
 
@@ -23,14 +23,7 @@ function interpreter(formatted, vars){
         }
 
         switch(command){
-            case "f:": {
-                console.log(formatted)
-                let body = line.args.body;
-                interpreter({
-                    variables: variables,
-                    lines: body,
-                }, variables);
-            } break;
+            // FIX FUNCTION PARSING!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ==================================================
             case "append": {
                 let variable = line.args.variable;
                 let value = line.args.value;
