@@ -1,8 +1,8 @@
-function interpreter(formatted){
+function interpreter(formatted, vars){
 
     let lineIndex = 0;
 
-    let variables = {};
+    let variables = vars == undefined ? {} : vars;
     let defineCount = 0;
     let cliPromptCount = 0;
 
@@ -23,6 +23,14 @@ function interpreter(formatted){
         }
 
         switch(command){
+            case "f:": {
+                console.log(formatted)
+                let body = line.args.body;
+                interpreter({
+                    variables: variables,
+                    lines: body,
+                }, variables);
+            } break;
             case "append": {
                 let variable = line.args.variable;
                 let value = line.args.value;

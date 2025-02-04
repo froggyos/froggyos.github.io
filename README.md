@@ -40,7 +40,7 @@ There is no set colors that you must have, but these are the color conventions.
  * swimto -> st
 
 ## Bugs
- * cannot call functions inside of functions. This is because functions are parsed by the formatter instead of the parser. This is because it was easier to do than implementing an isolated parser that has the variables from the other, parent parser. implementation maybe.
+ * ~~cannot call functions inside of functions. This is because functions are parsed by the formatter instead of the parser. This is because it was easier to do than implementing an isolated parser that has the variables from the other, parent parser~~
  * ~~something with `if` statements???? check it out later~~
     if statements work correctly now, but `else` might not work as expected
  * load state doesnt work with palettes

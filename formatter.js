@@ -1,7 +1,6 @@
 function format(input) {
     let formatted = {
         functions: {},
-        labels: {},
         lines: [],
         errors: [],
         warnings: []
@@ -108,6 +107,8 @@ function format(input) {
                 }
             }
 
+            functionLines.push({command: "endprog", args: []});
+
             formatted.lines.splice(j, 1); // Remove "endfunc"
             formatted.functions[functionName] = functionLines;
             formatted.lines.splice(i, 1); // Remove "func"
@@ -116,19 +117,18 @@ function format(input) {
     }
 
     // Execute `f:` commands
-    for (let i = 0; i < formatted.lines.length; i++) {
-        let line = formatted.lines[i];
+    formatted.lines.forEach((line, i) => {
         if (line.command === "f:") {
             let functionName = line.args[0];
             if (formatted.functions[functionName]) {
-                let functionBody = JSON.parse(JSON.stringify(formatted.functions[functionName]));
-                formatted.lines.splice(i, 1, ...functionBody);
-                i += functionBody.length - 1;
+                line.args = {
+                    body: JSON.parse(JSON.stringify(formatted.functions[functionName]))
+                }
             } else {
                 formatted.errors.push(`FormatError: Function "${functionName}" not defined.`);
             }
         }
-    }
+    });
 
     // if
     formatted.lines.forEach((line, i) => {
