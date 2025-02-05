@@ -36,13 +36,13 @@ function interpreter(formatted, vars){
         let command = line.command;
 
         async function parseNext(){
+            if(config.debugMode) await waitForButtonClick("froggyscript-debug-button");
+            lineIndex++;
+            iteration++;
             if(config.debugMode){
-                await waitForButtonClick("froggyscript-debug-button");
                 document.getElementById('debug-program-memory').textContent = "program memory\n"+JSON.stringify(variables, null, 2) + "\n----------\n" + JSON.stringify(debugObject, null, 2);
                 console.log(`{${iteration}} Line ${lineIndex}: ${command} ${JSON.stringify(line.args)}`);
             }
-            lineIndex++;
-            iteration++;
             runParser();
         }
 
