@@ -88,7 +88,7 @@ setInterval(function() {
             config.fileSystem["D:/Program-Data"].push({
                 name: program,
                 properties: {
-                    read: true,
+                    read: false,
                     write: false,
                     hidden: false
                 },
