@@ -32,6 +32,7 @@ function interpreter(formatted, vars){
     }
 
     function runParser(){
+        let lines = formatted.lines;
         let line = formatted.lines[lineIndex];
         let command = line.command;
 
@@ -59,7 +60,23 @@ function interpreter(formatted, vars){
         }
 
         switch(command){
-            // FIX FUNCTION PARSING!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ==================================================
+            // gonna need some error checking here
+            case "f:": {
+                let end = line.args.end;
+                lines[end].args = {
+                    goto: lineIndex
+                };
+                lineIndex = line.args.start;
+                parseNext();
+            } break;
+            case "endfunc": {
+                lineIndex = line.args.goto;
+                parseNext();
+            } break;
+            case "func": {
+                lineIndex = line.args.end;
+                parseNext();
+            } break;
             case "append": {
                 let variable = line.args.variable;
                 let value = line.args.value;

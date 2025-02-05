@@ -89,56 +89,16 @@ function format(input) {
         }
     });
 
-    // Parse functions
-    for (let i = 0; i < formatted.lines.length; i++) {
-        let line = formatted.lines[i];
-        if (line.command === "func") {
-            let functionName = line.args[0];
-            let functionLines = [];
-            let j = i + 1;
-            let failsafe = 0;
-
-            if(formatted.functions[functionName] !== undefined){
-                formatted.errors.push(`FormatError: Function "${functionName}" already exists.`);
-                if(config.debugMode) console.log(`FORMAT ERROR! ${formatted.errors[formatted.errors.length - 1]}`);
-                break;
-            }
-
-            while (formatted.lines[j]?.command !== "endfunc") {
-                functionLines.push(formatted.lines[j]);
-                formatted.lines.splice(j, 1);
-                failsafe++;
-                
-                if(failsafe > formatted.lines.length){
-                    formatted.errors.push(`FormatError: Function "${functionName}" is not closed.`);
-                    if(config.debugMode) console.log(`FORMAT ERROR! ${formatted.errors[formatted.errors.length - 1]}`);
-                    break;
-                }
-            }
-
-            formatted.lines.splice(j, 1); // Remove "endfunc"
-            formatted.functions[functionName] = functionLines;
-            formatted.lines.splice(i, 1); // Remove "func"
-            i--;
-
-            if(config.debugMode) console.log(`Formatted function ${functionName}`);
-        }
-    }
-
-    // Execute `f:` commands
-    formatted.lines.forEach((line, i) => {
-        if (line.command === "f:") {
-            let functionName = line.args[0];
-            if (formatted.functions[functionName]) {
-                let functionBody = JSON.parse(JSON.stringify(formatted.functions[functionName]));
-                formatted.lines.splice(i, 1, ...functionBody);
-                if(config.debugMode) console.log(`Formatted function declaration ${JSON.stringify(formatted.functions[functionName])}`);
-            } else {
-                formatted.errors.push(`FormatError: Function "${functionName}" not defined.`);
-                if(config.debugMode) console.log(`FORMAT ERROR! ${formatted.errors[formatted.errors.length - 1]}`);
-            }
-        }
-    });
+    //         if (formatted.functions[functionName]) {
+    //             let functionBody = JSON.parse(JSON.stringify(formatted.functions[functionName]));
+    //             formatted.lines.splice(i, 1, ...functionBody);
+    //             if(config.debugMode) console.log(`Formatted function declaration ${JSON.stringify(formatted.functions[functionName])}`);
+    //         } else {
+    //             formatted.errors.push(`FormatError: Function "${functionName}" not defined.`);
+    //             if(config.debugMode) console.log(`FORMAT ERROR! ${formatted.errors[formatted.errors.length - 1]}`);
+    //         }
+    //     }
+    // });
 
     // if
     formatted.lines.forEach((line, i) => {
@@ -358,6 +318,67 @@ function format(input) {
             if(config.debugMode) console.log(`Formatted append ${JSON.stringify(line.args)}`);
         }
     });
+
+    // Parse functions
+    for (let i = 0; i < formatted.lines.length; i++) {
+        let line = formatted.lines[i];
+        if (line.command === "func") {
+            let functionName = line.args[0];
+            let startLine = i;
+            let endLine = -1;
+
+            let j = i + 1;
+            let failsafe = 0;
+
+            if(formatted.functions[functionName] !== undefined){
+                formatted.errors.push(`FormatError: Function "${functionName}" already exists.`);
+                if(config.debugMode) console.log(`FORMAT ERROR! ${formatted.errors[formatted.errors.length - 1]}`);
+                break;
+            }
+
+            while (j < formatted.lines.length && endLine === -1) {
+                if (formatted.lines[j].command === "endfunc") {
+                    endLine = j;
+                }
+                j++;
+                failsafe++;
+                if (failsafe > formatted.lines.length) {
+                    formatted.errors.push(`FormatError: No matching "endfunc" found for "func".`);
+                    if(config.debugMode) console.log(`FORMAT ERROR! ${formatted.errors[formatted.errors.length - 1]}`);
+                    break;
+                }
+            }
+
+            formatted.functions[functionName] = {
+                start: startLine,
+                end: endLine,
+            };
+
+            if(config.debugMode) console.log(`Formatted function ${functionName}`);
+        }
+    }
+
+    formatted.lines.forEach((line, i) => {
+        if(line.command === "func" || line.command === "f:"){
+            let functionName = line.args[0];
+            if(formatted.functions[functionName] === undefined){
+                formatted.errors.push(`FormatError: Function "${functionName}" not defined.`);
+                if(config.debugMode) console.log(`FORMAT ERROR! ${formatted.errors[formatted.errors.length - 1]}`);
+            } else {
+                let startingIndex = formatted.functions[functionName].start;
+                let endingIndex = formatted.functions[functionName].end;
+
+                line.args = {
+                    function: functionName,
+                    start: startingIndex,
+                    end: endingIndex
+                }
+
+                if(line.command === "f:" && config.debugMode) console.log(`Formatted f: ${JSON.stringify(line.args)}`);
+                if(line.command === "func" && config.debugMode) console.log(`Formatted function ${JSON.stringify(line.args)}`);
+            }
+        }
+    })
     
     return formatted;
 }
