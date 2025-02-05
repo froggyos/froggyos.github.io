@@ -1,4 +1,4 @@
-// new AllSniffer({timerOptions: {intervalIDsToExclude: [1,2]}});
+// new AllSniffer({timerOptions: {intervalIDsToExclude: [1,2,3, 4]}});
 
 let screen = document.getElementById('screen');
 let terminal = document.getElementById('terminal');
@@ -81,6 +81,12 @@ setInterval(function() {
     }
     files = files.map(file => file.name);
     config.programList = files;
+
+    if(config.debugMode) {
+        document.getElementById('froggyscript-debug-button').style.display = 'block';
+    } else {
+        document.getElementById('froggyscript-debug-button').style.display = 'none';
+    }
 }, 1000);
 
 // CSS STYLING ==============================================================================================

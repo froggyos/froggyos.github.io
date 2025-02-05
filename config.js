@@ -1,4 +1,5 @@
 const config = {
+    debugMode: false,
     version: "1.5",
     colorPalette: "standard",
     currentPath: 'C:/Home',

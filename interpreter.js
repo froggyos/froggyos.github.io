@@ -1,6 +1,18 @@
+function waitForButtonClick(buttonId) {
+    return new Promise(resolve => {
+        const button = document.getElementById(buttonId);
+        const handleClick = () => {
+            button.removeEventListener("click", handleClick); // Cleanup event listener
+            resolve();
+        };
+        button.addEventListener("click", handleClick);
+    });
+}
+
 function interpreter(formatted, vars){
 
     let lineIndex = 0;
+    let iteration = 0;
 
     let variables = {};
     let defineCount = 0;
@@ -10,8 +22,13 @@ function interpreter(formatted, vars){
         let line = formatted.lines[lineIndex];
         let command = line.command;
 
-        function parseNext(){
+        async function parseNext(){
+            if(config.debugMode){
+                console.log(`{${iteration}} Line ${lineIndex}: ${command} ${JSON.stringify(line.args)}`);
+                await waitForButtonClick("froggyscript-debug-button");
+            }
             lineIndex++;
+            iteration++;
             runParser();
         }
 
