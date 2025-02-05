@@ -42,9 +42,9 @@ There is no set colors that you must have, but these are the color conventions.
 ## Bugs
  * ~~cannot call functions inside of functions. This is because functions are parsed by the formatter instead of the parser. This is because it was easier to do than implementing an isolated parser that has the variables from the other, parent parser~~
  * ~~something with `if` statements???? check it out later~~
-    * if statements work correctly now, but `else` might not work as expected
+    * `if` keywords work correctly now, but `else` might not work as expected.
  * load state doesnt work with palettes
- * ~~the inserted `wait` keywords may be messing up frame generation sometimes~~
+ * ~~the inserted `wait` keywords may be messing loops sometimes~~
     * `wait` keywords were being inserted before every `endloop` command, which stacked. Instead of the `wait` keywords being inserting during formatting, they are now inserted after formatting, before parsing.
 
 ## Command Help
