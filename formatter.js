@@ -337,6 +337,20 @@ function format(input) {
         }
     }
 
+    formatted.lines.forEach((line) => {
+        if (line.command === "savedata") {
+            let variable = line.args[0];
+            if (variable === undefined) {
+                formatted.errors.push(`FormatError: Missing variable for "savedata" keyword.`);
+                if(config.debugMode) console.log(`FORMAT ERROR! ${formatted.errors[formatted.errors.length - 1]}`);
+            }
+            line.args = {
+                variable: variable
+            }
+            if(config.debugMode) console.log(`Formatted savedata ${JSON.stringify(line.args)}`);
+        }
+    })
+
     formatted.lines.forEach((line, i) => {
         if(line.command === "func" || line.command === "f:"){
             let functionName = line.args[0];

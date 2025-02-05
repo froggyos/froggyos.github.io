@@ -61,7 +61,11 @@ function interpreter(formatted, vars){
         }
 
         switch(command){
-            // gonna need some error checking here
+            case "savedata": { // bug! ========================================= double enter on ask statements as well as finish this
+                console.log(line);
+                parseNext();
+            } break;
+             // gonna need some error checking here
             case "f:": {
                 let end = line.args.end;
                 lines[end].args = {

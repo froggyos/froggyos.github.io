@@ -82,6 +82,22 @@ setInterval(function() {
     files = files.map(file => file.name);
     config.programList = files;
 
+    // for all the programs, if there is not a corresponding file in the D:Program-Data directory, create one
+    for(let program of config.programList){
+        if(getFileWithName("D:/Program-Data", program) == undefined){
+            config.fileSystem["D:/Program-Data"].push({
+                name: program,
+                properties: {
+                    read: true,
+                    write: false,
+                    hidden: false
+                },
+                data: [""]
+            });
+        }
+    }
+
+
     if(config.debugMode) {
         document.body.style.cursor = "pointer";
         document.getElementById('froggyscript-debug-button').style.display = 'block';
@@ -95,7 +111,7 @@ setInterval(function() {
         document.getElementById('debug-program-memory').style.display = 'none';
         document.getElementById('debug-os').style.display = 'none';
     }
-}, 1000);
+}, 100);
 
 // CSS STYLING ==============================================================================================
 const defaultStyling = `
