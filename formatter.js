@@ -1,7 +1,6 @@
 function format(input) {
     let formatted = {
         functions: {},
-        labels: {},
         lines: [],
         errors: [],
         warnings: []
@@ -16,6 +15,7 @@ function format(input) {
         if (input[i] === "endloop") {
             input.splice(i, 0, "wait 0");
             i++;
+            if(config.debugMode) console.log("Inserted wait 0 before endloop.");
         }
     }
 
@@ -38,6 +38,7 @@ function format(input) {
                 name: line.args[0],
                 value: value
             };
+            if(config.debugMode) console.log(`Formatted variable ${JSON.stringify(line.args)}`);
         }
     });
 
@@ -49,6 +50,7 @@ function format(input) {
                 name: line.args[0],
                 value: line.args[1]
             };
+            if(config.debugMode) console.log(`Formatted filearg ${JSON.stringify(line.args)}`);
         }
     })
 
@@ -60,6 +62,7 @@ function format(input) {
                 variable: line.args[0],
                 value: value
             };
+            if(config.debugMode) console.log(`Formatted set ${JSON.stringify(line.args)}`);
         }
     });
 
@@ -67,6 +70,7 @@ function format(input) {
     formatted.lines.forEach((line) => {
         if (line.command === "out") {
             line.args = line.args.join(" ");
+            if(config.debugMode) console.log(`Formatted out ${JSON.stringify(line.args)}`);
         }
         if(line.command === "outc"){
             let color = line.args[0];
@@ -74,12 +78,14 @@ function format(input) {
 
             if(color === undefined || output === undefined){
                 formatted.errors.push(`FormatError: Missing arguments for "outc" keyword.`);
+                if(config.debugMode) console.log(`FORMAT ERROR! ${formatted.errors[formatted.errors.length - 1]}`);
             }
 
             line.args = {
                 color: color,
                 output: output
             }
+            if(config.debugMode) console.log(`Formatted outc ${JSON.stringify(line.args)}`);
         }
     });
 
@@ -94,6 +100,7 @@ function format(input) {
 
             if(formatted.functions[functionName] !== undefined){
                 formatted.errors.push(`FormatError: Function "${functionName}" already exists.`);
+                if(config.debugMode) console.log(`FORMAT ERROR! ${formatted.errors[formatted.errors.length - 1]}`);
                 break;
             }
 
@@ -104,6 +111,7 @@ function format(input) {
                 
                 if(failsafe > formatted.lines.length){
                     formatted.errors.push(`FormatError: Function "${functionName}" is not closed.`);
+                    if(config.debugMode) console.log(`FORMAT ERROR! ${formatted.errors[formatted.errors.length - 1]}`);
                     break;
                 }
             }
@@ -112,6 +120,8 @@ function format(input) {
             formatted.functions[functionName] = functionLines;
             formatted.lines.splice(i, 1); // Remove "func"
             i--;
+
+            if(config.debugMode) console.log(`Formatted function ${functionName}`);
         }
     }
 
@@ -122,8 +132,10 @@ function format(input) {
             if (formatted.functions[functionName]) {
                 let functionBody = JSON.parse(JSON.stringify(formatted.functions[functionName]));
                 formatted.lines.splice(i, 1, ...functionBody);
+                if(config.debugMode) console.log(`Formatted function declaration ${JSON.stringify(formatted.functions[functionName])}`);
             } else {
                 formatted.errors.push(`FormatError: Function "${functionName}" not defined.`);
+                if(config.debugMode) console.log(`FORMAT ERROR! ${formatted.errors[formatted.errors.length - 1]}`);
             }
         }
     });
@@ -137,6 +149,7 @@ function format(input) {
 
             if(input === ""){
                 formatted.errors.push(`FormatError: Missing condition for "if" keyword.`);
+                if(config.debugMode) console.log(`FORMAT ERROR! ${formatted.errors[formatted.errors.length - 1]}`);
             }
 
             let pairedIf = 0;
@@ -157,12 +170,15 @@ function format(input) {
 
             if (count !== 0) {
                 formatted.errors.push(`FormatError: No matching "endif" found for "if".`);
+                if(config.debugMode) console.log(`FORMAT ERROR! ${formatted.errors[formatted.errors.length - 1]}`);
             }
 
             line.args = {
                 condition: input,
                 pairedIf: pairedIf
             };
+
+            if(config.debugMode) console.log(`Formatted if ${JSON.stringify(line.args)}`);
         }
 
         if (line.command === "else") {
@@ -172,6 +188,8 @@ function format(input) {
                 ),
                 skip: false
             };
+
+            if(config.debugMode) console.log(`Formatted else ${JSON.stringify(line.args)}`);
         }
     })
 
@@ -183,11 +201,14 @@ function format(input) {
 
             if (variable === undefined || variable === "") {
                 formatted.errors.push(`FormatError: Missing variable for "ask" keyword.`);
+                if(config.debugMode) console.log(`FORMAT ERROR! ${formatted.errors[formatted.errors.length - 1]}`);
             }
 
             line.args = {
                 variable: variable,
             }
+
+            if(config.debugMode) console.log(`Formatted ask ${JSON.stringify(line.args)}`);
         }
     })
 
@@ -200,14 +221,17 @@ function format(input) {
 
             if (selectedOption === undefined || selectedOption === "") {
                 formatted.errors.push(`FormatError: Missing selected option for "prompt" keyword.`);
+                if(config.debugMode) console.log(`FORMAT ERROR! ${formatted.errors[formatted.errors.length - 1]}`);
             }
 
             if (variable === undefined || variable === "") {
                 formatted.errors.push(`FormatError: Missing variable for "prompt" keyword.`);
+                if(config.debugMode) console.log(`FORMAT ERROR! ${formatted.errors[formatted.errors.length - 1]}`);
             }
 
             if (output === undefined || output === "") {
                 formatted.errors.push(`FormatError: Missing output for "prompt" keyword.`);
+                if(config.debugMode) console.log(`FORMAT ERROR! ${formatted.errors[formatted.errors.length - 1]}`);
             }
 
             line.args = {
@@ -215,6 +239,8 @@ function format(input) {
                 selectedOption: selectedOption,
                 output: output
             }
+
+            if(config.debugMode) console.log(`Formatted prompt ${JSON.stringify(line.args)}`);
         }
     })
 
@@ -234,6 +260,8 @@ function format(input) {
                 condition: input,
                 endOfLoop: endLoopIndex
             };
+
+            if(config.debugMode) console.log(`Formatted loop ${JSON.stringify(line.args)}`);
         }
     })
 
@@ -260,8 +288,11 @@ function format(input) {
                 line.args = {
                     startOfLoop: loopIndex,
                 };
+                
+                if(config.debugMode) console.log(`Formatted endloop: ${JSON.stringify(line.args)}`);
             } else {
                 formatted.errors.push(`FormatError: No matching "loop" found for "endloop".`);
+                if(config.debugMode) console.log(`FORMAT ERROR! ${formatted.errors[formatted.errors.length - 1]}`);
             }
         }
     });
@@ -275,11 +306,14 @@ function format(input) {
 
             if (input === "") {
                 formatted.errors.push(`FormatError: Missing time for "wait" keyword.`);
+                if(config.debugMode) console.log(`FORMAT ERROR! ${formatted.errors[formatted.errors.length - 1]}`);
             }
 
             line.args = {
                 time: input
             };
+
+            if(config.debugMode) console.log(`Formatted wait ${JSON.stringify(line.args)}`);
         }
     });
 
@@ -290,11 +324,14 @@ function format(input) {
 
             if (input === undefined) {
                 formatted.errors.push(`FormatError: Missing variable for "free" keyword.`);
+                if(config.debugMode) console.log(`FORMAT ERROR! ${formatted.errors[formatted.errors.length - 1]}`);
             }
 
             line.args = {
                 variable: input
             };
+
+            if(config.debugMode) console.log(`Formatted free ${JSON.stringify(line.args)}`);
         }
     });
 
@@ -305,16 +342,20 @@ function format(input) {
 
             if (line.args[0] === undefined) {
                 formatted.errors.push(`FormatError: Missing variable for "append" keyword.`);
+                if(config.debugMode) console.log(`FORMAT ERROR! ${formatted.errors[formatted.errors.length - 1]}`);
             }
 
             if (input === "") {
                 formatted.errors.push(`FormatError: Missing input for "append" keyword.`);
+                if(config.debugMode) console.log(`FORMAT ERROR! ${formatted.errors[formatted.errors.length - 1]}`);
             }
 
             line.args = {
                 variable: line.args[0],
                 value: input
             };
+
+            if(config.debugMode) console.log(`Formatted append ${JSON.stringify(line.args)}`);
         }
     });
     

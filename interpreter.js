@@ -15,8 +15,21 @@ function interpreter(formatted, vars){
     let iteration = 0;
 
     let variables = {};
-    let defineCount = 0;
+    let fileargCount = 0;
     let cliPromptCount = 0;
+
+    let debugObject = {
+        fileargCount: fileargCount,
+        cliPromptCount: cliPromptCount,
+        functions: formatted.functions,
+        errors: formatted.errors,
+        warnings: formatted.warnings,
+    }
+
+    if(config.debugMode) {
+        console.log("Formatting complete. Ready!")
+        document.getElementById('debug-program-memory').textContent = "program memory\n"+JSON.stringify(variables, null, 2) + "\n----------\n" + JSON.stringify(debugObject, null, 2);
+    }
 
     function runParser(){
         let line = formatted.lines[lineIndex];
@@ -24,8 +37,9 @@ function interpreter(formatted, vars){
 
         async function parseNext(){
             if(config.debugMode){
-                console.log(`{${iteration}} Line ${lineIndex}: ${command} ${JSON.stringify(line.args)}`);
                 await waitForButtonClick("froggyscript-debug-button");
+                document.getElementById('debug-program-memory').textContent = "program memory\n"+JSON.stringify(variables, null, 2) + "\n----------\n" + JSON.stringify(debugObject, null, 2);
+                console.log(`{${iteration}} Line ${lineIndex}: ${command} ${JSON.stringify(line.args)}`);
             }
             lineIndex++;
             iteration++;
@@ -296,14 +310,14 @@ function interpreter(formatted, vars){
                 }
 
                 // count the number of variables with the type of "define"
-                defineCount++;
+                fileargCount++;
 
-                if(args.length - 1 < defineCount){
-                    endProgram(`Missing argument ${defineCount} (type ${type}).`);
+                if(args.length - 1 < fileargCount){
+                    endProgram(`Missing argument ${fileargCount} (type ${type}).`);
                     break;
                 }
 
-                let varVal = args[defineCount];
+                let varVal = args[fileargCount];
 
                 variables["v:" + name] = {
                     type: type,

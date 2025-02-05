@@ -27,7 +27,7 @@ const config = {
             { name: "help", properties: {read: true, write: false, hidden: false}, data: [
                 "str category = ''",
                 "out 'Choose a category: '",
-                "prompt category OS File Directory Other",
+                "prompt 0 category OS File Directory Other",
                 "if {v:category == 'OS'}",
                 "out 'clearstate. . . .clears froggyOS state'",
                 "out 'loadstate . . . .loads froggyOS state'",

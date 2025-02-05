@@ -83,9 +83,17 @@ setInterval(function() {
     config.programList = files;
 
     if(config.debugMode) {
+        document.body.style.cursor = "pointer";
         document.getElementById('froggyscript-debug-button').style.display = 'block';
+        document.getElementById('debug-program-memory').style.display = 'block';
+        document.getElementById('debug-os').style.display = 'block';
+
+        document.getElementById('debug-os').textContent = "os memory:\n"+JSON.stringify(config, null, 1);
     } else {
+        document.body.style.cursor = "false";
         document.getElementById('froggyscript-debug-button').style.display = 'none';
+        document.getElementById('debug-program-memory').style.display = 'none';
+        document.getElementById('debug-os').style.display = 'none';
     }
 }, 1000);
 
