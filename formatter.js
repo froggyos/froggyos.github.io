@@ -5,19 +5,6 @@ function format(input) {
         errors: [],
         warnings: []
     };
-    
-    const disallowedVariableNames = [
-        //"int", "str", "set", "out", "func", "endfunc", "f:", "label", "goto", "if", "endif", "and", "or", "not", "true", "false", "else"
-    ]
-
-    // for each index in input, if it equals "endloop", insert "wait 0" before it
-    for (let i = 0; i < input.length; i++) {
-        if (input[i] === "endloop") {
-            input.splice(i, 0, "wait 0");
-            i++;
-            if(config.debugMode) console.log("Inserted wait 0 before endloop.");
-        }
-    }
 
     input.forEach((line, i) => {
         input[i] = line.trim();
@@ -88,17 +75,6 @@ function format(input) {
             if(config.debugMode) console.log(`Formatted outc ${JSON.stringify(line.args)}`);
         }
     });
-
-    //         if (formatted.functions[functionName]) {
-    //             let functionBody = JSON.parse(JSON.stringify(formatted.functions[functionName]));
-    //             formatted.lines.splice(i, 1, ...functionBody);
-    //             if(config.debugMode) console.log(`Formatted function declaration ${JSON.stringify(formatted.functions[functionName])}`);
-    //         } else {
-    //             formatted.errors.push(`FormatError: Function "${functionName}" not defined.`);
-    //             if(config.debugMode) console.log(`FORMAT ERROR! ${formatted.errors[formatted.errors.length - 1]}`);
-    //         }
-    //     }
-    // });
 
     // if
     formatted.lines.forEach((line, i) => {
