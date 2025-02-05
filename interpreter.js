@@ -61,8 +61,50 @@ function interpreter(formatted, vars){
         }
 
         switch(command){
-            case "savedata": { // bug! ========================================= double enter on ask statements as well as finish this
-                console.log(line);
+            case "loaddata": { // =========================================================
+                let variable = line.args.variable;
+                let data = '';
+                let file = config.fileSystem["D:/Program-Data"].find(file => file.name == config.currentProgram);
+                for(let i = 0; i < file.data.length; i++){
+                    if(file.data[i].startsWith(variable+` `)){
+                        data = file.data[i].split(` `)[1];
+                        break;
+                    }
+                }
+                // if the variable already exists
+                if(variables["v:" + variable] != undefined){
+                    variables["v:" + variable].value = data;
+                } else {
+                    variables["v:" + variable] = {
+                        type: "str",
+                        value: data,
+                        name: variable,
+                    };
+                }
+                parseNext();
+            } break;
+            case "savedata": { // =========================================================
+                let variable = line.args.variable;
+                let variableData = '';
+                if(variables["v:" + variable] != undefined){
+                    variableData = variables["v:" + variable].value;
+                }
+
+                let data = variable+` `+variableData;
+                // find the corresponding file in directory D:Program-Files
+                let file = config.fileSystem["D:/Program-Data"].find(file => file.name == config.currentProgram);
+
+                // for each line in fileData, check if the line starts with the variable name
+                let found = false;
+                for(let i = 0; i < file.data.length; i++){
+                    if(file.data[i].startsWith(variable+` `)){
+                        file.data[i] = data;
+                        found = true;
+                        break;
+                    }
+                }
+
+                if(!found) file.data.push(data);
                 parseNext();
             } break;
              // gonna need some error checking here
@@ -288,6 +330,10 @@ function interpreter(formatted, vars){
                 inputElement.focus();
 
                 inputElement.addEventListener('keydown', function(e){
+                    if(e.key == "Enter") e.preventDefault();
+                }); 
+
+                inputElement.addEventListener('keyup', function(e){
                     if(e.key == "Enter"){
                         e.preventDefault();
                         inputElement.setAttribute('contenteditable', 'false');

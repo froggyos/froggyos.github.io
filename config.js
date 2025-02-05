@@ -2,7 +2,7 @@ const config = {
     debugMode: false,
     version: "1.5",
     colorPalette: "standard",
-    currentPath: 'D:/Program-Data',
+    currentPath: 'C:/Home',
     commandHistory: [],
     commandHistoryIndex: -1,
     showLoadingSpinner: false,
@@ -56,11 +56,9 @@ const config = {
                 "endprog",
             ] },
             { name: "test", properties: {read: true, write: true, hidden: false}, data: [
-                "str variable = ''",
-                "out 'what is your name?'",
-                "ask variable",
-                "savedata variable",
-                "out v:variable",
+                // "str flag = ''",
+                // "loaddata flag",
+                // "out v:flag",
                 "endprog",
 
             ] },
@@ -371,7 +369,11 @@ const config = {
                 "m $1"
             ] },
         ],
-        "D:/Program-Data": [],
+        "D:/Program-Data": [
+            { name: "test", properties: {read: true, write: true, hidden: false}, data: [
+                "flag lbctf{ribbit_ribbit}",
+            ] },
+        ],
         "D:/Palettes": [
             // standard and revised palettes:  https://int10h.org/blog/2022/06/ibm-5153-color-true-cga-palette/
             { name: "standard", properties: {read: true, write: true, hidden: false}, data: [

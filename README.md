@@ -274,3 +274,14 @@ loop { v:i < 5 }
     set j = 0
 endloop
 ```
+## Program Data
+### Saving Data
+Saves the contents of `[variable]` to the corresponding file in the `D:/Program-Data` file
+```
+savedata [variable]
+```
+### Loading Data
+Loads the contents of entry of `[variable]` to the variable called `[variable]`
+```
+loaddata [variable]
+```

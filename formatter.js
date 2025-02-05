@@ -349,6 +349,17 @@ function format(input) {
             }
             if(config.debugMode) console.log(`Formatted savedata ${JSON.stringify(line.args)}`);
         }
+        if (line.command === "loaddata") {
+            let variable = line.args[0];
+            if (variable === undefined) {
+                formatted.errors.push(`FormatError: Missing variable for "loaddata" keyword.`);
+                if(config.debugMode) console.log(`FORMAT ERROR! ${formatted.errors[formatted.errors.length - 1]}`);
+            }
+            line.args = {
+                variable: variable
+            }
+            if(config.debugMode) console.log(`Formatted loaddata ${JSON.stringify(line.args)}`);
+        }
     })
 
     formatted.lines.forEach((line, i) => {
