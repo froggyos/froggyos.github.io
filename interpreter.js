@@ -51,6 +51,11 @@ function interpreter(formatted, vars){
             createEditableTerminalLine(`${config.currentPath}>`);
             config.showLoadingSpinner = false;
             config.currentProgram = null;
+
+            if(config.debugMode){
+                document.getElementById('debug-program-memory').textContent = `program memory\nprogram ended with error\n${error}`;
+                console.error(error);
+            }
         }
 
         switch(command){
@@ -535,6 +540,7 @@ function interpreter(formatted, vars){
             } break;
             case "endprog":
                 config.currentProgram = "cli";
+                document.getElementById('debug-program-memory').textContent = `program memory\nprogram ended`;
                 createEditableTerminalLine(`${config.currentPath}>`);
             break;
             default:
