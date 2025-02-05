@@ -281,7 +281,7 @@ Saves the contents of `[variable]` to the corresponding file in the `D:/Program-
 savedata [variable]
 ```
 ### Loading Data
-Loads the contents of entry of `[variable]` to the variable called `[variable]`
+From the corresponding `D:/Program-Data` file, loads the contents of entry of `[variable]` to the variable called `[variable]`
 ```
 loaddata [variable]
 ```
