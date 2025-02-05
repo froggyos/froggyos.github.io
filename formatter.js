@@ -56,7 +56,10 @@ function format(input) {
     // Handle `out` commands
     formatted.lines.forEach((line) => {
         if (line.command === "out") {
-            line.args = line.args.join(" ");
+            let output = line.args.join(" ");
+            line.args = {
+                output: output
+            }
             if(config.debugMode) console.log(`Formatted out ${JSON.stringify(line.args)}`);
         }
         if(line.command === "outc"){

@@ -524,7 +524,7 @@ function interpreter(formatted, vars){
                     break;
                 }
 
-                let out = line.args;
+                let out = line.args.output;
 
                 // Replace variables in the "out" statement
                 for (let variable in variables) {
