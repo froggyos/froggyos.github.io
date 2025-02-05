@@ -65,12 +65,25 @@ function interpreter(formatted, vars){
                 let variable = line.args.variable;
                 let data = '';
                 let file = config.fileSystem["D:/Program-Data"].find(file => file.name == config.currentProgram);
+
+                let malformedData = false;
+
                 for(let i = 0; i < file.data.length; i++){
-                    if(file.data[i].startsWith(variable+` `)){
-                        data = file.data[i].split(` `)[1];
+                    if(!file.data[i].includes("�")){
+                        malformedData = true;
+                        break;
+                    }
+
+                    if(file.data[i].startsWith(variable+`�`)){
+                        data = file.data[i].split(`�`)[1];
                         break;
                     }
                 }
+                if(malformedData){
+                    endProgram(`Malformed data in file.`);
+                    break;
+                }
+                
                 // if the variable already exists
                 if(variables["v:" + variable] != undefined){
                     variables["v:" + variable].value = data;

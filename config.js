@@ -55,12 +55,8 @@ const config = {
                 "endif",
                 "endprog",
             ] },
-            { name: "test", properties: {read: true, write: true, hidden: false}, data: [
-                // "str flag = ''",
-                // "loaddata flag",
-                // "out v:flag",
-                "endprog",
-
+            { name: "for_lbc2", properties: {read: true, write: true, hidden: false}, data: [
+                "-- write your froggyscript here",
             ] },
             { name: "demo", properties: {read: true, write: true, hidden: true}, data: [
                 "str field = ''",
@@ -370,8 +366,8 @@ const config = {
             ] },
         ],
         "D:/Program-Data": [
-            { name: "test", properties: {read: true, write: true, hidden: false}, data: [
-                "flag lbctf{ribbit_ribbit}",
+            { name: "for_lbc2", properties: {read: false, write: false, hidden: false}, data: [
+                "flag�lbctf{ribbit_ribbit}",
             ] },
         ],
         "D:/Palettes": [
