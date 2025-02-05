@@ -45,7 +45,7 @@ There is no set colors that you must have, but these are the color conventions.
     * `if` keywords work correctly now, but `else` might not work as expected.
  * load state doesnt work with palettes
  * ~~the inserted `wait` keywords may be messing loops sometimes~~
-    * `wait` keywords were being inserted before every `endloop` command, which stacked. Instead of the `wait` keywords being inserting during formatting, they are now inserted after formatting, before parsing.
+    * `wait` keywords were being inserted before every `endloop` command, which stacked. Turns out the `wait` keyword was not necessary, so it was removed.
 
 ## Command Help
 

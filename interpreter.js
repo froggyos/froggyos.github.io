@@ -26,13 +26,6 @@ function interpreter(formatted, vars){
         warnings: formatted.warnings,
     }
 
-    for (let i = 0; i < formatted.length; i++) {
-        // if the command is endloop, insert a wait 0 command before it
-        if (formatted[i].command === "endloop") {
-            formatted.splice(i, 0, { command: "wait", args: { time: 0 } });
-        }
-    }
-
     if(config.debugMode) {
         console.log("Formatting complete. Ready!")
         document.getElementById('debug-program-memory').textContent = "program memory\n"+JSON.stringify(variables, null, 2) + "\n----------\n" + JSON.stringify(debugObject, null, 2);
