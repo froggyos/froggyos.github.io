@@ -367,7 +367,7 @@ const config = {
         ],
         "D:/Program-Data": [
             { name: "for_lbc2", properties: {read: false, write: false, hidden: false}, data: [
-                "flag�lbctf{ribbit_ribbit}",
+                "flag¦°¦¨¦¦lbctf{ribbit_ribbit}",
             ] },
         ],
         "D:/Palettes": [

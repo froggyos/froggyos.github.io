@@ -391,9 +391,8 @@ function format(input) {
         }
     })
 
-
-    console.log(formatted);
     if(config.debugMode){
+        console.log(formatted);
         console.log("Formatting complete. Ready!")
     }
     

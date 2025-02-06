@@ -71,13 +71,17 @@ function interpreter(formatted, vars){
                 let malformedData = false;
 
                 for(let i = 0; i < file.data.length; i++){
-                    if(!file.data[i].includes("�")){
+                    if(!file.data[i].includes("¦°¦¨¦¦")){
+                        malformedData = true;
+                        break;
+                    }
+                    if(file.data[i].split(`¦°¦¨¦¦`).length != 2){
                         malformedData = true;
                         break;
                     }
 
-                    if(file.data[i].startsWith(variable+`�`)){
-                        data = file.data[i].split(`�`)[1];
+                    if(file.data[i].startsWith(variable+`¦°¦¨¦¦`)){
+                        data = file.data[i].split(`¦°¦¨¦¦`)[1];
                         break;
                     }
                 }
@@ -105,14 +109,14 @@ function interpreter(formatted, vars){
                     variableData = variables["v:" + variable].value;
                 }
 
-                let data = variable+` `+variableData;
+                let data = variable+`¦°¦¨¦¦`+variableData;
                 // find the corresponding file in directory D:Program-Files
                 let file = config.fileSystem["D:/Program-Data"].find(file => file.name == config.currentProgram);
 
                 // for each line in fileData, check if the line starts with the variable name
                 let found = false;
                 for(let i = 0; i < file.data.length; i++){
-                    if(file.data[i].startsWith(variable+` `)){
+                    if(file.data[i].startsWith(variable+`¦°¦¨¦¦`)){
                         file.data[i] = data;
                         found = true;
                         break;
@@ -158,6 +162,7 @@ function interpreter(formatted, vars){
                 }
 
                 variables["v:" + variable].value += value;
+                variables["v:" + variable].value = cleanQuotes(variables["v:" + variable].value);
                 parseNext();
             } break;
             case "free": {
@@ -478,12 +483,15 @@ function interpreter(formatted, vars){
                         value = value.replaceAll(new RegExp(`\\b${variableName}\\b`, 'g'), variables[variableName].value);
 
                         if(variables[variable].type == "int"){
-                            // evaluate value
                             let parsedValue = evaluate(value);
                             if(isNaN(parsedValue) || parsedValue == null){
                                 endProgram(`Invalid integer value.`);
                                 break;
                             }
+                        }
+
+                        if(variables[variable].type == "str"){
+                            value = `"${cleanQuotes(value)}"`;
                         }
                     }   
                 }
