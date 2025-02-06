@@ -16,6 +16,13 @@ function format(input) {
         formatted.lines.push({ command, args });
     });
 
+    
+    formatted.lines.forEach((line) => {
+        if(line.command === ''){
+            formatted.lines.splice(formatted.lines.indexOf(line), 1);
+        }
+    })
+
     // Parse variable declarations
     formatted.lines.forEach((line) => {
         if (line.command === "int" || line.command === "str") {
@@ -383,6 +390,12 @@ function format(input) {
             }
         }
     })
+
+
+    console.log(formatted);
+    if(config.debugMode){
+        console.log("Formatting complete. Ready!")
+    }
     
     return formatted;
 }

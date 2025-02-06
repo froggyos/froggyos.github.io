@@ -27,7 +27,6 @@ function interpreter(formatted, vars){
     }
 
     if(config.debugMode) {
-        console.log("Formatting complete. Ready!")
         document.getElementById('debug-program-memory').textContent = "program memory\n"+JSON.stringify(variables, null, 2) + "\n----------\n" + JSON.stringify(debugObject, null, 2);
     }
 
@@ -39,12 +38,12 @@ function interpreter(formatted, vars){
 
         async function parseNext(){
             if(config.debugMode) await waitForButtonClick("froggyscript-debug-button");
-            lineIndex++;
-            iteration++;
             if(config.debugMode){
                 document.getElementById('debug-program-memory').textContent = "program memory\n"+JSON.stringify(variables, null, 2) + "\n----------\n" + JSON.stringify(debugObject, null, 2);
                 console.log(`{${iteration}} Line ${lineIndex}: ${command} ${JSON.stringify(line.args)}`);
             }
+            lineIndex++;
+            iteration++;
             runParser();
         }
 
@@ -61,6 +60,9 @@ function interpreter(formatted, vars){
         }
 
         switch(command){
+            case "": {
+                parseNext();
+            } break;
             case "loaddata": { // =========================================================
                 let variable = line.args.variable;
                 let data = '';
@@ -588,6 +590,10 @@ function interpreter(formatted, vars){
                 }
 
                 let out = line.args.output;
+                
+
+                // BUG!!!!!! =============================================================
+                // the way that strings are done are weird. make it not have so many ''. youknow? yes i know u know
 
                 // Replace variables in the "out" statement
                 for (let variable in variables) {
