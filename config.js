@@ -1,6 +1,6 @@
 const config = {
     debugMode: false,
-    version: "1.5",
+    version: "1.6",
     colorPalette: "standard",
     currentPath: 'C:/Home',
     commandHistory: [],
@@ -53,10 +53,6 @@ const config = {
                 "out 'formattime [format]. . .changes the time format'",
                 "out 'clearterminal' . . . . .clears the terminal output'",
                 "endif",
-                "endprog",
-            ] },
-            { name: "for_lbc2", properties: {read: true, write: true, hidden: false}, data: [
-                "-- write your froggyscript here",
                 "endprog",
             ] },
             { name: "demo", properties: {read: true, write: true, hidden: true}, data: [
@@ -366,11 +362,7 @@ const config = {
                 "m $1"
             ] },
         ],
-        "D:/Program-Data": [
-            { name: "for_lbc2", properties: {read: false, write: false, hidden: false}, data: [
-                "flag¦°¦¨¦¦lbctf{fr0g5_4r3_r3411y_c001_4c7u411y}",
-            ] },
-        ],
+        "D:/Program-Data": [],
         "D:/Palettes": [
             // standard and revised palettes:  https://int10h.org/blog/2022/06/ibm-5153-color-true-cga-palette/
             { name: "standard", properties: {read: true, write: true, hidden: false}, data: [
