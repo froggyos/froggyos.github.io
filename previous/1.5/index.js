@@ -874,13 +874,13 @@ function sendCommand(command, args, createEditableLineAfter){
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
 
-        case '[[FROGGY]]statbarlock':
-            let bool_ = args[0];
-            if(bool_ == "1") config.updateStatBar = false;
-            else if(bool_ == "0") config.updateStatBar = true;
+        case '[[FROGGY]]statbarlock': {
+            let bool = args[0];
+            if(bool == "1") config.updateStatBar = false;
+            else if(bool== "0") config.updateStatBar = true;
             else createTerminalLine("Invalid argument. Please provide '1' or '0'.", config.errorText);
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
-        break;
+        } break;
 
         default:
             createTerminalLine(`Froggy doesn't know "${command}", sorry.`, ">");
