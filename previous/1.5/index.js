@@ -839,8 +839,10 @@ function sendCommand(command, args, createEditableLineAfter){
         break;
 
         case '[[FROGGY]]greeting':
-            createTerminalLine("Type ‘help’ to receive support with commands, and possibly navigation.", "");
-            createTerminalLine(`* Welcome to froggyOS, version ${config.version} *` , "");
+            createTerminalLine(`${config.version} is a special version of froggyOS for lbc2` , "");
+            createTerminalLine(`* Type ‘hop D:/Programs’ to help you get started *`, "");
+            createTerminalLine(`* Read the documentation. *`, "");
+            createTerminalLine(`Good Luck.`, "");
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
 
