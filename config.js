@@ -57,6 +57,7 @@ const config = {
             ] },
             { name: "for_lbc2", properties: {read: true, write: true, hidden: false}, data: [
                 "-- write your froggyscript here",
+                "endprog",
             ] },
             { name: "demo", properties: {read: true, write: true, hidden: true}, data: [
                 "str field = ''",
@@ -296,7 +297,7 @@ const config = {
                 "        set energy = v:energy - 1",
                 "    endif",
                 "",
-                "    if {v:currentAction == 'sleep'}",
+                "    if {v:currentAction == 'sleep' && v:hunger > 1}",
                 "        set selectedPromptOption = 1",
                 "        set energy = v:energy + 1",
                 "        set hunger = v:hunger - 1",
@@ -308,7 +309,7 @@ const config = {
                 "        set hunger = v:hunger + 1",
                 "    endif",
                 "",
-                "    if {v:currentAction == 'work'}",
+                "    if {v:currentAction == 'work' && (v:energy > 2 && v:hunger > 2 && v:happiness > 2)}",
                 "        set selectedPromptOption = 3",
                 "        set hunger = v:hunger - 2",
                 "        set energy = v:energy - 2",
@@ -367,7 +368,7 @@ const config = {
         ],
         "D:/Program-Data": [
             { name: "for_lbc2", properties: {read: false, write: false, hidden: false}, data: [
-                "flag¦°¦¨¦¦lbctf{ribbit_ribbit}",
+                "flag¦°¦¨¦¦lbctf{fr0g5_4r3_r3411y_c001_4c7u411y}",
             ] },
         ],
         "D:/Palettes": [
