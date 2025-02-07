@@ -839,7 +839,7 @@ function sendCommand(command, args, createEditableLineAfter){
         break;
 
         case '[[FROGGY]]greeting':
-            createTerminalLine(`${config.version} is a special version of froggyOS for lbc2` , "");
+            createTerminalLine(`Version ${config.version} is a special version of froggyOS for lbc2` , "");
             createTerminalLine(`* Type ‘hop D:/Programs’ to help you get started *`, "");
             createTerminalLine(`* Read the documentation. *`, "");
             createTerminalLine(`Good Luck.`, "");
