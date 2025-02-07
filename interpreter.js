@@ -49,6 +49,9 @@ function interpreter(formatted, vars){
 
         function endProgram(error){
             createTerminalLine(`${error}`, config.errorText);
+            createTerminalLine("Error Data:", "");
+            createTerminalLine(`Command: ${command}`, "");
+            createTerminalLine(`Args: ${JSON.stringify(line.args, null, 2)}`, "");
             createEditableTerminalLine(`${config.currentPath}>`);
             config.showLoadingSpinner = false;
             config.currentProgram = null;
@@ -464,10 +467,11 @@ function interpreter(formatted, vars){
                 variables["v:" + line.args.name] = line.args;
                 parseNext();
             break;
-            case "set":
+            case "set": {
                 let variableName = "v:" + line.args?.variable;
                 let value = line.args?.value;
                 let parsedValue;
+                let type;
         
                 if (!variableName || !value) {
                     endProgram(`Invalid "set" declaration syntax.`);;
@@ -483,6 +487,8 @@ function interpreter(formatted, vars){
                     if(variable == variableName){
                         value = value.replaceAll(new RegExp(`\\b${variableName}\\b`, 'g'), variables[variableName].value);
 
+                        let type = variables[variable].type;
+
                         if(variables[variable].type == "int"){
                             parsedValue = evaluate(value);
                         }
@@ -493,7 +499,7 @@ function interpreter(formatted, vars){
                     }   
                 }
 
-                if(isNaN(parsedValue) || parsedValue == null){
+                if(type == "int" && (isNaN(parsedValue) || parsedValue == null)){
                     endProgram(`Invalid integer value.`);
                     break;
                 }
@@ -507,7 +513,7 @@ function interpreter(formatted, vars){
 
                 variables[variableName].value = parsedValue;
                 parseNext();
-            break;
+            } break;
             case "if":
                 let condition = line.args.condition;
         
@@ -558,38 +564,42 @@ function interpreter(formatted, vars){
                 parseNext();
             break;
             case "outc": {
-                let color = line.args.color;
-                let out = line.args.output;
+                let text = line.args.text;
+                let formatting = line.args.formatting;
 
-                // Replace variables in the "out" statement
-                for (let variable in variables) {
-                    let variableRegex = new RegExp(`\\b${variable}\\b`, "g"); // Ensure full match for variable name
-                    if (variableRegex.test(out)) {
-                        let value = variables[variable].value;
-                        if (variables[variable].type === "str") {
-                            value = `'${value}'`; // Wrap string variables in quotes
-                        }
-                        out = out.replace(variableRegex, value);
+                // go through the key value pairs in formatting, if theres a variable, retrieve its value
+                for(let key in formatting){
+                    let value = formatting[key];
+                    if(value.includes("v:")){
+                        value = value.replaceAll(/v:(\w+)/g, (match, variable) => {
+                            if(variables["v:" + variable] == undefined){
+                                endProgram(`Variable "${variable}" does not exist.`);
+                                return;
+                            }
+                            return variables["v:" + variable].value;
+                        });
                     }
+                    if(value.length == 1){
+                        value = `c0${value}`
+                    } else if(value.length == 2){
+                        value = `c${value}`
+                    }
+
+                    formatting[key] = value;
                 }
 
-                // Check for unresolved variables
-                if (/v:\w+/.test(out)) {
-                    endProgram(`Variable does not exist in "out" statement.`);
-                    break;
-                }
+                console.log(formatting);
 
-                let parsedOut;
+                let parsedText;
                 try {
-                    out = cleanInnerQuotes(out); // Clean any nested or extra quotes
-                    parsedOut = new Function(`return (${out});`)(); // Evaluate the expression
+                    parsedText = new Function(`return (${cleanInnerQuotes(text)});`)(); // Evaluate the expression
                 } catch (err) {
-                    endProgram(`Error evaluating statement: "${out}".`);
+                    endProgram(`Error evaluating statement: "${text}".`);
                     break;
                 }
 
                 // Output the parsed result to the terminal
-                createTerminalLine(parsedOut, ">", color);
+                createTerminalLine(parsedText, ">", formatting);
                 parseNext();
             } break;
             case "out": {

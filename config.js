@@ -24,6 +24,14 @@ const config = {
         "D:/Programs": [
             { name: "cli", properties: {read: false, write: false, hidden: true}, data: ["str cli = 'this program is hardcoded into froggyOS'", "endprog"] },
             { name: "lilypad", properties: {read: false, write: false, hidden: true}, data: ["str lilypad = 'this program is hardcoded into froggyOS'", "endprog"] },
+            { name: "test", properties: {read: true, write: false, hidden: false}, data: [
+                "int color = 3",
+                "outc {t=c13} 'test 1'",
+                "outc {b=c06} 'test 2'",
+                "outc {t=c04,b=c01} 'test 3'",
+                "outc {t=v:color,b=c06} 'test 4'",
+                "endprog"
+            ] },
             { name: "help", properties: {read: true, write: false, hidden: false}, data: [
                 "str category = ''",
                 "out 'Choose a category: '",
@@ -55,65 +63,6 @@ const config = {
                 "endif",
                 "endprog",
             ] },
-            { name: "demo", properties: {read: true, write: true, hidden: true}, data: [
-                "str field = ''",
-
-                "int field_x = 0",
-                "int player_x = 0",
-
-                "str playerAction = 'right'",
-                "int selectedOption = 0",
-
-                "str fieldBackground = '.'",
-                "str playerChar = '^-^'",
-
-                "str quitConfirm = ''",
-
-
-                "loop { true }",
-                "    -- field generation",
-                "    loop {v:field_x < 75}",
-                "        if {v:field_x == v:player_x}",
-                "            append field v:playerChar",
-                "        else",
-                "            append field v:fieldBackground",
-                "        endif",
-                "        set field_x = v:field_x + 1",
-                "    endloop",
-
-                "    clearterminal",
-
-                "    out v:field",
-                "    out ''",
-
-                "    set field_x = 0",
-
-                "    prompt selectedOption playerAction left right [[QUIT]]",
-                "    if {v:playerAction == 'left' && v:player_x > 0}",
-                "        set playerAction = 'left'",
-                "        set player_x = v:player_x - 1",
-                "        set selectedOption = 0",
-                "    endif",
-
-                "    if {v:playerAction == 'right' && v:player_x < 74}",
-                "        set playerAction = 'right'",
-                "        set player_x = v:player_x + 1",
-                "        set selectedOption = 1",
-                "    endif",
-
-                "    if {v:playerAction == '[[QUIT]]'}",
-                "        out 'Are you sure you want to quit?'",
-                "        prompt 0 quitConfirm no yes",
-                "        if {v:quitConfirm == 'yes'}",
-                "            clearterminal",
-                "            endprog",
-                "        endif",
-                "        set quitConfirm = ''",
-                "    endif",
-
-                "    set field = ''",
-                "endloop",
-            ] },
             { name: "kaerugotchi", properties: {read: true, write: true, hidden: false}, data: [
                 "str currentEmotion = 'default'",
                 "str currentAction = 'play'",
@@ -122,6 +71,7 @@ const config = {
                 "",
                 "str quitFailsafe = ''",
                 "",
+                "int coin = 0",
                 "int energy = 60",
                 "int hunger = 60",
                 "int happiness = 60",
@@ -129,6 +79,7 @@ const config = {
                 "str energyDisplay = '   energy: '",
                 "str hungerDisplay = '   hunger: '",
                 "str happinessDisplay = 'happiness: '",
+                "str coinDisplay = '     coin:'",
                 "",
                 "int energyIterator = 0",
                 "int hungerIterator = 0",
@@ -189,7 +140,7 @@ const config = {
                 "    set hungerIterator = 0",
                 "    set happinessIterator = 0",
                 "",
-                "    loop {v:energyIterator < v:energy}",
+                "    loop { v:energyIterator < v:energy }",
                 "        append energyDisplay '#'",
                 "        set energyIterator = v:energyIterator + 1",
                 "    endloop",
@@ -205,6 +156,7 @@ const config = {
                 "    endloop",
                 "",
                 "",
+                "    outc c14 'v:coinDisplay v:coin'",
                 "    outc c09 v:energyDisplay",
                 "    outc c12 v:hungerDisplay",
                 "    outc c13 v:happinessDisplay",
@@ -310,6 +262,7 @@ const config = {
                 "        set hunger = v:hunger - 2",
                 "        set energy = v:energy - 2",
                 "        set happiness = v:happiness - 2",
+                "        set coin = v:coin + 1",
                 "    endif",
                 "",
                 "    if {v:currentAction == 'poke'}",
@@ -347,7 +300,7 @@ const config = {
                 "   endif",
                 "endloop",
                 "endprog"
-            ] }, // FIIIIIX!!!!!!!!!!!!!!!! SOMETHING DEFINITELY WRONG HERE
+            ] },
         ],
         "D:/Macros": [
             { name: "create-program", properties: {read: true, write: true, hidden: false}, data: [

@@ -70,18 +70,27 @@ function format(input) {
             if(config.debugMode) console.log(`Formatted out ${JSON.stringify(line.args)}`);
         }
         if(line.command === "outc"){
-            let color = line.args[0];
-            let output = line.args.slice(1).join(" ");
+            let formatting = line.args.join(" ").match(/\{([^}]+)\}/g)?.map(match => match.slice(1, -1))[0]
+            let text = line.args.join(" ").replaceAll(`{${formatting}}`, "")
 
-            if(color === undefined || output === undefined){
+            let formatObj = {};
+            formatting = formatting.split(",")
+            formatting = formatting.map(format => format.trim().split("=").map(value => value.trim()))
+
+            formatting.forEach(format => {
+                formatObj[format[0]] = format[1]
+            })
+
+            if(formatting === undefined || formatting === undefined){
                 formatted.errors.push(`FormatError: Missing arguments for "outc" keyword.`);
                 if(config.debugMode) console.log(`FORMAT ERROR! ${formatted.errors[formatted.errors.length - 1]}`);
             }
 
             line.args = {
-                color: color,
-                output: output
+                text: text,
+                formatting: formatObj,
             }
+
             if(config.debugMode) console.log(`Formatted outc ${JSON.stringify(line.args)}`);
         }
     });
@@ -89,9 +98,12 @@ function format(input) {
     // if
     formatted.lines.forEach((line, i) => {
         if (line.command === "if") {
-            let input = line.args.join(" ");
-            input = input.replace("{", "");
-            input = input.replace("}", "");
+            let input = line.args.join(" ").match(/\{([^}]+)\}/g)?.map(match => match.slice(1, -1))[0];
+
+            if(input === undefined || input === ""){
+                formatted.errors.push(`FormatError: Missing condition for "if" keyword.`);
+                if(config.debugMode) console.log(`FORMAT ERROR! ${formatted.errors[formatted.errors.length - 1]}`);
+            }
 
             if(input === ""){
                 formatted.errors.push(`FormatError: Missing condition for "if" keyword.`);
@@ -250,8 +262,6 @@ function format(input) {
     formatted.lines.forEach((line) => {
         if (line.command === "wait") {
             let input = line.args.join(" ");
-            input = input.replace("{", "");
-            input = input.replace("}", "");
 
             if (input === "") {
                 formatted.errors.push(`FormatError: Missing time for "wait" keyword.`);

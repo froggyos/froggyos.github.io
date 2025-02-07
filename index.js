@@ -275,7 +275,11 @@ function createTerminalLine(text, path, color){
     terminalLine.textContent = text;
 
     if(color != undefined){
-        terminalLine.style.color = `var(--${color})`;
+        let foreground = color?.t;
+        let background = color?.b;
+
+        if(foreground != undefined) terminalLine.style.color = `var(--${foreground})`;
+        if(background != undefined) terminalLine.style.backgroundColor = `var(--${background})`;
     }
 
     lineContainer.appendChild(terminalPath);
