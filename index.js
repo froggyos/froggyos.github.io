@@ -540,7 +540,9 @@ function sendCommand(command, args, createEditableLineAfter){
 
         case "ld":
         case "listdrives": {
-            let drives = Object.keys(config.fileSystem).filter(path => path.length == 2);
+            let drives = Object.keys(config.fileSystem).map(drive => drive.split(":"))
+            drives = [...new Set(drives.filter(drive => drive.length == 2).map(drive => drive[0]))].map(drive => drive + ":");
+
             drives.forEach(drive => {
                 createTerminalLine(`[DRIVE] ${drive}`, ">");
             });
