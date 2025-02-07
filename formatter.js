@@ -193,9 +193,12 @@ function format(input) {
     // loop
     formatted.lines.forEach((line, currentIndex) => {
         if (line.command === "loop") {
-            let input = line.args.join(" ");
-            input = input.replace("{", "");
-            input = input.replace("}", "");
+            let input = line.args.join(" ").match(/\{([^}]+)\}/g)?.map(match => match.slice(1, -1))[0];
+
+            if(input === undefined || input === ""){
+                formatted.errors.push(`FormatError: Missing condition for "loop" keyword.`);
+                if(config.debugMode) console.log(`FORMAT ERROR! ${formatted.errors[formatted.errors.length - 1]}`);
+            }
 
             // find the next endloop index, starting at this line
             let endLoopIndex = formatted.lines.findIndex(

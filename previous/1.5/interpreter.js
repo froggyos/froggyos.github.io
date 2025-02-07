@@ -467,6 +467,7 @@ function interpreter(formatted, vars){
             case "set":
                 let variableName = "v:" + line.args?.variable;
                 let value = line.args?.value;
+                let parsedValue;
         
                 if (!variableName || !value) {
                     endProgram(`Invalid "set" declaration syntax.`);;
@@ -483,11 +484,7 @@ function interpreter(formatted, vars){
                         value = value.replaceAll(new RegExp(`\\b${variableName}\\b`, 'g'), variables[variableName].value);
 
                         if(variables[variable].type == "int"){
-                            let parsedValue = evaluate(value);
-                            if(isNaN(parsedValue) || parsedValue == null){
-                                endProgram(`Invalid integer value.`);
-                                break;
-                            }
+                            parsedValue = evaluate(value);
                         }
 
                         if(variables[variable].type == "str"){
@@ -496,7 +493,11 @@ function interpreter(formatted, vars){
                     }   
                 }
 
-                let parsedValue;
+                if(isNaN(parsedValue) || parsedValue == null){
+                    endProgram(`Invalid integer value.`);
+                    break;
+                }
+                
                 try {
                     parsedValue = new Function(`return (${value});`)();
                 } catch (err) {
