@@ -32,6 +32,7 @@ There is no set colors that you must have, but these are the color conventions.
  * help -> ?
  * hop -> h
  * list -> ls
+ * listdrives -> ld
  * loadstate -> lds
  * macro -> /
  * meta -> m

@@ -16,6 +16,11 @@ function format(input) {
         formatted.lines.push({ command, args });
     });
 
+    if(formatted.lines[formatted.lines.length - 1].command !== "endprog"){
+        formatted.errors.push(`FormatError: Cannot run program.`);
+        if(config.debugMode) console.log(`FORMAT ERROR! ${formatted.errors[formatted.errors.length - 1]}`);
+    }
+
     
     formatted.lines.forEach((line) => {
         if(line.command === ''){

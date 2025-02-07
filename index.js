@@ -348,12 +348,12 @@ function sendCommand(command, args, createEditableLineAfter){
                 createTerminalLine("Please provide a color palette name.", config.errorText);
                 createTerminalLine(`* Available color palettes *`, "");
                 createTerminalLine(Object.keys(colorPalettes).join(", "), ">");
-                createEditableTerminalLine(`${config.currentPath}>`);
+                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
             if(colorPalettes[args[0]] == undefined){
                 createTerminalLine("Color palette does not exist.", config.errorText);
-                createEditableTerminalLine(`${config.currentPath}>`);
+                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
             changeColorPalette(args[0]);
@@ -380,24 +380,24 @@ function sendCommand(command, args, createEditableLineAfter){
         case "croak":
             if(args.length == 0){
                 createTerminalLine("Please provide a file name.", config.errorText);
-                createEditableTerminalLine(`${config.currentPath}>`);
+                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
             file = config.fileSystem[config.currentPath];
             if(file == undefined){
                 createTerminalLine("File does not exist.", config.errorText);
-                createEditableTerminalLine(`${config.currentPath}>`);
+                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
             file = file.find(file => file.name == args[0]);
             if(file == undefined){
                 createTerminalLine("File does not exist.", config.errorText);
-                createEditableTerminalLine(`${config.currentPath}>`);
+                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
             if(file.properties.write == false){
                 createTerminalLine("You do not have permission to delete this file.", config.errorText);
-                createEditableTerminalLine(`${config.currentPath}>`);
+                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
             let fileIndex = config.fileSystem[config.currentPath].findIndex(file => file.name == args[0]);
@@ -412,12 +412,12 @@ function sendCommand(command, args, createEditableLineAfter){
         case "formattime":
             if(args.length == 0){
                 createTerminalLine("Please provide a time format.", config.errorText);
-                createEditableTerminalLine(`${config.currentPath}>`);
+                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
             if(args.join(" ").length > 59){
                 createTerminalLine("The argument is too long.", config.errorText);
-                createEditableTerminalLine(`${config.currentPath}>`);
+                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
             config.timeFormat = args.join(" ");
@@ -429,16 +429,16 @@ function sendCommand(command, args, createEditableLineAfter){
         case "hatch":
             if(args.length == 0){
                 createTerminalLine("Please provide a file name.", config.errorText);
-                createEditableTerminalLine(`${config.currentPath}>`);
+                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
             if(config.fileSystem[config.currentPath] == undefined){
                 createTerminalLine("Directory does not exist.", config.errorText);
-                createEditableTerminalLine(`${config.currentPath}>`);
+                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
             }
             if(config.fileSystem[config.currentPath].find(file => file.name == args[0]) != undefined){
                 createTerminalLine("File already exists.", config.errorText);
-                createEditableTerminalLine(`${config.currentPath}>`);
+                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
             config.fileSystem[config.currentPath].push({
@@ -473,6 +473,7 @@ function sendCommand(command, args, createEditableLineAfter){
             createTerminalLine("help . . . . . . . . . . . . . Displays this message.", ">");
             createTerminalLine("hop [directory]. . . . . . . . Moves to a directory.", ">");
             createTerminalLine("list . . . . . . . . . . . . . Lists files and subdirectories in the current                                directory.", ">");
+            createTerminalLine("listdrives . . . . . . . . . . Lists all drives.", ">");
             createTerminalLine("loadstate. . . . . . . . . . . Load froggyOS state.", ">");
             createTerminalLine("meta [file]. . . . . . . . . . Edits a file.", ">");
             createTerminalLine("metaprop [file] [perm] [0/1] . Edits a file's properties.", ">");
@@ -491,7 +492,7 @@ function sendCommand(command, args, createEditableLineAfter){
 
             if(directory == undefined){
                 createTerminalLine("Please provide a directory name.", config.errorText);
-                createEditableTerminalLine(`${config.currentPath}>`);
+                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
 
@@ -501,11 +502,11 @@ function sendCommand(command, args, createEditableLineAfter){
 
             if(config.fileSystem[directory] == undefined){
                 createTerminalLine("Directory does not exist.", config.errorText);
-                createEditableTerminalLine(`${config.currentPath}>`);
+                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
 
-            sendCommand("[[FROGGY]]changepath", [directory], createEditableLineAfter);
+            sendCommand("[[BULLFROG]]changepath", [directory], createEditableLineAfter);
         break;
 
         // list files
@@ -525,7 +526,7 @@ function sendCommand(command, args, createEditableLineAfter){
 
             if(files.length == 0 && subdirectoryNames.length == 0){
                 createTerminalLine("This directory is empty.", ">")
-                createEditableTerminalLine(`${config.currentPath}>`);
+                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
             subdirectoryNames.forEach(subdirectory => {
@@ -537,13 +538,22 @@ function sendCommand(command, args, createEditableLineAfter){
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
 
+        case "ld":
+        case "listdrives": {
+            let drives = Object.keys(config.fileSystem).filter(path => path.length == 2);
+            drives.forEach(drive => {
+                createTerminalLine(`[DRIVE] ${drive}`, ">");
+            });
+            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+        } break;
+
         // load state
         case "lds":
         case "loadstate":
             let state = localStorage.getItem("froggyOS-state");
             if(state == null){
                 createTerminalLine("No state found.", config.errorText);
-                createEditableTerminalLine(`${config.currentPath}>`);
+                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
             for(let key in JSON.parse(state)){
@@ -567,7 +577,7 @@ function sendCommand(command, args, createEditableLineAfter){
                 } else {
                     createTerminalLine(macros.map(macro => macro.name).join(", "), ">")
                 }
-                createEditableTerminalLine(`${config.currentPath}>`);
+                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
 
@@ -581,7 +591,7 @@ function sendCommand(command, args, createEditableLineAfter){
             
             if(macro == undefined){
                 createTerminalLine("Macro does not exist.", config.errorText);
-                createEditableTerminalLine(`${config.currentPath}>`);
+                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
 
@@ -598,7 +608,7 @@ function sendCommand(command, args, createEditableLineAfter){
 
             if(args.length - 1 < totalFileArguments){
                 createTerminalLine(`Missing file argument(s).`, config.errorText);
-                createEditableTerminalLine(`${config.currentPath}>`);
+                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
 
@@ -630,24 +640,24 @@ function sendCommand(command, args, createEditableLineAfter){
         case "meta":
             if(args.length == 0){
                 createTerminalLine("Please provide a file name.", config.errorText);
-                createEditableTerminalLine(`${config.currentPath}>`);
+                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
             file = config.fileSystem[config.currentPath];
             if(file == undefined){
                 createTerminalLine("File does not exist.", config.errorText);
-                createEditableTerminalLine(`${config.currentPath}>`);
+                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
             file = file.find(file => file.name == args[0]);
             if(file == undefined){
                 createTerminalLine("File does not exist.", config.errorText);
-                createEditableTerminalLine(`${config.currentPath}>`);
+                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
             if(file.properties.write == false){
                 createTerminalLine("You do not have permission to edit this file.", config.errorText);
-                createEditableTerminalLine(`${config.currentPath}>`);
+                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
             createTerminalLine("* press ESC to save and exit lilypad *", "");
@@ -672,7 +682,7 @@ function sendCommand(command, args, createEditableLineAfter){
             let value = args[2];
             if(file == undefined){
                 createTerminalLine("File does not exist.", config.errorText);
-                createEditableTerminalLine(`${config.currentPath}>`);
+                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
 
@@ -682,19 +692,19 @@ function sendCommand(command, args, createEditableLineAfter){
                 createTerminalLine("Please provide a valid property type.", config.errorText);
                 createTerminalLine("* Available properties *", "");
                 createTerminalLine(propertyTypes.join(", "), ">");
-                createEditableTerminalLine(`${config.currentPath}>`);
+                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
 
             if(value == undefined || (value != "0" && value != "1")){
                 createTerminalLine("Please provide a valid value. 0 or 1.", config.errorText);
-                createEditableTerminalLine(`${config.currentPath}>`);
+                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break
             }
 
             if(file.properties.write == false){
                 createTerminalLine("You do not have permission to edit this file.", config.errorText);
-                createEditableTerminalLine(`${config.currentPath}>`);
+                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
 
@@ -707,7 +717,7 @@ function sendCommand(command, args, createEditableLineAfter){
         case "ribbit":
             if(args.length == 0){
                 createTerminalLine("Please provide text to display.", config.errorText);
-                createEditableTerminalLine(`${config.currentPath}>`);
+                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
             createTerminalLine(args.join(" "), ">")
@@ -729,46 +739,46 @@ function sendCommand(command, args, createEditableLineAfter){
 
             if(config.dissallowSubdirectoriesIn.includes(config.currentPath)){
                 createTerminalLine("You cannot create directories in this directory.", config.errorText);
-                createEditableTerminalLine(`${config.currentPath}>`);
+                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
             if(args[0] == undefined){
                 createTerminalLine("Please provide a directory name.", config.errorText);
-                createEditableTerminalLine(`${config.currentPath}>`);
+                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
             if(config.fileSystem[directory] != undefined){
                 createTerminalLine("Directory already exists.", config.errorText);
-                createEditableTerminalLine(`${config.currentPath}>`);
+                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
             config.fileSystem[directory] = [];
             createTerminalLine("Directory created.", ">");
-            sendCommand("[[FROGGY]]changepath", [directory], createEditableLineAfter);
+            sendCommand("[[BULLFROG]]changepath", [directory], createEditableLineAfter);
         break;
 
         // read file contents
         case "spy":
             if(args.length == 0){
                 createTerminalLine("Please provide a file name.", config.errorText);
-                createEditableTerminalLine(`${config.currentPath}>`);
+                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
             file = config.fileSystem[config.currentPath];
             if(file == undefined){
                 createTerminalLine("File does not exist.", config.errorText);
-                createEditableTerminalLine(`${config.currentPath}>`);
+                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
             file = file.find(file => file.name == args[0]);
             if(file == undefined){
                 createTerminalLine("File does not exist.", config.errorText);
-                createEditableTerminalLine(`${config.currentPath}>`);
+                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
             if(file.properties.read == false){
                 createTerminalLine("You do not have permission to read this file.", config.errorText);
-                createEditableTerminalLine(`${config.currentPath}>`);
+                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
             file.data.forEach(line => {
@@ -791,14 +801,14 @@ function sendCommand(command, args, createEditableLineAfter){
                 createTerminalLine("Please provide a valid program.", config.errorText);
                 createTerminalLine("* Available programs *", "");
                 createTerminalLine(programList.join(", "), ">");
-                createEditableTerminalLine(`${config.currentPath}>`);
+                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
 
             config.programSession++
             if(args[0] == "cli"){
                 config.currentProgram = "cli";
-                createEditableTerminalLine(`${config.currentPath}>`);
+                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
             } else if(args[0] == "lilypad"){
                 config.currentProgram = "lilypad";
                 createTerminalLine("* press ESC to exit lilypad *", "");
@@ -811,14 +821,14 @@ function sendCommand(command, args, createEditableLineAfter){
                 }
                 if(file.properties.read == false){
                     createTerminalLine("You do not have permission to run this program.", config.errorText);
-                    createEditableTerminalLine(`${config.currentPath}>`);
+                    if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                     break;
                 }
 
                 let formatted = format(file.data);
                 if(formatted.errors.length > 0){
                     createTerminalLine(formatted.errors[0], config.errorText);
-                    createEditableTerminalLine(`${config.currentPath}>`);
+                    if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 } else {
                     config.currentProgram = args[0];
                     // interpret the formatted code
@@ -828,43 +838,45 @@ function sendCommand(command, args, createEditableLineAfter){
         break;
 
         // hidden commands =======================================================================================================================================
-        case "[[FROGGY]]changepath":
+        case "[[BULLFROG]]changepath":
             if(args.length == 0){
                 createTerminalLine("Please provide a path.", config.errorText);
-                createEditableTerminalLine(`${config.currentPath}>`);
+                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
             config.currentPath = args.join(" ");
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
 
-        case '[[FROGGY]]greeting':
+        case '[[BULLFROG]]greeting':
             createTerminalLine("Type ‘help’ to receive support with commands, and possibly navigation.", "");
             createTerminalLine(`* Welcome to froggyOS, version ${config.version} *` , "");
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
 
-        case '[[FROGGY]]help':
-            createTerminalLine("* A few frog commands *", "");
-            createTerminalLine("[[FROGGY]]changepath [path] - Changes the path of the terminal", ">");
-            createTerminalLine("[[FROGGY]]greeting - Displays the greeting message", ">");
-            createTerminalLine("[[FROGGY]]help - Displays this message", ">");
-            createTerminalLine("[[FROGGY]]setstatbar [text] - Changes the text in the status bar", ">");
-            createTerminalLine("[[FROGGY]]statbarlock [0/1] - Locks the status bar from updating", ">");
+        case '[[BULLFROG]]help':
+            createTerminalLine("* A few bullfrog commands *", "");
+            createTerminalLine("[[BULLFROG]]changepath [path] - Changes the path of the terminal", ">");
+            createTerminalLine("[[BULLFROG]]greeting - Displays the greeting message", ">");
+            createTerminalLine("[[BULLFROG]]help - Displays this message", ">");
+            createTerminalLine("[[BULLFROG]]setstatbar [text] - Changes the text in the status bar", ">");
+            createTerminalLine("[[BULLFROG]]statbarlock [0/1] - Locks the status bar from updating", ">");
+            createTerminalLine("[[BULLFROG]]spinner [0/1] - Toggles the loading spinner", ">");
+            createTerminalLine("[[BULLFROG]]devmode [0/1] - Toggles debug mode", ">");
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
 
-        case '[[FROGGY]]setstatbar':
+        case '[[BULLFROG]]setstatbar':
             if(args.length > 79){
                 createTerminalLine("The argument is too long.", config.errorText);
-                createEditableTerminalLine(`${config.currentPath}>`);
+                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
             document.getElementById('bar').textContent = args.join(" ");
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
 
-        case '[[FROGGY]]spinner':
+        case '[[BULLFROG]]spinner':
             let bool = args[0];
             if(bool == "1") config.showLoadingSpinner = true;
             else if(bool == "0") config.showLoadingSpinner = false;
@@ -872,7 +884,7 @@ function sendCommand(command, args, createEditableLineAfter){
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
 
-        case '[[FROGGY]]statbarlock': {
+        case '[[BULLFROG]]statbarlock': {
             let bool = args[0];
             if(bool == "1") config.updateStatBar = false;
             else if(bool == "0") config.updateStatBar = true;
@@ -881,7 +893,7 @@ function sendCommand(command, args, createEditableLineAfter){
         } break;
 
         
-        case "[[FROGGY]]devmode": {
+        case "[[BULLFROG]]devmode": {
             let bool = args[0];
             if(bool == "1") config.debugMode = true;
             else if(bool == "0") config.debugMode = false;
@@ -890,7 +902,7 @@ function sendCommand(command, args, createEditableLineAfter){
 
         default:
             createTerminalLine(`Froggy doesn't know "${command}", sorry.`, ">");
-            createEditableTerminalLine(`${config.currentPath}>`);
+            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
     }
 }
@@ -1120,4 +1132,4 @@ function createLilypadLine(path, linetype, filename){
 
 changeColorPalette(config.colorPalette);
 createColorTestBar();
-sendCommand('[[FROGGY]]greeting', []);
+sendCommand('[[BULLFROG]]greeting', []);
