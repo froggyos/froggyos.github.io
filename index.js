@@ -881,7 +881,7 @@ function sendCommand(command, args, createEditableLineAfter){
         } break;
 
         
-        case "[[FROGGY]]debugmode": {
+        case "[[FROGGY]]devmode": {
             let bool = args[0];
             if(bool == "1") config.debugMode = true;
             else if(bool == "0") config.debugMode = false;
