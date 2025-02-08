@@ -868,7 +868,7 @@ function sendCommand(command, args, createEditableLineAfter){
             createTerminalLine("[[BULLFROG]]setstatbar [text] - Changes the text in the status bar", ">");
             createTerminalLine("[[BULLFROG]]statbarlock [0/1] - Locks the status bar from updating", ">");
             createTerminalLine("[[BULLFROG]]spinner [0/1] - Toggles the loading spinner", ">");
-            createTerminalLine("[[BULLFROG]]devmode [0/1] - Toggles debug mode", ">");
+            createTerminalLine("[[BULLFROG]]debugmode [0/1] - Toggles debug mode", ">");
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
 
@@ -897,13 +897,13 @@ function sendCommand(command, args, createEditableLineAfter){
             else createTerminalLine("Invalid argument. Please provide '1' or '0'.", config.errorText);
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         } break;
-
         
-        case "[[BULLFROG]]devmode": {
+        case "[[BULLFROG]]debugmode": {
             let bool = args[0];
             if(bool == "1") config.debugMode = true;
             else if(bool == "0") config.debugMode = false;
             else createTerminalLine("Invalid argument. Please provide '1' or '0'.", config.errorText);
+            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         } break;
 
         default:
