@@ -74,24 +74,33 @@ function format(input) {
             let text = line.args.join(" ").replaceAll(`{${formatting}}`, "")
 
             let formatObj = {};
-            formatting = formatting.split(",")
-            formatting = formatting.map(format => format.trim().split("=").map(value => value.trim()))
-
-            formatting.forEach(format => {
-                formatObj[format[0]] = format[1]
-            })
-
-            if(formatting === undefined || formatting === undefined){
-                formatted.errors.push(`FormatError: Missing arguments for "outc" keyword.`);
+            formatting = formatting?.split(",")
+            if(formatting == undefined){
+                formatted.errors.push(`FormatError: Malformed Format object.`);
                 if(config.debugMode) console.log(`FORMAT ERROR! ${formatted.errors[formatted.errors.length - 1]}`);
             }
+            formatting = formatting?.map(format => format.trim().split("=").map(value => value.trim()))
 
-            line.args = {
-                text: text,
-                formatting: formatObj,
+            if(formatting == undefined){
+                formatted.errors.push(`FormatError: Malformed Format object AGAIN! FIX SOMETHING I DONT THINK YOU SHOULD EVEN BE SEEING THIS ERROR.`);
+                if(config.debugMode) console.log(`FORMAT ERROR! ${formatted.errors[formatted.errors.length - 1]}`);
+            } else {
+                formatting.forEach(format => {
+                    formatObj[format[0]] = format[1]
+                })
+    
+                if(formatting === undefined || formatting === undefined){
+                    formatted.errors.push(`FormatError: Missing arguments for "outc" keyword.`);
+                    if(config.debugMode) console.log(`FORMAT ERROR! ${formatted.errors[formatted.errors.length - 1]}`);
+                }
+    
+                line.args = {
+                    text: text,
+                    formatting: formatObj,
+                }
+    
+                if(config.debugMode) console.log(`Formatted outc ${JSON.stringify(line.args)}`);
             }
-
-            if(config.debugMode) console.log(`Formatted outc ${JSON.stringify(line.args)}`);
         }
     });
 

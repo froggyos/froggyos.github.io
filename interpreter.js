@@ -39,12 +39,18 @@ function interpreter(formatted, vars){
         async function parseNext(){
             if(config.debugMode) await waitForButtonClick("froggyscript-debug-button");
             if(config.debugMode){
-                document.getElementById('debug-program-memory').textContent = "program memory\n"+JSON.stringify(variables, null, 2) + "\n----------\n" + JSON.stringify(debugObject, null, 2);
+                let programFile = config.fileSystem["D:/Program-Data"].find(file => file.name == config.currentProgram).data;
+                console.log(programFile);
+                document.getElementById('debug-program-memory').textContent = "program memory\n"+ JSON.stringify(programFile, null,2) +"\ninstance memory\n"+JSON.stringify(variables, null, 2) + "\n----------\n" + JSON.stringify(debugObject, null, 2);
                 console.log(`{${iteration}} Line ${lineIndex}: ${command} ${JSON.stringify(line.args)}`);
             }
             lineIndex++;
             iteration++;
             runParser();
+        }
+
+        function getVariable(variable){
+            return variables[variable];
         }
 
         function endProgram(error){
@@ -68,21 +74,12 @@ function interpreter(formatted, vars){
             } break;
             case "loaddata": { // =========================================================
                 let variable = line.args.variable;
-                let data = '';
+                let data = '##NUL###';
                 let file = config.fileSystem["D:/Program-Data"].find(file => file.name == config.currentProgram);
 
                 let malformedData = false;
 
                 for(let i = 0; i < file.data.length; i++){
-                    if(!file.data[i].includes("¦°¦¨¦¦")){
-                        malformedData = true;
-                        break;
-                    }
-                    if(file.data[i].split(`¦°¦¨¦¦`).length != 2){
-                        malformedData = true;
-                        break;
-                    }
-
                     if(file.data[i].startsWith(variable+`¦°¦¨¦¦`)){
                         data = file.data[i].split(`¦°¦¨¦¦`)[1];
                         break;
@@ -92,16 +89,11 @@ function interpreter(formatted, vars){
                     endProgram(`Malformed data in file.`);
                     break;
                 }
-                
-                // if the variable already exists
-                if(variables["v:" + variable] != undefined){
-                    variables["v:" + variable].value = data;
+
+                if(variable["v:" + variable] == undefined){
                 } else {
-                    variables["v:" + variable] = {
-                        type: "str",
-                        value: data,
-                        name: variable,
-                    };
+                    let variableType = variable["v:" + variable].type;
+                    if(variableType == "int" && data == '##NUL###') data = 0;
                 }
                 parseNext();
             } break;
@@ -507,7 +499,7 @@ function interpreter(formatted, vars){
                 try {
                     parsedValue = new Function(`return (${value});`)();
                 } catch (err) {
-                    endProgram(`Error evaluating: "${value}".`);
+                    endProgram(`Error evaluating: ${value}`);
                     break;
                 }
 
@@ -588,11 +580,17 @@ function interpreter(formatted, vars){
                     formatting[key] = value;
                 }
 
+                // go through the text and replace variables
+                for(let variable in variables){
+                    text = text.replaceAll(new RegExp(`\\b${variable}\\b`, 'g'), variables[variable].value);
+                }
+
+
                 let parsedText;
                 try {
-                    parsedText = new Function(`return (${cleanInnerQuotes(text)});`)(); // Evaluate the expression
+                    parsedText = new Function(`return ("${cleanInnerQuotes(text)}");`)(); // Evaluate the expression
                 } catch (err) {
-                    endProgram(`Error evaluating statement: "${text}".`);
+                    endProgram(`Error evaluating: ${text}`);
                     break;
                 }
 
@@ -631,7 +629,7 @@ function interpreter(formatted, vars){
                     out = cleanInnerQuotes(out); // Clean any nested or extra quotes
                     parsedOut = new Function(`return (${out});`)(); // Evaluate the expression
                 } catch (err) {
-                    endProgram(`Error evaluating statement: "${out}".`);
+                    endProgram(`Error evaluating: ${out}`);
                     break;
                 }
 
