@@ -588,8 +588,6 @@ function interpreter(formatted, vars){
                     formatting[key] = value;
                 }
 
-                console.log(formatting);
-
                 let parsedText;
                 try {
                     parsedText = new Function(`return (${cleanInnerQuotes(text)});`)(); // Evaluate the expression

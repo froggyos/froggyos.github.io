@@ -548,7 +548,7 @@ function sendCommand(command, args, createEditableLineAfter){
             drives = [...new Set(drives.filter(drive => drive.length == 2).map(drive => drive[0]))].map(drive => drive + ":");
 
             drives.forEach(drive => {
-                createTerminalLine(`[DRIVE] ${drive}`, ">");
+                createTerminalLine(`${drive}`, ">");
             });
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         } break;
