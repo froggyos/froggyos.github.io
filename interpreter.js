@@ -607,10 +607,6 @@ function interpreter(formatted, vars){
                 }
 
                 let out = line.args.output;
-                
-
-                // BUG!!!!!! =============================================================
-                // the way that strings are done are weird. make it not have so many ''. youknow? yes i know u know
 
                 // Replace variables in the "out" statement
                 for (let variable in variables) {

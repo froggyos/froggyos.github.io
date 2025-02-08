@@ -47,6 +47,7 @@ There is no set colors that you must have, but these are the color conventions.
  * load state doesnt work with palettes
  * ~~the inserted `wait` keywords may be messing loops sometimes~~
     * `wait` keywords were being inserted before every `endloop` command, which stacked. Turns out the `wait` keyword was not necessary, so it was removed.
+ * There's some weird stuff going on with `append`. Fix later.
 
 ## Command Help
 
@@ -120,7 +121,7 @@ out 'more text'
 out "i can put a v:variable inside a string"
 ```
 ### Colored Output
-You can also use variables as values for color codes, integers of length 2 or less will be converted to color codes automatically. There is very little error checking on the formatting objects, so make sure they're correct.
+You can also use variables as values for color codes, variables of length 2 or less will be converted to color codes automatically. There is very little error checking on the formatting objects, so make sure they're correct.
 ```
 outc [format] [text]
 
@@ -128,8 +129,8 @@ outc {t=c01} "this is blue text"
 outc {b=c00} "this is a black background"
 outc {t=c02,b=c01} "this is green green text on a blue background"
 -- not implemented vv
-outc {t=c02,ts=0:15} "from the 4th to 15th character, the text will be blue" 
-outc {t=c02,ts=4:26|b=c04,bs=57:71} "from the 4th to 28th character, the text will be blue. AND from the 57th to the 71st character the background will be red" 
+outc {t=c02,ts=0:15} "from the 1st to 16th character, the text will be blue" 
+outc {t=c02,ts=4:26|b=c04,bs=57:71} "from the 5th to 29th character, the text will be blue. AND from the 58th to the 72nd character the background will be red" 
 ```
 
 ## Variables

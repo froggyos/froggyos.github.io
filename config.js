@@ -25,11 +25,14 @@ const config = {
             { name: "cli", properties: {read: false, write: false, hidden: true}, data: ["str cli = 'this program is hardcoded into froggyOS'", "endprog"] },
             { name: "lilypad", properties: {read: false, write: false, hidden: true}, data: ["str lilypad = 'this program is hardcoded into froggyOS'", "endprog"] },
             { name: "test", properties: {read: true, write: false, hidden: false}, data: [
-                "int color = 3",
-                "outc {t=c13} 'test 1'",
-                "outc {b=c06} 'test 2'",
-                "outc {t=c04,b=c01} 'test 3'",
-                "outc {t=v:color,b=c06} 'test 4'",
+                // "int color = 3",
+                // "outc {t=c13} 'test 1'",
+                // "outc {b=c06} 'test 2'",
+                // "outc {t=c04,b=c01} 'test 3'",
+                // "outc {t=v:color,b=c06} 'test 4'",
+                "str test = 'test'",
+                "append test ing",
+                "out v:test",
                 "endprog"
             ] },
             { name: "help", properties: {read: true, write: false, hidden: false}, data: [
