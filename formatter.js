@@ -12,23 +12,23 @@ function format(input) {
 
     // Parse lines into command objects
     input.forEach((line) => {
-        let [command, ...args] = line.split(" ");
-        formatted.lines.push({ command, args });
+        let [keyword, ...args] = line.split(" ");
+        formatted.lines.push({ keyword, args });
     });
 
     
     formatted.lines.forEach((line) => {
-        if(line.command === ''){
+        if(line.keyword === ''){
             formatted.lines.splice(formatted.lines.indexOf(line), 1);
         }
     })
 
     // Parse variable declarations
     formatted.lines.forEach((line) => {
-        if (line.command === "int" || line.command === "str") {
+        if (line.keyword === "int" || line.keyword === "str") {
             let value = line.args.slice(2).join(" ");
             line.args = {
-                type: line.command,
+                type: line.keyword,
                 name: line.args[0],
                 value: value
             };
@@ -38,9 +38,9 @@ function format(input) {
 
     // file argument definitions
     formatted.lines.forEach((line) => {
-        if (line.command === "filearg") {
+        if (line.keyword === "filearg") {
             line.args = {
-                type: line.command,
+                type: line.keyword,
                 name: line.args[0],
                 value: line.args[1]
             };
@@ -48,9 +48,9 @@ function format(input) {
         }
     })
 
-    // Parse set commands
+    // Parse set keywords
     formatted.lines.forEach((line) => {
-        if (line.command === "set") {
+        if (line.keyword === "set") {
             let value = line.args.slice(2).join(" ");
             line.args = {
                 variable: line.args[0],
@@ -60,16 +60,16 @@ function format(input) {
         }
     });
 
-    // Handle `out` commands
+    // Handle `out` keywords
     formatted.lines.forEach((line) => {
-        if (line.command === "out") {
+        if (line.keyword === "out") {
             let output = line.args.join(" ");
             line.args = {
                 output: output
             }
             if(config.debugMode) console.log(`Formatted out ${JSON.stringify(line.args)}`);
         }
-        if(line.command === "outc"){
+        if(line.keyword === "outc"){
             let formatting = line.args.join(" ").match(/\{([^}]+)\}/g)?.map(match => match.slice(1, -1))[0]
             let text = line.args.join(" ").replaceAll(`{${formatting}}`, "")
 
@@ -85,12 +85,16 @@ function format(input) {
                 let formattingObject = {};
                 formatting[i].split(",").forEach((format) => {
                     if(format === "") return;
+                    format.trim();
                     let [key, value] = format.split("=").map(value => value.trim());
 
-                    if(key == "t" || key == "b"){
+                    if(key == "t" || key == "b" || key == "i"){
                         formattingObject[key] = value;
-                    } else if (key == "ts" || key == "bs") {
-                        let [start, end] = value.split(";").map(value => value.trim());
+                        formattingObject.type = "blanket";
+                    } else if (key == "tr" || key == "br" || key == "ir") {
+                        let [start, end] = value.split("-").map(value => value.trim());
+
+                        formattingObject.type = "range";
                         formattingObject[`${key}_start`] = start;
                         formattingObject[`${key}_end`] = end;
                     }
@@ -119,7 +123,7 @@ function format(input) {
 
     // if
     formatted.lines.forEach((line, i) => {
-        if (line.command === "if") {
+        if (line.keyword === "if") {
             let input = line.args.join(" ").match(/\{([^}]+)\}/g)?.map(match => match.slice(1, -1))[0];
 
             if(input === undefined || input === ""){
@@ -136,9 +140,9 @@ function format(input) {
             let count = 1;
 
             for (let j = i + 1; j < formatted.lines.length; j++) {
-                if (formatted.lines[j].command === "if") {
+                if (formatted.lines[j].keyword === "if") {
                     count++;
-                } else if (formatted.lines[j].command === "endif") {
+                } else if (formatted.lines[j].keyword === "endif") {
                     count--;
                 }
 
@@ -161,10 +165,10 @@ function format(input) {
             if(config.debugMode) console.log(`Formatted if ${JSON.stringify(line.args)}`);
         }
 
-        if (line.command === "else") {
+        if (line.keyword === "else") {
             line.args = {
                 endifIndex: formatted.lines.findIndex(
-                    (item, index) => index > i && item.command === "endif"
+                    (item, index) => index > i && item.keyword === "endif"
                 ),
                 skip: false
             };
@@ -175,7 +179,7 @@ function format(input) {
 
     // ask
     formatted.lines.forEach((line) => {
-        if (line.command === "ask") {
+        if (line.keyword === "ask") {
             // ask [variable] [output]
             let variable = line.args[0];
 
@@ -194,7 +198,7 @@ function format(input) {
 
     // prompt
     formatted.lines.forEach((line) => {
-        if (line.command === "prompt") {
+        if (line.keyword === "prompt") {
             let selectedOption = line.args[0];
             let variable = line.args[1];
             let output = line.args.slice(2);
@@ -226,7 +230,7 @@ function format(input) {
 
     // loop
     formatted.lines.forEach((line, currentIndex) => {
-        if (line.command === "loop") {
+        if (line.keyword === "loop") {
             let input = line.args.join(" ").match(/\{([^}]+)\}/g)?.map(match => match.slice(1, -1))[0];
 
             if(input === undefined || input === ""){
@@ -236,7 +240,7 @@ function format(input) {
 
             // find the next endloop index, starting at this line
             let endLoopIndex = formatted.lines.findIndex(
-                (item, index) => index > currentIndex && item.command === "endloop"
+                (item, index) => index > currentIndex && item.keyword === "endloop"
             );
 
             line.args = {
@@ -249,15 +253,15 @@ function format(input) {
     })
 
     formatted.lines.forEach((line, endIndex) => {
-        if (line.command === "endloop") {
+        if (line.keyword === "endloop") {
             // Use a stack to track open loops
             let loopIndex = -1;
             let openLoops = 0;
 
             for (let i = endIndex - 1; i >= 0; i--) {
-                if (formatted.lines[i].command === "endloop") {
+                if (formatted.lines[i].keyword === "endloop") {
                     openLoops++;
-                } else if (formatted.lines[i].command === "loop") {
+                } else if (formatted.lines[i].keyword === "loop") {
                     if (openLoops === 0) {
                         loopIndex = i;
                         break;
@@ -282,7 +286,7 @@ function format(input) {
 
     // wait keyword
     formatted.lines.forEach((line) => {
-        if (line.command === "wait") {
+        if (line.keyword === "wait") {
             let input = line.args.join(" ");
 
             if (input === "") {
@@ -300,7 +304,7 @@ function format(input) {
 
     // free keyword
     formatted.lines.forEach((line) => {
-        if (line.command === "free") {
+        if (line.keyword === "free") {
             let input = line.args[0];
 
             if (input === undefined) {
@@ -318,7 +322,7 @@ function format(input) {
 
     // append keyword
     formatted.lines.forEach((line) => {
-        if (line.command === "append") {
+        if (line.keyword === "append") {
             let input = line.args.splice(1).join(" ");
 
             if (line.args[0] === undefined) {
@@ -343,7 +347,7 @@ function format(input) {
     // Parse functions
     for (let i = 0; i < formatted.lines.length; i++) {
         let line = formatted.lines[i];
-        if (line.command === "func") {
+        if (line.keyword === "func") {
             let functionName = line.args[0];
             let startLine = i;
             let endLine = -1;
@@ -358,7 +362,7 @@ function format(input) {
             }
 
             while (j < formatted.lines.length && endLine === -1) {
-                if (formatted.lines[j].command === "endfunc") {
+                if (formatted.lines[j].keyword === "endfunc") {
                     endLine = j;
                 }
                 j++;
@@ -380,7 +384,7 @@ function format(input) {
     }
 
     formatted.lines.forEach((line) => {
-        if (line.command === "savedata") {
+        if (line.keyword === "savedata") {
             let variable = line.args[0];
             if (variable === undefined) {
                 formatted.errors.push(`FormatError: Missing variable for "savedata" keyword.`);
@@ -391,7 +395,7 @@ function format(input) {
             }
             if(config.debugMode) console.log(`Formatted savedata ${JSON.stringify(line.args)}`);
         }
-        if (line.command === "loaddata") {
+        if (line.keyword === "loaddata") {
             let variable = line.args[0];
             if (variable === undefined) {
                 formatted.errors.push(`FormatError: Missing variable for "loaddata" keyword.`);
@@ -405,7 +409,7 @@ function format(input) {
     })
 
     formatted.lines.forEach((line, i) => {
-        if(line.command === "func" || line.command === "f:"){
+        if(line.keyword === "func" || line.keyword === "f:"){
             let functionName = line.args[0];
             if(formatted.functions[functionName] === undefined){
                 formatted.errors.push(`FormatError: Function "${functionName}" not defined.`);
@@ -420,8 +424,8 @@ function format(input) {
                     end: endingIndex
                 }
 
-                if(line.command === "f:" && config.debugMode) console.log(`Formatted f: ${JSON.stringify(line.args)}`);
-                if(line.command === "func" && config.debugMode) console.log(`Formatted function ${JSON.stringify(line.args)}`);
+                if(line.keyword === "f:" && config.debugMode) console.log(`Formatted f: ${JSON.stringify(line.args)}`);
+                if(line.keyword === "func" && config.debugMode) console.log(`Formatted function ${JSON.stringify(line.args)}`);
             }
         }
     })

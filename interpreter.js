@@ -9,7 +9,7 @@ function waitForButtonClick(buttonId) {
     });
 }
 
-function interpreter(formatted, vars){
+function interpreter(formatted){
 
     let lineIndex = 0;
     let iteration = 0;
@@ -34,7 +34,9 @@ function interpreter(formatted, vars){
     function runParser(){
         let lines = formatted.lines;
         let line = formatted.lines[lineIndex];
-        let command = line.command;
+        let keyword = line.keyword;
+
+        let IS_ERROR = false;
 
         async function parseNext(){
             if(config.debugMode) await waitForButtonClick("froggyscript-debug-button");
@@ -42,21 +44,19 @@ function interpreter(formatted, vars){
                 let programFile = config.fileSystem["D:/Program-Data"].find(file => file.name == config.currentProgram).data;
                 console.log(programFile);
                 document.getElementById('debug-program-memory').textContent = "program memory\n"+ JSON.stringify(programFile, null,2) +"\ninstance memory\n"+JSON.stringify(variables, null, 2) + "\n----------\n" + JSON.stringify(debugObject, null, 2);
-                console.log(`{${iteration}} Line ${lineIndex}: ${command} ${JSON.stringify(line.args)}`);
+                console.log(`{${iteration}} Line ${lineIndex}: ${keyword} ${JSON.stringify(line.args)}`);
             }
+            if(IS_ERROR) return;
             lineIndex++;
             iteration++;
             runParser();
         }
 
-        function getVariable(variable){
-            return variables[variable];
-        }
-
         function endProgram(error){
+            IS_ERROR = true;
             createTerminalLine(`${error}`, config.errorText);
             createTerminalLine("Error Data:", "");
-            createTerminalLine(`Command: ${command}`, "");
+            createTerminalLine(`Keyword: ${keyword}`, "");
             createTerminalLine(`Args: ${JSON.stringify(line.args, null, 2)}`, "");
             createEditableTerminalLine(`${config.currentPath}>`);
             config.showLoadingSpinner = false;
@@ -68,7 +68,7 @@ function interpreter(formatted, vars){
             }
         }
 
-        switch(command){
+        switch(keyword){
             case "": {
                 parseNext();
             } break;
@@ -143,12 +143,12 @@ function interpreter(formatted, vars){
                 let value = line.args.value;
 
                 if(variables["v:" + variable] == undefined){
-                    endProgram(`Variable "${variable}" does not exist.`);
+                    endProgram(`Variable [${variable}] does not exist.`);
                     break;
                 }
 
                 if(variables["v:" + variable].type != "str"){
-                    endProgram(`Variable "${variable}" must be of type str.`);
+                    endProgram(`Variable [${variable}] must be of type str.`);
                     break;
                 }
 
@@ -163,7 +163,7 @@ function interpreter(formatted, vars){
             case "free": {
                 let variable = line.args.variable;
                 if(variables[variable] == undefined){
-                    endProgram(`Variable "${variable}" does not exist.`);
+                    endProgram(`Variable [${variable}] does not exist.`);
                     break;
                 }
                 delete variables[variable];
@@ -174,16 +174,15 @@ function interpreter(formatted, vars){
                 parseNext();
             } break;
             case "wait": {
-                console.log(formatted);
                 let time = line.args.time;
                 if(time.includes("v:")){
                     time = time.replaceAll(/v:(\w+)/g, (match, variable) => {
                         if(variables["v:" + variable] == undefined){
-                            endProgram(`Variable "${variable}" does not exist.`);
+                            endProgram(`Variable [${variable}] does not exist.`);
                             return;
                         }
                         if(variables["v:" + variable].type != "int"){
-                            endProgram(`Variable "${variable}" must be of type int.`);
+                            endProgram(`Variable [${variable}] must be of type int.`);
                             return;
                         }
                         return variables["v:" + variable].value;
@@ -210,7 +209,7 @@ function interpreter(formatted, vars){
                 if(loopCondition.includes("v:")){
                     loopCondition = loopCondition.replaceAll(/v:(\w+)/g, (match, variable) => {
                         if(variables["v:" + variable] == undefined){
-                            endProgram(`Variable "${variable}" does not exist.`);
+                            endProgram(`Variable [${variable}] does not exist.`);
                         }
                         return variables["v:" + variable].value;
                     });
@@ -241,12 +240,12 @@ function interpreter(formatted, vars){
 
                 // check if variable is a valid variable
                 if(variables["v:" + variable] == undefined){
-                    endProgram(`Variable "${variable}" does not exist.`);
+                    endProgram(`Variable [${variable}] does not exist.`);
                     break;
                 }
 
                 if(variables["v:" + variable].type != "str"){
-                    endProgram(`Variable "${variable}" must be of type str.`);
+                    endProgram(`Variable [${variable}] must be of type str.`);
                     break;
                 }
 
@@ -255,11 +254,11 @@ function interpreter(formatted, vars){
                     selectedIndex = +selectedOption;
                 } else {
                     if(variables["v:" + selectedOption] == undefined){
-                        endProgram(`Variable "${selectedOption}" does not exist.`);
+                        endProgram(`Variable [${selectedOption}] does not exist.`);
                         break;
                     }
                     if(variables["v:" + selectedOption].type != "int"){
-                        endProgram(`Variable "${selectedOption}" must be of type int.`);
+                        endProgram(`Variable [${selectedOption}] must be of type int.`);
                         break;
                     }
                     selectedIndex = variables["v:" + selectedOption].value;
@@ -360,7 +359,7 @@ function interpreter(formatted, vars){
                         let variable = line.args.variable;
 
                         if(variables["v:" + variable] == undefined){
-                            endProgram(`Variable "${variable}" does not exist.`);
+                            endProgram(`Variable [${variable}] does not exist.`);
                             return;
                         }
 
@@ -394,7 +393,7 @@ function interpreter(formatted, vars){
                 let type = line.args.value;  
 
                 if(variables["v:" + name] != undefined){
-                    endProgram(`Variable "${name}" already exists.`);
+                    endProgram(`Variable [${name}] already exists.`);
                     break;
                 }
 
@@ -402,7 +401,7 @@ function interpreter(formatted, vars){
                 fileargCount++;
 
                 if(args.length - 1 < fileargCount){
-                    endProgram(`Missing argument ${fileargCount} (type ${type}).`);
+                    endProgram(`Missing argument [${fileargCount}] (type ${type}).`);
                     break;
                 }
 
@@ -422,7 +421,7 @@ function interpreter(formatted, vars){
                 }
                 // if the variable already exist, throw error
                 if(variables[line.args.name] != undefined){
-                    endProgram(`String "${line.args.name}" already exists.`);
+                    endProgram(`String [${line.args.name}] already exists.`);
                     break;
                 }
 
@@ -442,7 +441,7 @@ function interpreter(formatted, vars){
                     break;
                 }
                 if(variables[line.args.name] != undefined){
-                    endProgram(`Integer "${line.args.name}" already exists.`);
+                    endProgram(`Integer [${line.args.name}] already exists.`);
                     break;
                 }
 
@@ -471,7 +470,7 @@ function interpreter(formatted, vars){
                 }
 
                 if(variables[variableName] == undefined){
-                    endProgram(`Variable "${variableName}" does not exist.`);
+                    endProgram(`Variable [${variableName}] does not exist.`);
                     break;
                 }
 
@@ -479,14 +478,8 @@ function interpreter(formatted, vars){
                     if(variable == variableName){
                         value = value.replaceAll(new RegExp(`\\b${variableName}\\b`, 'g'), variables[variableName].value);
 
-                        let type = variables[variable].type;
-
                         if(variables[variable].type == "int"){
                             parsedValue = evaluate(value);
-                        }
-
-                        if(variables[variable].type == "str"){
-                            value = `"${String(value)}"`;
                         }
                     }   
                 }
@@ -499,7 +492,7 @@ function interpreter(formatted, vars){
                 try {
                     parsedValue = new Function(`return (${value});`)();
                 } catch (err) {
-                    endProgram(`Error evaluating: ${value}`);
+                    endProgram(`Error evaluating [${value}]`);
                     break;
                 }
 
@@ -528,7 +521,7 @@ function interpreter(formatted, vars){
                 }
 
                 // find the else statement
-                let elseIndex = formatted.lines.findIndex((line, index) => line.command == "else" && index > lineIndex);
+                let elseIndex = formatted.lines.findIndex((line, index) => line.keyword == "else" && index > lineIndex);
                 let endifIndex = line.args.pairedIf;
 
                 if(endifIndex == -1){
@@ -563,18 +556,32 @@ function interpreter(formatted, vars){
                     for(let key in formatting[i]){
                         let value = formatting[i][key];
 
+                        if([key, value].includes(undefined)){
+                            endProgram(`Invalid FormatObject (RANGE) syntax.`);
+                            break;
+                        }
+
                         // replace variables
                         if(value.includes("v:")){
+                            for(let variable in variables){
+                                value = value.replaceAll(new RegExp(`\\b${variable}\\b`, 'g'), variables[variable].value);
+                            }
+
                             value = value.replaceAll(/v:(\w+)/g, (match, variable) => {
                                 if(variables["v:" + variable] == undefined){
-                                    endProgram(`Variable "${variable}" does not exist.`);
+                                    endProgram(`Variable [${variable}] does not exist.`);
                                     return;
                                 } else if (variables["v:" + variable].type != "int") {
-                                    endProgram(`Variable "${variable}" must be of type int.`);
+                                    endProgram(`Variable [${variable}] must be of type int.`);
                                     return;
                                 }
-                                return +variables["v:" + variable].value;
+                                return variables["v:" + variable].value;
                             });
+                        }
+
+                        if(key == "t" || key == "b"){
+                            if(value.length == 1) value = `c0${value}`;
+                            else if (value.length == 2) value = `c${value}`;
                         }
 
                         formatting[i][key] = value;
@@ -589,13 +596,24 @@ function interpreter(formatted, vars){
 
                 let parsedText;
                 try {
-                    parsedText = new Function(`return (${String(text)});`)(); // Evaluate the expression
+                    parsedText = new Function(`return (${(text)});`)(); // Evaluate the expression
                 } catch (err) {
                     endProgram(`Error evaluating: [${text}]`);
                     break;
                 }
 
-                // Output the parsed result to the terminal
+
+                for(let i = 0; i < formatting.length; i++){
+                    for(let key in formatting[i]){
+                        let value = formatting[i][key];
+
+                        // if(key.startsWith("tr_") || key.startsWith("br_")){
+                        //     formatting[i][key] = +value;
+                        // }
+                    }
+                }
+
+                if(IS_ERROR) return;
                 createTerminalLine(parsedText, ">", formatting);
                 parseNext();
             } break;
@@ -606,11 +624,11 @@ function interpreter(formatted, vars){
                 }
 
                 let out = line.args.output;
-                out = String(out);
+                out = (out);
 
                 // Replace variables in the "out" statement
                 for (let variable in variables) {
-                    let variableRegex = new RegExp(`\\b${variable}\\b`, "g"); // Ensure full match for variable name
+                    let variableRegex = new RegExp(`${variable}`, "g"); // Ensure full match for variable name
                     if (variableRegex.test(out)) {
                         let value = variables[variable].value;
                         if (variables[variable].type === "str") {
@@ -628,13 +646,14 @@ function interpreter(formatted, vars){
 
                 let parsedOut;
                 try {
-                    parsedOut = new Function(`return (${String(out)});`)(); // Evaluate the expression
+                    parsedOut = new Function(`return (${(out)});`)(); // Evaluate the expression
                 } catch (err) {
                     endProgram(`Error evaluating [${out}]`);
                     break;
                 }
 
                 // Output the parsed result to the terminal
+                if(IS_ERROR) return;
                 createTerminalLine(parsedOut, ">");
                 parseNext();
             } break;

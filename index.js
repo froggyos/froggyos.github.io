@@ -264,7 +264,7 @@ function moveCaretToEnd(element) {
     }
 }
 
-function createTerminalLine(text, path, color){
+function createTerminalLine(text, path, formatting){
     let lineContainer = document.createElement('div');
     let terminalPath = document.createElement('span');
     let terminalLine = document.createElement('div');
@@ -272,12 +272,66 @@ function createTerminalLine(text, path, color){
     lineContainer.classList.add('line-container');
 
     terminalPath.innerHTML = path;
-    terminalLine.textContent = text;
 
-    // DO THIS SHIT !!!!!!!!!! LATER THO BECAUSE IM TOO TIRED FROM REWRITING IT LIKE TWICE ======================================================================================================
+    if(formatting != undefined){
+        let html = '';
+        for(let i = 0; i < text.length; i++){
+            let properties = [];
+            let character = text[i];
+            let span = "<span "
 
-    if(color != undefined){
-        // console.log(color)
+            for(let j = 0; j < formatting.length; j++){
+                let format = formatting[j]
+
+                if(format.type == "blanket"){
+                    if(format?.t) {
+                        if(format.t.length != 3) {
+                            createTerminalLine("Invalid FormatObject (INTER-RULE DELIMITER) syntax.", `${config.errorText}`);
+                            createTerminalLine("Error Data UNAVAILABLE", `${config.errorText}`);
+                            return;
+                        }
+                        properties.push(`color: var(--${format.t})`)
+                    }
+                    if(format?.b) {
+                        if(format.b.length != 3) {
+                            createTerminalLine("Invalid FormatObject (INTER-RULE DELIMITER) syntax.", `${config.errorText}`);
+                            createTerminalLine("Error Data UNAVAILABLE", `${config.errorText}`);
+                            return;
+                        }
+                        properties.push(`background-color: var(--${format.b})`)
+                    }
+                    if(format?.i) if(format.i == "1") properties.push(`font-style: italic`)
+                } else if (format.type == "range"){
+                    if(format?.t){
+                        let start = format.tr_start;
+                        let end = format.tr_end;
+
+                        if(i >= start && i <= end){
+                            properties.push(`color: var(--${format.t})`)
+                        }                        
+                    } else if (format?.b){
+                        let start = format.br_start;
+                        let end = format.br_end;
+
+                        if(i >= start && i <= end){
+                            properties.push(`background-color: var(--${format.b})`)
+                        }
+                    } else if (format?.i){
+                        let start = format.ir_start;
+                        let end = format.ir_end;
+
+                        if(i >= start && i <= end){
+                            if(format.i == "1") properties.push(`font-style: italic`)
+                        } 
+                    }
+                }
+            }
+            span += `style="${properties.join(";")}">${character}</span>`
+            html += span;
+        }
+        terminalLine.innerHTML = html;
+    } else {
+        terminalLine.textContent = text;
     }
 
     lineContainer.appendChild(terminalPath);
