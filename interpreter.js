@@ -486,7 +486,7 @@ function interpreter(formatted, vars){
                         }
 
                         if(variables[variable].type == "str"){
-                            value = `"${cleanQuotes(value)}"`;
+                            value = `"${String(value)}"`;
                         }
                     }   
                 }
@@ -559,25 +559,26 @@ function interpreter(formatted, vars){
                 let text = line.args.text;
                 let formatting = line.args.formatting;
 
-                // go through the key value pairs in formatting, if theres a variable, retrieve its value
-                for(let key in formatting){
-                    let value = formatting[key];
-                    if(value.includes("v:")){
-                        value = value.replaceAll(/v:(\w+)/g, (match, variable) => {
-                            if(variables["v:" + variable] == undefined){
-                                endProgram(`Variable "${variable}" does not exist.`);
-                                return;
-                            }
-                            return variables["v:" + variable].value;
-                        });
-                    }
-                    if(value.length == 1){
-                        value = `c0${value}`
-                    } else if(value.length == 2){
-                        value = `c${value}`
-                    }
+                for(let i = 0; i < formatting.length; i++){
+                    for(let key in formatting[i]){
+                        let value = formatting[i][key];
 
-                    formatting[key] = value;
+                        // replace variables
+                        if(value.includes("v:")){
+                            value = value.replaceAll(/v:(\w+)/g, (match, variable) => {
+                                if(variables["v:" + variable] == undefined){
+                                    endProgram(`Variable "${variable}" does not exist.`);
+                                    return;
+                                } else if (variables["v:" + variable].type != "int") {
+                                    endProgram(`Variable "${variable}" must be of type int.`);
+                                    return;
+                                }
+                                return +variables["v:" + variable].value;
+                            });
+                        }
+
+                        formatting[i][key] = value;
+                    }
                 }
 
                 // go through the text and replace variables
@@ -588,9 +589,9 @@ function interpreter(formatted, vars){
 
                 let parsedText;
                 try {
-                    parsedText = new Function(`return ("${cleanInnerQuotes(text)}");`)(); // Evaluate the expression
+                    parsedText = new Function(`return (${String(text)});`)(); // Evaluate the expression
                 } catch (err) {
-                    endProgram(`Error evaluating: ${text}`);
+                    endProgram(`Error evaluating: [${text}]`);
                     break;
                 }
 
@@ -605,6 +606,7 @@ function interpreter(formatted, vars){
                 }
 
                 let out = line.args.output;
+                out = String(out);
 
                 // Replace variables in the "out" statement
                 for (let variable in variables) {
@@ -626,10 +628,9 @@ function interpreter(formatted, vars){
 
                 let parsedOut;
                 try {
-                    out = cleanInnerQuotes(out); // Clean any nested or extra quotes
-                    parsedOut = new Function(`return (${out});`)(); // Evaluate the expression
+                    parsedOut = new Function(`return (${String(out)});`)(); // Evaluate the expression
                 } catch (err) {
-                    endProgram(`Error evaluating: ${out}`);
+                    endProgram(`Error evaluating [${out}]`);
                     break;
                 }
 

@@ -25,14 +25,14 @@ const config = {
             { name: "cli", properties: {read: false, write: false, hidden: true}, data: ["str cli = 'this program is hardcoded into froggyOS'", "endprog"] },
             { name: "lilypad", properties: {read: false, write: false, hidden: true}, data: ["str lilypad = 'this program is hardcoded into froggyOS'", "endprog"] },
             { name: "test", properties: {read: true, write: false, hidden: false}, data: [
-                "int color = 3",
-                "outc {t=c13} 'test 1'",
-                "outc {b=c06} 'test 2'",
-                "outc {t=c04,b=c01} 'test 3'",
-                "outc {t=v:color,b=c06} 'test 4'",
-                // "str test = 'test'",
-                // "append test ing",
-                // "out v:test",
+                "int var = 5",
+                "int tsStart = 4",
+                "int tsEnd = 26",
+                'outc {t=c01} "this is blu\'meow\'e text"',
+                'outc {b=c00} "this is a black background"',
+                'outc {t=c02,b=c01} "this is green green text on a blue background"',
+                'outc {t=c01,ts=0;15} "from the 1st to 16th character, the text will be blue"',
+                'outc {t=c01,ts=v:tsStart;v:tsEnd|b=c04,bs=57;71} "from the 5th to 29th character, the text will be blue. AND from the 58th to the 72nd character the background will be red"',
                 "endprog"
             ] },
             { name: "help", properties: {read: true, write: false, hidden: false}, data: [

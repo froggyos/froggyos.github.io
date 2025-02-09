@@ -73,22 +73,35 @@ function format(input) {
             let formatting = line.args.join(" ").match(/\{([^}]+)\}/g)?.map(match => match.slice(1, -1))[0]
             let text = line.args.join(" ").replaceAll(`{${formatting}}`, "")
 
-            let formatObj = {};
-            formatting = formatting?.split(",")
+            let formatArray = [];
+            formatting = formatting?.split("|")
+
             if(formatting == undefined){
                 formatted.errors.push(`FormatError: Malformed Format object.`);
                 if(config.debugMode) console.log(`FORMAT ERROR! ${formatted.errors[formatted.errors.length - 1]}`);
             }
-            formatting = formatting?.map(format => format.trim().split("=").map(value => value.trim()))
+
+            for(let i = 0; i < formatting.length; i++){
+                let formattingObject = {};
+                formatting[i].split(",").forEach((format) => {
+                    if(format === "") return;
+                    let [key, value] = format.split("=").map(value => value.trim());
+
+                    if(key == "t" || key == "b"){
+                        formattingObject[key] = value;
+                    } else if (key == "ts" || key == "bs") {
+                        let [start, end] = value.split(";").map(value => value.trim());
+                        formattingObject[`${key}_start`] = start;
+                        formattingObject[`${key}_end`] = end;
+                    }
+                })
+                formatArray.push(formattingObject);
+            }
 
             if(formatting == undefined){
                 formatted.errors.push(`FormatError: Malformed Format object AGAIN! FIX SOMETHING I DONT THINK YOU SHOULD EVEN BE SEEING THIS ERROR.`);
                 if(config.debugMode) console.log(`FORMAT ERROR! ${formatted.errors[formatted.errors.length - 1]}`);
             } else {
-                formatting.forEach(format => {
-                    formatObj[format[0]] = format[1]
-                })
-    
                 if(formatting === undefined || formatting === undefined){
                     formatted.errors.push(`FormatError: Missing arguments for "outc" keyword.`);
                     if(config.debugMode) console.log(`FORMAT ERROR! ${formatted.errors[formatted.errors.length - 1]}`);
@@ -96,7 +109,7 @@ function format(input) {
     
                 line.args = {
                     text: text,
-                    formatting: formatObj,
+                    formatting: formatArray,
                 }
     
                 if(config.debugMode) console.log(`Formatted outc ${JSON.stringify(line.args)}`);
