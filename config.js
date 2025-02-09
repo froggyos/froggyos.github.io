@@ -12,7 +12,6 @@ const config = {
     programList: ["cli", "lilypad"],
     allowedProgramDirectories: ["D:/Programs"],
     dissallowSubdirectoriesIn: ["D:/Programs", "D:/Macros", "D:/Program-Data", "D:/Palettes"],
-    froggyscriptFormatObjectKeys: ["tc", "bc", "tcr", "bcr"],
     programSession: 0,
     errorText: "<span class='error'><span class='error-text'>!!ERROR!!</span> -</span>",
     fileSystem: {
