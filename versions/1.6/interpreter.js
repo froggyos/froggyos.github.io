@@ -208,34 +208,42 @@ function interpreter(formatted){
                 config.showLoadingSpinner = true;
             } break;
             case "endloop": {
-                let loopCondition = formatted.lines[line.args.startOfLoop].args.condition;
+                try {
+                    let loopCondition = formatted.lines[line.args.startOfLoop].args.condition;
 
-                if(loopCondition.includes("v:")){
-                    loopCondition = loopCondition.replaceAll(/v:(\w+)/g, (match, variable) => {
-                        if(variables["v:" + variable] == undefined){
-                            endProgram(`Variable [${variable}] does not exist.`);
-                            IS_ERROR = true;
-                        }
-                        return variables["v:" + variable].value;
-                    });
-                }
-
-                if(evaluate(loopCondition) == null) {
-                    endProgram(`Invalid loop condition.`);
-                    break;
-                }
-                if(evaluate(loopCondition)){
-                    config.showLoadingSpinner = true;
-                    lineIndex = line.args.startOfLoop;
-
-                    try {
-                        parseNext();
-                    } catch (err) {
-                        endProgram(`Callstack size exceeded. This is a JavaScript problem.`);
+                    if(loopCondition.includes("v:")){
+                        loopCondition = loopCondition.replaceAll(/v:(\w+)/g, (match, variable) => {
+                            if(variables["v:" + variable] == undefined){
+                                endProgram(`Variable [${variable}] does not exist.`);
+                                IS_ERROR = true;
+                            }
+                            return variables["v:" + variable].value;
+                        });
                     }
-                } else {
-                    config.showLoadingSpinner = false;
-                    parseNext();
+
+                    if(evaluate(loopCondition) == null) {
+                        endProgram(`Invalid loop condition.`);
+                        IS_ERROR = true;
+                    }
+                    if(evaluate(loopCondition)){
+                        config.showLoadingSpinner = true;
+                        lineIndex = line.args.startOfLoop;
+
+                        try {
+                            parseNext();
+                        } catch (err) {
+                            endProgram(`Callstack size exceeded. This is a JavaScript problem.`);
+                        }
+                    } else {
+                        config.showLoadingSpinner = false;
+                        parseNext();
+                    }
+                } catch (err) {
+                    createTerminalLine("Wow.............................. really................ smh.......", config.errorText);
+                    createTerminalLine("U really gonna brick poor old Froggy like that???? smh....", config.errorText)
+                    createTerminalLine("add [wait 0] before an endloop keyword idk", config.errorText);
+                    createTerminalLine("I cant really do anything but ill savestate ur stuff", config.errorText);
+                    sendCommand("savestate", [], false);
                 }
             } break;
             case "prompt": {

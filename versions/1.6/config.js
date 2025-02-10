@@ -25,16 +25,15 @@ const config = {
         "D:/Programs": [
             { name: "cli", properties: {read: false, write: false, hidden: true}, data: ["str cli = 'this program is hardcoded into froggyOS'", "endprog"] },
             { name: "lilypad", properties: {read: false, write: false, hidden: true}, data: ["str lilypad = 'this program is hardcoded into froggyOS'", "endprog"] },
-            { name: "test", properties: {read: true, write: false, hidden: false}, data: [
-                "if {1 == 1}",
-                "   if { 2 == 2}",
-                "   out '2 is equal to 2'",
-                "   endif",
-                "   if {3 != 4}",
-                "   out '3 is not equal to 4'",
-                "   endif",
-                "endif",
-                "endprog"
+            { name: "test", properties: {read: true, write: true, hidden: false}, data: [
+                "out 'before loop'",
+                "int i = 0",
+                "loop { v:i < 1000 }",
+                "out v:i",
+                "set i = v:i + 1",
+                "endloop",
+                "out 'after loop'",
+                "endprog",
             ] },
             { name: "help", properties: {read: true, write: false, hidden: false}, data: [
                 "str category = ''",

@@ -267,7 +267,6 @@ function format(input) {
 
     formatted.lines.forEach((line, endIndex) => {
         if (line.keyword === "endloop") {
-            // Use a stack to track open loops
             let loopIndex = -1;
             let openLoops = 0;
 

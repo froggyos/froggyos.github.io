@@ -55,7 +55,8 @@ There is no set colors that you must have, but these are the color conventions.
     * `if` keywords work correctly now, but `else` might not work as expected.
  * load state doesnt work with palettes
  * ~~the inserted `wait` keywords may be messing loops sometimes~~
-    * `wait` keywords were being inserted before every `endloop` command, which stacked. Turns out the `wait` keyword was not necessary, so it was removed.
+    * ~~`wait` keywords were being inserted before every `endloop` command, which stacked. Turns out the `wait` keyword was not necessary, so it was removed.~~
+        * they were VERY much needed lmfao
  * There's some weird stuff going on with `append`. Fix later.
  * something with `outc`? idk
  * `str` variables dont require quotes. make them required
@@ -295,6 +296,7 @@ endif
 ```
 
 ### Loop
+**NOTE: you may need to include `wait 0` before endloop keywords**
 ```
 loop {[condition]}
     [code]
