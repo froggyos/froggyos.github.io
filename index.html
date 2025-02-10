@@ -177,7 +177,7 @@
     let currentSelected = versionList.length - 1;
     document.querySelectorAll("[data-version]")[currentSelected].classList.add("selected");
 
-    document.body.addEventListener("keyup", function(e){
+    document.body.addEventListener("keydown", function(e){
         let versions = document.querySelectorAll("[data-version]");
         if(e.key == "ArrowUp"){
             versions[currentSelected].classList.remove("selected");
@@ -187,7 +187,7 @@
         } else if (e.key == "ArrowDown") {
             versions[currentSelected].classList.remove("selected");
             currentSelected++;
-            if(currentSelected >= versions.length) currentSelected = versions.length - 1;
+            if(currentSelected >= versions.length) currentSelected = 0;
             versions[currentSelected].classList.add("selected");
         } else if (e.key == "Enter"){
             let version = versionList[currentSelected];
