@@ -43,7 +43,10 @@ function interpreter(formatted){
             if(config.debugMode){
                 let programFile = config.fileSystem["D:/Program-Data"].find(file => file.name == config.currentProgram).data;
                 console.log(programFile);
-                document.getElementById('debug-program-memory').textContent = "program memory\n"+ JSON.stringify(programFile, null,2) +"\ninstance memory\n"+JSON.stringify(variables, null, 2) + "\n----------\n" + JSON.stringify(debugObject, null, 2);
+                document.getElementById('debug-program-memory').textContent = 
+                "program memory:\n"+ JSON.stringify(programFile, null,2) +
+                "\ninstance memory:\n"+JSON.stringify(variables, null, 2) + 
+                "\nformatted memory:\n" + JSON.stringify(debugObject, null, 2);
                 console.log(`{${iteration}} Line ${lineIndex}: ${keyword} ${JSON.stringify(line.args)}`);
             }
             if(IS_ERROR) return;
