@@ -64,7 +64,8 @@ There is no set colors that you must have, but these are the color conventions.
 
 ### formattime
 The all instances of the following characters will be replaced with their respective values. Place a "!" before the character to escape it.
- * w - weekday
+ * w - short weekday (Mon, Tues, etc.)
+ * W - long weekday (Monday, Tuesday, etc.)
  * d - day
  * M - month
  * y - year

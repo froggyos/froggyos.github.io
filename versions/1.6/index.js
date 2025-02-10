@@ -17,7 +17,8 @@ function updateDateTime() {
     const now = new Date();
 
     // Grab the current weekday.
-    const dayOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][now.getDay()];  // Grab the live day of the week.
+    const dayOfWeekShort = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][now.getDay()];  // Grab the live day of the week.
+    const dayOfWeekLong = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][now.getDay()];  // Grab the live day of the week.
     const year = now.getFullYear(); // Year
     const month = String(now.getMonth() + 1).padStart(2, '0'); // Month
     const day = String(now.getDate()).padStart(2, '0'); // Day
@@ -39,7 +40,8 @@ function updateDateTime() {
             { char: 'm', value: minute },
             { char: 's', value: second },
             { char: 'a', value: ampm },
-            { char: 'w', value: dayOfWeek }
+            { char: 'w', value: dayOfWeekShort },
+            { char: 'W', value: dayOfWeekLong },
         ];
       
     let escapedTemplate = replacements.reduce((str, { char, value }) => {
