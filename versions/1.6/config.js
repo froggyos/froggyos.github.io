@@ -6,6 +6,7 @@ const config = {
     commandHistory: [],
     commandHistoryIndex: -1,
     showLoadingSpinner: false,
+    loadingSpinnerFrames: ['-', '\\', '|', '/'],
     timeFormat: 'w. y/M/d h:m:s',
     updateStatBar: true,
     currentProgram: "cli",

@@ -9,7 +9,15 @@ document.body.onclick = function() {
     } catch (err) { };
 }
 
-const loadingSpinnerAnimFrames = ['-', '\\', '|', '/'];
+const spinners = [
+    ['-', '\\', '|', '/'],
+    [".", ":", "¨", ":"],
+    [".", "o", "O", "°", "O", "o"],
+    ["×", "+"],
+    ["~", "–"],
+    ["<", "^", ">", "v"]
+]
+
 let loadingSpinnerIndex = 0;
 
 function updateDateTime() {
@@ -55,7 +63,7 @@ function updateDateTime() {
 
     if(!config.showLoadingSpinner) document.getElementById('bar').textContent = dateString.padEnd(79," ");
     else {
-        document.getElementById('bar').textContent = dateString.padEnd(79," ").slice(0, -1) + loadingSpinnerAnimFrames[loadingSpinnerIndex % 4];
+        document.getElementById('bar').textContent = dateString.padEnd(79," ").slice(0, -1) + config.loadingSpinnerFrames[loadingSpinnerIndex % config.loadingSpinnerFrames.length];
         loadingSpinnerIndex++;
     }
 }
