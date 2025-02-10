@@ -28,37 +28,27 @@ function updateDateTime() {
     const ampm = now.getHours() >= 12 ? 'PM' : 'AM'; // AM or PM
 
     let dateTemplate = config.timeFormat;
-    dateTemplate = dateTemplate.replace('w', '###w###');
-    dateTemplate = dateTemplate.replace('y', '###y###');
-    dateTemplate = dateTemplate.replace('M', '###M###');
-    dateTemplate = dateTemplate.replace('d', '###d###');
-    dateTemplate = dateTemplate.replace('h', '###h###');
-    dateTemplate = dateTemplate.replace('H', '###H###');
-    dateTemplate = dateTemplate.replace('m', '###m###');
-    dateTemplate = dateTemplate.replace('s', '###s###');
-    dateTemplate = dateTemplate.replace('a', '###a###');
 
-    dateTemplate = dateTemplate.replace('!###y###', 'y');
-    dateTemplate = dateTemplate.replace('!###M###', 'M');
-    dateTemplate = dateTemplate.replace('!###d###', 'd');
-    dateTemplate = dateTemplate.replace('!###h###', 'h');
-    dateTemplate = dateTemplate.replace('!###H###', 'H');
-    dateTemplate = dateTemplate.replace('!###m###', 'm');
-    dateTemplate = dateTemplate.replace('!###s###', 's');
-    dateTemplate = dateTemplate.replace('!###a###', 'a');
-    dateTemplate = dateTemplate.replace('!###w###', 'w');
+    const replacements = [
+            { char: 'y', value: year },
+            { char: 'M', value: month },
+            { char: 'd', value: day },
+            { char: 'h', value: hour24 },
+            { char: 'H', value: hour12 },
+            { char: 'm', value: minute },
+            { char: 's', value: second },
+            { char: 'a', value: ampm },
+            { char: 'w', value: dayOfWeek }
+        ];
+      
+        let escapedTemplate = replacements.reduce((str, { char, value }) => {
+            let escapedChar = `!${char}`;
+            return str
+                .replace(new RegExp(`(?<!!)${char}`, 'g'), value) // Replace unescaped characters
+                .replace(new RegExp(escapedChar, 'g'), char); // Replace escaped characters back
+        }, dateTemplate);
 
-    dateTemplate = dateTemplate.replace('###y###', year);
-    dateTemplate = dateTemplate.replace('###M###', month);
-    dateTemplate = dateTemplate.replace('###d###', day);
-    dateTemplate = dateTemplate.replace('###h###', hour24);
-    dateTemplate = dateTemplate.replace('###H###', hour12);
-    dateTemplate = dateTemplate.replace('###m###', minute);
-    dateTemplate = dateTemplate.replace('###s###', second);
-    dateTemplate = dateTemplate.replace('###a###', ampm);
-    dateTemplate = dateTemplate.replace('###w###', dayOfWeek);
-
-    const dateString = dateTemplate;
+    const dateString = escapedTemplate;
 
     if(!config.showLoadingSpinner) document.getElementById('bar').textContent = dateString.padEnd(79," ");
     else {

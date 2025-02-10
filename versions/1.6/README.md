@@ -63,7 +63,7 @@ There is no set colors that you must have, but these are the color conventions.
 ## Command Help
 
 ### formattime
-The first instance of the following characters will be replaced with their respective values. Place a "!" before the character to escape it.
+The all instances of the following characters will be replaced with their respective values. Place a "!" before the character to escape it.
  * w - weekday
  * d - day
  * M - month
