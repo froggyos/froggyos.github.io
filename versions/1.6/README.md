@@ -141,7 +141,7 @@ out "i can put a v:variable inside a string"
 ```
 ### Colored Output
 #### General
- * `0` is the `1st` character.
+ * index `0` is the 1st character.
  * You can  use variables as values for color codes, variables of length 2 or less will be converted to color codes automatically.
  * There is very little error checking on the formatting objects, so make sure they're correct.
  * The whitespace inside of the formatting object does not matter.
