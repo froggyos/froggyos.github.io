@@ -29,6 +29,7 @@ function updateDateTime() {
 
     let dateTemplate = config.timeFormat;
 
+    // totally not ai
     const replacements = [
             { char: 'y', value: year },
             { char: 'M', value: month },
@@ -41,12 +42,12 @@ function updateDateTime() {
             { char: 'w', value: dayOfWeek }
         ];
       
-        let escapedTemplate = replacements.reduce((str, { char, value }) => {
-            let escapedChar = `!${char}`;
-            return str
-                .replace(new RegExp(`(?<!!)${char}`, 'g'), value) // Replace unescaped characters
-                .replace(new RegExp(escapedChar, 'g'), char); // Replace escaped characters back
-        }, dateTemplate);
+    let escapedTemplate = replacements.reduce((str, { char, value }) => {
+        let escapedChar = `!${char}`;
+        return str
+            .replace(new RegExp(`(?<!!)${char}`, 'g'), value) // Replace unescaped characters
+            .replace(new RegExp(escapedChar, 'g'), char); // Replace escaped characters back
+    }, dateTemplate);
 
     const dateString = escapedTemplate;
 
