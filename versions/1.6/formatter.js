@@ -51,7 +51,20 @@ function format(input) {
     // Parse set keywords
     formatted.lines.forEach((line) => {
         if (line.keyword === "set") {
+            let variable = line.args[0];
             let value = line.args.slice(2).join(" ");
+
+            if(variable === undefined || variable === ""){
+                formatted.errors.push(`FormatError: Missing variable for "set" keyword.`);
+                if(config.debugMode) console.log(`FORMAT ERROR! ${formatted.errors[formatted.errors.length - 1]}`);
+            }
+
+            if(value === undefined || value === ""){
+                formatted.errors.push(`FormatError: Missing value for "set" keyword.`);
+                if(config.debugMode) console.log(`FORMAT ERROR! ${formatted.errors[formatted.errors.length - 1]}`);
+            }
+
+
             line.args = {
                 variable: line.args[0],
                 value: value

@@ -1,5 +1,43 @@
 <!--mrjuice43, Rus1130, 2025/01/10-->
 <style>
+    :root {
+        --c00: #000000;
+        --c01: #0000AA;
+        --c02: #00AA00;
+        --c03: #00AAAA;
+        --c04: #AA0000;
+        --c05: #AA00AA;
+        --c06: #AA5500;
+        --c07: #AAAAAA;
+        --c08: #555555;
+        --c09: #5555FF;
+        --c10: #55FF55;
+        --c11: #55FFFF; 
+        --c12: #FF5555;
+        --c13: #FF55FF;
+        --c14: #FFFF55;
+        --c15: #FFFFFF;
+
+        --void-space: var(--c00);
+
+        --bar-background: var(--c01);
+        --bar-text: var(--c15);
+
+        --terminal-background: var(--c15);
+
+        --terminal-line-background: var(--c15);
+        --terminal-line-highlighted-background: var(--c14);
+        --terminal-line-text: var(--c02);
+        --terminal-line-selection-background: var(--c02);
+        --terminal-line-selection-text: var(--c15);
+
+        --error-background: var(--c12);
+        --error-text: var(--c15);
+
+        --prompt-selected-background: var(--c02);
+        --prompt-selected-text: var(--c15);
+    }
+
     body {
         background-color: var(--void-space);
         margin: 0;
@@ -98,35 +136,6 @@
         background-color: var(--terminal-line-selection-background);
         color: var(--terminal-line-selection-text);
     }
-
-    /* Debugging */
-    #froggyscript-debug-button {
-        position: absolute;
-        display: none;
-        top: 0;
-        right: 0;
-        background-color: var(--bar-background);
-        color: var(--bar-text);
-        width: 50px;
-        height: 50px;
-        cursor: pointer;
-    }
-    #debug-program-memory {
-        position: absolute;
-        display: none;
-        top: calc(48px * 2);
-        height: calc(100vh - 48px * 2);
-        width: calc(48px * 8);
-        left: 0;
-    }
-    #debug-os {
-        position: absolute;
-        display: none;
-        top: 50px;
-        right: 0;
-        height: calc(100vh - 50px);
-        width: 350px;
-    }
 </style>
 <head>
     <title>froggyOS</title>
@@ -140,43 +149,104 @@
 
 </head>
 <body>
-    <div id="color-test-bar"></div>
-    <div id="froggyscript-debug-button">step</div>
-    <textarea id="debug-program-memory" readonly>program memory</textarea>
-    <textarea id="debug-os" readonly>os memory</textarea>
     <div id="screen">
         <div id="bar"></div>
-        <div id="terminal"></div>
+        <div id="terminal">
+            <div class="line-container"><span></span><div>* Current Versions *</div></div>
+        </div>
     </div>
 </body>
-<script src="./config.js"></script>
-<script src="https://rus1130.github.io/projects/Global/sniffer.js"></script>
-<script src="./formatter.js"></script>
-<script src="./interpreter.js"></script>
-<script src="./index.js"></script>
 <script>
-    let ce = document.querySelectorAll('[contenteditable]');
 
-    ce.forEach((el) => {
-        el.addEventListener('paste', function (e) {
-            e.preventDefault();
-            const text = e.clipboardData.getData('text/plain');
+    const versionList = [
+        "beta",
+        "1.0",
+        "1.1",
+        "1.2",
+        "1.3",
+        "1.4",
+        "1.5-lbc2",
+        "1.6"
+    ];
 
-            // Use the Selection and Range APIs to insert the text
-            const selection = window.getSelection();
-            if (!selection.rangeCount) return;
-
-            const range = selection.getRangeAt(0);
-            range.deleteContents();
-
-            const textNode = document.createTextNode(text);
-            range.insertNode(textNode);
-
-            // Move the caret to the end of the inserted text
-            range.setStartAfter(textNode);
-            range.setEndAfter(textNode);
-            selection.removeAllRanges();
-            selection.addRange(range);
-        });
+    versionList.forEach(version => {
+        let terminal = document.getElementById("terminal");
+        terminal.innerHTML += `<div class="line-container" data-version><span>></span><div>${version}</div></div>`;
     });
+
+    let currentSelected = versionList.length - 1;
+    document.querySelectorAll("[data-version]")[currentSelected].classList.add("selected");
+
+    document.body.addEventListener("keyup", function(e){
+        let versions = document.querySelectorAll("[data-version]");
+        if(e.key == "ArrowUp"){
+            versions[currentSelected].classList.remove("selected");
+            currentSelected--;
+            if(currentSelected < 0) currentSelected = versions.length - 1;
+            versions[currentSelected].classList.add("selected");
+        } else if (e.key == "ArrowDown") {
+            versions[currentSelected].classList.remove("selected");
+            currentSelected++;
+            if(currentSelected >= versions.length) currentSelected = versions.length - 1;
+            versions[currentSelected].classList.add("selected");
+        } else if (e.key == "Enter"){
+            let version = versionList[currentSelected];
+            window.location.href = `https://froggyos.github.io/versions/${version}/index.html`;
+        }
+    })
+
+    function updateDateTime() {
+        const now = new Date();
+
+        // Grab the current weekday.
+        const dayOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][now.getDay()];  // Grab the live day of the week.
+        const year = now.getFullYear(); // Year
+        const month = String(now.getMonth() + 1).padStart(2, '0'); // Month
+        const day = String(now.getDate()).padStart(2, '0'); // Day
+        const hour24 = String(now.getHours()).padStart(2, '0'); // Hour in 24-hour format
+        const hour12 = String((now.getHours() + 11) % 12 + 1).padStart(2, '0'); // Hour in 12-hour format
+        const minute = String(now.getMinutes()).padStart(2, '0'); // Minutes
+        const second = String(now.getSeconds()).padStart(2, '0'); // Seconds
+        const ampm = now.getHours() >= 12 ? 'PM' : 'AM'; // AM or PM
+
+        let dateTemplate = "w. y/M/d h:m:s";
+        
+        dateTemplate = dateTemplate.replace('w', '###w###');
+        dateTemplate = dateTemplate.replace('y', '###y###');
+        dateTemplate = dateTemplate.replace('M', '###M###');
+        dateTemplate = dateTemplate.replace('d', '###d###');
+        dateTemplate = dateTemplate.replace('h', '###h###');
+        dateTemplate = dateTemplate.replace('H', '###H###');
+        dateTemplate = dateTemplate.replace('m', '###m###');
+        dateTemplate = dateTemplate.replace('s', '###s###');
+        dateTemplate = dateTemplate.replace('a', '###a###');
+
+        dateTemplate = dateTemplate.replace('!###y###', 'y');
+        dateTemplate = dateTemplate.replace('!###M###', 'M');
+        dateTemplate = dateTemplate.replace('!###d###', 'd');
+        dateTemplate = dateTemplate.replace('!###h###', 'h');
+        dateTemplate = dateTemplate.replace('!###H###', 'H');
+        dateTemplate = dateTemplate.replace('!###m###', 'm');
+        dateTemplate = dateTemplate.replace('!###s###', 's');
+        dateTemplate = dateTemplate.replace('!###a###', 'a');
+        dateTemplate = dateTemplate.replace('!###w###', 'w');
+
+        dateTemplate = dateTemplate.replace('###y###', year);
+        dateTemplate = dateTemplate.replace('###M###', month);
+        dateTemplate = dateTemplate.replace('###d###', day);
+        dateTemplate = dateTemplate.replace('###h###', hour24);
+        dateTemplate = dateTemplate.replace('###H###', hour12);
+        dateTemplate = dateTemplate.replace('###m###', minute);
+        dateTemplate = dateTemplate.replace('###s###', second);
+        dateTemplate = dateTemplate.replace('###a###', ampm);
+        dateTemplate = dateTemplate.replace('###w###', dayOfWeek);
+
+        const dateString = dateTemplate;
+
+        document.getElementById('bar').textContent = dateString;
+
+    }
+
+    setInterval(updateDateTime, 100);
+    updateDateTime();
 </script>

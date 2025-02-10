@@ -5,22 +5,30 @@
 
 ## Palette Conventions
 There is no set colors that you must have, but these are the color conventions.
- * 00 - black, the void surrounding the terminal
- * 01 - blue, the top bar background color
- * 02 - green, text color, as well as selected text and option background color
- * 03 - cyan
- * 04 - red
- * 05 - magenta
- * 06 - orange/brown
- * 07 - light grey
- * 08 - dark grey
- * 09 - light blue
- * 10 - light green
- * 11 - light cyan
- * 12 - light red, error background color
- * 13 - light magenta
- * 14 - light orange/yellow
- * 15 - white, the terminal background color, top bar and error text color, and the selected text and option color
+ * `00` - black, the void surrounding the terminal
+ * `01` - blue, the top bar background color
+ * `02` - green, text color, as well as selected text and option background color
+ * `03` - cyan
+ * `04` - red
+ * `05` - magenta
+ * `06` - orange/brown
+ * `07` - light grey
+ * `08` - dark grey
+ * `09` - light blue
+ * `10` - light green
+ * `11` - light cyan
+ * `12` - light red, error background color
+ * `13` - light magenta
+ * `14` - light orange/yellow
+ * `15` - white, the terminal background color, top bar and error text color, and the selected text and option color
+
+### Current Color Palettes
+ * standard
+ * revised
+ * cherry
+ * swamp
+ * swamp-revised
+ * neon
 
 ## Aliases
 
@@ -109,6 +117,13 @@ wait v:number
 ### Clear Screen
 ```
 clearterminal
+```
+### Change Color Palette
+```
+changepalette [palette name]
+
+changepalette standard
+changepalette cherry
 ```
 
 ## Output

@@ -179,10 +179,12 @@ function interpreter(formatted){
                     time = time.replaceAll(/v:(\w+)/g, (match, variable) => {
                         if(variables["v:" + variable] == undefined){
                             endProgram(`Variable [${variable}] does not exist.`);
+                            IS_ERROR = true;
                             return;
                         }
                         if(variables["v:" + variable].type != "int"){
                             endProgram(`Variable [${variable}] must be of type int.`);
+                            IS_ERROR = true;
                             return;
                         }
                         return variables["v:" + variable].value;
@@ -210,6 +212,7 @@ function interpreter(formatted){
                     loopCondition = loopCondition.replaceAll(/v:(\w+)/g, (match, variable) => {
                         if(variables["v:" + variable] == undefined){
                             endProgram(`Variable [${variable}] does not exist.`);
+                            IS_ERROR = true;
                         }
                         return variables["v:" + variable].value;
                     });
@@ -463,11 +466,6 @@ function interpreter(formatted){
                 let value = line.args?.value;
                 let parsedValue;
                 let type;
-        
-                if (!variableName || !value) {
-                    endProgram(`Invalid "set" declaration syntax.`);;
-                    break;
-                }
 
                 if(variables[variableName] == undefined){
                     endProgram(`Variable [${variableName}] does not exist.`);
@@ -602,17 +600,6 @@ function interpreter(formatted){
                     break;
                 }
 
-
-                for(let i = 0; i < formatting.length; i++){
-                    for(let key in formatting[i]){
-                        let value = formatting[i][key];
-
-                        // if(key.startsWith("tr_") || key.startsWith("br_")){
-                        //     formatting[i][key] = +value;
-                        // }
-                    }
-                }
-
                 if(IS_ERROR) return;
                 createTerminalLine(parsedText, ">", formatting);
                 parseNext();
@@ -624,7 +611,6 @@ function interpreter(formatted){
                 }
 
                 let out = line.args.output;
-                out = (out);
 
                 // Replace variables in the "out" statement
                 for (let variable in variables) {
