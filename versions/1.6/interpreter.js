@@ -42,7 +42,6 @@ function interpreter(formatted){
             if(config.debugMode) await waitForButtonClick("froggyscript-debug-button");
             if(config.debugMode){
                 let programFile = config.fileSystem["D:/Program-Data"].find(file => file.name == config.currentProgram).data;
-                console.log(programFile);
                 document.getElementById('debug-program-memory').textContent = 
                 "program memory:\n"+ JSON.stringify(programFile, null,2) +
                 "\ninstance memory:\n"+JSON.stringify(variables, null, 2) + 
