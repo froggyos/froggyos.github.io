@@ -1,4 +1,4 @@
-// new AllSniffer({timerOptions: {intervalIDsToExclude: [1,2,3,4]}});
+//new AllSniffer({timerOptions: {intervalIDsToExclude: [1,2,3,4]}});
 
 let screen = document.getElementById('screen');
 let terminal = document.getElementById('terminal');
@@ -10,6 +10,7 @@ document.body.onclick = function() {
 }
 
 function tickUpdater(){
+    // here, eventually sync the configs changed to files with their config object counterparts, to avoid refactoring literally everything
     let files = [];
     for(let directory of config.allowedProgramDirectories){
         if(config.fileSystem[directory] == undefined) continue;
@@ -102,7 +103,7 @@ function updateDateTime() {
 setInterval(() => {
     tickUpdater()
     updateDateTime()
-}, 100);
+}, 1);
 
 tickUpdater();
 updateDateTime();
@@ -447,6 +448,12 @@ function sendCommand(command, args, createEditableLineAfter){
             }
             if(file.properties.write == false){
                 createTerminalLine("You do not have permission to delete this file.", config.errorText);
+                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                break;
+            }
+            // if we are in the Settings: directory, do not allow the user to delete the file
+            if(config.currentPath.split(":")[0] == "Settings"){
+                createTerminalLine("You cannot delete this file.", config.errorText);
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
@@ -947,8 +954,14 @@ function sendCommand(command, args, createEditableLineAfter){
         
         case "[[BULLFROG]]debugmode": {
             let bool = args[0];
-            if(bool == "1") config.debugMode = true;
-            else if(bool == "0") config.debugMode = false;
+            if(bool == "1") {
+                config.fileSystem["Settings:"].find(file => file.name == "debugMode").data[0] = "true";
+                config.debugMode = true; // eventually remove this
+            }
+            else if(bool == "0") {
+                config.fileSystem["Settings:"].find(file => file.name == "debugMode").data[0] = "false";
+                config.debugMode = false; // eventually remove this
+            }
             else createTerminalLine("Invalid argument. Please provide '1' or '0'.", config.errorText);
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         } break;

@@ -1,5 +1,5 @@
 const config = {
-    debugMode: false, // change to file
+    debugMode: false, // change to file - HALF-COMPLETE
     version: "1.7", // change to file
     colorPalette: "standard", // change to file
     currentPath: 'C:/Home',
@@ -17,6 +17,17 @@ const config = {
     programSession: 0,
     errorText: "<span class='error'><span class='error-text'>!!ERROR!!</span> -</span>",
     fileSystem: {
+        "Settings:": [
+            { name: "debugMode", properties: {read: true, write: true, hidden: false}, data: ["false"] },
+            { name: "version", properties: {read: true, write: true, hidden: false}, data: ["1.7"] },
+            { name: "colorPalette", properties: {read: true, write: true, hidden: false}, data: ["standard"] },
+            { name: "showSpinner", properties: {read: true, write: true, hidden: false}, data: ["false"] },
+            { name: "currentSpinner", properties: {read: true, write: true, hidden: false}, data: ["spinner"] },
+            { name: "timeFormat", properties: {read: true, write: true, hidden: false}, data: ["w. y/M/d h:m:s"] },
+            { name: "updateStatBar", properties: {read: true, write: true, hidden: false}, data: ["true"] },
+            { name: "allowedProgramDirectories", properties: {read: true, write: true, hidden: false}, data: ["D:/Programs"] },
+            { name: "dissallowSubdirectoriesIn", properties: {read: true, write: true, hidden: false}, data: ["D:/Programs", "D:/Macros", "D:/Program-Data", "D:/Palettes", "D:/Spinners"] },
+        ],
         "C:": [], 
         "C:/Home": [
             { name: "welcome!", properties: {read: true, write: true, hidden: false}, data: ['Hello!', "Welcome to FroggyOS.", "Type 'help' for a list of commands.", "Have fun! ^v^"] },
