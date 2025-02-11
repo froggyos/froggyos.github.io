@@ -9,7 +9,19 @@ document.body.onclick = function() {
     } catch (err) { };
 }
 
-function tickUpdater(){
+function setConfigFromSettings(){
+    for(let file of config.fileSystem["Settings:"]){
+        let name = file.name;
+        let data = file.data;
+
+        if(name == "debugMode") {
+            // set to file
+            // then from file, set to config object
+        }
+    }
+}
+
+function programList(){
     // here, eventually sync the configs changed to files with their config object counterparts, to avoid refactoring literally everything
     let files = [];
     for(let directory of config.allowedProgramDirectories){
@@ -101,11 +113,13 @@ function updateDateTime() {
 }
 
 setInterval(() => {
-    tickUpdater()
+    setConfigFromSettings()
+    programList()
     updateDateTime()
 }, 1);
 
-tickUpdater();
+setConfigFromSettings()
+programList();
 updateDateTime();
 
 // CSS STYLING ==============================================================================================
