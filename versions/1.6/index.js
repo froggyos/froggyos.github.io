@@ -9,17 +9,47 @@ document.body.onclick = function() {
     } catch (err) { };
 }
 
-const spinners = [
-    ['-', '\\', '|', '/'],
-    [".", ":", "¨", ":"],
-    [".", "o", "O", "°", "O", "o"],
-    ["×", "+"],
-    ["~", "–"],
-    ["<", "^", ">", "v"],
-    ["·", ":", "!", "+", "x", "%", "#", "%", "x", "+", "!", ":"],
-]
+function tickUpdater(){
+    let files = [];
+    for(let directory of config.allowedProgramDirectories){
+        if(config.fileSystem[directory] == undefined) continue;
+        // if the files havent changed, do not update the program list
+        if(config.fileSystem[directory].length == files.length && config.fileSystem[directory].every((file, index) => file.name == files[index])) continue;
 
-let loadingSpinnerIndex = 0;
+        files = files.concat(config.fileSystem[directory]);
+    }
+    files = files.map(file => file.name);
+    config.programList = files;
+
+    // for all the programs, if there is not a corresponding file in the D:Program-Data directory, create one
+    for(let program of config.programList){
+        if(getFileWithName("D:/Program-Data", program) == undefined){
+            config.fileSystem["D:/Program-Data"].push({
+                name: program,
+                properties: {
+                    read: false,
+                    write: false,
+                    hidden: false
+                },
+                data: [""]
+            });
+        }
+    }
+
+    if(config.debugMode) {
+        document.body.style.cursor = "pointer";
+        document.getElementById('froggyscript-debug-button').style.display = 'block';
+        document.getElementById('debug-program-memory').style.display = 'block';
+        document.getElementById('debug-os').style.display = 'block';
+
+        document.getElementById('debug-os').textContent = "os memory:\n"+JSON.stringify(config, null, 1);
+    } else {
+        document.body.style.cursor = "false";
+        document.getElementById('froggyscript-debug-button').style.display = 'none';
+        document.getElementById('debug-program-memory').style.display = 'none';
+        document.getElementById('debug-os').style.display = 'none';
+    }
+}
 
 function updateDateTime() {
     if(!config.updateStatBar) return;
@@ -61,59 +91,21 @@ function updateDateTime() {
     }, dateTemplate);
 
     const dateString = escapedTemplate;
-
-    if(!config.showLoadingSpinner) document.getElementById('bar').textContent = dateString.padEnd(79," ");
+    if(!config.showSpinner) document.getElementById('bar').textContent = dateString.padEnd(79," ");
     else {
-        document.getElementById('bar').textContent = dateString.padEnd(79," ").slice(0, -1) + config.loadingSpinnerFrames[loadingSpinnerIndex % config.loadingSpinnerFrames.length];
-        loadingSpinnerIndex++;
+        let spinnerFrames = config.fileSystem["D:/Spinners"].find(spinner => spinner.name == config.currentSpinner).data;
+        document.getElementById('bar').textContent = dateString.padEnd(79," ").slice(0, -1) + spinnerFrames[config.spinnerIndex % spinnerFrames.length];
+        config.spinnerIndex++;
     }
 }
 
-setInterval(updateDateTime, 100);
-updateDateTime();
-
-setInterval(function() {
-    let files = [];
-    for(let directory of config.allowedProgramDirectories){
-        if(config.fileSystem[directory] == undefined) continue;
-        // if the files havent changed, do not update the program list
-        if(config.fileSystem[directory].length == files.length && config.fileSystem[directory].every((file, index) => file.name == files[index])) continue;
-
-        files = files.concat(config.fileSystem[directory]);
-    }
-    files = files.map(file => file.name);
-    config.programList = files;
-
-    // for all the programs, if there is not a corresponding file in the D:Program-Data directory, create one
-    for(let program of config.programList){
-        if(getFileWithName("D:/Program-Data", program) == undefined){
-            config.fileSystem["D:/Program-Data"].push({
-                name: program,
-                properties: {
-                    read: false,
-                    write: false,
-                    hidden: false
-                },
-                data: [""]
-            });
-        }
-    }
-
-
-    if(config.debugMode) {
-        document.body.style.cursor = "pointer";
-        document.getElementById('froggyscript-debug-button').style.display = 'block';
-        document.getElementById('debug-program-memory').style.display = 'block';
-        document.getElementById('debug-os').style.display = 'block';
-
-        document.getElementById('debug-os').textContent = "os memory:\n"+JSON.stringify(config, null, 1);
-    } else {
-        document.body.style.cursor = "false";
-        document.getElementById('froggyscript-debug-button').style.display = 'none';
-        document.getElementById('debug-program-memory').style.display = 'none';
-        document.getElementById('debug-os').style.display = 'none';
-    }
+setInterval(() => {
+    tickUpdater()
+    updateDateTime()
 }, 100);
+
+tickUpdater();
+updateDateTime();
 
 // CSS STYLING ==============================================================================================
 const defaultStyling = `
@@ -921,8 +913,9 @@ function sendCommand(command, args, createEditableLineAfter){
             createTerminalLine("[[BULLFROG]]help - Displays this message", ">");
             createTerminalLine("[[BULLFROG]]setstatbar [text] - Changes the text in the status bar", ">");
             createTerminalLine("[[BULLFROG]]statbarlock [0/1] - Locks the status bar from updating", ">");
-            createTerminalLine("[[BULLFROG]]spinner [0/1] - Toggles the loading spinner", ">");
+            createTerminalLine("[[BULLFROG]]showspinner [0/1] - Toggles the loading spinner", ">");
             createTerminalLine("[[BULLFROG]]debugmode [0/1] - Toggles debug mode", ">");
+            createTerminalLine("[[BULLFROG]]setspinner [spinner] - Changes the loading spinner", ">");
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
 
@@ -936,10 +929,10 @@ function sendCommand(command, args, createEditableLineAfter){
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
 
-        case '[[BULLFROG]]spinner':
+        case '[[BULLFROG]]showspinner':
             let bool = args[0];
-            if(bool == "1") config.showLoadingSpinner = true;
-            else if(bool == "0") config.showLoadingSpinner = false;
+            if(bool == "1") config.showSpinner = true;
+            else if(bool == "0") config.showSpinner = false;
             else createTerminalLine("Invalid argument. Please provide '1' or '0'.", config.errorText);
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
@@ -958,6 +951,20 @@ function sendCommand(command, args, createEditableLineAfter){
             else if(bool == "0") config.debugMode = false;
             else createTerminalLine("Invalid argument. Please provide '1' or '0'.", config.errorText);
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+        } break;
+
+        case "[[BULLFROG]]setspinner": {
+            let spinner = args[0];
+            // check if spinner is a valid spinner
+            if(config.fileSystem["D:/Spinners"].find(spinner_ => spinner_.name == spinner) == undefined){
+                createTerminalLine("Spinner does not exist.", config.errorText);
+                createTerminalLine(`* Available spinners *`, "");
+                createTerminalLine(config.fileSystem["D:/Spinners"].map(spinner_ => spinner_.name).join(", "), ">");
+                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                break;
+            } else {
+                config.currentSpinner = spinner;
+            }
         } break;
 
         default:
@@ -1154,7 +1161,7 @@ function createLilypadLine(path, linetype, filename){
             if(filename == undefined){
                 createEditableTerminalLine(`${config.currentPath}>`);
             } else {
-                config.showLoadingSpinner = true;
+                config.showSpinner = true;
                 createTerminalLine(`Saving file...`, ">");
 
                 let dataLength = 0;
@@ -1168,7 +1175,7 @@ function createLilypadLine(path, linetype, filename){
                 });
                 
                 setTimeout(function(){
-                    config.showLoadingSpinner = false;
+                    config.showSpinner = false;
                     createTerminalLine(`Done! ^v^`, ">");
                     createEditableTerminalLine(`${config.currentPath}>`);
                     config.programSession++;

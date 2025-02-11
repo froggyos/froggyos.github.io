@@ -1,18 +1,19 @@
 const config = {
-    debugMode: false,
-    version: "1.6",
-    colorPalette: "standard",
+    debugMode: false, // change to file
+    version: "1.6", // change to file
+    colorPalette: "standard", // change to file
     currentPath: 'C:/Home',
     commandHistory: [],
     commandHistoryIndex: -1,
-    showLoadingSpinner: false,
-    loadingSpinnerFrames: ['-', '\\', '|', '/'],
-    timeFormat: 'w. y/M/d h:m:s',
-    updateStatBar: true,
+    spinnerIndex: 0,
+    showSpinner: false, // change to file
+    currentSpinner: 'spinner', // change to file
+    timeFormat: 'w. y/M/d h:m:s', // change to file
+    updateStatBar: true, // change to file
     currentProgram: "cli",
     programList: ["cli", "lilypad"],
-    allowedProgramDirectories: ["D:/Programs"],
-    dissallowSubdirectoriesIn: ["D:/Programs", "D:/Macros", "D:/Program-Data", "D:/Palettes"],
+    allowedProgramDirectories: ["D:/Programs"], // change to file
+    dissallowSubdirectoriesIn: ["D:/Programs", "D:/Macros", "D:/Program-Data", "D:/Palettes", "D:/Spinners"], // change to file
     programSession: 0,
     errorText: "<span class='error'><span class='error-text'>!!ERROR!!</span> -</span>",
     fileSystem: {
@@ -444,6 +445,29 @@ const config = {
                 "FFFF55",
                 "FFFFFF",
             ] },
-        ]
+        ],
+        "D:/Spinners": [
+            { name: "default", properties: {read: true, write: true, hidden: false}, data: [
+                '-', '\\', '|', '/'
+            ] },
+            { name: "dots", properties: {read: true, write: true, hidden: false}, data: [
+                ".", ":", "¨", ":"
+            ] },
+            { name: "circles", properties: {read: true, write: true, hidden: false}, data: [
+                ".", "o", "O", "°", "O", "o"
+            ] },
+            { name: "cross", properties: {read: true, write: true, hidden: false}, data: [
+                "×", "+"
+            ] },
+            { name: "wave", properties: {read: true, write: true, hidden: false}, data: [
+                "~", "–"
+            ] },
+            { name: "arrows", properties: {read: true, write: true, hidden: false}, data: [
+                "<", "^", ">", "v"
+            ] },
+            { name: "shade", properties: {read: true, write: true, hidden: false}, data: [
+                "·", ":", "!", "+", "x", "%", "#", "%", "x", "+", "!", ":"
+            ] }
+        ],
     }
-};
+}
