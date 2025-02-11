@@ -11,7 +11,7 @@ document.body.onclick = function() {
 
 function setConfigFromSettings(){
     if(config.savingFile) return;
-    config.debugMode = config.fileSystem["Settings:"].find(file => file.name == "debugMode").data[0] === "true";
+    config.debugMode = (config.fileSystem["Settings:"].find(file => file.name == "debugMode").data[0] === "true");
     config.version = config.fileSystem["Settings:"].find(file => file.name == "version").data[0];
     config.colorPalette = config.fileSystem["Settings:"].find(file => file.name == "colorPalette").data[0];
 }
@@ -156,6 +156,8 @@ function changeColorPalette(name){
         root.style.setProperty(`--${color}`, palette[color]);
     }
 
+    config.fileSystem["Settings:"].find(file => file.name == "colorPalette").data[0] = name;
+
     resetStyling();
     if(name == "standard"){
     }
@@ -171,12 +173,12 @@ function changeColorPalette(name){
     if(name == "swamp-revised"){
         root.style.setProperty(`--error-background`, "var(--c04)");
     }
-
-    config.colorPalette = name;
+    createColorTestBar();
 }
 
 function createColorTestBar(){
     const colorPalettes = createPalettesObject();
+    console.log(config.colorPalette)
     // remove all the children of the color test bar
     document.getElementById('color-test-bar').innerHTML = "";
     function getContrastYIQ(hexColor) {
@@ -1220,6 +1222,6 @@ function createLilypadLine(path, linetype, filename){
     terminalLine.focus();
 }
 
-changeColorPalette(config.colorPalette);
+changeColorPalette(config.fileSystem["Settings:"].find(file => file.name == "colorPalette").data[0]);
 createColorTestBar();
 sendCommand('[[BULLFROG]]greeting', []);
