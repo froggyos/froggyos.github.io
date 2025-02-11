@@ -10,15 +10,10 @@ document.body.onclick = function() {
 }
 
 function setConfigFromSettings(){
-    for(let file of config.fileSystem["Settings:"]){
-        let name = file.name;
-        let data = file.data;
-
-        if(name == "debugMode") {
-            // set to file
-            // then from file, set to config object
-        }
-    }
+    if(config.savingFile) return;
+    config.debugMode = config.fileSystem["Settings:"].find(file => file.name == "debugMode").data[0] === "true";
+    config.version = config.fileSystem["Settings:"].find(file => file.name == "version").data[0];
+    config.colorPalette = config.fileSystem["Settings:"].find(file => file.name == "colorPalette").data[0];
 }
 
 function programList(){
@@ -26,7 +21,6 @@ function programList(){
     let files = [];
     for(let directory of config.allowedProgramDirectories){
         if(config.fileSystem[directory] == undefined) continue;
-        // if the files havent changed, do not update the program list
         if(config.fileSystem[directory].length == files.length && config.fileSystem[directory].every((file, index) => file.name == files[index])) continue;
 
         files = files.concat(config.fileSystem[directory]);
@@ -801,7 +795,7 @@ function sendCommand(command, args, createEditableLineAfter){
         case "svs":
         case "savestate":
             localStorage.setItem("froggyOS-state", JSON.stringify(config));
-            createTerminalLine("State saved.", ">")
+            createTerminalLine("State saved. May need to loadstate for some changes to take effect.", ">")
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
 
@@ -921,11 +915,11 @@ function sendCommand(command, args, createEditableLineAfter){
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
 
-        case '[[BULLFROG]]greeting':
+        case '[[BULLFROG]]greeting': {
             createTerminalLine("Type ‘help’ to receive support with commands, and possibly navigation.", "");
             createTerminalLine(`* Welcome to froggyOS, version ${config.version} *` , "");
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
-        break;
+        } break;
 
         case '[[BULLFROG]]help':
             createTerminalLine("* A few bullfrog commands *", "");
@@ -970,11 +964,11 @@ function sendCommand(command, args, createEditableLineAfter){
             let bool = args[0];
             if(bool == "1") {
                 config.fileSystem["Settings:"].find(file => file.name == "debugMode").data[0] = "true";
-                config.debugMode = true; // eventually remove this
+                // config.debugMode = true;
             }
             else if(bool == "0") {
                 config.fileSystem["Settings:"].find(file => file.name == "debugMode").data[0] = "false";
-                config.debugMode = false; // eventually remove this
+                // config.debugMode = false;
             }
             else createTerminalLine("Invalid argument. Please provide '1' or '0'.", config.errorText);
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
@@ -1201,8 +1195,10 @@ function createLilypadLine(path, linetype, filename){
                     dataLength += line.length;
                 });
                 
+                config.savingFile = true;
                 setTimeout(function(){
                     config.showSpinner = false;
+                    config.savingFile = false;
                     createTerminalLine(`Done! ^v^`, ">");
                     createEditableTerminalLine(`${config.currentPath}>`);
                     config.programSession++;
