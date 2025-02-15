@@ -1430,14 +1430,6 @@ function sendCommand(command, args, createEditableLineAfter){
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
 
-        // clear froggyOS state
-        case "cls":
-        case "clearstate":
-            localStorage.removeItem("froggyOS-state");
-            createTerminalLine("State cleared.", ">")
-            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
-        break;
-
         // delete files
         case "c":
         case "croak":
@@ -1527,7 +1519,6 @@ function sendCommand(command, args, createEditableLineAfter){
             createTerminalLine("* A few basic froggyOS commands *", "");
             createTerminalLine("changepalette [palette]. . . . Changes the color palette.", ">");
             createTerminalLine("clear. . . . . . . . . . . . . Clears the terminal output.", ">");
-            createTerminalLine("clearstate . . . . . . . . . . Clears froggyOS state.", ">");
             createTerminalLine("croak [file] . . . . . . . . . Deletes the file.", ">");
             createTerminalLine("ribbit [text]. . . . . . . . . Displays the text.", ">");
             createTerminalLine("formattime [format]. . . . . . Changes the time format.", ">");
@@ -1537,10 +1528,8 @@ function sendCommand(command, args, createEditableLineAfter){
             createTerminalLine("hop [directory]. . . . . . . . Moves to a directory.", ">");
             createTerminalLine("list . . . . . . . . . . . . . Lists files and subdirectories in the current                                directory.", ">");
             createTerminalLine("listdrives . . . . . . . . . . Lists all drives.", ">");
-            createTerminalLine("loadstate. . . . . . . . . . . Load froggyOS state.", ">");
             createTerminalLine("meta [file]. . . . . . . . . . Edits a file.", ">");
             createTerminalLine("metaprop [file] [perm] [0/1] . Edits a file's properties.", ">");
-            createTerminalLine("savestate. . . . . . . . . . . Save froggyOS state.", ">");
             createTerminalLine("spawn [directory]. . . . . . . Creates a directory.", ">");
             createTerminalLine("spy [file] . . . . . . . . . . Reads the file.", ">");
             createTerminalLine("swimto [program] . . . . . . . Start a program.", ">");
@@ -1611,25 +1600,6 @@ function sendCommand(command, args, createEditableLineAfter){
             });
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         } break;
-
-        // load state
-        case "lds":
-        case "loadstate":
-            let state = localStorage.getItem("froggyOS-state");
-            if(state == null){
-                createTerminalLine("No state found.", config.errorText);
-                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
-                break;
-            }
-            for(let key in JSON.parse(state)){
-                config[key] = JSON.parse(state)[key];
-            }
-
-            changeColorPalette(config.colorPalette);
-
-            createTerminalLine("State loaded.", ">")
-            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
-        break;
 
         case "/":
         case "macro": {
@@ -1786,14 +1756,6 @@ function sendCommand(command, args, createEditableLineAfter){
                 break;
             }
             createTerminalLine(args.join(" "), ">")
-            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
-        break;
-
-        // save state
-        case "svs":
-        case "savestate":
-            localStorage.setItem("froggyOS-state", JSON.stringify(config));
-            createTerminalLine("State saved.", ">")
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
 
