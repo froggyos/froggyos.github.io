@@ -14,8 +14,10 @@ function setSetting(setting, value) {
     else config.fileSystem["Settings:"].find(file => file.name == setting).data[0] = value;
 }
 
-function getSetting(setting) {
-    return config.fileSystem["Settings:"].find(file => file.name == setting).data[0];
+function getSetting(setting, isArray) {
+    let data = config.fileSystem["Settings:"].find(file => file.name == setting).data;
+    if(isArray) return data;
+    return data[0];
 }
 
 function setConfigFromSettings(){
@@ -27,8 +29,8 @@ function setConfigFromSettings(){
     config.currentSpinner = getSetting("currentSpinner");
     config.timeFormat = getSetting("timeFormat");
     config.updateStatBar = (getSetting("updateStatBar") === "true");
-    config.allowedProgramDirectories = getSetting("allowedProgramDirectories");
-    config.dissallowSubdirectoriesIn = getSetting("dissallowSubdirectoriesIn");
+    config.allowedProgramDirectories = getSetting("allowedProgramDirectories", true);
+    config.dissallowSubdirectoriesIn = getSetting("dissallowSubdirectoriesIn", true);
 }
 
 function programList(){
@@ -961,7 +963,7 @@ function sendCommand(command, args, createEditableLineAfter){
             createTerminalLine("[[BULLFROG]]urgentsavestate - saves state for reloading", ">");
             createTerminalLine("[[BULLFROG]]urgentloadstate - loads state for reloading", ">");
             createTerminalLine("[[BULLFROG]]urgentclearstate - clears reload state", ">");
-            createTerminalLine("[[BULLFROG]]loadstate - loads state", ">");
+            createTerminalLine("[[BULLFROG]]autoloadstate - loads state", ">");
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
 
@@ -1044,7 +1046,7 @@ function sendCommand(command, args, createEditableLineAfter){
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         } break;
 
-        case "[[BULLFROG]]loadstate": {
+        case "[[BULLFROG]]autoloadstate": {
             let state = localStorage.getItem("froggyOS-state");
             if(state != null){
                 for(let key in JSON.parse(state)){
@@ -1289,5 +1291,5 @@ function createLilypadLine(path, linetype, filename){
 
 changeColorPalette(config.colorPalette);
 createColorTestBar();
-sendCommand('[[BULLFROG]]loadstate', [], false);
+sendCommand('[[BULLFROG]]autoloadstate', [], false);
 sendCommand('[[BULLFROG]]greeting', []);
