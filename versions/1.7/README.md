@@ -1,105 +1,108 @@
 # Things to Know
 
- * in paths, `.` will be replaced with the current directory
- * programs can *only* be written in designated directories
+* in paths, `.` will be replaced with the current directory
+* programs can *only* be written in designated directories
 
 ## Palette Conventions
 There is no set colors that you must have, but these are the color conventions.
- * `00` - black, the void surrounding the terminal
- * `01` - blue, the top bar background color
- * `02` - green, text color, as well as selected text and option background color
- * `03` - cyan
- * `04` - red
- * `05` - magenta
- * `06` - orange/brown
- * `07` - light grey
- * `08` - dark grey
- * `09` - light blue
- * `10` - light green
- * `11` - light cyan
- * `12` - light red, error background color
- * `13` - light magenta
- * `14` - light orange/yellow
- * `15` - white, the terminal background color, top bar and error text color, and the selected text and option color
+* `00` - black, the void surrounding the terminal
+* `01` - blue, the top bar background color
+* `02` - green, text color, as well as selected text and option background color
+* `03` - cyan
+* `04` - red
+* `05` - magenta
+* `06` - orange/brown
+* `07` - light grey
+* `08` - dark grey
+* `09` - light blue
+* `10` - light green
+* `11` - light cyan
+* `12` - light red, error background color
+* `13` - light magenta
+* `14` - light orange/yellow
+* `15` - white, the terminal background color, top bar and error text color, and the selected text and option color
 
 ### Current Color Palettes
- * standard
- * revised
- * cherry
- * swamp
- * swamp-revised
- * neon
+* standard
+* revised
+* cherry
+* swamp
+* swamp-revised
+* neon
 
 ## Aliases
 
- * clear -> cl
- * clearstate -> cls
- * croak -> c
- * formattime -> ft
- * hatch -> ch
- * help -> ?
- * hop -> h
- * list -> ls
- * listdrives -> ld
- * loadstate -> lds
- * macro -> /
- * meta -> m
- * savestate -> svs
- * spawn -> s
- * swimto -> st
+* clear -> cl
+* clearstate -> cls
+* croak -> c
+* formattime -> ft
+* hatch -> ch
+* help -> ?
+* hop -> h
+* list -> ls
+* listdrives -> ld
+* loadstate -> lds
+* macro -> /
+* meta -> m
+* savestate -> svs
+* spawn -> s
+* swimto -> st
 
 ## Command Help
 
 ### formattime
 The all instances of the following characters will be replaced with their respective values. Place a "!" before the character to escape it.
- * `w` - short weekday (Mon, Tues, etc.)
- * `W` - long weekday (Monday, Tuesday, etc.)
- * `d` - day
- * `o` - ordinal day (1st, 2nd, etc.)
- * `M` - month (01, 02, etc.)
- * `W` - month word (January, February, etc.)
- * `y` - year
- * `h` - hour (24 hour)
- * `H` - hour (12 hour)
- * `m` - minute
- * `s` - second
- * `a` - AM/PM
- * `z` - timezone
+* weekday
+    * `w` - short weekday (Mon, Tues, etc.)
+    * `W` - long weekday (Monday, Tuesday, etc.)
+* day
+    * `d` - day
+    * `o` - ordinal day (1st, 2nd, etc.)
+* month
+* `M` - month (01, 02, etc.)
+* `W` - month word long (January, February, etc.)
+* `y` - year
+* `h` - hour (24 hour)
+* `H` - hour (12 hour)
+* `m` - minute
+* `s` - second
+* `a` - AM/PM
+* `z` - timezone
 
 ### hop
- * `hop ~` will take you to the root directory
- * `hop -` will take you to the previous directory
+* `hop ~` will take you to the root directory
+* `hop -` will take you to the previous directory
 
 ### metaprop
 Properties:
- * read - If this file can be read. This includes being able to run the program or list file contents with the `spy` command.
- * write - If this file can be written to. This includes being able to edit the file or delete it.
- * hidden - If this file is hidden. This will *not* prevent you from editing the file.
+* read - If this file can be read. This includes being able to run the program or list file contents with the `spy` command.
+* write - If this file can be written to. This includes being able to edit the file or delete it.
+* hidden - If this file is hidden. This will *not* prevent you from editing the file.
 
 ## Macros
- * Macros are written in the `D:/Macros` directory
- * each line in a macro file is a command that will be executed
- * to add an alias to a macro, the **first** line must be `![alias]`. You can add only one alias per macro.
- * to use file arguments inside of a macro, use `$[file argument number]`
+* Macros are written in the `D:/Macros` directory
+* each line in a macro file is a command that will be executed
+* to add an alias to a macro, the **first** line must be `![alias]`. You can add only one alias per macro.
+* to use file arguments inside of a macro, use `$[file argument number]`
 
 ## Settings Directory
 If you edit the `Settings:` drive directly, some settings won't apply until you reload the froggyOS state. An easy way to do this would be to run the `reload` macro.
 
 ## Bugs
 ### Known
- * There's some weird stuff going on with `append`. Fix later.
- * something with `outc`? idk
- * `str` variables dont require quotes. make them required
- * the loading spinner goes ZOOMING????
+* There's some weird stuff going on with `append`. Fix later.
+* something with `outc`? idk
+* `str` variables dont require quotes. make them required
+* the loading spinner goes ZOOMING????
 ### Fixed
- * the first line of the macro was not being read
+* the first line of the macro was not being read
     * because it was assumed the first like was defining the alias, it was just discarded
- * cannot call functions inside of functions. This is because functions are parsed by the formatter instead of the parser. This is because it was easier to do than implementing an isolated parser that has the variables from the other, parent parser
+* cannot call functions inside of functions. This is because functions are parsed by the formatter instead of the parser. This is because it was easier to do than implementing an isolated parser that has the variables from the other, parent parser
     * functions are now referenced by line numbers
- * something with `if` statements???? check it out later
+* something with `if` statements???? check it out later
     * `if` keywords work correctly now, but `else` might not work as expected.
- * load state doesnt work with palettes
- * the inserted `wait` keywords may be messing loops sometimes
+* load state doesnt work with palettes
+* the inserted `wait` keywords may be messing loops sometimes
     * `wait` keywords were being inserted before every `endloop` command, which stacked. Turns out the `wait` keyword was not necessary, so it was removed.
         * they were VERY much needed lmfao, but instead of them being automatically put in, the user has to do it manually, if it isnt done, there is a rare error message and froggyOS is reloaded
 
@@ -152,10 +155,10 @@ out "i can put a v:variable inside a string"
 ```
 ### Colored Output
 #### General
- * index `0` is the 1st character.
- * You can  use variables as values for color codes, variables of length 2 or less will be converted to color codes automatically.
- * There is very little error checking on the formatting objects, so make sure they're correct.
- * The whitespace inside of the formatting object does not matter.
+* index `0` is the 1st character.
+* You can  use variables as values for color codes, variables of length 2 or less will be converted to color codes automatically.
+* There is very little error checking on the formatting objects, so make sure they're correct.
+* The whitespace inside of the formatting object does not matter.
 ```
 outc [format] [text]
 
@@ -166,17 +169,17 @@ outc {t=c02, tr=0-15} "from the 1st to 16th character, the text will be blue"
 outc {t=c02, tr=4-26 | b=c04, br=57-71} "from the 5th to 29th character, the text will be blue. AND from the 58th to the 72nd character the background will be red" 
 ```
 #### Format Object
- * `{}` is a formatting object
- * you can set a subrule using this general format: `{[property]=[value]}`
- * valid properties:
+* `{}` is a formatting object
+* you can set a subrule using this general format: `{[property]=[value]}`
+* valid properties:
     * `t` - text color
     * `b` - background color
     * `i` - italic
     * `tr` - text color range
     * `br` - background color range
     * `ir` - italic range
- * you can set multiple subrules by separating them with commas: `{[property]=[value],[property]=[value]}`
- * to set different ranges, separate subrules with a `|`: `{[property]=[value] | [property]=[value]}`
+* you can set multiple subrules by separating them with commas: `{[property]=[value],[property]=[value]}`
+* to set different ranges, separate subrules with a `|`: `{[property]=[value] | [property]=[value]}`
     * If a range is not specified, the subrule will apply to the entire string
     * The value for Italic is `1` to be enabled, and `0` to be disabled
  
