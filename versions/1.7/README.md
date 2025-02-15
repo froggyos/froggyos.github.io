@@ -50,7 +50,7 @@ There is no set colors that you must have, but these are the color conventions.
 
 ## Command Help
 ### formattime
-The all instances of the following characters will be replaced with their respective values. Place a "!" before the character to escape it.
+The all instances of the following characters (or character sequences) will be replaced with their respective values. Place a `!` before the character to escape it.
 #### Date
 
 * weekday
@@ -75,7 +75,7 @@ The all instances of the following characters will be replaced with their respec
 * `z` - timezone
 
 ### hop
-* `hop ~` will take you to the root directory
+* `hop ~` will take you to the root directory of the current drive
 * `hop -` will take you to the previous directory
 
 ### metaprop
