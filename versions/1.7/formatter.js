@@ -82,6 +82,7 @@ function format(input) {
             }
             if(config.debugMode) console.log(`Formatted out ${JSON.stringify(line.args)}`);
         }
+        
         if(line.keyword === "outc"){
             let formatting = line.args.join(" ").match(/\{([^}]+)\}/g)?.map(match => match.slice(1, -1))[0]
             let text = line.args.join(" ").replaceAll(`{${formatting}}`, "")
