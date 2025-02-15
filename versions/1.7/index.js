@@ -79,20 +79,39 @@ function updateDateTime() {
     if(!config.updateStatBar) return;
     const now = new Date();
 
-    // Grab the current weekday.
-    const dayOfWeekShort = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][now.getDay()];  // Grab the live day of the week.
-    const dayOfWeekLong = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][now.getDay()];  // Grab the live day of the week.
-    const year = now.getFullYear(); // Year
-    const monthNumber = String(now.getMonth() + 1).padStart(2, '0'); // Month
-    const monthShort = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][now.getMonth()]; // Month
-    const monthLong = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][now.getMonth()]; // Month
-    const day = String(now.getDate()).padStart(2, '0'); // Day
-    const hour24 = String(now.getHours()).padStart(2, '0'); // Hour in 24-hour format
-    const hour12 = String((now.getHours() + 11) % 12 + 1).padStart(2, '0'); // Hour in 12-hour format
-    const minute = String(now.getMinutes()).padStart(2, '0'); // Minutes
-    const second = String(now.getSeconds()).padStart(2, '0'); // Seconds
-    const ampm = now.getHours() >= 12 ? 'PM' : 'AM'; // AM or PM
-    const timezone = new Date().toLocaleString(["en-US"], {timeZoneName: "short"}).split(" ").pop(); // Timezone
+    const dowListShort = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const dowListLong = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const monthListShort = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const monthListLong = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+    const dayOfWeekShort = dowListShort[now.getDay()];
+    const dayOfWeekLong = dowListLong[now.getDay()];
+
+    const year = now.getFullYear();
+
+    const monthNumber = String(now.getMonth() + 1).padStart(2, '0');
+    const monthNumberUnpadded = String(now.getMonth() + 1);
+    const monthShort = monthListShort[now.getMonth()];
+    const monthLong = monthListLong[now.getMonth()]; 
+
+    const day = String(now.getDate()).padStart(2, '0');
+    const dayUnpadded = String(now.getDate());
+    const ordinalDay = String(now.getDate()) + getOrdinalSuffix(+day);
+
+    const hour24 = String(now.getHours()).padStart(2, '0');
+    const hour12 = String((now.getHours() + 11) % 12 + 1).padStart(2, '0');
+    const hour24Unpadded = String(now.getHours());
+    const hour12Unpadded = String((now.getHours() + 11) % 12 + 1);
+
+    const minute = String(now.getMinutes()).padStart(2, '0');
+    const minuteUnpadded = String(now.getMinutes());
+
+    const second = String(now.getSeconds()).padStart(2, '0');
+    const secondUnpadded = String(now.getSeconds());
+
+    const ampm = now.getHours() >= 12 ? 'PM' : 'AM';
+
+    const timezone = new Date().toLocaleString(["en-US"], {timeZoneName: "short"}).split(" ").pop();
 
     function getOrdinalSuffix(num) {
         if (typeof num !== "number" || isNaN(num)) return "";
@@ -118,21 +137,27 @@ function updateDateTime() {
         { char: 'w', value: dayOfWeekShort },
         { char: 'W', value: dayOfWeekLong },
 
-        { char: 'd', value: day },
-        { char: "D", value: String(now.getDate()) + getOrdinalSuffix(+day) },
+        { char: 'y', value: year },
 
         { char: 'mn', value: monthNumber },
+        { char: 'mN', value: monthNumberUnpadded },
         { char: "m", value: monthShort },
         { char: "M", value: monthLong },
 
-        { char: 'y', value: year },
+        { char: 'd', value: day },
+        { char: 'du', value: dayUnpadded },
+        { char: "D", value: ordinalDay },
 
         { char: 'h', value: hour24 },
+        { char: 'hu', value: hour24Unpadded },
         { char: 'H', value: hour12 },
+        { char: 'Hu', value: hour12Unpadded },
 
         { char: 'm', value: minute },
+        { char: 'mu', value: minuteUnpadded },
 
         { char: 's', value: second },
+        { char: 'su', value: secondUnpadded },
 
         { char: 'a', value: ampm },
 

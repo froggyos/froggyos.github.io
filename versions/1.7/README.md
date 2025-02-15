@@ -52,25 +52,32 @@ There is no set colors that you must have, but these are the color conventions.
 ### formattime
 The all instances of the following characters (or character sequences) will be replaced with their respective values. Place a `!` before the character to escape it.
 #### Date
-
 * weekday
     * `w` - short weekday (Mon, Tues)
     * `W` - long weekday (Monday, Tuesday)
 * `y` - year
 * month
     * `mn` - month number (01, 02)
+    * `mN` - month number unpadded (1, 2)
     * `m` - month short (Jan, Feb)
     * `M` - month long (January, February)
 * day
     * `d` - day (01, 02)
+    * `du` - day unpadded (1, 2)
     * `D` - ordinal day (1st, 2nd)
 
 #### Time
 * hour
-    * `h` - hour (24 hour)
-    * `H` - hour (12 hour)
-* `m` - minute
-* `s` - second
+    * `h` - 24 hour (00, 01, ... 22, 23)
+    * `hu` - 24 hour unpadded (0, 1, ... 22, 23)
+    * `H` - 12 hour (01, 02, ... 11, 12)
+    * `Hu` - 12 hour unpadded (1, 2, ... 11, 12)
+* minute
+    * `m` - minute (00, 01)
+    * `mu` - minute unpadded (0, 1)
+* second
+    * `s` - second (00, 01)
+    * `su` - second unpadded (0, 1)
 * `a` - AM/PM
 * `z` - timezone
 
