@@ -48,33 +48,21 @@ There is no set colors that you must have, but these are the color conventions.
  * spawn -> s
  * swimto -> st
 
-## Bugs
- * ~~cannot call functions inside of functions. This is because functions are parsed by the formatter instead of the parser. This is because it was easier to do than implementing an isolated parser that has the variables from the other, parent parser~~
-    * functions are now referenced by line numbers
- * ~~something with `if` statements???? check it out later~~
-    * `if` keywords work correctly now, but `else` might not work as expected.
- * load state doesnt work with palettes
- * ~~the inserted `wait` keywords may be messing loops sometimes~~
-    * ~~`wait` keywords were being inserted before every `endloop` command, which stacked. Turns out the `wait` keyword was not necessary, so it was removed.~~
-        * they were VERY much needed lmfao
- * There's some weird stuff going on with `append`. Fix later.
- * something with `outc`? idk
- * `str` variables dont require quotes. make them required
-
 ## Command Help
 
 ### formattime
 The all instances of the following characters will be replaced with their respective values. Place a "!" before the character to escape it.
- * w - short weekday (Mon, Tues, etc.)
- * W - long weekday (Monday, Tuesday, etc.)
- * d - day
- * M - month
- * y - year
- * h - hour (24 hour)
- * H - hour (12 hour)
- * m - minute
- * s - second
- * a - AM/PM
+ * `w` - short weekday (Mon, Tues, etc.)
+ * `W` - long weekday (Monday, Tuesday, etc.)
+ * `d` - day
+ * `M` - month
+ * `y` - year
+ * `h` - hour (24 hour)
+ * `H` - hour (12 hour)
+ * `m` - minute
+ * `s` - second
+ * `a` - AM/PM
+ * `z` - timezone
 
 ### hop
  * `hop ~` will take you to the root directory
@@ -86,11 +74,32 @@ Properties:
  * write - If this file can be written to. This includes being able to edit the file or delete it.
  * hidden - If this file is hidden. This will *not* prevent you from editing the file.
 
-## macro
+## Macros
  * Macros are written in the `D:/Macros` directory
  * each line in a macro file is a command that will be executed
  * to add an alias to a macro, the **first** line must be `![alias]`. You can add only one alias per macro.
  * to use file arguments inside of a macro, use `$[file argument number]`
+
+## Settings Directory
+If you edit the `Settings:` drive directly, some settings won't apply until you reload the froggyOS state. An easy way to do this would be to run the `reload` macro.
+
+## Bugs
+### Known
+ * There's some weird stuff going on with `append`. Fix later.
+ * something with `outc`? idk
+ * `str` variables dont require quotes. make them required
+ * the loading spinner goes ZOOMING????
+### Fixed
+ * the first line of the macro was not being read
+    * because it was assumed the first like was defining the alias, it was just discarded
+ * cannot call functions inside of functions. This is because functions are parsed by the formatter instead of the parser. This is because it was easier to do than implementing an isolated parser that has the variables from the other, parent parser
+    * functions are now referenced by line numbers
+ * something with `if` statements???? check it out later
+    * `if` keywords work correctly now, but `else` might not work as expected.
+ * load state doesnt work with palettes
+ * the inserted `wait` keywords may be messing loops sometimes
+    * `wait` keywords were being inserted before every `endloop` command, which stacked. Turns out the `wait` keyword was not necessary, so it was removed.
+        * they were VERY much needed lmfao, but instead of them being automatically put in, the user has to do it manually, if it isnt done, there is a rare error message and froggyOS is reloaded
 
 # FroggyScript Documentation
 **Note: spaces are part of syntax, and must be used as shown**

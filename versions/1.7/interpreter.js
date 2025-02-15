@@ -61,7 +61,7 @@ function interpreter(formatted){
             createTerminalLine(`Keyword: ${keyword}`, "");
             createTerminalLine(`Args: ${JSON.stringify(line.args, null, 2)}`, "");
             createEditableTerminalLine(`${config.currentPath}>`);
-            config.showLoadingSpinner = false;
+            setSetting("showSpinner", "false");
             config.currentProgram = null;
 
             if(config.debugMode){
@@ -201,11 +201,11 @@ function interpreter(formatted){
                 //     break;
                 // }
                 let timeout = setTimeout(() => {
-                    config.showLoadingSpinner = false;
+                    setSetting("showSpinner", "false");
                     clearTimeout(timeout);
                     parseNext();
                 }, time);
-                config.showLoadingSpinner = true;
+                setSetting("showSpinner", "true");
             } break;
             case "endloop": {
                 try {
@@ -226,7 +226,7 @@ function interpreter(formatted){
                         IS_ERROR = true;
                     }
                     if(evaluate(loopCondition)){
-                        config.showLoadingSpinner = true;
+                        setSetting("showSpinner", "true");
                         lineIndex = line.args.startOfLoop;
 
                         try {
@@ -235,15 +235,30 @@ function interpreter(formatted){
                             endProgram(`Callstack size exceeded. This is a JavaScript problem.`);
                         }
                     } else {
-                        config.showLoadingSpinner = false;
+                        setSetting("showSpinner", "false");
                         parseNext();
                     }
                 } catch (err) {
                     createTerminalLine("Wow.............................. really................ smh.......", config.errorText);
                     createTerminalLine("U really gonna brick poor old Froggy like that???? smh....", config.errorText)
                     createTerminalLine("add [wait 0] before an endloop keyword idk", config.errorText);
-                    createTerminalLine("I cant really do anything but ill savestate ur stuff", config.errorText);
-                    sendCommand("savestate", [], false);
+                    createTerminalLine("I cant really do anything but ill reload froggy os in a few seconds", config.errorText);
+                    let decrement = 10;
+                    setTimeout(() => {
+                        let interval = setInterval(() => {
+                            createTerminalLine(`Reloading in ${decrement-1} seconds...`, "");
+                            decrement--;
+                            if(decrement == 0){
+                                clearInterval(interval);
+                                location.reload();
+                            }
+                        }, 1000);
+                        setTimeout(() => {
+                            sendCommand("/", ["r"], true);
+                        }, 10000)
+                    }, 5000);
+
+
                 }
             } break;
             case "prompt": {
@@ -327,7 +342,7 @@ function interpreter(formatted){
                         e.preventDefault();
                         variables["v:" + variable].value = options[selectedIndex].textContent;
                         document.body.removeEventListener('keyup', promptHandler);
-                        config.showLoadingSpinner = false;
+                        setSetting("showSpinner", "false");
                         parseNext();
 
                     }
@@ -335,7 +350,7 @@ function interpreter(formatted){
 
                 document.body.addEventListener('keyup', promptHandler);
                 terminal.appendChild(terminalLineElement);
-                config.showLoadingSpinner = true;
+                setSetting("showSpinner", "true");
                 // PAUSE HERE
             } break;
             case "ask":
@@ -366,7 +381,7 @@ function interpreter(formatted){
                         inputElement.setAttribute('contenteditable', 'false');
 
                         // RESUME PAUSE HERE
-                        config.showLoadingSpinner = false;
+                        setSetting("showSpinner", "false");
 
                         let userInput = inputElement.textContent;
                         let variable = line.args.variable;
@@ -394,7 +409,7 @@ function interpreter(formatted){
                 });
 
                 // PAUSE HERE
-                config.showLoadingSpinner = true;
+                setSetting("showSpinner", "true");
             break;
             case "filearg":
                 if (!line.args || !line.args.name || !line.args.type || !line.args.value) {

@@ -1,4 +1,4 @@
-//new AllSniffer({timerOptions: {intervalIDsToExclude: [1,2,3,4]}});
+// new AllSniffer({timerOptions: {intervalIDsToExclude: [1,2,3,4]}});
 
 let screen = document.getElementById('screen');
 let terminal = document.getElementById('terminal');
@@ -9,11 +9,26 @@ document.body.onclick = function() {
     } catch (err) { };
 }
 
+function setSetting(setting, value) {
+    if(typeof value === 'object') config.fileSystem["Settings:"].find(file => file.name == setting).data = value;
+    else config.fileSystem["Settings:"].find(file => file.name == setting).data[0] = value;
+}
+
+function getSetting(setting) {
+    return config.fileSystem["Settings:"].find(file => file.name == setting).data[0];
+}
+
 function setConfigFromSettings(){
     if(config.savingFile) return;
-    config.debugMode = (config.fileSystem["Settings:"].find(file => file.name == "debugMode").data[0] === "true");
-    config.version = config.fileSystem["Settings:"].find(file => file.name == "version").data[0];
-    config.colorPalette = config.fileSystem["Settings:"].find(file => file.name == "colorPalette").data[0];
+    config.debugMode = (getSetting("debugMode") === "true");
+    config.version = getSetting("version");
+    config.colorPalette = getSetting("colorPalette");
+    config.showSpinner = (getSetting("showSpinner") === "true");
+    config.currentSpinner = getSetting("currentSpinner");
+    config.timeFormat = getSetting("timeFormat");
+    config.updateStatBar = (getSetting("updateStatBar") === "true");
+    config.allowedProgramDirectories = getSetting("allowedProgramDirectories");
+    config.dissallowSubdirectoriesIn = getSetting("dissallowSubdirectoriesIn");
 }
 
 function programList(){
@@ -73,6 +88,7 @@ function updateDateTime() {
     const minute = String(now.getMinutes()).padStart(2, '0'); // Minutes
     const second = String(now.getSeconds()).padStart(2, '0'); // Seconds
     const ampm = now.getHours() >= 12 ? 'PM' : 'AM'; // AM or PM
+    const timezone = new Date().toLocaleString(["en-US"], {timeZoneName: "short"}).split(" ").pop(); // Timezone
 
     let dateTemplate = config.timeFormat;
 
@@ -88,6 +104,7 @@ function updateDateTime() {
             { char: 'a', value: ampm },
             { char: 'w', value: dayOfWeekShort },
             { char: 'W', value: dayOfWeekLong },
+            { char: 'z', value: timezone }
         ];
       
     let escapedTemplate = replacements.reduce((str, { char, value }) => {
@@ -111,6 +128,10 @@ setInterval(() => {
     programList()
     updateDateTime()
 }, 1);
+
+setInterval(() => {
+    updateDateTime()
+}, 1000);
 
 setConfigFromSettings()
 programList();
@@ -156,7 +177,8 @@ function changeColorPalette(name){
         root.style.setProperty(`--${color}`, palette[color]);
     }
 
-    config.fileSystem["Settings:"].find(file => file.name == "colorPalette").data[0] = name;
+    setSetting("colorPalette", name);
+    config.colorPalette = name;
 
     resetStyling();
     if(name == "standard"){
@@ -178,11 +200,11 @@ function changeColorPalette(name){
 
 function createColorTestBar(){
     const colorPalettes = createPalettesObject();
-    console.log(config.colorPalette)
+
     // remove all the children of the color test bar
     document.getElementById('color-test-bar').innerHTML = "";
     function getContrastYIQ(hexColor) {
-        if (!/^#([0-9A-F]{3}|[0-9A-F]{6})$/i.test(hexColor)) {
+        if (!/^#([0-9A-F]{3}|[0-9A-F]{6}|[0-9A-F]{8})$/i.test(hexColor)) {
             createTerminalLine(`PaletteError: ${hexColor} is an invalid hex color.`, config.errorText);
             return 
         }
@@ -200,14 +222,15 @@ function createColorTestBar(){
         return yiq >= 128 ? "c00" : "c15";
     }
     let squareContainer = document.getElementById('color-test-bar');
+    squareContainer.innerHTML = "";
     squareContainer.style.position = "absolute";
     squareContainer.style.top = "0px";
     squareContainer.style.left = "0px";
 
     for(let i = 0; i < Object.keys(colorPalettes[config.colorPalette]).length; i++){
         let color = Object.keys(colorPalettes[config.colorPalette])[i];
-        let square = document.createElement('div');
         let text = `<br><br><br><br><br><br>${color}<br>${colorPalettes[config.colorPalette][color].replace("#","")}`
+        let square = document.createElement('div');
 
         square.innerHTML = text;
         square.style.backgroundColor = `var(--${color})`;
@@ -241,7 +264,7 @@ function createPalettesObject(){
             }
         }
     } catch (err) {
-        createTerminalLine("Could create palette.", config.errorText)
+        createTerminalLine("Could not create palette.", config.errorText)
     }
 
     return palettes;
@@ -418,7 +441,6 @@ function sendCommand(command, args, createEditableLineAfter){
                 break;
             }
             changeColorPalette(args[0]);
-            createColorTestBar()
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         } break;
 
@@ -487,7 +509,7 @@ function sendCommand(command, args, createEditableLineAfter){
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
-            config.timeFormat = args.join(" ");
+            setSetting("timeFormat", args.join(" "));
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
 
@@ -695,10 +717,13 @@ function sendCommand(command, args, createEditableLineAfter){
                 return line;
             });
 
-            macro.data.shift();
+            if(macro.data[0].startsWith("!")) macro.data.shift();
 
             macro.data.forEach(line => {
-                sendCommand(line.split(" ")[0], line.split(" ").slice(1), false);
+                let cmd = line.split(" ")[0];
+                let args = line.split(" ").slice(1);
+
+                sendCommand(cmd, args, false);
             });
 
             if(createEditableLineAfter && config.currentProgram == "cli") createEditableTerminalLine(`${config.currentPath}>`);
@@ -933,6 +958,9 @@ function sendCommand(command, args, createEditableLineAfter){
             createTerminalLine("[[BULLFROG]]showspinner [0/1] - Toggles the loading spinner", ">");
             createTerminalLine("[[BULLFROG]]debugmode [0/1] - Toggles debug mode", ">");
             createTerminalLine("[[BULLFROG]]setspinner [spinner] - Changes the loading spinner", ">");
+            createTerminalLine("[[BULLFROG]]urgentsavestate - saves state for reloading", ">");
+            createTerminalLine("[[BULLFROG]]urgentloadstate - loads state for reloading", ">");
+            createTerminalLine("[[BULLFROG]]urgentclearstate - clears reload state", ">");
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
 
@@ -948,16 +976,16 @@ function sendCommand(command, args, createEditableLineAfter){
 
         case '[[BULLFROG]]showspinner':
             let bool = args[0];
-            if(bool == "1") config.showSpinner = true;
-            else if(bool == "0") config.showSpinner = false;
+            if(bool == "1") setSetting("showSpinner", "true");
+            else if(bool == "0") setSetting("showSpinner", "false");
             else createTerminalLine("Invalid argument. Please provide '1' or '0'.", config.errorText);
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
 
         case '[[BULLFROG]]statbarlock': {
             let bool = args[0];
-            if(bool == "1") config.updateStatBar = false;
-            else if(bool == "0") config.updateStatBar = true;
+            if(bool == "1") setSetting("updateStatBar", "false");
+            else if(bool == "0") setSetting("updateStatBar", "true");
             else createTerminalLine("Invalid argument. Please provide '1' or '0'.", config.errorText);
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         } break;
@@ -965,12 +993,10 @@ function sendCommand(command, args, createEditableLineAfter){
         case "[[BULLFROG]]debugmode": {
             let bool = args[0];
             if(bool == "1") {
-                config.fileSystem["Settings:"].find(file => file.name == "debugMode").data[0] = "true";
-                // config.debugMode = true;
+                setSetting("debugMode", "true");
             }
             else if(bool == "0") {
-                config.fileSystem["Settings:"].find(file => file.name == "debugMode").data[0] = "false";
-                // config.debugMode = false;
+                setSetting("debugMode", "false");
             }
             else createTerminalLine("Invalid argument. Please provide '1' or '0'.", config.errorText);
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
@@ -986,8 +1012,35 @@ function sendCommand(command, args, createEditableLineAfter){
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             } else {
-                config.currentSpinner = spinner;
+                setSetting("currentSpinner", spinner);
             }
+        } break;
+
+        case "[[BULLFROG]]urgentsavestate": {
+            localStorage.setItem("froggyOS-urgent-state", JSON.stringify(config));
+            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+        } break;
+
+        case "[[BULLFROG]]urgentloadstate": {
+            let state = localStorage.getItem("froggyOS-urgent-state");
+            if(state == null){
+                createTerminalLine("No urgent state found.", config.errorText);
+                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                break;
+            }
+
+            for(let key in JSON.parse(state)){
+                config[key] = JSON.parse(state)[key];
+            }
+
+            changeColorPalette(config.colorPalette);
+
+            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+        } break;
+
+        case "[[BULLFROG]]urgentclearstate": {
+            localStorage.removeItem("froggyOS-urgent-state");
+            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         } break;
 
         default:
@@ -1184,7 +1237,7 @@ function createLilypadLine(path, linetype, filename){
             if(filename == undefined){
                 createEditableTerminalLine(`${config.currentPath}>`);
             } else {
-                config.showSpinner = true;
+                setSetting("showSpinner", "true");
                 createTerminalLine(`Saving file...`, ">");
 
                 let dataLength = 0;
@@ -1199,7 +1252,7 @@ function createLilypadLine(path, linetype, filename){
                 
                 config.savingFile = true;
                 setTimeout(function(){
-                    config.showSpinner = false;
+                    setSetting("showSpinner", "false");
                     config.savingFile = false;
                     createTerminalLine(`Done! ^v^`, ">");
                     createEditableTerminalLine(`${config.currentPath}>`);
@@ -1222,6 +1275,6 @@ function createLilypadLine(path, linetype, filename){
     terminalLine.focus();
 }
 
-changeColorPalette(config.fileSystem["Settings:"].find(file => file.name == "colorPalette").data[0]);
+changeColorPalette(config.colorPalette);
 createColorTestBar();
 sendCommand('[[BULLFROG]]greeting', []);
