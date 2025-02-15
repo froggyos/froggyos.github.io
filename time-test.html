@@ -1,0 +1,109 @@
+<body>
+
+</body>
+<script>
+    function timeTest() {
+        const now = new Date();
+
+        const dowListShort = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const dowListLong = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const monthListShort = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const monthListLong = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+        const dayOfWeekShort = dowListShort[now.getDay()];
+        const dayOfWeekLong = dowListLong[now.getDay()];
+
+        const year = now.getFullYear();
+
+        const monthNumber = String(now.getMonth() + 1).padStart(2, '0');
+        const monthNumberUnpadded = String(now.getMonth() + 1);
+        const monthShort = monthListShort[now.getMonth()];
+        const monthLong = monthListLong[now.getMonth()]; 
+
+        const day = String(now.getDate()).padStart(2, '0');
+        const dayUnpadded = String(now.getDate());
+        const ordinalDay = String(now.getDate()) + getOrdinalSuffix(+day);
+
+        const hour24 = String(now.getHours()).padStart(2, '0');
+        const hour12 = String((now.getHours() + 11) % 12 + 1).padStart(2, '0');
+        const hour24Unpadded = String(now.getHours());
+        const hour12Unpadded = String((now.getHours() + 11) % 12 + 1);
+
+        const minute = String(now.getMinutes()).padStart(2, '0');
+        const minuteUnpadded = String(now.getMinutes());
+
+        const second = String(now.getSeconds()).padStart(2, '0');
+        const secondUnpadded = String(now.getSeconds());
+
+        const ampm = now.getHours() >= 12 ? 'PM' : 'AM';
+
+        const timezone = new Date().toLocaleString(["en-US"], {timeZoneName: "short"}).split(" ").pop();
+
+        function getOrdinalSuffix(num) {
+            if (typeof num !== "number" || isNaN(num)) return "";
+        
+            let lastDigit = num % 10;
+            let lastTwoDigits = num % 100;
+        
+            if (lastTwoDigits >= 11 && lastTwoDigits <= 13) return "th";
+        
+            switch (lastDigit) {
+                case 1: return "st";
+                case 2: return "nd";
+                case 3: return "rd";
+                default: return "th";
+            }
+        }
+
+
+        let dateTemplate = "w || W || y || mn || mN || m || M || d || du || D || h || hu || H || Hu || m || mu || s || su || a || z"
+        let values = ["dowShort", "dowLong", "year", "monthNumber", "monthNumberUnpadded", "monthShort", "monthLong", "day", "dayUnpadded", "ordinalDay", "hour24", "hour24Unpadded", "hour12", "hour12Unpadded", "minute", "minuteUnpadded", "second", "secondUnpadded", "ampm", "timezone"];
+
+        // totally not ai
+        const replacements = [
+            { char: 'w', value: dayOfWeekShort },
+            { char: 'W', value: dayOfWeekLong },
+
+            { char: 'y', value: year },
+
+            { char: 'mn', value: monthNumber },
+            { char: 'mN', value: monthNumberUnpadded },
+            { char: "m", value: monthShort },
+            { char: "M", value: monthLong },
+
+            { char: 'd', value: day },
+            { char: 'du', value: dayUnpadded },
+            { char: "D", value: ordinalDay },
+
+            { char: 'h', value: hour24 },
+            { char: 'hu', value: hour24Unpadded },
+            { char: 'H', value: hour12 },
+            { char: 'Hu', value: hour12Unpadded },
+
+            { char: 'm', value: minute },
+            { char: 'mu', value: minuteUnpadded },
+
+            { char: 's', value: second },
+            { char: 'su', value: secondUnpadded },
+
+            { char: 'a', value: ampm },
+
+            { char: 'z', value: timezone },
+        ];
+
+        let replacementMap = Object.fromEntries(replacements.map(({ char, value }) => [char, value]));
+
+        let dateString = dateTemplate.replace(/!([a-zA-Z]+)/g, "!$1") // Preserve escaped characters
+            .replace(/\b([a-zA-Z]+)\b/g, (match) => replacementMap[match] ?? match); // Replace only whole words
+
+        let result = "";
+
+        for(let i = 0; i < values.length; i++) {
+            result += `${values[i]}: ${replacements[i].value}\n`;
+        }
+
+        return result;;
+    }
+
+    console.log(timeTest());
+</script>
