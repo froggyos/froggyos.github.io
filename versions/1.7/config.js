@@ -27,7 +27,7 @@ const config = {
             { name: "colorPalette", properties: {read: true, write: true, hidden: false}, data: ["standard"] },
             { name: "showSpinner", properties: {read: true, write: true, hidden: false}, data: ["false"] },
             { name: "currentSpinner", properties: {read: true, write: true, hidden: false}, data: ["default"] },
-            { name: "timeFormat", properties: {read: true, write: true, hidden: false}, data: ["w. y/M/d h:m:s"] },
+            { name: "timeFormat", properties: {read: true, write: true, hidden: false}, data: ["w. y/mn/d h:m:s"] },
             { name: "updateStatBar", properties: {read: true, write: true, hidden: false}, data: ["true"] },
             { name: "allowedProgramDirectories", properties: {read: true, write: false, hidden: false}, data: ["D:/Programs"] },
             { name: "dissallowSubdirectoriesIn", properties: {read: true, write: false, hidden: false}, data: ["D:/Programs", "D:/Macros", "D:/Program-Data", "D:/Palettes", "D:/Spinners"] },
@@ -406,6 +406,24 @@ const config = {
                 "F34EF3",
                 "F3F34E",
                 "FFFFFF",
+            ] },
+            { name: "standard-dark", properties: {read: true, write: true, hidden: false}, data: [
+                "000000", // 00 black (unchanged)
+                "000066", // 01 dark blue
+                "006600", // 02 dark green
+                "006666", // 03 dark cyan
+                "660000", // 04 dark red
+                "660066", // 05 dark magenta
+                "664400", // 06 dark brown
+                "666666", // 07 grey
+                "222222", // 08 darker grey
+                "222288", // 09 deep blue
+                "228822", // 10 deep green
+                "228888", // 11 deep cyan
+                "882222", // 12 deep red
+                "882288", // 13 deep magenta
+                "888822", // 14 deep yellow
+                "AAAAAA", // 15 light grey (less bright than white)
             ] },
             { name: "cherry", properties: {read: true, write: true, hidden: false}, data: [
                 "000000",
