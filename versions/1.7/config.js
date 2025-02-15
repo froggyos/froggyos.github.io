@@ -50,8 +50,6 @@ const config = {
                 "wait 0",
                 "endloop",
                 "out 'after loop'",
-                "str promper = ''",
-                "prompt 0 promper 'yes' 'no'",
                 "endprog",
             ] },
             { name: "help", properties: {read: true, write: false, hidden: false}, data: [
