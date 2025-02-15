@@ -236,8 +236,13 @@
             }
         }
 
-
         let dateTemplate = "w. y/mn/d h:m:s";
+
+        let saveState = localStorage.getItem("froggyOS-state")
+
+        if(saveState != null) {
+            dateTemplate = JSON.parse(saveState).fileSystem["Settings:"].find(e => e.name == "timeFormat").data[0];
+        }
 
         // totally not ai
         const replacements = [
