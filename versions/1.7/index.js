@@ -83,7 +83,9 @@ function updateDateTime() {
     const dayOfWeekShort = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][now.getDay()];  // Grab the live day of the week.
     const dayOfWeekLong = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][now.getDay()];  // Grab the live day of the week.
     const year = now.getFullYear(); // Year
-    const month = String(now.getMonth() + 1).padStart(2, '0'); // Month
+    const monthNumber = String(now.getMonth() + 1).padStart(2, '0'); // Month
+    const monthShort = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][now.getMonth()]; // Month
+    const monthLong = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][now.getMonth()]; // Month
     const day = String(now.getDate()).padStart(2, '0'); // Day
     const hour24 = String(now.getHours()).padStart(2, '0'); // Hour in 24-hour format
     const hour12 = String((now.getHours() + 11) % 12 + 1).padStart(2, '0'); // Hour in 12-hour format
@@ -92,31 +94,57 @@ function updateDateTime() {
     const ampm = now.getHours() >= 12 ? 'PM' : 'AM'; // AM or PM
     const timezone = new Date().toLocaleString(["en-US"], {timeZoneName: "short"}).split(" ").pop(); // Timezone
 
+    function getOrdinalSuffix(num) {
+        if (typeof num !== "number" || isNaN(num)) return "";
+    
+        let lastDigit = num % 10;
+        let lastTwoDigits = num % 100;
+    
+        if (lastTwoDigits >= 11 && lastTwoDigits <= 13) return "th";
+    
+        switch (lastDigit) {
+            case 1: return "st";
+            case 2: return "nd";
+            case 3: return "rd";
+            default: return "th";
+        }
+    }
+
+
     let dateTemplate = config.timeFormat;
 
     // totally not ai
     const replacements = [
-            { char: 'y', value: year },
-            { char: 'M', value: month },
-            { char: 'd', value: day },
-            { char: 'h', value: hour24 },
-            { char: 'H', value: hour12 },
-            { char: 'm', value: minute },
-            { char: 's', value: second },
-            { char: 'a', value: ampm },
-            { char: 'w', value: dayOfWeekShort },
-            { char: 'W', value: dayOfWeekLong },
-            { char: 'z', value: timezone }
-        ];
-      
-    let escapedTemplate = replacements.reduce((str, { char, value }) => {
-        let escapedChar = `!${char}`;
-        return str
-            .replace(new RegExp(`(?<!!)${char}`, 'g'), value) // Replace unescaped characters
-            .replace(new RegExp(escapedChar, 'g'), char); // Replace escaped characters back
-    }, dateTemplate);
+        { char: 'w', value: dayOfWeekShort },
+        { char: 'W', value: dayOfWeekLong },
 
-    const dateString = escapedTemplate;
+        { char: 'd', value: day },
+        { char: "D", value: String(now.getDate()) + getOrdinalSuffix(+day) },
+
+        { char: 'mn', value: monthNumber },
+        { char: "m", value: monthShort },
+        { char: "M", value: monthLong },
+
+        { char: 'y', value: year },
+
+        { char: 'h', value: hour24 },
+        { char: 'H', value: hour12 },
+
+        { char: 'm', value: minute },
+
+        { char: 's', value: second },
+
+        { char: 'a', value: ampm },
+
+        { char: 'z', value: timezone },
+    ];
+
+    let replacementMap = Object.fromEntries(replacements.map(({ char, value }) => [char, value]));
+
+    let dateString = dateTemplate.replace(/!([a-zA-Z]+)/g, "!$1") // Preserve escaped characters
+        .replace(/\b([a-zA-Z]+)\b/g, (match) => replacementMap[match] ?? match); // Replace only whole words
+
+
     if(!config.showSpinner) document.getElementById('bar').textContent = dateString.padEnd(79," ");
     else {
         let spinnerFrames = config.fileSystem["D:/Spinners"].find(spinner => spinner.name == config.currentSpinner).data;

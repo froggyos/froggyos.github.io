@@ -49,21 +49,26 @@ There is no set colors that you must have, but these are the color conventions.
 * swimto -> st
 
 ## Command Help
-
 ### formattime
 The all instances of the following characters will be replaced with their respective values. Place a "!" before the character to escape it.
+#### Date
+
 * weekday
-    * `w` - short weekday (Mon, Tues, etc.)
-    * `W` - long weekday (Monday, Tuesday, etc.)
-* day
-    * `d` - day
-    * `o` - ordinal day (1st, 2nd, etc.)
-* month
-* `M` - month (01, 02, etc.)
-* `W` - month word long (January, February, etc.)
+    * `w` - short weekday (Mon, Tues)
+    * `W` - long weekday (Monday, Tuesday)
 * `y` - year
-* `h` - hour (24 hour)
-* `H` - hour (12 hour)
+* month
+    * `mn` - month number (01, 02)
+    * `m` - month short (Jan, Feb)
+    * `M` - month long (January, February)
+* day
+    * `d` - day (01, 02)
+    * `D` - ordinal day (1st, 2nd)
+
+#### Time
+* hour
+    * `h` - hour (24 hour)
+    * `H` - hour (12 hour)
 * `m` - minute
 * `s` - second
 * `a` - AM/PM
