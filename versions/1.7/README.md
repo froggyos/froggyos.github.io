@@ -55,7 +55,9 @@ The all instances of the following characters will be replaced with their respec
  * `w` - short weekday (Mon, Tues, etc.)
  * `W` - long weekday (Monday, Tuesday, etc.)
  * `d` - day
- * `M` - month
+ * `o` - ordinal day (1st, 2nd, etc.)
+ * `M` - month (01, 02, etc.)
+ * `W` - month word (January, February, etc.)
  * `y` - year
  * `h` - hour (24 hour)
  * `H` - hour (12 hour)
