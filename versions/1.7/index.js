@@ -961,6 +961,7 @@ function sendCommand(command, args, createEditableLineAfter){
             createTerminalLine("[[BULLFROG]]urgentsavestate - saves state for reloading", ">");
             createTerminalLine("[[BULLFROG]]urgentloadstate - loads state for reloading", ">");
             createTerminalLine("[[BULLFROG]]urgentclearstate - clears reload state", ">");
+            createTerminalLine("[[BULLFROG]]loadstate - loads state", ">");
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
 
@@ -1040,6 +1041,17 @@ function sendCommand(command, args, createEditableLineAfter){
 
         case "[[BULLFROG]]urgentclearstate": {
             localStorage.removeItem("froggyOS-urgent-state");
+            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+        } break;
+
+        case "[[BULLFROG]]loadstate": {
+            let state = localStorage.getItem("froggyOS-state");
+            if(state != null){
+                for(let key in JSON.parse(state)){
+                    config[key] = JSON.parse(state)[key];
+                }
+                changeColorPalette(config.colorPalette);
+            }
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         } break;
 
@@ -1277,4 +1289,5 @@ function createLilypadLine(path, linetype, filename){
 
 changeColorPalette(config.colorPalette);
 createColorTestBar();
+sendCommand('[[BULLFROG]]loadstate', [], false);
 sendCommand('[[BULLFROG]]greeting', []);

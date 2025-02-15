@@ -200,7 +200,8 @@
         const now = new Date();
 
         // Grab the current weekday.
-        const dayOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][now.getDay()];  // Grab the live day of the week.
+        const dayOfWeekShort = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][now.getDay()];  // Grab the live day of the week.
+        const dayOfWeekLong = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][now.getDay()];  // Grab the live day of the week.
         const year = now.getFullYear(); // Year
         const month = String(now.getMonth() + 1).padStart(2, '0'); // Month
         const day = String(now.getDate()).padStart(2, '0'); // Day
@@ -209,43 +210,39 @@
         const minute = String(now.getMinutes()).padStart(2, '0'); // Minutes
         const second = String(now.getSeconds()).padStart(2, '0'); // Seconds
         const ampm = now.getHours() >= 12 ? 'PM' : 'AM'; // AM or PM
+        const timezone = new Date().toLocaleString(["en-US"], {timeZoneName: "short"}).split(" ").pop(); // Timezone
 
-        let dateTemplate = "w. y/M/d h:m:s";
+        let os = JSON.parse(localStorage.getItem("froggyOS-state"));
+
+        let dateTemplate = 'w. y/M/d h:m:s';
+
+        if(os != null){
+            dateTemplate = os.fileSystem["Settings:"].find(e => e.name == "timeFormat").data[0];
+        }
+
+        // totally not ai
+        const replacements = [
+                { char: 'y', value: year },
+                { char: 'M', value: month },
+                { char: 'd', value: day },
+                { char: 'h', value: hour24 },
+                { char: 'H', value: hour12 },
+                { char: 'm', value: minute },
+                { char: 's', value: second },
+                { char: 'a', value: ampm },
+                { char: 'w', value: dayOfWeekShort },
+                { char: 'W', value: dayOfWeekLong },
+                { char: 'z', value: timezone }
+            ];
         
-        dateTemplate = dateTemplate.replace('w', '###w###');
-        dateTemplate = dateTemplate.replace('y', '###y###');
-        dateTemplate = dateTemplate.replace('M', '###M###');
-        dateTemplate = dateTemplate.replace('d', '###d###');
-        dateTemplate = dateTemplate.replace('h', '###h###');
-        dateTemplate = dateTemplate.replace('H', '###H###');
-        dateTemplate = dateTemplate.replace('m', '###m###');
-        dateTemplate = dateTemplate.replace('s', '###s###');
-        dateTemplate = dateTemplate.replace('a', '###a###');
+        let escapedTemplate = replacements.reduce((str, { char, value }) => {
+            let escapedChar = `!${char}`;
+            return str
+                .replace(new RegExp(`(?<!!)${char}`, 'g'), value) // Replace unescaped characters
+                .replace(new RegExp(escapedChar, 'g'), char); // Replace escaped characters back
+        }, dateTemplate);
 
-        dateTemplate = dateTemplate.replace('!###y###', 'y');
-        dateTemplate = dateTemplate.replace('!###M###', 'M');
-        dateTemplate = dateTemplate.replace('!###d###', 'd');
-        dateTemplate = dateTemplate.replace('!###h###', 'h');
-        dateTemplate = dateTemplate.replace('!###H###', 'H');
-        dateTemplate = dateTemplate.replace('!###m###', 'm');
-        dateTemplate = dateTemplate.replace('!###s###', 's');
-        dateTemplate = dateTemplate.replace('!###a###', 'a');
-        dateTemplate = dateTemplate.replace('!###w###', 'w');
-
-        dateTemplate = dateTemplate.replace('###y###', year);
-        dateTemplate = dateTemplate.replace('###M###', month);
-        dateTemplate = dateTemplate.replace('###d###', day);
-        dateTemplate = dateTemplate.replace('###h###', hour24);
-        dateTemplate = dateTemplate.replace('###H###', hour12);
-        dateTemplate = dateTemplate.replace('###m###', minute);
-        dateTemplate = dateTemplate.replace('###s###', second);
-        dateTemplate = dateTemplate.replace('###a###', ampm);
-        dateTemplate = dateTemplate.replace('###w###', dayOfWeek);
-
-        const dateString = dateTemplate;
-
-        document.getElementById('bar').textContent = dateString;
-
+        document.getElementById('bar').textContent = escapedTemplate
     }
 
     setInterval(updateDateTime, 100);
