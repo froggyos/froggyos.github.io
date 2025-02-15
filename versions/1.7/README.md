@@ -101,7 +101,7 @@ If you edit the `Settings:` drive directly, some settings won't apply until you 
 * the loading spinner goes ZOOMING????
 ### Fixed
 * the first line of the macro was not being read
-    * because it was assumed the first like was defining the alias, it was just discarded
+    * because it was assumed the first line was defining the alias, it was just discarded
 * cannot call functions inside of functions. This is because functions are parsed by the formatter instead of the parser. This is because it was easier to do than implementing an isolated parser that has the variables from the other, parent parser
     * functions are now referenced by line numbers
 * something with `if` statements???? check it out later
