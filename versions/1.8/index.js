@@ -874,7 +874,7 @@ function sendCommand(command, args, createEditableLineAfter){
                 return xhr.responseText;
             }
         
-            function popitup() {
+            function openDocumentationWindow() {
                 const converter = new showdown.Converter();
                 newwindow = window.open("", null, 'toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=yes,resizable=yes,height=800,width=700');
         
@@ -912,7 +912,7 @@ function sendCommand(command, args, createEditableLineAfter){
                 }
             }
         
-            popitup();
+            openDocumentationWindow();
             createTerminalLine("Documentation opened in a new window.", ">");
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         } break;
