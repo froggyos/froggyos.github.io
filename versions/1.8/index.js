@@ -871,7 +871,7 @@ function sendCommand(command, args, createEditableLineAfter){
             new MarkdownParser("url", `https://froggyos.github.io/versions/${config.version}/README.md`)
             .newWindowArgs("height=850,width=700")
             .toc(true)
-            .title(`froggyOS v${config.version} Documentation`)
+            .title(`froggyOS v. ${config.version} Documentation`)
             .generate()
             .open("newWindow");
 
