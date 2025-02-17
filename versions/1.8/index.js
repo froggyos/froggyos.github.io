@@ -864,7 +864,6 @@ function sendCommand(command, args, createEditableLineAfter){
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
 
-        // might put this in 1.8
         case "docs":
         case "opendocumentation": {
 
