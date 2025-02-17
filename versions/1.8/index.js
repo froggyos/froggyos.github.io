@@ -876,7 +876,7 @@ function sendCommand(command, args, createEditableLineAfter){
         
             function popitup() {
                 const converter = new showdown.Converter();
-                newwindow = window.open("", null, 'height=800,width=700');
+                newwindow = window.open("", null, 'toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=yes,resizable=yes,height=800,width=700');
         
                 newwindow.document.title = "froggyOS Documentation";
 
@@ -913,6 +913,7 @@ function sendCommand(command, args, createEditableLineAfter){
             }
         
             popitup();
+            createTerminalLine("Documentation opened in a new window.", ">");
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         } break;
 
