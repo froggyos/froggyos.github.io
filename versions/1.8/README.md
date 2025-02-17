@@ -238,7 +238,7 @@ append test ' ing it some more'
 append test "AND MORE"
 append test v:variable
 ```
-## User input
+## User Input
 ### Define a File Argument
 ```
 filearg [variable_name] [type]
