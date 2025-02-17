@@ -23,7 +23,7 @@ const config = {
     fileSystem: {
         "Settings:": [
             { name: "debugMode", properties: {read: true, write: true, hidden: false}, data: ["false"] },
-            { name: "version", properties: {read: true, write: true, hidden: false}, data: ["1.7"] },
+            { name: "version", properties: {read: true, write: true, hidden: false}, data: ["1.8"] },
             { name: "colorPalette", properties: {read: true, write: true, hidden: false}, data: ["standard"] },
             { name: "showSpinner", properties: {read: true, write: true, hidden: false}, data: ["false"] },
             { name: "currentSpinner", properties: {read: true, write: true, hidden: false}, data: ["default"] },
