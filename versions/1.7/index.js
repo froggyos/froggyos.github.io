@@ -621,7 +621,6 @@ function sendCommand(command, args, createEditableLineAfter){
             createTerminalLine("loadstate. . . . . . . . . . . Load froggyOS state.", ">");
             createTerminalLine("meta [file]. . . . . . . . . . Edits a file.", ">");
             createTerminalLine("metaprop [file] [perm] [0/1] . Edits a file's properties.", ">");
-            createTerminalLine("opendocumentation. . . . . . . Opens the froggyOS documentation.", ">");
             createTerminalLine("savestate. . . . . . . . . . . Save froggyOS state.", ">");
             createTerminalLine("spawn [directory]. . . . . . . Creates a directory.", ">");
             createTerminalLine("spy [file] . . . . . . . . . . Reads the file.", ">");
