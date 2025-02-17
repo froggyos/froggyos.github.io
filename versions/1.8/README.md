@@ -60,7 +60,7 @@ The all instances of the following characters (or character sequences) will be r
 * `y` - year
 * month
     * `mn` - month number (01, 02)
-    * `mN` - month number unpadded (1, 2)
+    * `mnu` - month number unpadded (1, 2)
     * `m` - month short (Jan, Feb)
     * `M` - month long (January, February)
 * day
