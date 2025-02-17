@@ -864,6 +864,7 @@ function sendCommand(command, args, createEditableLineAfter){
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
 
+        // might put this in 1.8
         case "docs":
         case "opendocumentation": {
             function getDocumentation() {
@@ -875,7 +876,7 @@ function sendCommand(command, args, createEditableLineAfter){
         
             function popitup() {
                 const converter = new showdown.Converter();
-                newwindow = window.open("", null, 'height=800,width=600');
+                newwindow = window.open("", null, 'height=800,width=700');
         
                 // change the title of the new window
                 newwindow.document.title = "froggyOS Documentation";
