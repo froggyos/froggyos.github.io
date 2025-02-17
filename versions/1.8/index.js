@@ -867,52 +867,13 @@ function sendCommand(command, args, createEditableLineAfter){
         // might put this in 1.8
         case "docs":
         case "opendocumentation": {
-            function getDocumentation() {
-                let xhr = new XMLHttpRequest();
-                xhr.open('GET', `https://froggyos.github.io/versions/${config.version}/README.md`, false);
-                xhr.send();
-                return xhr.responseText;
-            }
-        
-            function openDocumentationWindow() {
-                const converter = new showdown.Converter();
-                newwindow = window.open("", null, 'toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=yes,resizable=yes,height=800,width=700');
-        
-                newwindow.document.title = "froggyOS Documentation";
 
-                // todo: make a table of contents and also fix a bit of formating
-                // ALSO change this to a library of rus1130.github.io/projects/Globals because that would be cool to have a markdown viewer
+            new MarkdownParser("url", `https://froggyos.github.io/versions/${config.version}/README.md`)
+            .newWindowArgs("height=800,width=900")
+            .toc(true)
+            .generate()
+            .open("newWindow");
 
-                let html = `
-                <style>
-                    code {
-                        padding-left: 5px;
-                        padding-right: 5px;
-
-                        padding-top: 1px;
-                        padding-bottom: 1px;
-
-                        border-radius: 3px;
-                        background-color: 	#f0f0f0;
-                    }
-                    pre > code {
-                        display: block;
-                        padding: 15px;
-
-                        line-height: 1.5;
-                        overflow-x: auto;
-                    }
-                </style>
-                ${converter.makeHtml(getDocumentation())}`;
-                // console.log(html)
-        
-                newwindow.document.body.innerHTML = html;
-                if (window.focus) {
-                    newwindow.focus()
-                }
-            }
-        
-            openDocumentationWindow();
             createTerminalLine("Documentation opened in a new window.", ">");
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         } break;
