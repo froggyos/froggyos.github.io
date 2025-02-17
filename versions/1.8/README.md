@@ -44,6 +44,8 @@ There is no set colors that you must have, but these are the color conventions.
 * loadstate -> lds
 * macro -> /
 * meta -> m
+* metaprop -> mp
+* opendocumentation -> docs
 * savestate -> svs
 * spawn -> s
 * swimto -> st
