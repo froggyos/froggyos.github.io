@@ -878,10 +878,10 @@ function sendCommand(command, args, createEditableLineAfter){
                 const converter = new showdown.Converter();
                 newwindow = window.open("", null, 'height=800,width=700');
         
-                // change the title of the new window
                 newwindow.document.title = "froggyOS Documentation";
 
                 // todo: make a table of contents and also fix a bit of formating
+                // ALSO change this to a library of rus1130.github.io/projects/Globals because that would be cool to have a markdown viewer
 
                 let html = `
                 <style>
