@@ -4,7 +4,7 @@
 * programs can *only* be written in designated directories
 
 ## Palette Conventions
-There is no set colors that you must have, but these are the color conventions.
+There are no set colors that you must have, but these are the color conventions.
 * `00` - black, the void surrounding the terminal
 * `01` - blue, the top bar background color
 * `02` - green, text color, as well as selected text and option background color
