@@ -165,7 +165,7 @@ out "text with spaces"
 out 'more text'
 out "i can put a v:variable inside a string"
 ```
-### Colored Output
+### Formatted Output
 #### General
 * index `0` is the 1st character.
 * You can  use variables as values for color codes, variables of length 2 or less will be converted to color codes automatically.
