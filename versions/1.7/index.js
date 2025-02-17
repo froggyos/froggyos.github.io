@@ -904,7 +904,7 @@ function sendCommand(command, args, createEditableLineAfter){
                     }
                 </style>
                 ${converter.makeHtml(getDocumentation())}`;
-                console.log(html)
+                // console.log(html)
         
                 newwindow.document.body.innerHTML = html;
                 if (window.focus) {
