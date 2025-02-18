@@ -420,7 +420,7 @@ function sendCommand(command, args, createEditableLineAfter){
         // clear froggyOS state
         case "cls":
         case "clearstate":
-            localStorage.removeItem("froggyOS-state");
+            localStorage.removeItem(`froggyOS-state-${config.version}`);
             createTerminalLine("State cleared.", ">")
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
@@ -602,7 +602,7 @@ function sendCommand(command, args, createEditableLineAfter){
         // load state
         case "lds":
         case "loadstate":
-            let state = localStorage.getItem("froggyOS-state");
+            let state = localStorage.getItem(`froggyOS-state-${config.version}`);
             if(state == null){
                 createTerminalLine("No state found.", config.errorText);
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
@@ -779,7 +779,7 @@ function sendCommand(command, args, createEditableLineAfter){
         // save state
         case "svs":
         case "savestate":
-            localStorage.setItem("froggyOS-state", JSON.stringify(config));
+            localStorage.setItem(`froggyOS-state-${config.version}`, JSON.stringify(config));
             createTerminalLine("State saved.", ">")
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;

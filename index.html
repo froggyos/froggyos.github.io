@@ -258,7 +258,7 @@
 
         let dateTemplate = "w. y/mn/d h:m:s";
 
-        let saveState = localStorage.getItem("froggyOS-state")
+        let saveState = localStorage.getItem(`froggyOS-state-${versionList[versionList.length - 1]}`);
 
         if(saveState != null) {
             dateTemplate = JSON.parse(saveState).fileSystem["Settings:"].find(e => e.name == "timeFormat").data[0];
