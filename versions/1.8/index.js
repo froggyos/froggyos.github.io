@@ -141,7 +141,7 @@ function updateDateTime() {
 
         { char: 'mn', value: monthNumber },
         { char: 'mnu', value: monthNumberUnpadded },
-        { char: "m", value: monthShort },
+        { char: "ms", value: monthShort },
         { char: "M", value: monthLong },
 
         { char: 'd', value: day },

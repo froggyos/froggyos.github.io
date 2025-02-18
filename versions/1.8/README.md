@@ -61,7 +61,7 @@ The all instances of the following characters (or character sequences) will be r
 * month
     * `mn` - month number (01, 02)
     * `mnu` - month number unpadded (1, 2)
-    * `m` - month short (Jan, Feb)
+    * `ms` - month short (Jan, Feb)
     * `M` - month long (January, February)
 * day
     * `d` - day (01, 02)
