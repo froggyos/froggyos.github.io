@@ -9,6 +9,27 @@ function waitForButtonClick(buttonId) {
     });
 }
 
+function weirdError(){
+    createTerminalLine("Wow.............................. really................ smh.......", config.errorText);
+    createTerminalLine("U really gonna brick poor old Froggy like that???? smh....", config.errorText)
+    createTerminalLine("add [wait 0] before an endloop keyword idk", config.errorText);
+    createTerminalLine("I cant really do anything but ill reload froggy os in a few seconds", config.errorText);
+    let decrement = 10;
+    setTimeout(() => {
+        let interval = setInterval(() => {
+            createTerminalLine(`Reloading in ${decrement-1} seconds...`, "");
+            decrement--;
+            if(decrement == 0){
+                clearInterval(interval);
+                location.reload();
+            }
+        }, 1000);
+        setTimeout(() => {
+            sendCommand("/", ["r"], true);
+        }, 10000)
+    }, 5000);
+}
+
 function interpreter(formatted){
 
     let lineIndex = 0;
@@ -51,7 +72,11 @@ function interpreter(formatted){
             if(IS_ERROR) return;
             lineIndex++;
             iteration++;
-            runParser();
+            try {
+                runParser();
+            } catch (err) {
+                console.error("good job bud. u bricked froggy. how could u. smh. well ur cooked i cant do nothin. if u were doing stuff its all lost. gg.")
+            }
         }
 
         function endProgram(error){
@@ -239,25 +264,7 @@ function interpreter(formatted){
                         parseNext();
                     }
                 } catch (err) {
-                    createTerminalLine("Wow.............................. really................ smh.......", config.errorText);
-                    createTerminalLine("U really gonna brick poor old Froggy like that???? smh....", config.errorText)
-                    createTerminalLine("add [wait 0] before an endloop keyword idk", config.errorText);
-                    createTerminalLine("I cant really do anything but ill reload froggy os in a few seconds", config.errorText);
-                    let decrement = 10;
-                    setTimeout(() => {
-                        let interval = setInterval(() => {
-                            createTerminalLine(`Reloading in ${decrement-1} seconds...`, "");
-                            decrement--;
-                            if(decrement == 0){
-                                clearInterval(interval);
-                                location.reload();
-                            }
-                        }, 1000);
-                        setTimeout(() => {
-                            sendCommand("/", ["r"], true);
-                        }, 10000)
-                    }, 5000);
-
+                    weirdError();
 
                 }
             } break;
