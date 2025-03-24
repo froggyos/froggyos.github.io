@@ -1,7 +1,7 @@
 // new AllSniffer({timerOptions: {intervalIDsToExclude: [1,2,3,4]}});
 
-let screen = document.getElementById('screen');
-let terminal = document.getElementById('terminal');
+const screen = document.getElementById('screen');
+const terminal = document.getElementById('terminal');
 
 document.body.onclick = function() {
     try {
@@ -42,8 +42,9 @@ function localize(english){
         english = english.replaceAll(`|||[${replacementData}]|||`, "|||[]|||");
     }
 
-    let englishData = config.fileSystem["Lang:"].find(translation => translation.name == "BRAIN_BASE").data.indexOf(english);
-    let translation = config.fileSystem["Lang:"].find(translation => translation.name == config.language).data[englishData];
+    let englishData = config.fileSystem["Settings:/lang_files"].find(translation => translation.name == "BRAIN_BASE").data.indexOf(english);
+    let translation = config.fileSystem["Settings:/lang_files"].find(translation => translation.name == config.language).data[englishData];
+
 
     return translation?.replaceAll("|||[]|||", replacementData) ?? english;
 }
@@ -500,14 +501,50 @@ function sendCommand(command, args, createEditableLineAfter){
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
 
+        // ADD: COPY and RENAME command !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
         // commands =========================================================================================================================================================
-        // change color palette
+        // change language
         case "lang":
         case "changelanguage": {
-            let languages = config.fileSystem["Lang:"].map(lang => lang.name && lang.name != "BRAIN_BASE" ? lang.name : undefined).filter(lang => lang != undefined);
+            let languageCodes = config.fileSystem["Settings:/lang_files"].map(lang => lang.name && lang.name != "BRAIN_BASE" ? lang.name : undefined).filter(lang => lang != undefined);
 
-            console.log(languages)
+            let languageNames = config.fileSystem["Settings:/lang_files"].map(lang => lang.data[0] && lang.name != "BRAIN_BASE" ? lang.data[0] : undefined).filter(lang => lang != undefined).map(x => x.split("_")[3])
+
+            languageNames.forEach((_, i) => {
+                languageNames[i] = `${languageCodes[i]} (${languageNames[i]})`
+            })
+
+            if(args.length == 0){
+                createTerminalLine("Please provide a language code.", config.errorText);
+                createTerminalLine(`* Available languages *`, "");
+                createTerminalLine(languageNames.join(", "), ">")
+                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                break;
+            }
+
+            let code = args[0].split(" ")[0];
+
+            if(!languageCodes.includes(code)){
+                createTerminalLine("Language does not exist.", config.errorText);
+                createTerminalLine(`* Available languages *`, "");
+                createTerminalLine(languageNames.join(", "), ">")
+                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                break;
+            }
+
+            sendCommand("[[BULLFROG]]showspinner", ["1"], false);
+
+            setSetting("language", code.split(" ")[0]);
+
+            setTimeout(() => {
+                createTerminalLine("Language changed.", ">")
+                sendCommand("[[BULLFROG]]showspinner", ["0"], false);
+                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+            }, 10)
+
         } break;
+        // change color palette
         case "changepalette": {
             let colorPalettes = createPalettesObject();
             if(args.length == 0){
@@ -633,6 +670,7 @@ function sendCommand(command, args, createEditableLineAfter){
         case "?":
         case "help":
             createTerminalLine("* A few basic froggyOS commands *", "");
+            createTerminalLine("changelanguage [code]. . . . . Changes the current language.", ">");
             createTerminalLine("changepalette [palette]. . . . Changes the color palette.", ">");
             createTerminalLine("clear. . . . . . . . . . . . . Clears the terminal output.", ">");
             createTerminalLine("clearstate . . . . . . . . . . Clears froggyOS state.", ">");
@@ -1311,7 +1349,12 @@ function createLilypadLine(path, linetype, filename){
 
             let focusedLineIndex = Array.from(lines).indexOf(focusedLine);
             if(focusedLineIndex > 0){
-                moveCaretToEnd(lines[focusedLineIndex - 1]);
+                let newLine = lines[focusedLineIndex - 1]
+                moveCaretToEnd(newLine);
+
+                if(newLine.getBoundingClientRect().y < terminal.getBoundingClientRect().y){
+                    terminal.scrollTop = terminal.scrollTop - (terminal.getBoundingClientRect().y - newLine.getBoundingClientRect().y);
+                }
             };
         };
         if(e.key == "ArrowDown"){
@@ -1321,7 +1364,12 @@ function createLilypadLine(path, linetype, filename){
 
             let focusedLineIndex = Array.from(lines).indexOf(focusedLine);
             if(focusedLineIndex < lines.length - 1){
-                moveCaretToEnd(lines[focusedLineIndex + 1]);
+                let newLine = lines[focusedLineIndex + 1];
+                moveCaretToEnd(newLine);
+
+                if(newLine.getBoundingClientRect().bottom > terminal.getBoundingClientRect().bottom) {
+                    terminal.scrollTop += newLine.getBoundingClientRect().bottom - terminal.getBoundingClientRect().bottom;
+                }
             };
         };
 
