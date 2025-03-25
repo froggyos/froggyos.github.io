@@ -15,7 +15,6 @@ const LANG_BUILD_HELPER = [
     "T_cannot_delete_file",
     "T_provide_time_format",
     "T_arg_too_long",
-    "T_directory_does_not_exist",
     "T_file_already_exists",
     "T_file_created",
     "T_hello_froggy",
