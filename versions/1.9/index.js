@@ -42,7 +42,7 @@ function localize(english){
         english = english.replaceAll(`|||[${replacementData}]|||`, "|||[]|||");
     }
 
-    let englishData = config.fileSystem["Settings:/lang_files"].find(translation => translation.name == "BRAIN_BASE").data.indexOf(english);
+    let englishData = config.fileSystem["Settings:/lang_files"].find(translation => translation.name == "TRANSLATION_MAP").data.indexOf(english);
     let translation = config.fileSystem["Settings:/lang_files"].find(translation => translation.name == config.language).data[englishData];
 
 
@@ -439,6 +439,15 @@ function createTerminalLine(text, path, formatting){
         terminalLine.textContent = localize(text);
     }
 
+    // if the last character is japanese, switch the font
+    let isJp = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]/g.test(terminalLine.textContent);
+
+    if(isJp && config.language == "jpn") {
+        lineContainer.classList.add('text-jp');
+    } else {
+        lineContainer.classList.remove('text-jp');
+    }
+
     lineContainer.appendChild(terminalPath);
     lineContainer.appendChild(terminalLine);
     terminal.appendChild(lineContainer);
@@ -488,6 +497,18 @@ function updateLineHighlighting() {
     });
 }
 
+function validateLanguageFile(code){
+    let langData = config.fileSystem["Settings:/lang_files"].find(file => file.name == code).data;
+    let translation_map = config.fileSystem["Settings:/lang_files"].find(file => file.name == "TRANSLATION_MAP").data;
+    
+    if(langData.length != translation_map.length) return false;
+
+    let identifierLine = langData[0]
+
+    return /\{\{\{_LANGNAME_!!!_.*\}\}\}/g.test(identifierLine)
+    
+}
+
 function sendCommand(command, args, createEditableLineAfter){
     if(createEditableLineAfter == undefined) createEditableLineAfter = true;
     command = command.trim();
@@ -501,48 +522,52 @@ function sendCommand(command, args, createEditableLineAfter){
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
 
-        // ADD: COPY and RENAME command !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        // ADD: COPY and RENAME command (files) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         // commands =========================================================================================================================================================
         // change language
         case "lang":
         case "changelanguage": {
-            let languageCodes = config.fileSystem["Settings:/lang_files"].map(lang => lang.name && lang.name != "BRAIN_BASE" ? lang.name : undefined).filter(lang => lang != undefined);
+            let langCodes = config.fileSystem["Settings:/lang_files"].filter(file => file.properties.hidden == false).map(file => file.name);
 
-            let languageNames = config.fileSystem["Settings:/lang_files"].map(lang => lang.data[0] && lang.name != "BRAIN_BASE" ? lang.data[0] : undefined).filter(lang => lang != undefined).map(x => x.split("_")[3])
-
-            languageNames.forEach((_, i) => {
-                languageNames[i] = `${languageCodes[i]} (${languageNames[i]})`
-            })
+            function getLanguages(){
+                let arr = [];
+                for(let i = 0; i < langCodes.length; i++){
+                    if(!validateLanguageFile(langCodes[i])) continue;
+                    let langName = config.fileSystem["Settings:/lang_files"].find(file => file.name == langCodes[i]).data[0].split("_")[3]
+                    arr.push(`${langCodes[i]} (${langName})`);
+                }
+                return arr.join(", ");
+            }
 
             if(args.length == 0){
                 createTerminalLine("Please provide a language code.", config.errorText);
                 createTerminalLine(`* Available languages *`, "");
-                createTerminalLine(languageNames.join(", "), ">")
+                createTerminalLine(getLanguages(), ">");
+                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+            } else {
+                if(!langCodes.includes(args[0])){
+                    createTerminalLine(`Language with code "|||[${args[0]}]|||" does not exist.`, config.errorText);
+                    createTerminalLine(`* Available languages *`, "");
+                    createTerminalLine(getLanguages(), ">");
+                    if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                    break;
+                }
+            }
+
+            let code = args[0];
+            if(!validateLanguageFile(code)){
+                createTerminalLine(`Invalid language file with code "|||[${code}]|||".`, config.errorText);
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
-
-            let code = args[0].split(" ")[0];
-
-            if(!languageCodes.includes(code)){
-                createTerminalLine("Language does not exist.", config.errorText);
-                createTerminalLine(`* Available languages *`, "");
-                createTerminalLine(languageNames.join(", "), ">")
-                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
-                break;
-            }
-
-            sendCommand("[[BULLFROG]]showspinner", ["1"], false);
-
-            setSetting("language", code.split(" ")[0]);
+            
+            setSetting("language", code);
 
             setTimeout(() => {
                 createTerminalLine("Language changed.", ">")
-                sendCommand("[[BULLFROG]]showspinner", ["0"], false);
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
             }, 10)
-
         } break;
         // change color palette
         case "changepalette": {
@@ -1223,8 +1248,21 @@ function createEditableTerminalLine(path){
 
     terminalLine.addEventListener('keyup', function(e){
         let userInput = terminalLine.textContent;
+
+        // if the last character is japanese, switch the font
+        let isJp = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]/g.test(userInput);
+
+        if(isJp && config.language == "jpn") {
+            terminalLine.classList.add('text-jp');
+        } else {
+            terminalLine.classList.remove('text-jp');
+        }
+        
         
         e.stopImmediatePropagation();
+
+        // if the inputted character is japanese, change the font of the terminal line
+
         if(e.key == "Enter"){
             e.preventDefault();
             terminalLine.setAttribute('contenteditable', 'false');
