@@ -369,7 +369,7 @@ function moveCaretToEnd(element) {
     }
 }
 
-function createTerminalLine(text, path, formatting){
+function createTerminalLine(text, path, other){
     let lineContainer = document.createElement('div');
     let terminalPath = document.createElement('span');
     let terminalLine = document.createElement('div');
@@ -377,6 +377,11 @@ function createTerminalLine(text, path, formatting){
     lineContainer.classList.add('line-container');
 
     terminalPath.innerHTML = path;
+
+    if(other == undefined) other = {};
+
+    let formatting = other.formatting ?? undefined;
+    let translateText = other.translate ?? true;
 
     if(formatting != undefined){
         let html = '';
@@ -436,7 +441,7 @@ function createTerminalLine(text, path, formatting){
         }
         terminalLine.innerHTML = html;
     } else {
-        terminalLine.textContent = localize(text);
+        if(translateText) terminalLine.textContent = localize(text);
     }
 
     // if the last character is japanese, switch the font
@@ -524,6 +529,9 @@ function sendCommand(command, args, createEditableLineAfter){
         break;
 
         // ADD: COPY and RENAME command (files) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        // copy reqs: can read, not hidden
+        // rename reqs: can read, can write, not hidden, new name not already in use. If in Settings:/lang_files, name must be 3 characters long exactly. Use T_file_name_not_3_char descriptor for error
+        
 
         // commands =========================================================================================================================================================
         // change language
@@ -672,6 +680,12 @@ function sendCommand(command, args, createEditableLineAfter){
             }
             if(config.fileSystem[config.currentPath].find(file => file.name == args[0]) != undefined){
                 createTerminalLine("File already exists.", config.errorText);
+                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                break;
+            }
+            // if the current path is settings and the name isnt exactly 3 character long, throw an error
+            if(config.currentPath == "Settings:/lang_files" && args[0].length != 3){
+                createTerminalLine("File name must be exactly 3 characters long.", config.errorText);
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
@@ -1082,7 +1096,9 @@ function sendCommand(command, args, createEditableLineAfter){
 
                 let formatted = format(file.data);
                 if(formatted.errors.length > 0){
-                    createTerminalLine(formatted.errors[0], config.errorText);
+                    createTerminalLine(formatted.errors[0], config.errorText, {
+                        translate: false
+                    });
                     if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 } else {
                     config.currentProgram = args[0];

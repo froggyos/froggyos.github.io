@@ -1,5 +1,5 @@
 const LANG_BUILD_HELPER = [
-    "{{{_LANGNAME_!!!_language file build helper_}}}",
+    "{{{_LANGNAME_!!!_language build helper_}}}",
     "T_froggy_doesnt_like",
     "T_pattete_error_invalid_hex |||[]|||",
     "T_could_not_create_palette",
@@ -22,7 +22,7 @@ const LANG_BUILD_HELPER = [
     "T_basic_commands_lang",
     "T_basic_commands_palette",
     "T_basic_commands_clear",
-    "T_basic_commands_clearstat",
+    "T_basic_commands_clearstate",
     "T_basic_commands_croak",
     "T_basic_commands_ribbit",
     "T_basic_commands_formattime",
@@ -134,6 +134,7 @@ const LANG_BUILD_HELPER = [
     "T_lang_changed",
     "T_invalid_lang_file |||[]|||",
     "T_invalid",
+    "T_file_name_not_3_char"
 ]
 
 const ENGLISH_LOCAL = [
@@ -272,7 +273,11 @@ const ENGLISH_LOCAL = [
     "Language changed.",
     'Invalid language file with code "|||[]|||".',
     "INVALID",
+    "File name must be exactly 3 characters long."
 ]
+
+const TRANSLATION_MAP = JSON.parse(JSON.stringify(ENGLISH_LOCAL));
+TRANSLATION_MAP[0] = "{{{_LANGNAME_!!!_translation map_}}}";
 
 const config = {
     // settings as files
@@ -313,14 +318,14 @@ const config = {
             { name: "dissallowSubdirectoriesIn", properties: {read: true, write: false, hidden: false}, data: ["D:/Programs", "D:/Macros", "D:/Program-Data", "D:/Palettes", "D:/Spinners"] },
         ],
         "Settings:/lang_files": [
-            { name: "TRANSLATION_MAP", properties: {read: true, write: false, hidden: true}, data: JSON.parse(JSON.stringify(ENGLISH_LOCAL)) },
-            { name: "lbh", properties: {read: true, write: false, hidden: false}, data: JSON.parse(JSON.stringify(LANG_BUILD_HELPER)) },
-            { name: "eng", properties: {read: true, write: true, hidden: false}, data: JSON.parse(JSON.stringify(ENGLISH_LOCAL)) },
+            { name: "TRANSLATION_MAP", properties: {read: true, write: false, hidden: true}, data: TRANSLATION_MAP },
+            { name: "lbh", properties: {read: true, write: false, hidden: false}, data: LANG_BUILD_HELPER },
+            { name: "eng", properties: {read: true, write: true, hidden: false}, data: ENGLISH_LOCAL },
             { name: "nmt", properties: {read: true, write: true, hidden: false}, data: [
                 "{{{_LANGNAME_!!!_ngimëte_}}}",
                 "Froggy gehana ilu >:(",
                 "PaletaGogowa: wa |||[]||| sepu hex pesezte",
-                "T_could_not_create_palette",
+                "gembeno paleta",
                 "T_invalid_format_object_inter_rule_delimiter",
                 "T_error_data_unavailable",
                 "apelelala som fiyala tama",
@@ -331,7 +336,7 @@ const config = {
                 "fiyala getsefese",
                 "T_no_permission_to_delete_file",
                 "T_cannot_delete_file",
-                "T_provide_time_format",
+                "apelelala som lohí folamata",
                 "T_arg_too_long",
                 "fiyala tsefese",
                 "T_file_created",
@@ -339,8 +344,8 @@ const config = {
                 "* tine hatsamwa froggyOS komandda me *",
                 "changelanguage [koda] :: lohi mëzte",
                 "changepalette [paleta] :: lohi pesezte paleta",
-                "T_basic_commands_clear",
-                "T_basic_commands_clearstat",
+                "clear :: nggave taminalu tuhar",
+                "T_basic_commands_clearstate",
                 "T_basic_commands_croak",
                 "T_basic_commands_ribbit",
                 "T_basic_commands_formattime",
@@ -360,13 +365,13 @@ const config = {
                 "T_basic_commands_swimto",
                 "apelelala som dilekatüli tama",
                 "dilekatüli getsefese",
-                "T_directory_empty",
+                "lu wa dilekatüli säna",
                 "T_no_state_found",
                 "T_state_loaded",
                 "apelelala som makulo tama",
-                "T_available_macros",
-                "T_no_macros_found",
-                "T_macro_does_not_exist",
+                "* makulo me *",
+                "makulo gewitsu mana",
+                "makulo getsefese",
                 "T_missing_file_args",
                 "T_no_permission_to_edit_file",
                 "T_lilypad_save_exit",
@@ -452,6 +457,7 @@ const config = {
                 "mëzte lohi mana",
                 "T_invalid_lang_file |||[]|||",
                 "T_invalid",
+                "T_file_name_not_3_char",
             ] },
             { name: "jpn", properties: {read: true, write: true, hidden: false}, data: [
                 "{{{_LANGNAME_!!!_Japanese_}}}",
@@ -589,6 +595,7 @@ const config = {
                 "T_lang_changed",
                 "T_invalid_lang_file |||[]|||",
                 "T_invalid",
+                "T_file_name_not_3_char"
             ] },
         ],
         "C:": [],   
