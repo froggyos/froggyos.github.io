@@ -133,6 +133,7 @@ const LANG_BUILD_HELPER = [
     "T_lang_does_not_exist |||[]|||",
     "T_lang_changed",
     "T_invalid_lang_file |||[]|||",
+    "T_invalid",
 ]
 
 const ENGLISH_LOCAL = [
@@ -270,6 +271,7 @@ const ENGLISH_LOCAL = [
     'Language with code "|||[]|||" does not exist.',
     "Language changed.",
     'Invalid language file with code "|||[]|||".',
+    "INVALID",
 ]
 
 const config = {
@@ -312,7 +314,7 @@ const config = {
         ],
         "Settings:/lang_files": [
             { name: "TRANSLATION_MAP", properties: {read: true, write: false, hidden: true}, data: JSON.parse(JSON.stringify(ENGLISH_LOCAL)) },
-            { name: "lbh", properties: {read: true, write: false, hidden: true}, data: JSON.parse(JSON.stringify(LANG_BUILD_HELPER)) },
+            { name: "lbh", properties: {read: true, write: false, hidden: false}, data: JSON.parse(JSON.stringify(LANG_BUILD_HELPER)) },
             { name: "eng", properties: {read: true, write: true, hidden: false}, data: JSON.parse(JSON.stringify(ENGLISH_LOCAL)) },
             { name: "nmt", properties: {read: true, write: true, hidden: false}, data: [
                 "{{{_LANGNAME_!!!_ngimëte_}}}",
@@ -449,6 +451,7 @@ const config = {
                 'mëzte kole "|||[]|||" getsefese',
                 "mëzte lohi mana",
                 "T_invalid_lang_file |||[]|||",
+                "T_invalid",
             ] },
             { name: "jpn", properties: {read: true, write: true, hidden: false}, data: [
                 "{{{_LANGNAME_!!!_Japanese_}}}",
@@ -584,7 +587,8 @@ const config = {
                 "T_available_langs",
                 "T_lang_does_not_exist |||[]|||",
                 "T_lang_changed",
-                "T_invalid_lang_file |||[]|||"
+                "T_invalid_lang_file |||[]|||",
+                "T_invalid",
             ] },
         ],
         "C:": [],   

@@ -1,5 +1,10 @@
 <!--mrjuice43, Rus1130, 2025/01/10-->
 <style>
+    /*https://github.com/mshioda/relaxed-typing-mono-jp/releases/*/
+    @font-face {
+        font-family: "RelaxedTypingMonoJP";
+        src: url("./RelaxedTypingMonoJP-Bold.ttf") format("truetype");
+    }
     body {
         background-color: var(--void-space);
         margin: 0;
@@ -98,10 +103,10 @@
     }
 
     .text-jp {
-        font-family: "Noto Sans JP", sans-serif;	
+        font-family: "RelaxedTypingMonoJP" !important;
         line-height: 12px;
         font-size: 10px;
-        font-weight: 800;
+        font-weight: 600;
     }
 
     ::selection {
@@ -166,6 +171,8 @@
     <script src="./interpreter.js"></script>
     <script src="./index.js"></script>
 <script>
+    new TimerSniffer({ enableAllOptions: true });
+
     let ce = document.querySelectorAll('[contenteditable]');
 
     ce.forEach((el) => {

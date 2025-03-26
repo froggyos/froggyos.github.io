@@ -444,6 +444,7 @@ function createTerminalLine(text, path, formatting){
 
     if(isJp && config.language == "jpn") {
         lineContainer.classList.add('text-jp');
+        terminalPath.style.fontSize = "12px";
     } else {
         lineContainer.classList.remove('text-jp');
     }
@@ -528,23 +529,23 @@ function sendCommand(command, args, createEditableLineAfter){
         // change language
         case "lang":
         case "changelanguage": {
-            let langCodes = config.fileSystem["Settings:/lang_files"].filter(file => file.properties.hidden == false).map(file => file.name);
+            let langCodes = config.fileSystem["Settings:/lang_files"].filter(file => file.name != "TRANSLATION_MAP").map(file => file.name);
 
             function getLanguages(){
                 let arr = [];
                 for(let i = 0; i < langCodes.length; i++){
-                    if(!validateLanguageFile(langCodes[i])) continue;
                     let langName = config.fileSystem["Settings:/lang_files"].find(file => file.name == langCodes[i]).data[0].split("_")[3]
-                    arr.push(`${langCodes[i]} (${langName})`);
+                    arr.push(`${langCodes[i]} (${validateLanguageFile(langCodes[i]) ? langName : localize("INVALID")})`);
                 }
                 return arr.join(", ");
-            }
+            } 
 
             if(args.length == 0){
                 createTerminalLine("Please provide a language code.", config.errorText);
                 createTerminalLine(`* Available languages *`, "");
                 createTerminalLine(getLanguages(), ">");
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                break;
             } else {
                 if(!langCodes.includes(args[0])){
                     createTerminalLine(`Language with code "|||[${args[0]}]|||" does not exist.`, config.errorText);
@@ -556,7 +557,7 @@ function sendCommand(command, args, createEditableLineAfter){
             }
 
             let code = args[0];
-            if(!validateLanguageFile(code)){
+            if(validateLanguageFile(code) == false){
                 createTerminalLine(`Invalid language file with code "|||[${code}]|||".`, config.errorText);
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
