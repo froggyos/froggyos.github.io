@@ -10,12 +10,12 @@ document.body.onclick = function() {
 }
 
 function setSetting(setting, value) {
-    if(typeof value === 'object') config.fileSystem["Settings:"].find(file => file.name == setting).data = value;
-    else config.fileSystem["Settings:"].find(file => file.name == setting).data[0] = value;
+    if(typeof value === 'object') config.fileSystem["Config:"].find(file => file.name == setting).data = value;
+    else config.fileSystem["Config:"].find(file => file.name == setting).data[0] = value;
 }
 
 function getSetting(setting, isArray) {
-    let data = config.fileSystem["Settings:"].find(file => file.name == setting).data;
+    let data = config.fileSystem["Config:"].find(file => file.name == setting).data;
     if(isArray) return data;
     return data[0];
 }
@@ -42,8 +42,8 @@ function localize(english){
         english = english.replaceAll(`|||[${replacementData}]|||`, "|||[]|||");
     }
 
-    let translationMap = config.fileSystem["Settings:/lang_files"].find(translation => translation.name == "TRANSLATION_MAP").data;
-    let languageMap = config.fileSystem["Settings:/lang_files"].find(translation => translation.name == config.language).data;
+    let translationMap = config.fileSystem["Config:/lang_files"].find(translation => translation.name == "TRANSLATION_MAP").data;
+    let languageMap = config.fileSystem["Config:/lang_files"].find(translation => translation.name == config.language).data;
 
     let englishData = translationMap.indexOf(english);
     let translation = languageMap[englishData];
@@ -505,8 +505,8 @@ function updateLineHighlighting() {
 }
 
 function validateLanguageFile(code){
-    let langData = config.fileSystem["Settings:/lang_files"].find(file => file.name == code).data;
-    let translation_map = config.fileSystem["Settings:/lang_files"].find(file => file.name == "TRANSLATION_MAP").data;
+    let langData = config.fileSystem["Config:/lang_files"].find(file => file.name == code).data;
+    let translation_map = config.fileSystem["Config:/lang_files"].find(file => file.name == "TRANSLATION_MAP").data;
     
     if(langData.length != translation_map.length) return false;
 
@@ -531,19 +531,19 @@ function sendCommand(command, args, createEditableLineAfter){
 
         // ADD: COPY and RENAME command (files) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         // copy reqs: can read, not hidden
-        // rename reqs: can read, can write, not hidden, new name not already in use. If in Settings:/lang_files, name must be 3 characters long exactly. Use T_file_name_not_3_char descriptor for error
+        // rename reqs: can read, can write, not hidden, new name not already in use. If in Config:/lang_files, name must be 3 characters long exactly. Use T_file_name_not_3_char descriptor for error
         
 
         // commands =========================================================================================================================================================
         // change language
         case "lang":
         case "changelanguage": {
-            let langCodes = config.fileSystem["Settings:/lang_files"].filter(file => file.name != "TRANSLATION_MAP").map(file => file.name);
+            let langCodes = config.fileSystem["Config:/lang_files"].filter(file => file.name != "TRANSLATION_MAP").map(file => file.name);
 
             function getLanguages(){
                 let arr = [];
                 for(let i = 0; i < langCodes.length; i++){
-                    let langName = config.fileSystem["Settings:/lang_files"].find(file => file.name == langCodes[i]).data[0].split("_")[3]
+                    let langName = config.fileSystem["Config:/lang_files"].find(file => file.name == langCodes[i]).data[0].split("_")[3]
                     arr.push(`${langCodes[i]} (${validateLanguageFile(langCodes[i]) ? langName : localize("INVALID")})`);
                 }
                 return arr.join(", ");
@@ -669,7 +669,7 @@ function sendCommand(command, args, createEditableLineAfter){
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
-            // if we are in the Settings: directory, do not allow the user to delete the file
+            // if we are in the Config: directory, do not allow the user to delete the file
             if(config.currentPath.split(":")[0] == "Settings"){
                 createTerminalLine("You cannot delete this file.", config.errorText);
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
@@ -717,7 +717,7 @@ function sendCommand(command, args, createEditableLineAfter){
                 break;
             }
             // if the current path is settings and the name isnt exactly 3 character long, throw an error
-            if(config.currentPath == "Settings:/lang_files" && args[0].length != 3){
+            if(config.currentPath == "Config:/lang_files" && args[0].length != 3){
                 createTerminalLine("File name must be exactly 3 characters long.", config.errorText);
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
@@ -1018,18 +1018,46 @@ function sendCommand(command, args, createEditableLineAfter){
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         } break;
 
+        // rename reqs: can read, can write, not hidden, new name not already in use. 
+        // If in Config:/lang_files, name must be 3 characters long exactly. Use T_file_name_not_3_char descriptor for error
+
         case "rename":
             if(args.length < 2){
                 createTerminalLine("Please provide a file name and a new name.", config.errorText);
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
-            if(args[1].length != 3 && config.currentPath == "Settings:/lang_files"){
+
+            let fileName = args[0];
+            let newName = args[1];
+
+            file = config.fileSystem[config.currentPath].find(file => file.name == fileName && file.properties.hidden == false);
+
+            if(file == undefined){
+                createTerminalLine("File does not exist.", config.errorText);
+                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                break;
+            }
+
+            if(file.properties.write == false || file.properties.read == false){
+                createTerminalLine("You do not have permission to rename this file.", config.errorText);
+                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                break;
+            }
+            if(config.fileSystem[config.currentPath].find(file => file.name == newName) != undefined){
+                createTerminalLine("File with that name already exists in this directory.", config.errorText);
+                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                break;
+            }
+            if(fileName.length != 3 && config.currentPath == "Config:/lang_files"){
                 createTerminalLine("File name must be exactly 3 characters long.", config.errorText);
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
-            console.log(args);
+
+            file.name = newName;
+            createTerminalLine(`File renamed.`, ">");
+            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
         case "ribbit":
             if(args.length == 0){

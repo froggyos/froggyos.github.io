@@ -140,6 +140,9 @@ const LANG_BUILD_HELPER = [
     "T_basic_commands_clone",
     "T_basic_commands_rename",
     "T_provide_file_name_and_new",
+    "T_no_permission_to_rename_file",
+    "T_file_name_already_exists",
+    "T_file_renamed"
 ]
 
 const ENGLISH_LOCAL = [
@@ -283,7 +286,10 @@ const ENGLISH_LOCAL = [
     'File "|||[]|||" cloned.',
     "clone [file] . . . . . . . . . Clones a file.",
     "rename [file] [new_name] . . . Renames the file.",
-    "Please provide a file name and a new name."
+    "Please provide a file name and a new name.",
+    "You do not have permission to rename this file.",
+    "File with that name already exists in this directory.",
+    "File renamed."
 ]
 
 const TRANSLATION_MAP = JSON.parse(JSON.stringify(ENGLISH_LOCAL));
@@ -315,7 +321,7 @@ const config = {
 
     // filesystem
     fileSystem: {
-        "Settings:": [
+        "Config:": [
             { name: "language", properties: {read: true, write: true, hidden: false}, data: ["eng"] },
             { name: "debugMode", properties: {read: true, write: true, hidden: false}, data: ["false"] },
             { name: "colorPalette", properties: {read: true, write: true, hidden: false}, data: ["standard"] },
@@ -327,7 +333,7 @@ const config = {
             { name: "allowedProgramDirectories", properties: {read: true, write: false, hidden: false}, data: ["D:/Programs"] },
             { name: "dissallowSubdirectoriesIn", properties: {read: true, write: false, hidden: false}, data: ["D:/Programs", "D:/Macros", "D:/Program-Data", "D:/Palettes", "D:/Spinners"] },
         ],
-        "Settings:/lang_files": [
+        "Config:/lang_files": [
             { name: "TRANSLATION_MAP", properties: {read: true, write: false, hidden: true}, data: TRANSLATION_MAP },
             { name: "lbh", properties: {read: true, write: false, hidden: false}, data: LANG_BUILD_HELPER },
             { name: "eng", properties: {read: true, write: true, hidden: false}, data: ENGLISH_LOCAL },
@@ -338,7 +344,7 @@ const config = {
                 "gembeno paleta",
                 "T_invalid_format_object_inter_rule_delimiter",
                 "T_error_data_unavailable",
-                "apelelala som fiyala tama",
+                "apelelala som pesezte paleta tama",
                 "* pesezte paleta me *",
                 "pesezte paleta getsefese",
                 "T_state_cleared",
@@ -472,7 +478,10 @@ const config = {
                 "T_file_cloned |||[]|||",
                 "T_basic_commands_clone",
                 "T_basic_commands_rename",
-                "T_provide_file_name_and_new"
+                "T_provide_file_name_and_new",
+                "T_no_permission_to_rename_file",
+                "T_file_name_already_exists",
+                "T_file_renamed"
             ] },
             { name: "jpn", properties: {read: true, write: true, hidden: false}, data: [
                 "{{{_LANGNAME_!!!_Japanese_}}}",
@@ -615,7 +624,10 @@ const config = {
                 "T_file_cloned |||[]|||",
                 "T_basic_commands_clone",
                 "T_basic_commands_rename",
-                "T_provide_file_name_and_new"
+                "T_provide_file_name_and_new",
+                "T_no_permission_to_rename_file",
+                "T_file_name_already_exists",
+                "T_file_renamed"
             ] },
         ],
         "C:": [],   
@@ -945,7 +957,7 @@ const config = {
             ] },
             { name: "edit-settings", properties: {read: true, write: true, hidden: false}, data: [
                 "!es",
-                "h Settings:",
+                "h Config:",
                 "m $1",
             ] },
             { name: "edit-palette", properties: {read: true, write: true, hidden: false}, data: [
