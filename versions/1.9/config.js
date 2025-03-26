@@ -350,7 +350,7 @@ const config = {
                 "* tine hatsamwa froggyOS komandda me *",
                 "changelanguage [koda] :: lohi mëzte",
                 "changepalette [paleta] :: lohi pesezte paleta",
-                "clear :: nggave taminalu tuhär",
+                "clear :: nggave taminalu tuha",
                 "T_basic_commands_clearstate",
                 "T_basic_commands_croak",
                 "T_basic_commands_ribbit",
