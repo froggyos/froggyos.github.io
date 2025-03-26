@@ -644,7 +644,7 @@ const config = {
                 "out 'croak [file]. . . . . . . . .deletes the file'",
                 "out 'hatch [file]. . . . . . . . .creates a file'",
                 "out 'meta [file] . . . . . . . . .edits a file'",
-                "out 'metaprop [file] [perm] [0/1] edits a file\'s properties'",
+                `out "metaprop [file] [perm] [0/1] edits a file's properties"`,
                 "out 'spy [file]. . . . . . . . . .reads the file'",
                 "endif",
                 "if {v:category == 'Directory'}",
