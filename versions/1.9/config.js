@@ -137,7 +137,9 @@ const LANG_BUILD_HELPER = [
     "T_file_name_not_3_char",
     "T_no_permission_to_clone",
     "T_file_cloned |||[]|||",
-    "T_basic_commands_clone"
+    "T_basic_commands_clone",
+    "T_basic_commands_rename",
+    "T_provide_file_name_and_new",
 ]
 
 const ENGLISH_LOCAL = [
@@ -279,7 +281,9 @@ const ENGLISH_LOCAL = [
     "File name must be exactly 3 characters long.",
     "You do not have permission to clone this file.",
     'File "|||[]|||" cloned.',
-    "clone [file] . . . . . . . . . Clones a file."
+    "clone [file] . . . . . . . . . Clones a file.",
+    "rename [file] [new_name] . . . Renames the file.",
+    "Please provide a file name and a new name."
 ]
 
 const TRANSLATION_MAP = JSON.parse(JSON.stringify(ENGLISH_LOCAL));
@@ -467,6 +471,8 @@ const config = {
                 "T_no_permission_to_clone",
                 "T_file_cloned |||[]|||",
                 "T_basic_commands_clone",
+                "T_basic_commands_rename",
+                "T_provide_file_name_and_new"
             ] },
             { name: "jpn", properties: {read: true, write: true, hidden: false}, data: [
                 "{{{_LANGNAME_!!!_Japanese_}}}",
@@ -608,6 +614,8 @@ const config = {
                 "T_no_permission_to_clone",
                 "T_file_cloned |||[]|||",
                 "T_basic_commands_clone",
+                "T_basic_commands_rename",
+                "T_provide_file_name_and_new"
             ] },
         ],
         "C:": [],   

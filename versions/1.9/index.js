@@ -749,6 +749,7 @@ function sendCommand(command, args, createEditableLineAfter){
             createTerminalLine("clone [file] . . . . . . . . . Clones a file.", ">");
             createTerminalLine("clearstate . . . . . . . . . . Clears froggyOS state.", ">");
             createTerminalLine("croak [file] . . . . . . . . . Deletes the file.", ">");
+            createTerminalLine("rename [file] [new_name] . . . Renames the file.", ">");
             createTerminalLine("ribbit [text]. . . . . . . . . Displays the text.", ">");
             createTerminalLine("formattime [format]. . . . . . Changes the time format.", ">");
             createTerminalLine("hatch [file] . . . . . . . . . Creates a file.", ">");
@@ -1017,6 +1018,19 @@ function sendCommand(command, args, createEditableLineAfter){
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         } break;
 
+        case "rename":
+            if(args.length < 2){
+                createTerminalLine("Please provide a file name and a new name.", config.errorText);
+                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                break;
+            }
+            if(args[1].length != 3 && config.currentPath == "Settings:/lang_files"){
+                createTerminalLine("File name must be exactly 3 characters long.", config.errorText);
+                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                break;
+            }
+            console.log(args);
+        break;
         case "ribbit":
             if(args.length == 0){
                 createTerminalLine("Please provide text to display.", config.errorText);
