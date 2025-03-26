@@ -42,11 +42,13 @@ function localize(english){
         english = english.replaceAll(`|||[${replacementData}]|||`, "|||[]|||");
     }
 
-    let englishData = config.fileSystem["Settings:/lang_files"].find(translation => translation.name == "TRANSLATION_MAP").data.indexOf(english);
-    let translation = config.fileSystem["Settings:/lang_files"].find(translation => translation.name == config.language).data[englishData];
+    let translationMap = config.fileSystem["Settings:/lang_files"].find(translation => translation.name == "TRANSLATION_MAP").data;
+    let languageMap = config.fileSystem["Settings:/lang_files"].find(translation => translation.name == config.language).data;
 
+    let englishData = translationMap.indexOf(english);
+    let translation = languageMap[englishData];
 
-    return translation?.replaceAll("|||[]|||", replacementData) ?? english;
+    return translation?.replaceAll("|||[]|||", replacementData) ?? "!!!ERROR: TRANSLATION NOT FOUND!!!";
 }
 
 function programList(){
@@ -441,17 +443,16 @@ function createTerminalLine(text, path, other){
         }
         terminalLine.innerHTML = html;
     } else {
-        if(translateText) terminalLine.textContent = localize(text);
+        if(localize(text) == "!!!ERROR: TRANSLATION NOT FOUND!!!") terminalLine.textContent = text;
+        else terminalLine.textContent = localize(text);
     }
 
     // if the last character is japanese, switch the font
     let isJp = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]/g.test(terminalLine.textContent);
 
     if(isJp && config.language == "jpn") {
-        lineContainer.classList.add('text-jp');
-        terminalPath.style.fontSize = "12px";
-    } else {
-        lineContainer.classList.remove('text-jp');
+        terminalLine.classList.add('text-jp');
+        terminalPath.classList.add("path-jp");
     }
 
     lineContainer.appendChild(terminalPath);
@@ -611,6 +612,38 @@ function sendCommand(command, args, createEditableLineAfter){
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
 
+        // copy files
+        case "clone":
+            if(args.length == 0){
+                createTerminalLine("Please provide a file name.", config.errorText);
+                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                break;
+            }
+            
+            let fileToClone = config.fileSystem[config.currentPath].find(file => file.name == args[0] && file.properties.hidden == false);
+
+            if(fileToClone == undefined){
+                createTerminalLine("File does not exist.", config.errorText);
+                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                break;
+            }
+
+            if(fileToClone.properties.read == false){
+                createTerminalLine("You do not have permission to clone this file.", config.errorText);
+                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                break;
+            }
+
+            let cloned = JSON.parse(JSON.stringify(fileToClone));
+
+            cloned.name = "Clone of " + cloned.name;
+
+            config.fileSystem[config.currentPath].push(cloned);
+
+            createTerminalLine(`File "|||[${fileToClone.name}]|||" cloned.`, ">")
+            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+        break;
+
         // delete files
         case "c":
         case "croak":
@@ -713,6 +746,7 @@ function sendCommand(command, args, createEditableLineAfter){
             createTerminalLine("changelanguage [code]. . . . . Changes the current language.", ">");
             createTerminalLine("changepalette [palette]. . . . Changes the color palette.", ">");
             createTerminalLine("clear. . . . . . . . . . . . . Clears the terminal output.", ">");
+            createTerminalLine("clone [file] . . . . . . . . . Clones a file.", ">");
             createTerminalLine("clearstate . . . . . . . . . . Clears froggyOS state.", ">");
             createTerminalLine("croak [file] . . . . . . . . . Deletes the file.", ">");
             createTerminalLine("ribbit [text]. . . . . . . . . Displays the text.", ">");

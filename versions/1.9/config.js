@@ -134,7 +134,10 @@ const LANG_BUILD_HELPER = [
     "T_lang_changed",
     "T_invalid_lang_file |||[]|||",
     "T_invalid",
-    "T_file_name_not_3_char"
+    "T_file_name_not_3_char",
+    "T_no_permission_to_clone",
+    "T_file_cloned |||[]|||",
+    "T_basic_commands_clone"
 ]
 
 const ENGLISH_LOCAL = [
@@ -273,7 +276,10 @@ const ENGLISH_LOCAL = [
     "Language changed.",
     'Invalid language file with code "|||[]|||".',
     "INVALID",
-    "File name must be exactly 3 characters long."
+    "File name must be exactly 3 characters long.",
+    "You do not have permission to clone this file.",
+    'File "|||[]|||" cloned.',
+    "clone [file] . . . . . . . . . Clones a file."
 ]
 
 const TRANSLATION_MAP = JSON.parse(JSON.stringify(ENGLISH_LOCAL));
@@ -344,7 +350,7 @@ const config = {
                 "* tine hatsamwa froggyOS komandda me *",
                 "changelanguage [koda] :: lohi mëzte",
                 "changepalette [paleta] :: lohi pesezte paleta",
-                "clear :: nggave taminalu tuhar",
+                "clear :: nggave taminalu tuhär",
                 "T_basic_commands_clearstate",
                 "T_basic_commands_croak",
                 "T_basic_commands_ribbit",
@@ -458,6 +464,9 @@ const config = {
                 "T_invalid_lang_file |||[]|||",
                 "T_invalid",
                 "T_file_name_not_3_char",
+                "T_no_permission_to_clone",
+                "T_file_cloned |||[]|||",
+                "T_basic_commands_clone",
             ] },
             { name: "jpn", properties: {read: true, write: true, hidden: false}, data: [
                 "{{{_LANGNAME_!!!_Japanese_}}}",
@@ -595,7 +604,10 @@ const config = {
                 "T_lang_changed",
                 "T_invalid_lang_file |||[]|||",
                 "T_invalid",
-                "T_file_name_not_3_char"
+                "T_file_name_not_3_char",
+                "T_no_permission_to_clone",
+                "T_file_cloned |||[]|||",
+                "T_basic_commands_clone",
             ] },
         ],
         "C:": [],   

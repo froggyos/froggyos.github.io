@@ -82,9 +82,9 @@ function interpreter(formatted){
         function endProgram(error){
             IS_ERROR = true;
             createTerminalLine(`${error}`, config.errorText);
-            createTerminalLine("Error Data:", "", {translate: false});
-            createTerminalLine(`Keyword: ${keyword}`, "", {translate: false});
-            createTerminalLine(`Args: ${JSON.stringify(line.args, null, 2)}`, "", {translate: false});
+            createTerminalLine("Error Data:", "");
+            createTerminalLine(`Keyword: ${keyword}`, "");
+            createTerminalLine(`Args: ${JSON.stringify(line.args, null, 2)}`, "");
             createEditableTerminalLine(`${config.currentPath}>`);
             setSetting("showSpinner", "false");
             config.currentProgram = null;
@@ -634,7 +634,8 @@ function interpreter(formatted){
 
                 if(IS_ERROR) return;
                 createTerminalLine(parsedText, ">", {
-                    formatting: formatting
+                    formatting: formatting,
+                    translate: false
                 });
                 parseNext();
             } break;
