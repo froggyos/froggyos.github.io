@@ -10,14 +10,14 @@ function waitForButtonClick(buttonId) {
 }
 
 function weirdError(){
-    createTerminalLine("Wow.............................. really................ smh.......", config.errorText);
-    createTerminalLine("U really gonna brick poor old Froggy like that???? smh....", config.errorText)
-    createTerminalLine("add [wait 0] before an endloop keyword idk", config.errorText);
-    createTerminalLine("I cant really do anything but ill reload froggy os in a few seconds", config.errorText);
+    createTerminalLine("Wow.............................. really................ smh.......", config.errorText, {translate: false});
+    createTerminalLine("U really gonna brick poor old Froggy like that???? smh....", config.errorText, {translate: false})
+    createTerminalLine("add [wait 0] before an endloop keyword idk", config.errorText, {translate: false});
+    createTerminalLine("I cant really do anything but ill reload froggy os in a few seconds", config.errorText, {translate: false});
     let decrement = 10;
     setTimeout(() => {
         let interval = setInterval(() => {
-            createTerminalLine(`Reloading in ${decrement-1} seconds...`, "");
+            createTerminalLine(`Reloading in ${decrement-1} seconds...`, "", {translate: false});
             decrement--;
             if(decrement == 0){
                 clearInterval(interval);
@@ -81,10 +81,10 @@ function interpreter(formatted){
 
         function endProgram(error){
             IS_ERROR = true;
-            createTerminalLine(`${error}`, config.errorText);
-            createTerminalLine("Error Data:", "");
-            createTerminalLine(`Keyword: ${keyword}`, "");
-            createTerminalLine(`Args: ${JSON.stringify(line.args, null, 2)}`, "");
+            createTerminalLine(`${error}`, config.errorText, {translate: false});
+            createTerminalLine("Error Data:", "", {translate: false});
+            createTerminalLine(`Keyword: ${keyword}`, "", {translate: false});
+            createTerminalLine(`Args: ${JSON.stringify(line.args, null, 2)}`, "", {translate: false});
             createEditableTerminalLine(`${config.currentPath}>`);
             setSetting("showSpinner", "false");
             config.currentProgram = null;
@@ -675,7 +675,7 @@ function interpreter(formatted){
 
                 // Output the parsed result to the terminal
                 if(IS_ERROR) return;
-                createTerminalLine(parsedOut, ">");
+                createTerminalLine(parsedOut, ">", {translate: false});
                 parseNext();
             } break;
             case "endprog":

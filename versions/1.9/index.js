@@ -34,13 +34,17 @@ function setConfigFromSettings(){
     config.language = getSetting("language");
 }
 
-function localize(english){
+function localize(english, TRANSLATE_TEXT){
     let replacementData;
+
+    if (TRANSLATE_TEXT == undefined) TRANSLATE_TEXT = true;
 
     if(english.includes("|||[")){
         replacementData = english.split("|||[")[1].split("]|||")[0];
         english = english.replaceAll(`|||[${replacementData}]|||`, "|||[]|||");
     }
+
+    if(TRANSLATE_TEXT == false) return english;
 
     let translationMap = config.fileSystem["Config:/lang_files"].find(translation => translation.name == "TRANSLATION_MAP").data;
     let languageMap = config.fileSystem["Config:/lang_files"].find(translation => translation.name == config.language).data;
@@ -48,12 +52,22 @@ function localize(english){
     let englishData = translationMap.indexOf(english);
     let translation = languageMap[englishData];
 
-    // do this replacement and make it replace :sp:  with " "
-    //if(config.language == "nmt") translation = translation.replaceAll("ə", "ә") // from latin to cyrillic, bc font doesnt have latin but does cyrillic
+    if(translation == undefined) return null;
+    else {
+        translation = translation.replaceAll("|||[]|||", replacementData)
+        if(config.language == "nmt") translation = translation.replaceAll("ə", "ә")
 
-    // WHY IS IT DOING THIS SHIT??????? ok fix later
+        let spaceMatches = translation.match(/:sp\d+:/g);
+        
+        if(spaceMatches != null){
+            spaceMatches.forEach(match => {
+                let num = +match.replaceAll(/\D/g, "");
+                translation = translation.replaceAll(match, " ".repeat(num))
+            })
+        }
 
-    return translation?.replaceAll("|||[]|||", replacementData) ?? "!!!ERROR: TRANSLATION NOT FOUND!!!";
+        return translation;
+    }
 }
 
 function programList(){
@@ -448,8 +462,11 @@ function createTerminalLine(text, path, other){
         }
         terminalLine.innerHTML = html;
     } else {
-        if(localize(text) == "!!!ERROR: TRANSLATION NOT FOUND!!!") terminalLine.textContent = text;
-        else terminalLine.textContent = localize(text);
+        let localizedText = localize(text, translateText);
+        if(localizedText == null) {
+            terminalLine.textContent = "!!!TRANSLATION MISMATCH!!!";
+        }
+        else terminalLine.textContent = localizedText; 
     }
 
     // if the last character is japanese, switch the font
@@ -557,14 +574,14 @@ function sendCommand(command, args, createEditableLineAfter){
             if(args.length == 0){
                 createTerminalLine("Please provide a language code.", config.errorText);
                 createTerminalLine(`* Available languages *`, "");
-                createTerminalLine(getLanguages(), ">");
+                createTerminalLine(getLanguages(), ">", {translate: false});
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             } else {
                 if(!langCodes.includes(args[0])){
                     createTerminalLine(`Language with code "|||[${args[0]}]|||" does not exist.`, config.errorText);
                     createTerminalLine(`* Available languages *`, "");
-                    createTerminalLine(getLanguages(), ">");
+                    createTerminalLine(getLanguages(), ">", {translate: false});
                     if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                     break;
                 }
@@ -590,7 +607,7 @@ function sendCommand(command, args, createEditableLineAfter){
             if(args.length == 0){
                 createTerminalLine("Please provide a color palette name.", config.errorText);
                 createTerminalLine(`* Available color palettes *`, "");
-                createTerminalLine(Object.keys(colorPalettes).join(", "), ">");
+                createTerminalLine(Object.keys(colorPalettes).join(", "), ">", {translate: false});
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
@@ -761,7 +778,7 @@ function sendCommand(command, args, createEditableLineAfter){
             createTerminalLine("hello. . . . . . . . . . . . . Displays a greeting message.", ">");
             createTerminalLine("help . . . . . . . . . . . . . Displays this message.", ">");
             createTerminalLine("hop [directory]. . . . . . . . Moves to a directory.", ">");
-            createTerminalLine("list . . . . . . . . . . . . . Lists files and subdirectories in the current                                directory.", ">");
+            createTerminalLine("list . . . . . . . . . . . . . Lists files and subdirectories in the current directory.", ">");
             createTerminalLine("listdrives . . . . . . . . . . Lists all drives.", ">");
             createTerminalLine("loadstate. . . . . . . . . . . Load froggyOS state.", ">");
             createTerminalLine("meta [file]. . . . . . . . . . Edits a file.", ">");
@@ -820,10 +837,10 @@ function sendCommand(command, args, createEditableLineAfter){
                 break;
             }
             subdirectoryNames.forEach(subdirectory => {
-                createTerminalLine(` [DIR] ${subdirectory}`, ">")
+                createTerminalLine(` [DIR] ${subdirectory}`, ">", {translate: false})
             });
             files.forEach(file => {
-                createTerminalLine(`       ${file.name}`, ">")
+                createTerminalLine(`       ${file.name}`, ">", {translate: false})
             });
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
@@ -834,7 +851,7 @@ function sendCommand(command, args, createEditableLineAfter){
             drives = [...new Set(drives.filter(drive => drive.length == 2).map(drive => drive[0]))].map(drive => drive + ":");
 
             drives.forEach(drive => {
-                createTerminalLine(`${drive}`, ">");
+                createTerminalLine(`${drive}`, ">", {translate: false});
             });
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         } break;
@@ -867,7 +884,7 @@ function sendCommand(command, args, createEditableLineAfter){
                 if(macros == undefined){
                     createTerminalLine("No macros found.", config.errorText);
                 } else {
-                    createTerminalLine(macros.map(macro => macro.name).join(", "), ">")
+                    createTerminalLine(macros.map(macro => macro.name).join(", "), ">", {translate: false})
                 }
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
@@ -986,7 +1003,7 @@ function sendCommand(command, args, createEditableLineAfter){
             if(property == undefined || propertyTypes.includes(property) == false){
                 createTerminalLine("Please provide a valid property type.", config.errorText);
                 createTerminalLine("* Available properties *", "");
-                createTerminalLine(propertyTypes.join(", "), ">");
+                createTerminalLine(propertyTypes.join(", "), ">", {translate: false});
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
@@ -1070,7 +1087,7 @@ function sendCommand(command, args, createEditableLineAfter){
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
-            createTerminalLine(args.join(" "), ">")
+            createTerminalLine(args.join(" "), ">", {translate: false})
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
 
@@ -1132,7 +1149,7 @@ function sendCommand(command, args, createEditableLineAfter){
                 break;
             }
             file.data.forEach(line => {
-                createTerminalLine(line, ">")
+                createTerminalLine(line, ">", {translate: false})
             });
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
@@ -1150,7 +1167,7 @@ function sendCommand(command, args, createEditableLineAfter){
 
                 createTerminalLine("Please provide a valid program.", config.errorText);
                 createTerminalLine("* Available programs *", "");
-                createTerminalLine(programList.join(", "), ">");
+                createTerminalLine(programList.join(", "), ">", {translate: false});
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
@@ -1177,9 +1194,7 @@ function sendCommand(command, args, createEditableLineAfter){
 
                 let formatted = format(file.data);
                 if(formatted.errors.length > 0){
-                    createTerminalLine(formatted.errors[0], config.errorText, {
-                        translate: false
-                    });
+                    createTerminalLine(formatted.errors[0], config.errorText, {translate: false});
                     if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 } else {
                     config.currentProgram = args[0];
@@ -1220,6 +1235,7 @@ function sendCommand(command, args, createEditableLineAfter){
             createTerminalLine("[[BULLFROG]]urgentloadstate - loads state for reloading", ">");
             createTerminalLine("[[BULLFROG]]urgentclearstate - clears reload state", ">");
             createTerminalLine("[[BULLFROG]]autoloadstate - loads state", ">");
+            createTerminalLine("[[BULLFROG]]validatelanguage - checks if the current language is valid", ">");
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
 
@@ -1267,7 +1283,7 @@ function sendCommand(command, args, createEditableLineAfter){
             if(config.fileSystem["D:/Spinners"].find(spinner_ => spinner_.name == spinner) == undefined){
                 createTerminalLine("Spinner does not exist.", config.errorText);
                 createTerminalLine(`* Available spinners *`, "");
-                createTerminalLine(config.fileSystem["D:/Spinners"].map(spinner_ => spinner_.name).join(", "), ">");
+                createTerminalLine(config.fileSystem["D:/Spinners"].map(spinner_ => spinner_.name).join(", "), ">", {translate: false});
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             } else {
@@ -1309,6 +1325,15 @@ function sendCommand(command, args, createEditableLineAfter){
                     config[key] = JSON.parse(state)[key];
                 }
                 changeColorPalette(config.colorPalette);
+            }
+            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+        } break;
+
+        case "[[BULLFROG]]validatelanguage": {
+            let valid = validateLanguageFile(config.language);
+            if(valid == false){
+                createTerminalLine("Current language file is INVALID! Switching to lbh.", config.errorText, {translate: false});
+                setSetting("language", "lbh");
             }
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         } break;
@@ -1571,4 +1596,9 @@ function createLilypadLine(path, linetype, filename){
 changeColorPalette(config.colorPalette);
 createColorTestBar();
 sendCommand('[[BULLFROG]]autoloadstate', [], false);
-sendCommand('[[BULLFROG]]greeting', []);
+
+sendCommand('[[BULLFROG]]validatelanguage', [], false);
+setTimeout(() => {
+    sendCommand('[[BULLFROG]]greeting', []);
+    document.getElementById("blackout").style.display = "none";
+}, 50)

@@ -147,6 +147,15 @@
         height: calc(100vh - 50px);
         width: 350px;
     }
+    #blackout {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background-color: var(--void-space);
+        z-index: 9999;
+    }
 </style>
 <head>
     <title>froggyOS</title>
@@ -168,6 +177,7 @@
         <div id="bar"></div>
         <div id="terminal"></div>
     </div>
+    <div id="blackout"></div>
 </body>
     <script src="https://rus1130.github.io/projects/Global/markdownParser.js"></script>
     <script src="https://rus1130.github.io/projects/Global/sniffer.js"></script>
