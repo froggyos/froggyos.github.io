@@ -342,15 +342,9 @@ const config = {
                 "Froggy gehana ilu >:(",
                 "PaletaGogowa: wa |||[]||| sepu hex pesezte",
                 "gembeno paleta",
-<<<<<<< Updated upstream
-                "T_invalid_format_object_inter_rule_delimiter",
-                "T_error_data_unavailable",
-                "apelelala som pesezte paleta tama",
-=======
                 "gogowa FormatObject (LU GAYANA MEMƏPELEWISI) sebesikya",
                 "gogowa data UNAYAVA",
                 "apelelala som fiyala tama",
->>>>>>> Stashed changes
                 "* pesezte paleta me *",
                 "pesezte paleta getsefese",
                 "satéte ngátiwi mana",
