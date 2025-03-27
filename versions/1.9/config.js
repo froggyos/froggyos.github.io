@@ -340,7 +340,7 @@ const config = {
             { name: "nmt", properties: {read: true, write: true, hidden: false}, data: [
                 "{{{_LANGNAME_!!!_ngimëte_}}}",
                 "Froggy gehana ilu >:(",
-                "PaletaGogowa: wa |||[]||| sepu hex pesezte",
+                "PaletaGogowa: |||[]||| wa sepu hex pesezte",
                 "gembeno paleta",
                 "gogowa FormatObject (LU GAYANA MEMƏPELEWISI) sebesikya",
                 "gogowa data UNAYAVA",
@@ -356,7 +356,7 @@ const config = {
                 "ágayuménta na'ë kékene",
                 "fiyala tsefese",
                 "fiyala mbeno mana",
-                "katálo, oyë Froggy! ^v^",
+                "katálo, mo Froggy! ^v^",
                 "* tine hatsamwa froggyOS komandda me *",
                 "changelanguage [koda]. . .lohi mëzte",
                 "changepalette [paleta] . .lohi pesezte paleta",

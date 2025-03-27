@@ -48,6 +48,8 @@ function localize(english){
     let englishData = translationMap.indexOf(english);
     let translation = languageMap[englishData];
 
+    if(config.language == "nmt") translation = translation.replaceAll("ə", "ә") // from latin to cyrillic, bc font doesnt have latin but does cyrillic
+
     return translation?.replaceAll("|||[]|||", replacementData) ?? "!!!ERROR: TRANSLATION NOT FOUND!!!";
 }
 
