@@ -60,7 +60,8 @@ To add a new language, copy the `lbh`, or `language build helper` file, which co
 Set the language to `lbh` to see which translation descriptors are used where in froggyOS. If there are missing translation descriptors at the end of a file, the English translation will be used.
 If a language file does not meet requirements (valid name declaration, correct file length), it will be invalid and unable to be used.
 The **name declaration** must be the first line of the file, and must be in the format `{{{LANGNAME_!!!_[language name]}}}`. For example, the name declaration for the `eng` file is `{{{LANGNAME_!!!_English}}}`.
-If the selected language is **not** English and the translation shows up as English, you screwed something up while making a translation file.
+If the default language is invalid, froggyOS will automatically revert to the `lbh` language file.
+If a supposedly translated text results in `!!!TRANSLATION MISMATCH!!!`, this means that you ROYALLY screwed something up. Please email what you did to `froggyos.royal.screw.up@gmail.com` so I can replicate it.
 
 ## Command Help
 ### formattime
