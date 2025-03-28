@@ -1608,3 +1608,5 @@ setTimeout(() => {
     sendCommand('[[BULLFROG]]greeting', []);
     document.getElementById("blackout").style.display = "none";
 }, 50)
+
+document.title = `froggyOS v. ${config.version}`;
