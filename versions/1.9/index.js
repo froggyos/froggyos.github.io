@@ -253,6 +253,7 @@ const defaultStyling = `
 
     --error-background: var(--c12);
     --translation-error-backgroud: var(--c05);
+    --translation-warning-backgroud: var(--c06);
     --error-text: var(--c15);
 
     --prompt-selected-background: var(--c02);
@@ -1332,8 +1333,16 @@ function sendCommand(command, args, createEditableLineAfter){
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 return;
             }
-            let valid = validateLanguageFile(config.language);
-            if(valid == false){
+            // get every language file except for TRANSLATION_MAP and the current language
+            let languageFiles = config.fileSystem["Config:/lang_files"].map(file => file.name).filter(name => name != "TRANSLATION_MAP" && name != "lbh" && name != config.language);
+
+            languageFiles.forEach(name => {
+                if(validateLanguageFile(name) == false){
+                    createTerminalLine(`Language file "${name}" is INVALID!`, config.translationWarningText, {translate: false});
+                }
+            })
+
+            if(validateLanguageFile(config.language) == false){
                 createTerminalLine("Current language file is INVALID! Switching to lbh.", config.translationErrorText, {translate: false});
                 setSetting("language", "lbh");
             }

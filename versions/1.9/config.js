@@ -319,6 +319,7 @@ const config = {
     programSession: 0,
     errorText: "<span class='error'><span class='error-text'>!!ERROR!!</span> -</span>",
     translationErrorText: "<span class='error'><span class='t-error-text'>!!TRANSLATION ERROR!!</span> -</span>",
+    translationWarningText: "<span class='error'><span class='t-warning-text'>!TRANSLATION WARNING!</span> -</span>",
 
     // filesystem
     fileSystem: {
