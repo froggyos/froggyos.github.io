@@ -32,6 +32,7 @@ function setConfigFromSettings(){
     config.allowedProgramDirectories = getSetting("allowedProgramDirectories", true);
     config.dissallowSubdirectoriesIn = getSetting("dissallowSubdirectoriesIn", true);
     config.language = getSetting("language");
+    config.validateLanguageOnStartup = (getSetting("validateLanguageOnStartup") === "true");
 }
 
 function localize(english, TRANSLATE_TEXT){
@@ -251,7 +252,7 @@ const defaultStyling = `
     --terminal-line-selection-text: var(--c15);
 
     --error-background: var(--c12);
-    --translation-error-backgroud: var(--c06);
+    --translation-error-backgroud: var(--c05);
     --error-text: var(--c15);
 
     --prompt-selected-background: var(--c02);
@@ -465,7 +466,8 @@ function createTerminalLine(text, path, other){
     } else {
         let localizedText = localize(text, translateText);
         if(localizedText == null) {
-            terminalLine.textContent = "!!!TRANSLATION MISMATCH!!!";
+            terminalLine.textContent = "Index Missing!";
+            terminalPath.innerHTML = config.translationErrorText;
         }
         else terminalLine.textContent = localizedText; 
     }
@@ -1331,6 +1333,10 @@ function sendCommand(command, args, createEditableLineAfter){
         } break;
 
         case "[[BULLFROG]]validatelanguage": {
+            if(!config.validateLanguageOnStartup) {
+                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                return;
+            }
             let valid = validateLanguageFile(config.language);
             if(valid == false){
                 createTerminalLine("Current language file is INVALID! Switching to lbh.", config.translationErrorText, {translate: false});
@@ -1597,7 +1603,6 @@ function createLilypadLine(path, linetype, filename){
 changeColorPalette(config.colorPalette);
 createColorTestBar();
 sendCommand('[[BULLFROG]]autoloadstate', [], false);
-
 sendCommand('[[BULLFROG]]validatelanguage', [], false);
 setTimeout(() => {
     sendCommand('[[BULLFROG]]greeting', []);

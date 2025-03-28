@@ -306,6 +306,7 @@ const config = {
     allowedProgramDirectories: null,
     dissallowSubdirectoriesIn: null,
     language: null,
+    validateLanguageOnStartup: null,
 
     // immutable settings
     currentPath: 'C:/Home',
@@ -330,8 +331,9 @@ const config = {
             { name: "currentSpinner", properties: {read: true, write: true, hidden: false}, data: ["default"] },
             { name: "timeFormat", properties: {read: true, write: true, hidden: false}, data: ["w. y/mn/d h:m:s"] },
             { name: "updateStatBar", properties: {read: true, write: true, hidden: false}, data: ["true"] },
-            { name: "allowedProgramDirectories", properties: {read: true, write: false, hidden: false}, data: ["D:/Programs"] },
-            { name: "dissallowSubdirectoriesIn", properties: {read: true, write: false, hidden: false}, data: ["D:/Programs", "D:/Macros", "D:/Program-Data", "D:/Palettes", "D:/Spinners"] },
+            { name: "allowedProgramDirectories", properties: {read: true, write: true, hidden: false}, data: ["D:/Programs"] },
+            { name: "dissallowSubdirectoriesIn", properties: {read: true, write: true, hidden: false}, data: ["D:/Programs", "D:/Macros", "D:/Program-Data", "D:/Palettes", "D:/Spinners"] },
+            { name: "validateLanguageOnStartup", properties: {read: true, write: true, hidden: false}, data: ["true"] }
         ],
         "Config:/lang_files": [
             { name: "TRANSLATION_MAP", properties: {read: false, write: false, hidden: true}, data: TRANSLATION_MAP },

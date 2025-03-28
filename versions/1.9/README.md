@@ -10,8 +10,8 @@ There are no set colors that you must have, but these are the color conventions.
 * `02` - green, text color, as well as selected text and option background color
 * `03` - cyan
 * `04` - red
-* `05` - magenta
-* `06` - orange/brown, translation error color text background
+* `05` - magenta, translation error color text background
+* `06` - orange/brown
 * `07` - light grey
 * `08` - dark grey
 * `09` - light blue
@@ -22,7 +22,7 @@ There are no set colors that you must have, but these are the color conventions.
 * `14` - light orange/yellow
 * `15` - white, the terminal background color, top bar and error text color, and the selected text and option color
 
-Note: colors `00`, `01`, `02`, `06`, `12`, and `15` are tied to their specific UI elements and this **cannot** be changed (yet). Some palettes are hardcoded to changes these values around. This will able to be done by the user via palette files in future versions.
+Note: colors `00`, `01`, `02`, `05`, `12`, and `15` are tied to their specific UI elements and this **cannot** be changed (yet). Some palettes are hardcoded to changes these values around. This will able to be done by the user via palette files in future versions.
 
 ### Current Color Palettes
 * standard
@@ -61,7 +61,7 @@ Note: colors `00`, `01`, `02`, `06`, `12`, and `15` are tied to their specific U
 - If a language file does not meet requirements (valid name declaration, correct file length), it will be invalid and unable to be used.
 - The **name declaration** must be the first line of the file, and must be in the format `{{{LANGNAME_!!!_[language name]}}}`. For example, the name declaration for the `eng` file is `{{{LANGNAME_!!!_English}}}`.
 - If the default language is invalid, froggyOS will automatically revert to the `lbh` language file.
-- If a supposedly translated text results in `!!!TRANSLATION MISMATCH!!!`, this means that you ROYALLY screwed something up. Please email what you did to `froggyos.royal.screw.up@gmail.com` so I can replicate it.
+- If a supposedly translated text results in `Index Missing!`, this means that you ROYALLY screwed something up. This can only happen if you edit the `TRANSLATION_MAP` file. If you manage to trigger this error without editing this file through the dev console, please email what you did to `froggyos.royal.screw.up@gmail.com` so I can replicate it. This type of error will also screw up other translations, it is very noticiable.
 
 ## Command Help
 ### formattime
