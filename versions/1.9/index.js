@@ -554,11 +554,6 @@ function sendCommand(command, args, createEditableLineAfter){
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
 
-        // ADD: COPY and RENAME command (files) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        // copy reqs: can read, not hidden
-        // rename reqs: can read, can write, not hidden, new name not already in use. If in Config:/lang_files, name must be 3 characters long exactly. Use T_file_name_not_3_char descriptor for error
-        
-
         // commands =========================================================================================================================================================
         // change language
         case "lang":
