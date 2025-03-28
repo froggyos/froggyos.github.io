@@ -251,6 +251,7 @@ const defaultStyling = `
     --terminal-line-selection-text: var(--c15);
 
     --error-background: var(--c12);
+    --translation-error-backgroud: var(--c06);
     --error-text: var(--c15);
 
     --prompt-selected-background: var(--c02);
@@ -1332,7 +1333,7 @@ function sendCommand(command, args, createEditableLineAfter){
         case "[[BULLFROG]]validatelanguage": {
             let valid = validateLanguageFile(config.language);
             if(valid == false){
-                createTerminalLine("Current language file is INVALID! Switching to lbh.", config.errorText, {translate: false});
+                createTerminalLine("Current language file is INVALID! Switching to lbh.", config.translationErrorText, {translate: false});
                 setSetting("language", "lbh");
             }
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
