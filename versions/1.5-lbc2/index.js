@@ -1877,6 +1877,7 @@ function sendCommand(command, args, createEditableLineAfter){
 
         case '[[BULLFROG]]greeting':
             createTerminalLine(`Version ${config.version} is a special version of froggyOS for LBC2`, "");
+            createTerminalLine(`(You should totally go check out the other versions of froggyOS at https://froggyos.github.io/ AFTER LBC2)`, "");
             createTerminalLine(`* This version of froggOS has no OS state saving features so dont accidentally close the tab *` , "");
             createTerminalLine(`* Don't forget to use the help command *` , "");
             createTerminalLine(`* Read the documentation. *` , "");
