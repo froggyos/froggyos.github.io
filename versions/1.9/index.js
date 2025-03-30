@@ -35,6 +35,8 @@ function setConfigFromSettings(){
     config.validateLanguageOnStartup = (getSetting("validateLanguageOnStartup") === "true");
 }
 
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!============================================================
+// todo: get rid of the fuckass bitchass shit and make it fix properly (ykwim)
 function localize(english, TRANSLATE_TEXT){
     let replacementData;
 
@@ -561,11 +563,13 @@ function sendCommand(command, args, createEditableLineAfter){
         case "changelanguage": {
             let langCodes = config.fileSystem["Config:/lang_files"].filter(file => file.name != "TRANSLATION_MAP").map(file => file.name);
 
-            function getLanguages(){
+            function getDisplayCodes(){
                 let arr = [];
-                for(let i = 0; i < langCodes.length; i++){
-                    let langName = config.fileSystem["Config:/lang_files"].find(file => file.name == langCodes[i]).data[0].split("_")[3]
-                    arr.push(`${langCodes[i]} (${validateLanguageFile(langCodes[i]) ? langName : localize("INVALID")})`);
+                let displayCodes = config.fileSystem["Config:/lang_files"].filter(file => file.name != "TRANSLATION_MAP" && file.properties.hidden != true).map(file => file.name);
+
+                for(let i = 0; i < displayCodes.length; i++){
+                    let langName = config.fileSystem["Config:/lang_files"].find(file => file.name == displayCodes[i]).data[0].split("_")[3];
+                    arr.push(`${displayCodes[i]} (${validateLanguageFile(displayCodes[i]) ? langName : localize("INVALID")})`);
                 }
                 return arr.join(", ");
             } 
@@ -573,14 +577,14 @@ function sendCommand(command, args, createEditableLineAfter){
             if(args.length == 0){
                 createTerminalLine("Please provide a language code.", config.errorText);
                 createTerminalLine(`* Available languages *`, "");
-                createTerminalLine(getLanguages(), ">", {translate: false});
+                createTerminalLine(getDisplayCodes(), ">", {translate: false});
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             } else {
                 if(!langCodes.includes(args[0])){
                     createTerminalLine(`Language with code "|||[${args[0]}]|||" does not exist.`, config.errorText);
                     createTerminalLine(`* Available languages *`, "");
-                    createTerminalLine(getLanguages(), ">", {translate: false});
+                    createTerminalLine(getDisplayCodes(), ">", {translate: false});
                     if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                     break;
                 }
