@@ -1,298 +1,780 @@
-const LANG_BUILD_HELPER = [
-    "{{{_LANGNAME_!!!_language build helper_}}}",
-    "T_froggy_doesnt_like",
-    "T_pattete_error_invalid_hex |||[]|||",
-    "T_could_not_create_palette",
-    "T_invalid_format_object_inter_rule_delimiter",
-    "T_error_data_unavailable",
-    "T_provide_palette_name",
-    "T_available_color_palettes",
-    "T_color_palette_does_not_exist",
-    "T_state_cleared",
-    "T_provide_file_name",
-    "T_file_does_not_exist",
-    "T_no_permission_to_delete_file",
-    "T_cannot_delete_file",
-    "T_provide_time_format",
-    "T_arg_too_long",
-    "T_file_already_exists",
-    "T_file_created",
-    "T_hello_froggy",
-    "T_basic_commands_intro",
-    "T_basic_commands_lang",
-    "T_basic_commands_palette",
-    "T_basic_commands_clear",
-    "T_basic_commands_clearstate",
-    "T_basic_commands_croak",
-    "T_basic_commands_ribbit",
-    "T_basic_commands_formattime",
-    "T_basic_commands_hatch",
-    "T_basic_commands_hello",
-    "T_basic_commands_help",
-    "T_basic_commands_hop",
-    "T_basic_commands_list",
-    "T_basic_commands_listdrives",
-    "T_basic_commands_loadstate",
-    "T_basic_commands_meta",
-    "T_basic_commands_metaprop",
-    "T_basic_commands_opendoc",
-    "T_basic_commands_savestate",
-    "T_basic_commands_spawn",
-    "T_basic_commands_spy",
-    "T_basic_commands_swimto",
-    "T_provide_directory_name",
-    "T_directory_does_not_exist",
-    "T_directory_empty",
-    "T_no_state_found",
-    "T_state_loaded",
-    "T_provide_macro_name",
-    "T_available_macros",
-    "T_no_macros_found",
-    "T_macro_does_not_exist",
-    "T_missing_file_args",
-    "T_no_permission_to_edit_file",
-    "T_lilypad_save_exit",
-    "T_provide_valid_property_type",
-    "T_available_properties",
-    "T_provide_valid_value_0_1",
-    "T_properties_updated",
-    "T_documentation_opened",
-    "T_provide_text_to_display",
-    "T_state_saved",
-    "T_cannot_create_directories",
-    "T_directory_already_exists",
-    "T_directory_created",
-    "T_no_permission_to_read_file",
-    "T_provide_valid_program",
-    "T_available_programs",
-    "T_lilypad_exit",
-    "T_no_permission_to_run_program",
-    "T_provide_path",
-    "T_nmt_greeting_1",
-    "T_nmt_greeting_2 |||[]|||",
-    "T_bullfrog_commands_intro",
-    "T_bullfrog_commands_changepath",
-    "T_bullfrog_commands_greeting",
-    "T_bullfrog_commands_help",
-    "T_bullfrog_commands_setstatbar",
-    "T_bullfrog_commands_statbarlock",
-    "T_bullfrog_commands_showspinner",
-    "T_bullfrog_commands_debugmode",
-    "T_bullfrog_commands_setspinner",
-    "T_bullfrog_commands_usavestate",
-    "T_bullfrog_commands_uloadstate",
-    "T_bullfrog_commands_uclearstate",
-    "T_bullfrog_commands_autoloadstate",
-    "T_invalid_args_provide_1_0",
-    "T_spinner_does_not_exist",
-    "T_available_spinners",
-    "T_no_urgent_state_found",
-    "T_doesnt_know |||[]|||",
-    "T_saving_file",
-    "T_saving_done",
-    "T_date_short_sunday",
-    "T_date_short_monday",
-    "T_date_short_tuesday",
-    "T_date_short_wednesday",
-    "T_date_short_thursday",
-    "T_date_short_friday",
-    "T_date_short_saturday",
-    "T_date_long_sunday",
-    "T_date_long_monday",
-    "T_date_long_tuesday",
-    "T_date_long_wednesday",
-    "T_date_long_thursday",
-    "T_date_long_friday",
-    "T_date_long_saturday",
-    "T_date_short_january",
-    "T_date_short_february",
-    "T_date_short_march",
-    "T_date_short_april",
-    "T_date_short_may",
-    "T_date_short_june",
-    "T_date_short_july",
-    "T_date_short_august",
-    "T_date_short_september",
-    "T_date_short_october",
-    "T_date_short_november",
-    "T_date_short_december",
-    "T_date_long_january",
-    "T_date_long_february",
-    "T_date_long_march",
-    "T_date_long_april",
-    "T_date_long_may",
-    "T_date_long_june",
-    "T_date_long_july",
-    "T_date_long_august",
-    "T_date_long_september",
-    "T_date_long_october",
-    "T_date_long_november",
-    "T_date_long_december",
-    "T_provide_lang_code",
-    "T_available_langs",
-    "T_lang_does_not_exist |||[]|||",
-    "T_lang_changed",
-    "T_invalid_lang_file |||[]|||",
-    "T_invalid_lang",
-    "T_file_name_not_3_char",
-    "T_no_permission_to_clone",
-    "T_file_cloned |||[]|||",
-    "T_basic_commands_clone",
-    "T_basic_commands_rename",
-    "T_provide_file_name_and_new",
-    "T_no_permission_to_rename_file",
-    "T_file_name_already_exists",
-    "T_file_renamed",
-    "T_bullfrog_commands_vlang",
-]
+const presetLanguagesMap = {
+    // general stuff ==========================
+    "T_froggy_doesnt_like": {
+        eng: "Froggy doesn't like that. >:(",
+        nmt: "Froggy gehana ilu >:(",
+        jpn: "フロッギーはそれが気に入らないよ >:("
+    },
+    "T_doesnt_know |||[]|||": {
+        eng: `Froggy doesn't know "|||[]|||", sorry.`,
+        nmt: `Froggy gepele "|||[]|||", mbayu`,
+        jpn: "T_doesnt_know |||[]|||"
+    },
+    "T_hello_froggy": {
+        eng: "Hello, I'm Froggy! ^v^",
+        nmt: "katálo, mo Froggy! ^v^",
+        jpn: "どうも、フロッギーです！^v^"
+    },
+    "T_nmt_greeting_1": {
+        eng: "Type ‘help’ to receive support with commands, and possibly navigation.",
+        nmt: "nenta ‘help’ mbo süm fesúāte kole komandda me, nam giwa 'ata",
+        jpn: "T_nmt_greeting_1"
+    },
+    "T_nmt_greeting_2 |||[]|||": {
+        eng: "* Welcome to froggyOS, version |||[]||| *",
+        nmt: "* wulë froggyOS, kekyene |||[]||| *",
+        jpn: "T_nmt_greeting_2 |||[]|||"
+    },
 
-const TRANSLATION_MAP = [
-    "{{{_LANGNAME_!!!_translation_map_}}}",
-    "Froggy doesn't like that. >:(",
-    `PaletteError: |||[]||| is an invalid hex color.`,
-    "Could not create palette.",
-    "Invalid FormatObject (INTER-RULE DELIMITER) syntax.",
-    "Error Data UNAVAILABLE",
-    "Please provide a color palette name.",
-    `* Available color palettes *`,
-    `Color palette does not exist.`,
-    `State cleared.`,
-    "Please provide a file name.",
-    "File does not exist.",
-    "You do not have permission to delete this file.",
-    "You cannot delete this file.",
-    "Please provide a time format.",
-    "The argument is too long.",
-    "File already exists.",
-    "File created.",
-    "Hello, I'm Froggy! ^v^",
-    "* A few basic froggyOS commands *",
-    "changelanguage [code]. . . . . Changes the current language.",
-    "changepalette [palette]. . . . Changes the color palette.",
-    "clear. . . . . . . . . . . . . Clears the terminal output.",
-    "clearstate . . . . . . . . . . Clears froggyOS state.",
-    "croak [file] . . . . . . . . . Deletes the file.",
-    "ribbit [text]. . . . . . . . . Displays the text.",
-    "formattime [format]. . . . . . Changes the time format.",
-    "hatch [file] . . . . . . . . . Creates a file.",
-    "hello. . . . . . . . . . . . . Displays a greeting message.",
-    "help . . . . . . . . . . . . . Displays this message.",
-    "hop [directory]. . . . . . . . Moves to a directory.",
-    "list . . . . . . . . . . . . . Lists files and subdirectories in the current directory.",
-    "listdrives . . . . . . . . . . Lists all drives.",
-    "loadstate. . . . . . . . . . . Load froggyOS state.",
-    "meta [file]. . . . . . . . . . Edits a file.",
-    "metaprop [file] [perm] [0/1] . Edits a file's properties.",
-    "opendocumentation. . . . . . . Opens the froggyOS documentation.",
-    "savestate. . . . . . . . . . . Save froggyOS state.",
-    "spawn [directory]. . . . . . . Creates a directory.",
-    "spy [file] . . . . . . . . . . Reads the file.",
-    "swimto [program] . . . . . . . Start a program.",
-    "Please provide a directory name.",
-    "Directory does not exist.",
-    "This directory is empty.",
-    "No state found.",
-    "State loaded.",
-    "Please provide a macro name.",
-    `* Available macros *`,
-    "No macros found.",
-    "Macro does not exist.",
-    `Missing file argument(s).`,
-    "You do not have permission to edit this file.",
-    "* press ESC to save and exit lilypad *",
-    "Please provide a valid property type.",
-    "* Available properties *",
-    "Please provide a valid value. 0 or 1.",
-    "properties updated.",
-    "Documentation opened in a new window.",
-    "Please provide text to display.",
-    "State saved. May need to loadstate for some changes to take effect.",
-    "You cannot create directories in this directory.",
-    "Directory already exists.",
-    "Directory created.",
-    "You do not have permission to read this file.",
-    "Please provide a valid program.",
-    "* Available programs *",
-    "* press ESC to exit lilypad *",
-    "You do not have permission to run this program.",
-    "Please provide a path.",
-    "Type ‘help’ to receive support with commands, and possibly navigation.",
-    `* Welcome to froggyOS, version |||[]||| *`,
-    "* A few bullfrog commands *",
-    "[[BULLFROG]]changepath [path] - Changes the path of the terminal",
-    "[[BULLFROG]]greeting - Displays the greeting message",
-    "[[BULLFROG]]help - Displays this message",
-    "[[BULLFROG]]setstatbar [text] - Changes the text in the status bar",
-    "[[BULLFROG]]statbarlock [0/1] - Locks the status bar from updating",
-    "[[BULLFROG]]showspinner [0/1] - Toggles the loading spinner",
-    "[[BULLFROG]]debugmode [0/1] - Toggles debug mode",
-    "[[BULLFROG]]setspinner [spinner] - Changes the loading spinner",
-    "[[BULLFROG]]urgentsavestate - saves state for reloading",
-    "[[BULLFROG]]urgentloadstate - loads state for reloading",
-    "[[BULLFROG]]urgentclearstate - clears reload state",
-    "[[BULLFROG]]autoloadstate - loads state",
-    "Invalid argument. Please provide '1' or '0'.",
-    "Spinner does not exist.",
-    "* Available spinners *",
-    "No urgent state found.",
-    `Froggy doesn't know "|||[]|||", sorry.`,
-    "Saving file...",
-    "Done! ^v^",
-    "Date_Sun",
-    "Date_Mon",
-    "Date_Tue",
-    "Date_Wed",
-    "Date_Thu",
-    "Date_Fri",
-    "Date_Sat",
-    "Date_Sunday",
-    "Date_Monday",
-    "Date_Tuesday",
-    "Date_Wednesday",
-    "Date_Thursday",
-    "Date_Friday",
-    "Date_Saturday",
-    "Date_Jan",
-    "Date_Feb",
-    "Date_Mar",
-    "Date_Apr",
-    "Date_May",
-    "Date_Jun",
-    "Date_Jul",
-    "Date_Aug",
-    "Date_Sep",
-    "Date_Oct",
-    "Date_Nov",
-    "Date_Dec",
-    "Date_January",
-    "Date_February",
-    "Date_March",
-    "Date_April",
-    "Date_May",
-    "Date_June",
-    "Date_July",
-    "Date_August",
-    "Date_September",
-    "Date_October",
-    "Date_November",
-    "Date_December",
-    "Please provide a language code.",
-    `* Available languages *`,
-    'Language with code "|||[]|||" does not exist.',
-    "Language changed.",
-    'Invalid language file with code "|||[]|||".',
-    "INVALID",
-    "File name must be exactly 3 characters long.",
-    "You do not have permission to clone this file.",
-    'File "|||[]|||" cloned.',
-    "clone [file] . . . . . . . . . Clones a file.",
-    "rename [file] [new_name] . . . Renames the file.",
-    "Please provide a file name and a new name.",
-    "You do not have permission to rename this file.",
-    "File with that name already exists in this directory.",
-    "File renamed.",
-    "[[BULLFROG]]validatelanguage - checks if the current language is valid"
-]
+    // basic command help ====================
+    "T_basic_commands_intro": {
+        eng: "* A few basic froggyOS commands *",
+        nmt: "* tine hatsamwa komandda me o-froggyOS *",
+        jpn: "* いくつかの基本的な𝚏𝚛𝚘𝚐𝚐𝚢𝙾𝚂コマンド *"
+    },
+    "T_basic_commands_lang": {
+        eng: "changelanguage [code]. . . . . Changes the current language.",
+        nmt: "changelanguage [koda]. . .. . . . . lohi mëzte",
+        jpn: "𝚌𝚑𝚊𝚗𝚐𝚎𝚕𝚊𝚗𝚐𝚞𝚊𝚐𝚎 [コード] . . 現在の言語を変更する"
+    },
+    "T_basic_commands_palette": {
+        eng: "changepalette [palette]. . . . Changes the color palette.",
+        nmt: "changepalette [paleta] . .. . . . . lohi pesezte paleta",
+        jpn: "𝚌𝚑𝚊𝚗𝚐𝚎𝚙𝚊𝚕𝚎𝚝𝚝𝚎 [パレット] . . カラーパレットを変更する"
+    },
+    "T_basic_commands_clear": {
+        eng: "clear. . . . . . . . . . . . . Clears the terminal output.",
+        nmt: "clear . . . . . . . . . . . . . . . nggave taminalu tuha",
+        jpn: "𝚌𝚕𝚎𝚊𝚛 . . 端末の出力をクリアする"
+    },
+    "T_basic_commands_clone": {
+        eng: "clone [file] . . . . . . . . . Clones a file.",
+        nmt: "T_basic_commands_clone",
+        jpn: "T_basic_commands_clone"
+    },
+    "T_basic_commands_clearstate": {
+        eng: "clearstate . . . . . . . . . . Clears froggyOS state.",
+        nmt: "clearstate. . . . . . . . . . . . . ngátiwi satéte o-froggyOS",
+        jpn: "𝚌𝚕𝚎𝚊𝚛𝚜𝚝𝚊𝚝𝚎 . . 𝚏𝚛𝚘𝚐𝚐𝚢𝙾𝚂の状態をクリアする"
+    },
+    "T_basic_commands_croak": {
+        eng: "croak [file] . . . . . . . . . Deletes the file.",
+        nmt: "croak [fiyala]. . . . . . . . . . . nggave fiyala",
+        jpn: "𝚌𝚛𝚘𝚊𝚔 [ファイル] . . ファイルを削除する"
+    },
+    "T_basic_commands_formattime": {
+        eng: "formattime [format]. . . . . . Changes the time format.",
+        nmt: "formattime [folamata] . . . . . . . lohi lohí folamata",
+        jpn: "𝚏𝚘𝚛𝚖𝚊𝚝𝚝𝚒𝚖𝚎 [形式] . . 時間形式を変更する"
+    },
+    "T_basic_commands_hatch": {
+        eng: "hatch [file] . . . . . . . . . Creates a file.",
+        nmt: "hatch [fiyala]. . . . . . . . . . . mbeno fiyala",
+        jpn: "𝚑𝚊𝚝𝚌𝚑 [ファイル] . . ファイルを作成する"
+    },
+    "T_basic_commands_hello": {
+        eng: "hello. . . . . . . . . . . . . Displays a greeting message.",
+        nmt: "hello . . . . . . . . . . . . . . . nenta wüle mem",
+        jpn: "𝚑𝚎𝚕𝚕𝚘 . . 挨拶のメッセージを表示する"
+    },
+    "T_basic_commands_help": {
+        eng: "help . . . . . . . . . . . . . Displays this message.",
+        nmt: "help. . . . . . . . . . . . . . . . nenta lu mem",
+        jpn: "𝚑𝚎𝚕𝚙 . . このメッセージを表示する"
+    },
+    "T_basic_commands_hop": {
+        eng: "hop [directory]. . . . . . . . Moves to a directory.",
+        nmt: "hop [dilekatüli]. . . . . . . . . . tsi was dilekatüli",
+        jpn: "𝚑𝚘𝚙 [ディレクトリ] . . ディレクトリに移動する"
+    },
+    "T_basic_commands_list": {
+        eng: "list . . . . . . . . . . . . . Lists files and subdirectories in the current :sp31:directory.",
+        nmt: "list. . . . . . . . . . . . . . . . seyaya fiyala me nam dilekatülilala ilo :sp36:dilekatüli wa",
+        jpn: "𝚕𝚒𝚜𝚝 . . 現在のディレクトリ内のファイルとサブディレクトリを表示する"
+    },
+    "T_basic_commands_listdrives": {
+        eng: "listdrives . . . . . . . . . . Lists all drives.",
+        nmt: "listdrives. . . . . . . . . . . . . seyaya ká'ono dalayavu me",
+        jpn: "𝚕𝚒𝚜𝚝𝚍𝚛𝚒𝚟𝚎𝚜 . . 全てのドライブを表示する"
+    },
+    "T_basic_commands_loadstate": {
+        eng: "loadstate. . . . . . . . . . . Load froggyOS state.",
+        nmt: "loadstate . . . . . . . . . . . . . nagyu satéte o-froggyOS",
+        jpn: "𝚕𝚘𝚊𝚍𝚜𝚝𝚊𝚝𝚎 . . 𝚏𝚛𝚘𝚐𝚐𝚢𝙾𝚂の状態をロードする"
+    },
+    "T_basic_commands_meta": {
+        eng: "meta [file]. . . . . . . . . . Edits a file.",
+        nmt: "meta [fiyala] . . . . . . . . . . . lohi fiyala kili'ocyá",
+        jpn: "𝚖𝚎𝚝𝚊 [ファイル] . . ファイルを編集する"
+    },
+    "T_basic_commands_metaprop": {
+        eng: "metaprop [file] [perm] [0/1] . Edits a file's properties.",
+        nmt: "metaprop [fiyala] [popatí] [0/1]. . lohi fiyala oəpopatí me",
+        jpn: "𝚖𝚎𝚝𝚊𝚙𝚛𝚘𝚙 [ファイル] [権限] [0/1] . . ファイルのプロパティを変更する"
+    },
+    "T_basic_commands_opendoc": {
+        eng: "opendocumentation. . . . . . . Opens the froggyOS documentation.",
+        nmt: "opendocumentation . . . . . . . . . ndo dokumenndasiyon o-froggyOS",
+        jpn: "𝚘𝚙𝚎𝚗𝚍𝚘𝚌𝚞𝚖𝚎𝚗𝚝𝚊𝚝𝚒𝚘𝚗 . . 𝚏𝚛𝚘𝚐𝚐𝚢𝙾𝚂のマニュアルを開く"
+    },
+    "T_basic_commands_rename": {
+        eng: "rename [file] [new_name] . . . Renames the file.",
+        nmt: "T_basic_commands_rename",
+        jpn: "T_basic_commands_rename"
+    },
+    "T_basic_commands_ribbit": {
+        eng: "ribbit [text]. . . . . . . . . Displays the text.",
+        nmt: "ribbit [meməpelezwisi]. . . . . . . nenta meməpelezwisi",
+        jpn: "𝚛𝚒𝚋𝚋𝚒𝚝 [テキスト] . . テキストを表示する"
+    },
+    "T_basic_commands_savestate": {
+        eng: "savestate. . . . . . . . . . . Save froggyOS state.",
+        nmt: "savestate . . . . . . . . . . . . . bátsiyo satéte o-froggyOS",
+        jpn: "𝚜𝚊𝚟𝚎𝚜𝚝𝚊𝚝𝚎 . . 𝚏𝚛𝚘𝚐𝚐𝚢𝙾𝚂の状態をセーブする"
+    },
+    "T_basic_commands_spawn": {
+        eng: "spawn [directory]. . . . . . . Creates a directory.",
+        nmt: "spawn [dilekatüli]. . . . . . . . . mbeno dilekatüli",
+        jpn: "𝚜𝚙𝚊𝚠𝚗 [ディレクトリ] . . ディレクトリを作成する"
+    },
+    "T_basic_commands_spy": {
+        eng: "spy [file] . . . . . . . . . . Reads the file and outputs it to the terminal.",
+        nmt: "spy [fiyala]. . . . . . . . . . . . sensa fiyala nam nenta lu taminalu wa",
+        jpn: "𝚜𝚙𝚢 [ファイル] . . ファイルを読み取る"
+    },
+    "T_basic_commands_swimto": {
+        eng: "swimto [program] . . . . . . . Start a program.",
+        nmt: "swimto [program]. . . . . . . . . . igyensa pógám",
+        jpn: "𝚜𝚠𝚒𝚖𝚝𝚘 [プログラム] . . プログラムを開始する"
+    },
+    /*
+    basic model:
+    provide ...
+    ... does not exit
+    ... already exists
+    other errors (ex. ... not found, invalid, no permission)
+    other non-errors (ex. available ...)
+    success(es)
+    */
+
+    // state ====================================
+    "T_no_state_found": {
+        eng: "No state found.",
+        nmt: "T_no_state_found",
+        jpn: "状態が見つかりませんでした"
+    },
+    "T_no_urgent_state_found": {
+        eng: "No urgent state found.",
+        nmt: "T_no_urgent_state_found",
+        jpn: "T_no_urgent_state_found"
+    },
+    "T_state_cleared": {
+        eng: "State cleared.",
+        nmt: "satéte ngátiwi mana",
+        jpn: "状態がクリアされました"
+    },
+    "T_state_loaded": {
+        eng: "State loaded.",
+        nmt: "T_state_loaded",
+        jpn: "状態がロードされました"
+    },
+    "T_state_saved": {
+        eng: "State saved. May need to loadstate for some changes to take effect.",
+        nmt: "T_state_saved",
+        jpn: "T_state_saved"
+    },
+
+    // file =====================================
+    "T_provide_file_name": {
+        eng: "Please provide a file name.",
+        nmt: "apelelala som fiyala tama",
+        jpn: "ファイル名を入力してください"
+    },
+    "T_provide_file_name_and_new": {
+        eng: "Please provide a file name and a new name.",
+        nmt: "T_provide_file_name_and_new",
+        jpn: "T_provide_file_name_and_new"
+    },
+    "T_file_does_not_exist": {
+        eng: "File does not exist.",
+        nmt: "fiyala getsefese",
+        jpn: "ファイルは存在しません"
+    },
+    "T_file_already_exists": {
+        eng: "File already exists.",
+        nmt: "fiyala tsefese",
+        jpn: "ファイルは既に存在します"
+    },
+    "T_file_name_already_exists": {
+        eng: "File with that name already exists in this directory.",
+        nmt: "T_file_name_already_exists",
+        jpn: "T_file_name_already_exists"
+    },
+    "T_file_name_not_3_char": {
+        eng: "File name must be exactly 3 characters long.",
+        nmt: "T_file_name_not_3_char",
+        jpn: "T_file_name_not_3_char"
+    },
+    "T_no_permission_to_edit_file": {
+        eng: "You do not have permission to edit this file.",
+        nmt: "T_no_permission_to_edit_file",
+        jpn: "このファイルを変更する権限がありません"
+    },
+    "T_no_permission_to_read_file": {
+        eng: "You do not have permission to read this file.",
+        nmt: "T_no_permission_to_read_file",
+        jpn: "T_no_permission_to_read_file"
+    },
+    "T_no_permission_to_clone": {
+        eng: "You do not have permission to clone this file.",
+        nmt: "T_no_permission_to_clone",
+        jpn: "T_no_permission_to_clone"
+    },
+    "T_no_permission_to_rename_file": {
+        eng: "You do not have permission to rename this file.",
+        nmt: "T_no_permission_to_rename_file",
+        jpn: "T_no_permission_to_rename_file"
+    },
+    "T_no_permission_to_delete_file": {
+        eng: "You do not have permission to delete this file.",
+        nmt: "na gewitsu pamason nggave ilo fiyala",
+        jpn: "このファイルを削除する権限がありません"
+    },
+    "T_cannot_delete_file": {
+        eng: "You cannot delete this file.",
+        nmt: "'a genggave ilo fiyala",
+        jpn: "このファイルは削除できません"
+    },
+    "T_available_properties": {
+        eng: "* Available properties *",
+        nmt: "T_available_properties",
+        jpn: "T_available_properties"
+    },
+    "T_file_created": {
+        eng: "File created.",
+        nmt: "fiyala mbeno mana",
+        jpn: "ファイルを作成しました"
+    },
+    "T_file_cloned |||[]|||": {
+        eng: `File "|||[]|||" cloned.`,
+        nmt: "T_file_cloned |||[]|||",
+        jpn: "T_file_cloned |||[]|||"
+    },
+    "T_file_renamed": {
+        eng: "File renamed.",
+        nmt: "T_file_renamed",
+        jpn: "T_file_renamed"
+    },
+    "T_file_deleted": {
+        eng: "File deleted.",
+        nmt: "T_file_deleted",
+        jpn: "T_file_deleted"
+    },
+
+    // time format ====================================
+    "T_provide_time_format": {
+        eng: "Please provide a time format.",
+        nmt: "apelelala som lohí folamata",
+        jpn: "時間形式を入力してください"
+    },
+
+    // directory =====================================
+    "T_provide_directory_name": {
+        eng: "Please provide a directory name.",
+        nmt: "apelelala som dilekatüli tama",
+        jpn: "ディレクトリ名を入力してください"
+    },
+    "T_directory_does_not_exist": {
+        eng: "Directory does not exist.",
+        nmt: "dilekatüli getsefese",
+        jpn: "ディレクトリは存在しません"
+    },
+    "T_directory_already_exists": {
+        eng: "Directory already exists.",
+        nmt: "T_directory_already_exists",
+        jpn: "T_directory_already_exists"
+    },
+    "T_directory_empty": {
+        eng: "This directory is empty.",
+        nmt: "ilo wa dilekatüli säna",
+        jpn: "このディレクトリは空です"
+    },
+    "T_cannot_create_directories": {
+        eng: "You cannot create directories in this directory.",
+        nmt: "T_cannot_create_directories",
+        jpn: "T_cannot_create_directories"
+    },
+    "T_directory_created": {
+        eng: "Directory created.",
+        nmt: "T_directory_created",
+        jpn: "T_directory_created"
+    },
+
+    // palette ====================================
+    "T_provide_palette_name": {
+        eng: "Please provide a color palette name.",
+        nmt: "apelelala som fiyala tama",
+        jpn: "カラーパレット名を入力してください"
+    },
+    "T_color_palette_does_not_exist": {
+        eng: "Color palette does not exist.",
+        nmt: "pesezte paleta getsefese",
+        jpn: "カラーパレットは存在しません"
+    },
+    "T_palette_error_invalid_hex |||[]|||": {
+        eng: "PaletteError: |||[]||| is an invalid hex color.",
+        nmt: "PaletaGogowa: |||[]||| wa sepu hex pesezte",
+        jpn: "パレットエラー: |||[]|||は無効な16進カラーコードです"
+    },
+    "T_could_not_create_palette": {
+        eng: "Could not create palette.",
+        nmt: "gembeno paleta",
+        jpn: "パレットを作成できません"
+    },
+    "T_available_color_palettes": {
+        eng: "* Available color palettes *",
+        nmt: "* pesezte paleta me *",
+        jpn: "* 使用可能なカラーパレット *"
+    },
+
+    // macro =====================================
+    "T_provide_macro_name": {
+        eng: "Please provide a macro name.",
+        nmt: "apelelala som makulo tama",
+        jpn: "マクロ名を入力してください"
+    },
+    "T_macro_does_not_exist": {
+        eng: "Macro does not exist.",
+        nmt: "makulo getsefese",
+        jpn: "マクロが存在しません"
+    },
+    "T_no_macros_found": {
+        eng: "No macros found.",
+        nmt: "makulo gewitsu mana",
+        jpn: "マクロが見つかりませんでした"
+    },
+    "T_available_macros": {
+        eng: "* Available macros *",
+        nmt: "* makulo me *",
+        jpn: "* 使用可能なマクロ *"
+    },
+
+    // program =====================================
+    "T_provide_valid_program": {
+        eng: "Please provide a valid program.",
+        nmt: "T_provide_valid_program",
+        jpn: "T_provide_valid_program"
+    },
+    "T_no_permission_to_run_program": {
+        eng: "You do not have permission to run this program.",
+        nmt: "T_no_permission_to_run_program",
+        jpn: "T_no_permission_to_run_program"
+    },
+    "T_available_programs": {
+        eng: "* Available programs *",
+        nmt: "T_available_programs",
+        jpn: "T_available_programs"
+    },
+
+    // spinner ====================================
+    "T_spinner_does_not_exist": {
+        eng: "Spinner does not exist.",
+        nmt: "T_spinner_does_not_exist",
+        jpn: "T_spinner_does_not_exist"
+    },
+    "T_available_spinners": {
+        eng: "* Available spinners *",
+        nmt: "T_available_spinners",
+        jpn: "T_available_spinners"
+    },
+
+    // lang =====================================
+    "T_provide_lang_code": {
+        eng: "Please provide a language code.",
+        nmt: "apelelala som mëzte koda",
+        jpn: "T_provide_lang_code"
+    },
+    "T_lang_does_not_exist |||[]|||": {
+        eng: `Language with code "|||[]|||" does not exist.`,
+        nmt: `mëzte kole "|||[]|||" getsefese`,
+        jpn: "T_lang_does_not_exist |||[]|||"
+    },
+    "T_invalid_lang_file |||[]|||": {
+        eng: `Invalid language file with code "|||[]|||".`,
+        nmt: "T_invalid_lang_file |||[]|||",
+        jpn: "T_invalid_lang_file |||[]|||"
+    },
+    "T_current_lang_invalid": {
+        eng: `Current language file is INVALID! Switching to "lbh".`,
+        nmt: `T_current_lang_invalid`,
+        jpn: `T_current_lang_invalid`
+    },
+    "T_invalid_lang": {
+        eng: "INVALID",
+        nmt: "T_invalid_lang",
+        jpn: "T_invalid_lang"
+    },
+    "T_available_langs": {
+        eng: "* Available languages *",
+        nmt: "* mëzte me *",
+        jpn: "T_available_langs"
+    },
+    "T_lang_changed": {
+        eng: "Language changed.",
+        nmt: "mëzte lohi mana",
+        jpn: "T_lang_changed"
+    },
+
+    /// miscellaneous provide ... ====================================
+    "T_provide_valid_property_type": {
+        eng: "Please provide a valid property type.",
+        nmt: "T_provide_valid_property_type",
+        jpn: "T_provide_valid_property_type"
+    },
+    "T_provide_valid_value_0_1": {
+        eng: "Please provide a valid value. 0 or 1.",
+        nmt: "T_provide_valid_value_0_1",
+        jpn: "T_provide_valid_value_0_1"
+    },
+    "T_provide_text_to_display": {
+        eng: "Please provide text to display.",
+        nmt: "T_provide_text_to_display",
+        jpn: "T_provide_text_to_display"
+    },
+    "T_provide_path": {
+        eng: "Please provide a path.",
+        nmt: "T_provide_path",
+        jpn: "T_provide_path"
+    },
+    "T_invalid_args_provide_1_0": {
+        eng: "Invalid argument. Please provide '1' or '0'.",
+        nmt: "T_invalid_args_provide_1_0",
+        jpn: "T_invalid_args_provide_1_0"
+    },
+
+    // lilypad ====================================
+    "T_lilypad_save_exit": {
+        eng: "* press ESC to save and exit lilypad *",
+        nmt: "T_lilypad_save_exit",
+        jpn: "T_lilypad_save_exit"
+    },
+    "T_lilypad_exit": {
+        eng: "* press ESC to exit lilypad *",
+        nmt: "T_lilypad_exit",
+        jpn: "T_lilypad_exit"
+    },
+    "T_saving_file": {
+        eng: "Saving file...",
+        nmt: "T_saving_file",
+        jpn: "T_saving_file"
+    },
+    "T_saving_done": {
+        eng: "Done! ^v^",
+        nmt: "T_saving_done",
+        jpn: "T_saving_done"
+    },
+
+    // misc success =========================
+    "T_properties_updated": {
+        eng: "properties updated.",
+        nmt: "T_properties_updated",
+        jpn: "T_properties_updated"
+    },
+    "T_documentation_opened": {
+        eng: "Documentation opened in a new window.",
+        nmt: "T_documentation_opened",
+        jpn: "T_documentation_opened"
+    },
+
+    // misc error/fail =========================
+    "T_arg_too_long": {
+        eng: "The argument is too long.",
+        nmt: "ágayuménta na'ë kékene",
+        jpn: "引数が長すぎます"
+    },
+    "T_missing_file_args": {
+        eng: "Missing file argument(s).",
+        nmt: "T_missing_file_args",
+        jpn: "ファイルの引数が不足しています"
+    },
+    "T_invalid_format_object_inter_rule_delimiter": {
+        eng: "Invalid FormatObject (INTER-RULE DELIMITER) syntax.",
+        nmt: "gogowa FormatObject (LU GAYANA MEMƏPELEWISI) sebesikya",
+        jpn: "無効なフォーマットオブジェクト（インター・ルール・デリミター）構文です"
+    },
+    "T_error_data_unavailable": {
+        eng: "Error Data UNAVAILABLE",
+        nmt: "gogowa data UNAYAVA",
+        jpn: "エラーデータは利用できません"
+    },
+
+    // bullfrog commands =========================
+    "T_bullfrog_commands_intro": {
+        eng: "* A few bullfrog commands *",
+        nmt: "T_bullfrog_commands_intro",
+        jpn: "T_bullfrog_commands_intro"
+    },
+    "T_bullfrog_commands_changepath": {
+        eng: "[[BULLFROG]]changepath [path] - Changes the path of the terminal",
+        nmt: "T_bullfrog_commands_changepath",
+        jpn: "T_bullfrog_commands_changepath"
+    },
+    "T_bullfrog_commands_greeting": {
+        eng: "[[BULLFROG]]greeting - Displays the greeting message",
+        nmt: "T_bullfrog_commands_greeting",
+        jpn: "T_bullfrog_commands_greeting"
+    },
+    "T_bullfrog_commands_help": {
+        eng: "[[BULLFROG]]help - Displays this message",
+        nmt: "T_bullfrog_commands_greeting",
+        jpn: "T_bullfrog_commands_greeting"
+    },
+    "T_bullfrog_commands_setstatbar": {
+        eng: "[[BULLFROG]]setstatbar [text] - Changes the text in the status bar",
+        nmt: "T_bullfrog_commands_setstatbar",
+        jpn: "T_bullfrog_commands_setstatbar"
+    },
+    "T_bullfrog_commands_statbarlock": {
+        eng: "[[BULLFROG]]statbarlock [0/1] - Locks the status bar from updating",
+        nmt: "T_bullfrog_commands_statbarlock",
+        jpn: "T_bullfrog_commands_statbarlock"
+    },
+    "T_bullfrog_commands_showspinner": {
+        eng: "[[BULLFROG]]showspinner [0/1] - Toggles the loading spinner",
+        nmt: "T_bullfrog_commands_showspinner",
+        jpn: "T_bullfrog_commands_showspinner"
+    },
+    "T_bullfrog_commands_debugmode": {
+        eng: "[[BULLFROG]]debugmode [0/1] - Toggles debug mode",
+        nmt: "T_bullfrog_commands_debugmode",
+        jpn: "T_bullfrog_commands_debugmode"
+    },
+    "T_bullfrog_commands_setspinner": {
+        eng: "[[BULLFROG]]setspinner [spinner] - Changes the loading spinner",
+        nmt: "T_bullfrog_commands_setspinner",
+        jpn: "T_bullfrog_commands_setspinner"
+    },
+    "T_bullfrog_commands_usavestate": {
+        eng: "[[BULLFROG]]urgentsavestate - saves state for reloading",
+        nmt: "T_bullfrog_commands_usavestate",
+        jpn: "T_bullfrog_commands_usavestate"
+    },
+    "T_bullfrog_commands_uloadstate": {
+        eng: "[[BULLFROG]]urgentloadstate - loads state for reloading",
+        nmt: "T_bullfrog_commands_uloadstate",
+        jpn: "T_bullfrog_commands_uloadstate"
+    },
+    "T_bullfrog_commands_uclearstate": {
+        eng: "[[BULLFROG]]urgentclearstate - clears reload state",
+        nmt: "T_bullfrog_commands_uclearstate",
+        jpn: "T_bullfrog_commands_uclearstate"
+    },
+    "T_bullfrog_commands_autoloadstate": {
+        eng: "[[BULLFROG]]autoloadstate - loads state",
+        nmt: "T_bullfrog_commands_autoloadstate",
+        jpn: "T_bullfrog_commands_autoloadstate"
+    },
+    "T_bullfrog_commands_vlang": {
+        eng: "[[BULLFROG]]validatelanguage - checks if the current language is valid",
+        nmt: "T_bullfrog_commands_vlang",
+        jpn: "T_bullfrog_commands_vlang"
+    },
+
+    // date and time =========================
+    "T_date_short_sunday": {
+        eng: "Sun",
+        nmt: "ypg",
+        jpn: "T_date_short_sunday"
+    },
+    "T_date_short_monday": {
+        eng: "Mon",
+        nmt: "ypl",
+        jpn: "T_date_short_monday"
+    },
+    "T_date_short_tuesday": {
+        eng: "Tue",
+        nmt: "ypb",
+        jpn: "T_date_short_tuesday"
+    },
+    "T_date_short_wednesday": {
+        eng: "Wed",
+        nmt: "yps",
+        jpn: "T_date_short_wednesday"
+    },
+    "T_date_short_thursday": {
+        eng: "Thu",
+        nmt: "ypk",
+        jpn: "T_date_short_thursday"
+    },
+    "T_date_short_friday": {
+        eng: "Fri",
+        nmt: "ypm",
+        jpn: "T_date_short_friday"
+    },
+    "T_date_short_saturday": {
+        eng: "Sat",
+        nmt: "ypw",
+        jpn: "T_date_short_saturday"
+    },
+    "T_date_long_sunday": {
+        eng: "Sunday",
+        nmt: "yepë-gela",
+        jpn: "T_date_long_sunday"
+    },
+    "T_date_long_monday": {
+        eng: "Monday",
+        nmt: "yepë-la",
+        jpn: "T_date_long_monday"
+    },
+    "T_date_long_tuesday": {
+        eng: "Tuesday",
+        nmt: "yepë-bese",
+        jpn: "T_date_long_tuesday"
+    },
+    "T_date_long_wednesday": {
+        eng: "Wednesday",
+        nmt: "yepë-sála",
+        jpn: "T_date_long_wednesday"
+    },
+    "T_date_long_thursday": {
+        eng: "Thursday",
+        nmt: "yepë-kimi",
+        jpn: "T_date_long_thursday"
+    },
+    "T_date_long_friday": {
+        eng: "Friday",
+        nmt: "yepë-molo",
+        jpn: "T_date_long_friday"
+    },
+    "T_date_long_saturday": {
+        eng: "Saturday",
+        nmt: "yepë-wé",
+        jpn: "T_date_long_saturday"
+    },
+    "T_date_short_january": {
+        eng: "Jan",
+        nmt: "ygl",
+        jpn: "T_date_short_january"
+    },
+    "T_date_short_february": {
+        eng: "Feb",
+        nmt: "yla",
+        jpn: "T_date_short_february"
+    },
+    "T_date_short_march": {
+        eng: "Mar",
+        nmt: "ybs",
+        jpn: "T_date_short_march"
+    },
+    "T_date_short_april": {
+        eng: "Apr",
+        nmt: "ysl",
+        jpn: "T_date_short_april"
+    },
+    "T_date_short_may": {
+        eng: "May",
+        nmt: "ykm",
+        jpn: "T_date_short_may"
+    },
+    "T_date_short_june": {
+        eng: "Jun",
+        nmt: "yml",
+        jpn: "T_date_short_june"
+    },
+    "T_date_short_july": {
+        eng: "Jul",
+        nmt: "ywé",
+        jpn: "T_date_short_july"
+    },
+    "T_date_short_august": {
+        eng: "Aug",
+        nmt: "yan",
+        jpn: "T_date_short_august"
+    },
+    "T_date_short_september": {
+        eng: "Sep",
+        nmt: "ymk",
+        jpn: "T_date_short_september"
+    },
+    "T_date_short_october": {
+        eng: "Oct",
+        nmt: "ykó",
+        jpn: "T_date_short_october"
+    },
+    "T_date_short_november": {
+        eng: "Nov",
+        nmt: "ykg",
+        jpn: "T_date_short_november"
+    },
+    "T_date_short_december": {
+        eng: "Dec",
+        nmt: "ykl",
+        jpn: "T_date_short_december"
+    },
+    "T_date_long_january": {
+        eng: "January",
+        nmt: "yepëlili-gela",
+        jpn: "T_date_long_january"
+    },
+    "T_date_long_february": {
+        eng: "February",
+        nmt: "yepëlili-la",
+        jpn: "T_date_long_february"
+    },
+    "T_date_long_march": {
+        eng: "March",
+        nmt: "yepëlili-bese",
+        jpn: "T_date_long_march"
+    },
+    "T_date_long_april": {
+        eng: "April",
+        nmt: "yepëlili-sála",
+        jpn: "T_date_long_april"
+    },
+    "T_date_long_may": {
+        eng: "May",
+        nmt: "yepëlili-kimi",
+        jpn: "T_date_long_may"
+    },
+    "T_date_long_june": {
+        eng: "June",
+        nmt: "yepëlili-molo",
+        jpn: "T_date_long_june"
+    },
+    "T_date_long_july": {
+        eng: "July",
+        nmt: "yepëlili-wé",
+        jpn: "T_date_long_july"
+    },
+    "T_date_long_august": {
+        eng: "August",
+        nmt: "yepëlili-ana",
+        jpn: "T_date_long_august"
+    },
+    "T_date_long_september": {
+        eng: "September",
+        nmt: "yepëlili-miki",
+        jpn: "T_date_long_september"
+    },
+    "T_date_long_october": {
+        eng: "October",
+        nmt: "yepëlili-kó",
+        jpn: "T_date_long_october"
+    },
+    "T_date_long_november": {
+        eng: "November",
+        nmt: "yepëlili-kó-nam-gela",
+        jpn: "T_date_long_november"
+    },
+    "T_date_long_december": {
+        eng: "December",
+        nmt: "yepëlili-kó-nam-la",
+        jpn: "T_date_long_december"
+    },
+
+    // uncategorized messages ==========================
+
+};
 
 const config = {
     // settings as files
@@ -324,631 +806,38 @@ const config = {
     // filesystem
     fileSystem: {
         "Config:": [
-            { name: "language", properties: {read: true, write: true, hidden: false}, data: ["eng"] },
-            { name: "debugMode", properties: {read: true, write: true, hidden: false}, data: ["false"] },
-            { name: "colorPalette", properties: {read: true, write: true, hidden: false}, data: ["standard"] },
-            { name: "version", properties: {read: true, write: true, hidden: false}, data: ["1.9"] },
-            { name: "showSpinner", properties: {read: true, write: true, hidden: false}, data: ["false"] },
-            { name: "currentSpinner", properties: {read: true, write: true, hidden: false}, data: ["default"] },
-            { name: "timeFormat", properties: {read: true, write: true, hidden: false}, data: ["w. y/mn/d h:m:s"] },
-            { name: "updateStatBar", properties: {read: true, write: true, hidden: false}, data: ["true"] },
-            { name: "allowedProgramDirectories", properties: {read: true, write: true, hidden: false}, data: ["D:/Programs"] },
-            { name: "dissallowSubdirectoriesIn", properties: {read: true, write: true, hidden: false}, data: ["D:/Programs", "D:/Macros", "D:/Program-Data", "D:/Palettes", "D:/Spinners"] },
-            { name: "validateLanguageOnStartup", properties: {read: true, write: true, hidden: false}, data: ["true"] }
+            { name: "language", properties: {transparent: false, read: true, write: true, hidden: false}, data: ["eng"] },
+            { name: "debugMode", properties: {transparent: false, read: true, write: true, hidden: false}, data: ["false"] },
+            { name: "colorPalette", properties: {transparent: false, read: true, write: true, hidden: false}, data: ["standard"] },
+            { name: "version", properties: {transparent: false, read: true, write: true, hidden: false}, data: ["1.9"] },
+            { name: "showSpinner", properties: {transparent: false, read: true, write: true, hidden: false}, data: ["false"] },
+            { name: "currentSpinner", properties: {transparent: false, read: true, write: true, hidden: false}, data: ["default"] },
+            { name: "timeFormat", properties: {transparent: false, read: true, write: true, hidden: false}, data: ["w. y/mn/d h:m:s"] },
+            { name: "updateStatBar", properties: {transparent: false, read: true, write: true, hidden: false}, data: ["true"] },
+            { name: "allowedProgramDirectories", properties: {transparent: false, read: true, write: true, hidden: false}, data: ["D:/Programs"] },
+            { name: "dissallowSubdirectoriesIn", properties: {transparent: false, read: true, write: true, hidden: false}, data: ["D:/Programs", "D:/Macros", "D:/Program-Data", "D:/Palettes", "D:/Spinners"] },
+            { name: "validateLanguageOnStartup", properties: {transparent: false, read: true, write: true, hidden: false}, data: ["true"] }
         ],
         "Config:/lang_files": [
-            { name: "TRANSLATION_MAP", properties: {read: false, write: false, hidden: true}, data: TRANSLATION_MAP },
-            { name: "lbh", properties: {read: true, write: false, hidden: false}, data: LANG_BUILD_HELPER },
-            { name: "eng", properties: {read: true, write: true, hidden: false}, data: [
-                "{{{_LANGNAME_!!!_English_}}}",
-                "Froggy doesn't like that. >:(",
-                `PaletteError: |||[]||| is an invalid hex color.`,
-                "Could not create palette.",
-                "Invalid FormatObject (INTER-RULE DELIMITER) syntax.",
-                "Error Data UNAVAILABLE",
-                "Please provide a color palette name.",
-                `* Available color palettes *`,
-                `Color palette does not exist.`,
-                `State cleared.`,
-                "Please provide a file name.",
-                "File does not exist.",
-                "You do not have permission to delete this file.",
-                "You cannot delete this file.",
-                "Please provide a time format.",
-                "The argument is too long.",
-                "File already exists.",
-                "File created.",
-                "Hello, I'm Froggy! ^v^",
-                "* A few basic froggyOS commands *",
-                "changelanguage [code]. . . . . Changes the current language.",
-                "changepalette [palette]. . . . Changes the color palette.",
-                "clear. . . . . . . . . . . . . Clears the terminal output.",
-                "clearstate . . . . . . . . . . Clears froggyOS state.",
-                "croak [file] . . . . . . . . . Deletes the file.",
-                "ribbit [text]. . . . . . . . . Displays the text.",
-                "formattime [format]. . . . . . Changes the time format.",
-                "hatch [file] . . . . . . . . . Creates a file.",
-                "hello. . . . . . . . . . . . . Displays a greeting message.",
-                "help . . . . . . . . . . . . . Displays this message.",
-                "hop [directory]. . . . . . . . Moves to a directory.",
-                "list . . . . . . . . . . . . . Lists files and subdirectories in the current :sp31:directory.",
-                "listdrives . . . . . . . . . . Lists all drives.",
-                "loadstate. . . . . . . . . . . Load froggyOS state.",
-                "meta [file]. . . . . . . . . . Edits a file.",
-                "metaprop [file] [perm] [0/1] . Edits a file's properties.",
-                "opendocumentation. . . . . . . Opens the froggyOS documentation.",
-                "savestate. . . . . . . . . . . Save froggyOS state.",
-                "spawn [directory]. . . . . . . Creates a directory.",
-                "spy [file] . . . . . . . . . . Reads the file and outputs it to the terminal.",
-                "swimto [program] . . . . . . . Start a program.",
-                "Please provide a directory name.",
-                "Directory does not exist.",
-                "This directory is empty.",
-                "No state found.",
-                "State loaded.",
-                "Please provide a macro name.",
-                `* Available macros *`,
-                "No macros found.",
-                "Macro does not exist.",
-                `Missing file argument(s).`,
-                "You do not have permission to edit this file.",
-                "* press ESC to save and exit lilypad *",
-                "Please provide a valid property type.",
-                "* Available properties *",
-                "Please provide a valid value. 0 or 1.",
-                "properties updated.",
-                "Documentation opened in a new window.",
-                "Please provide text to display.",
-                "State saved. May need to loadstate for some changes to take effect.",
-                "You cannot create directories in this directory.",
-                "Directory already exists.",
-                "Directory created.",
-                "You do not have permission to read this file.",
-                "Please provide a valid program.",
-                "* Available programs *",
-                "* press ESC to exit lilypad *",
-                "You do not have permission to run this program.",
-                "Please provide a path.",
-                "Type ‘help’ to receive support with commands, and possibly navigation.",
-                `* Welcome to froggyOS, version |||[]||| *`,
-                "* A few bullfrog commands *",
-                "[[BULLFROG]]changepath [path] - Changes the path of the terminal",
-                "[[BULLFROG]]greeting - Displays the greeting message",
-                "[[BULLFROG]]help - Displays this message",
-                "[[BULLFROG]]setstatbar [text] - Changes the text in the status bar",
-                "[[BULLFROG]]statbarlock [0/1] - Locks the status bar from updating",
-                "[[BULLFROG]]showspinner [0/1] - Toggles the loading spinner",
-                "[[BULLFROG]]debugmode [0/1] - Toggles debug mode",
-                "[[BULLFROG]]setspinner [spinner] - Changes the loading spinner",
-                "[[BULLFROG]]urgentsavestate - saves state for reloading",
-                "[[BULLFROG]]urgentloadstate - loads state for reloading",
-                "[[BULLFROG]]urgentclearstate - clears reload state",
-                "[[BULLFROG]]autoloadstate - loads state",
-                "Invalid argument. Please provide '1' or '0'.",
-                "Spinner does not exist.",
-                "* Available spinners *",
-                "No urgent state found.",
-                `Froggy doesn't know "|||[]|||", sorry.`,
-                "Saving file...",
-                "Done! ^v^",
-                "Date_Sun",
-                "Date_Mon",
-                "Date_Tue",
-                "Date_Wed",
-                "Date_Thu",
-                "Date_Fri",
-                "Date_Sat",
-                "Date_Sunday",
-                "Date_Monday",
-                "Date_Tuesday",
-                "Date_Wednesday",
-                "Date_Thursday",
-                "Date_Friday",
-                "Date_Saturday",
-                "Date_Jan",
-                "Date_Feb",
-                "Date_Mar",
-                "Date_Apr",
-                "Date_May",
-                "Date_Jun",
-                "Date_Jul",
-                "Date_Aug",
-                "Date_Sep",
-                "Date_Oct",
-                "Date_Nov",
-                "Date_Dec",
-                "Date_January",
-                "Date_February",
-                "Date_March",
-                "Date_April",
-                "Date_May",
-                "Date_June",
-                "Date_July",
-                "Date_August",
-                "Date_September",
-                "Date_October",
-                "Date_November",
-                "Date_December",
-                "Please provide a language code.",
-                `* Available languages *`,
-                'Language with code "|||[]|||" does not exist.',
-                "Language changed.",
-                'Invalid language file with code "|||[]|||".',
-                "INVALID",
-                "File name must be exactly 3 characters long.",
-                "You do not have permission to clone this file.",
-                'File "|||[]|||" cloned.',
-                "clone [file] . . . . . . . . . Clones a file.",
-                "rename [file] [new_name] . . . Renames the file.",
-                "Please provide a file name and a new name.",
-                "You do not have permission to rename this file.",
-                "File with that name already exists in this directory.",
-                "File renamed.",
-                "[[BULLFROG]]validatelanguage - checks if the current language is valid"
-            ] },
-            { name: "nmt", properties: {read: true, write: true, hidden: false}, data: [
-                "{{{_LANGNAME_!!!_ngimëte_}}}",
-                "Froggy gehana ilu >:(",
-                "PaletaGogowa: |||[]||| wa sepu hex pesezte",
-                "gembeno paleta",
-                "gogowa FormatObject (LU GAYANA MEMƏPELEWISI) sebesikya",
-                "gogowa data UNAYAVA",
-                "apelelala som fiyala tama",
-                "* pesezte paleta me *",
-                "pesezte paleta getsefese",
-                "satéte ngátiwi mana",
-                "apelelala som fiyala tama",
-                "fiyala getsefese",
-                "na gewitsu pamason nggave ilo fiyala",
-                "'a genggave ilo fiyala",
-                "apelelala som lohí folamata",
-                "ágayuménta na'ë kékene",
-                "fiyala tsefese",
-                "fiyala mbeno mana",
-                "katálo, mo Froggy! ^v^",
-                "* tine hatsamwa komandda me o-froggyOS *",
-                "changelanguage [koda]. . .. . . . . lohi mëzte",
-                "changepalette [paleta] . .. . . . . lohi pesezte paleta",
-                "clear . . . . . . . . . . . . . . . nggave taminalu tuha",
-                "clearstate. . . . . . . . . . . . . ngátiwi satéte o-froggyOS",
-                "croak [fiyala]. . . . . . . . . . . nggave fiyala",
-                "ribbit [meməpelezwisi]. . . . . . . nenta meməpelezwisi",
-                "formattime [folamata] . . . . . . . lohi lohí folamata",
-                "hatch [fiyala]. . . . . . . . . . . mbeno fiyala",
-                "hello . . . . . . . . . . . . . . . nenta wüle mem",
-                "help. . . . . . . . . . . . . . . . nenta lu mem",
-                "hop [dilekatüli]. . . . . . . . . . tsi was dilekatüli",
-                "list. . . . . . . . . . . . . . . . seyaya fiyala me nam dilekatülilala ilo :sp36:dilekatüli wa",
-                "listdrives. . . . . . . . . . . . . seyaya ká'ono dalayavu me",
-                "loadstate . . . . . . . . . . . . . nagyu satéte o-froggyOS",
-                "meta [fiyala] . . . . . . . . . . . lohi fiyala kili'ocyá",
-                "metaprop [fiyala] [popatí] [0/1]. . lohi fiyala oəpopatí me",
-                "opendocumentation . . . . . . . . . ndo dokumenndasiyon o-froggyOS",
-                "savestate . . . . . . . . . . . . . bátsiyo satéte o-froggyOS",
-                "spawn [dilekatüli]. . . . . . . . . mbeno dilekatüli",
-                "spy [fiyala]. . . . . . . . . . . . sensa fiyala nam nenta lu taminalu wa",
-                "swimto [program]. . . . . . . . . . igyensa pógám",
-                "apelelala som dilekatüli tama",
-                "dilekatüli getsefese",
-                "ilo wa dilekatüli säna",
-                "T_no_state_found",
-                "T_state_loaded",
-                "apelelala som makulo tama",
-                "* makulo me *",
-                "makulo gewitsu mana",
-                "makulo getsefese",
-                "T_missing_file_args",
-                "T_no_permission_to_edit_file",
-                "T_lilypad_save_exit",
-                "T_provide_valid_property_type",
-                "T_available_properties",
-                "T_provide_valid_value_0_1",
-                "T_properties_updated",
-                "T_documentation_opened",
-                "T_provide_text_to_display",
-                "T_state_saved",
-                "T_cannot_create_directories",
-                "T_directory_already_exists",
-                "T_directory_created",
-                "T_no_permission_to_read_file",
-                "T_provide_valid_program",
-                "T_available_programs",
-                "T_lilypad_exit",
-                "T_no_permission_to_run_program",
-                "T_provide_path",
-                "nenta ‘help’ mbo süm fesúāte kole komandda me, nam giwa 'ata",
-                "* wulë froggyOS, kekyene |||[]||| *",
-                "T_bullfrog_commands_0",
-                "T_bullfrog_commands_1",
-                "T_bullfrog_commands_2",
-                "T_bullfrog_commands_3",
-                "T_bullfrog_commands_4",
-                "T_bullfrog_commands_5",
-                "T_bullfrog_commands_6",
-                "T_bullfrog_commands_7",
-                "T_bullfrog_commands_8",
-                "T_bullfrog_commands_9",
-                "T_bullfrog_commands_10",
-                "T_bullfrog_commands_11",
-                "T_bullfrog_commands_12",
-                "T_invalid_args_provide_1_0",
-                "T_spinner_does_not_exist",
-                "T_available_spinners",
-                "T_no_urgent_state_found",
-                'Froggy gepele "|||[]|||", mbayu',
-                "T_saving_file",
-                "T_saving_done",
-                "Date_ypg",
-                "Date_ypl",
-                "Date_ypb",
-                "Date_yps",
-                "Date_ypk",
-                "Date_ypm",
-                "Date_ypw",
-                "Date_yepë-gela",
-                "Date_yepë-la",
-                "Date_yepë-bese",
-                "Date_yepë-sála",
-                "Date_yepë-kimi",
-                "Date_yepë-molo",
-                "Date_yepë-wé",
-                "Date_ygl",
-                "Date_yla",
-                "Date_ybs",
-                "Date_ysl",
-                "Date_ykm",
-                "Date_yml",
-                "Date_ywé",
-                "Date_yan",
-                "Date_ymk",
-                "Date_ykó",
-                "Date_ykg",
-                "Date_ykl",
-                "Date_yepëlili-gela",
-                "Date_yepëlili-la",
-                "Date_yepëlili-bese",
-                "Date_yepëlili-sála",
-                "Date_yepëlili-kimi",
-                "Date_yepëlili-molo",
-                "Date_yepëlili-wé",
-                "Date_yepëlili-ana",
-                "Date_yepëlili-miki",
-                "Date_yepëlili-kó",
-                "Date_yepëlili-kó-nam-gela",
-                "Date_yepëlili-kó-nam-la",
-                "apelelala som mëzte koda",
-                "* mëzte me *",
-                'mëzte kole "|||[]|||" getsefese',
-                "mëzte lohi mana",
-                "T_invalid_lang_file |||[]|||",
-                "T_invalid_lang",
-                "T_file_name_not_3_char",
-                "T_no_permission_to_clone",
-                "T_file_cloned |||[]|||",
-                "T_basic_commands_clone",
-                "T_basic_commands_rename",
-                "T_provide_file_name_and_new",
-                "T_no_permission_to_rename_file",
-                "T_file_name_already_exists",
-                "T_file_renamed",
-                "T_bullfrog_commands_vlang",
-            ] },
-            { name: "jpn", properties: {read: true, write: true, hidden: false}, data: [
-                "{{{_LANGNAME_!!!_Japanese_}}}",
-                "フロッギーはそれが気に入らないよ >:(",
-                "パレットエラー: |||[]|||は無効な16進カラーコードです",
-                "パレットを作成できません",
-                "無効なフォーマットオブジェクト（インター・ルール・デリミター）構文です",
-                "エラーデータは利用できません",
-                "カラーパレット名を入力してください",
-                "* 使用可能なカラーパレット *",
-                "カラーパレットは存在しません",
-                "状態がクリアされました",
-                "ファイル名を入力してください",
-                "ファイルは存在しません",
-                "このファイルを削除する権限がありません",
-                "このファイルは削除できません",
-                "時間形式を入力してください",
-                "引数が長すぎます",
-                "ファイルは既に存在します",
-                "ファイルを作成しました",
-                "どうも、フロッギーです！^v^",
-                "* いくつかの基本的な𝚏𝚛𝚘𝚐𝚐𝚢𝙾𝚂コマンド *",
-                "𝚌𝚑𝚊𝚗𝚐𝚎𝚕𝚊𝚗𝚐𝚞𝚊𝚐𝚎 [コード] . . 現在の言語を変更する",
-                "𝚌𝚑𝚊𝚗𝚐𝚎𝚙𝚊𝚕𝚎𝚝𝚝𝚎 [パレット] . . カラーパレットを変更する",
-                "𝚌𝚕𝚎𝚊𝚛 . . 端末の出力をクリアする",
-                "𝚌𝚕𝚎𝚊𝚛𝚜𝚝𝚊𝚝𝚎 . . 𝚏𝚛𝚘𝚐𝚐𝚢𝙾𝚂の状態をクリアする",
-                "𝚌𝚛𝚘𝚊𝚔 [ファイル] . . ファイルを削除する",
-                "𝚛𝚒𝚋𝚋𝚒𝚝 [テキスト] . . テキストを表示する",
-                "𝚏𝚘𝚛𝚖𝚊𝚝𝚝𝚒𝚖𝚎 [形式] . . 時間形式を変更する",
-                "𝚑𝚊𝚝𝚌𝚑 [ファイル] . . ファイルを作成する",
-                "𝚑𝚎𝚕𝚕𝚘 . . 挨拶のメッセージを表示する",
-                "𝚑𝚎𝚕𝚙 . . このメッセージを表示する",
-                "𝚑𝚘𝚙 [ディレクトリ] . . ディレクトリに移動する",
-                "𝚕𝚒𝚜𝚝 . . 現在のディレクトリ内のファイルとサブディレクトリを表示する",
-                "𝚕𝚒𝚜𝚝𝚍𝚛𝚒𝚟𝚎𝚜 . . 全てのドライブを表示する",
-                "𝚕𝚘𝚊𝚍𝚜𝚝𝚊𝚝𝚎 . . 𝚏𝚛𝚘𝚐𝚐𝚢𝙾𝚂の状態をロードする",
-                "𝚖𝚎𝚝𝚊 [ファイル] . . ファイルを編集する",
-                "𝚖𝚎𝚝𝚊𝚙𝚛𝚘𝚙 [ファイル] [権限] [0/1] . . ファイルのプロパティを変更する",
-                "𝚘𝚙𝚎𝚗𝚍𝚘𝚌𝚞𝚖𝚎𝚗𝚝𝚊𝚝𝚒𝚘𝚗 . . 𝚏𝚛𝚘𝚐𝚐𝚢𝙾𝚂のマニュアルを開く",
-                "𝚜𝚊𝚟𝚎𝚜𝚝𝚊𝚝𝚎 . . 𝚏𝚛𝚘𝚐𝚐𝚢𝙾𝚂の状態をセーブする",
-                "𝚜𝚙𝚊𝚠𝚗 [ディレクトリ] . . ディレクトリを作成する",
-                "𝚜𝚙𝚢 [ファイル] . . ファイルを読み取る",
-                "𝚜𝚠𝚒𝚖𝚝𝚘 [プログラム] . . プログラムを開始する",
-                "ディレクトリ名を入力してください",
-                "ディレクトリは存在しません",
-                "このディレクトリは空です",
-                "状態が見つかりませんでした",
-                "状態がロードされました",
-                "マクロ名を入力してください",
-                "* 使用可能なマクロ *",
-                "マクロが見つかりませんでした",
-                "マクロが存在しません",
-                "ファイルの引数が不足しています",
-                "このファイルを変更する権限がありません",
-                "T_lilypad_save_exit",
-                "T_provide_valid_property_type",
-                "T_available_properties",
-                "T_provide_valid_value_0_1",
-                "T_properties_updated",
-                "T_documentation_opened",
-                "T_provide_text_to_display",
-                "T_state_saved",
-                "T_cannot_create_directories",
-                "T_directory_already_exists",
-                "T_directory_created",
-                "T_no_permission_to_read_file",
-                "T_provide_valid_program",
-                "T_available_programs",
-                "T_lilypad_exit",
-                "T_no_permission_to_run_program",
-                "T_provide_path",
-                "T_nmt_greeting_1",
-                "T_nmt_greeting_2 |||[]|||",
-                "T_bullfrog_commands_0",
-                "T_bullfrog_commands_1",
-                "T_bullfrog_commands_2",
-                "T_bullfrog_commands_3",
-                "T_bullfrog_commands_4",
-                "T_bullfrog_commands_5",
-                "T_bullfrog_commands_6",
-                "T_bullfrog_commands_7",
-                "T_bullfrog_commands_8",
-                "T_bullfrog_commands_9",
-                "T_bullfrog_commands_10",
-                "T_bullfrog_commands_11",
-                "T_bullfrog_commands_12",
-                "T_invalid_args_provide_1_0",
-                "T_spinner_does_not_exist",
-                "T_available_spinners",
-                "T_no_urgent_state_found",
-                "T_doesnt_know |||[]|||",
-                "T_saving_file",
-                "T_saving_done",
-                "T_date_short_sunday",
-                "T_date_short_monday",
-                "T_date_short_tuesday",
-                "T_date_short_wednesday",
-                "T_date_short_thursday",
-                "T_date_short_friday",
-                "T_date_short_saturday",
-                "T_date_long_sunday",
-                "T_date_long_monday",
-                "T_date_long_tuesday",
-                "T_date_long_wednesday",
-                "T_date_long_thursday",
-                "T_date_long_friday",
-                "T_date_long_saturday",
-                "T_date_short_january",
-                "T_date_short_february",
-                "T_date_short_march",
-                "T_date_short_april",
-                "T_date_short_may",
-                "T_date_short_june",
-                "T_date_short_july",
-                "T_date_short_august",
-                "T_date_short_september",
-                "T_date_short_october",
-                "T_date_short_november",
-                "T_date_short_december",
-                "T_date_long_january",
-                "T_date_long_february",
-                "T_date_long_march",
-                "T_date_long_april",
-                "T_date_long_may",
-                "T_date_long_june",
-                "T_date_long_july",
-                "T_date_long_august",
-                "T_date_long_september",
-                "T_date_long_october",
-                "T_date_long_november",
-                "T_date_long_december",
-                "T_provide_lang_code",
-                "T_available_langs",
-                "T_lang_does_not_exist |||[]|||",
-                "T_lang_changed",
-                "T_invalid_lang_file |||[]|||",
-                "T_invalid_lang",
-                "T_file_name_not_3_char",
-                "T_no_permission_to_clone",
-                "T_file_cloned |||[]|||",
-                "T_basic_commands_clone",
-                "T_basic_commands_rename",
-                "T_provide_file_name_and_new",
-                "T_no_permission_to_rename_file",
-                "T_file_name_already_exists",
-                "T_file_renamed",
-                "T_bullfrog_commands_vlang",
-            ] },
-            { name: "nya", properties: {read: true, write: true, hidden: true}, data: [
-                "{{{_LANGNAME_!!!_Meow_}}}",
-                "Grrnya :(",
-                `NYA!!! :( |||[]||| nya nya meow`,
-                "Nya nya meow...",
-                "NYAA MEOW (MEOW-MEOW MEOW) MEOWMEOW",
-                "NYA!!! :( NYANYA NYAMEOW",
-                "nyanya nyaaa nya",
-                `* nyanya nyaaa nya *`,
-                `NYA!!! :( nyanya nyaaa nya`,
-                `Nyanyan meow`,
-                "Nyanya mrrp",
-                "meow nya",
-                "nya nya meow nya :(",
-                "nya meow nya...",
-                "nyaa meow mrrp nya",
-                "mrra mra mraaaaaaaaaaaaaaaa",
-                "myraaa meow mrao..",
-                "Nya!",
-                "Meow! ^v^",
-                "* meow meow meow meow meow mrrp *",
-                "changelanguage [meow]. . . . . meow mrrp",
-                "changepalette [meow] . . . . . nyaaa nya meow",
-                "clear. . . . . . . . . . . . . mrrpnya",
-                "clearstate . . . . . . . . . . meow",
-                "croak [meow] . . . . . . . . . mrrnya... meow",
-                "ribbit [meow]. . . . . . . . . mraaaow",
-                "formattime [meow]. . . . . . . meowmrrow",
-                "hatch [meow] . . . . . . . . . nya nyaa nya",
-                "hello. . . . . . . . . . . . . Meow!",
-                "help . . . . . . . . . . . . . meow mrrao maow",
-                "hop [meow] . . . . . . . . . . mrrpnyamow",
-                "list . . . . . . . . . . . . . myan meow",
-                "listdrives . . . . . . . . . . nyanyan meow meow",
-                "loadstate. . . . . . . . . . . meow meow meow!!!meowwwwww",
-                "meta [meow]. . . . . . . . . . meeooow",
-                "metaprop [meow] [meow] [0/1] . meeooow nyan",
-                "opendocumentation. . . . . . . meow meow ! meow !! meow",
-                "savestate. . . . . . . . . . . prrnya meow nyan",
-                "spawn [meow] . . . . . . . . . nya!!!! meow",
-                "spy [meow] . . . . . . . . . . mraaaownyaan mrow",
-                "swimto [meow]. . . . . . . . . mrrrrrrrrrrrrrrp",
-                "Please provide a directory name.",
-                "Directory does not exist.",
-                "This directory is empty.",
-                "No state found.",
-                "State loaded.",
-                "Please provide a macro name.",
-                `* Available macros *`,
-                "No macros found.",
-                "Macro does not exist.",
-                `Missing file argument(s).`,
-                "You do not have permission to edit this file.",
-                "* press ESC to save and exit lilypad *",
-                "Please provide a valid property type.",
-                "* Available properties *",
-                "Please provide a valid value. 0 or 1.",
-                "properties updated.",
-                "Documentation opened in a new window.",
-                "Please provide text to display.",
-                "State saved. May need to loadstate for some changes to take effect.",
-                "You cannot create directories in this directory.",
-                "Directory already exists.",
-                "Directory created.",
-                "You do not have permission to read this file.",
-                "Please provide a valid program.",
-                "* Available programs *",
-                "* press ESC to exit lilypad *",
-                "You do not have permission to run this program.",
-                "Please provide a path.",
-                "Nya ‘help’ nyaa nya meow mrrp myan meow nya!",
-                `* NYA!!! NYA MEOW!!! MEOW |||[]||| NYAA MRRP *`,
-                "* A few bullfrog commands *",
-                "[[BULLFROG]]changepath [path] - Changes the path of the terminal",
-                "[[BULLFROG]]greeting - Displays the greeting message",
-                "[[BULLFROG]]help - Displays this message",
-                "[[BULLFROG]]setstatbar [text] - Changes the text in the status bar",
-                "[[BULLFROG]]statbarlock [0/1] - Locks the status bar from updating",
-                "[[BULLFROG]]showspinner [0/1] - Toggles the loading spinner",
-                "[[BULLFROG]]debugmode [0/1] - Toggles debug mode",
-                "[[BULLFROG]]setspinner [spinner] - Changes the loading spinner",
-                "[[BULLFROG]]urgentsavestate - saves state for reloading",
-                "[[BULLFROG]]urgentloadstate - loads state for reloading",
-                "[[BULLFROG]]urgentclearstate - clears reload state",
-                "[[BULLFROG]]autoloadstate - loads state",
-                "Invalid argument. Please provide '1' or '0'.",
-                "Spinner does not exist.",
-                "* Available spinners *",
-                "No urgent state found.",
-                `Froggy doesn't know "|||[]|||", sorry.`,
-                "Saving file...",
-                "Done! ^v^",
-                "Date_Sun",
-                "Date_Mon",
-                "Date_Tue",
-                "Date_Wed",
-                "Date_Thu",
-                "Date_Fri",
-                "Date_Sat",
-                "Date_Sunday",
-                "Date_Monday",
-                "Date_Tuesday",
-                "Date_Wednesday",
-                "Date_Thursday",
-                "Date_Friday",
-                "Date_Saturday",
-                "Date_Jan",
-                "Date_Feb",
-                "Date_Mar",
-                "Date_Apr",
-                "Date_May",
-                "Date_Jun",
-                "Date_Jul",
-                "Date_Aug",
-                "Date_Sep",
-                "Date_Oct",
-                "Date_Nov",
-                "Date_Dec",
-                "Date_January",
-                "Date_February",
-                "Date_March",
-                "Date_April",
-                "Date_May",
-                "Date_June",
-                "Date_July",
-                "Date_August",
-                "Date_September",
-                "Date_October",
-                "Date_November",
-                "Date_December",
-                "Please provide a language code.",
-                `* Available languages *`,
-                'Language with code "|||[]|||" does not exist.',
-                "Language changed.",
-                'Invalid language file with code "|||[]|||".',
-                "INVALID",
-                "File name must be exactly 3 characters long.",
-                "You do not have permission to clone this file.",
-                'File "|||[]|||" cloned.',
-                "clone [meow] . . . . . . . . . meow meeeow meow mrrra",
-                "rename [meow] [meow] . . . . . nyan meow meow",
-                "Please provide a file name and a new name.",
-                "You do not have permission to rename this file.",
-                "File with that name already exists in this directory.",
-                "File renamed.",
-                "[[BULLFROG]]validatelanguage - checks if the current language is valid"
-            ] },
-        ],
+            { name: "lbh", properties: {transparent: true, read: true, write: false, hidden: false}, data: ["{{{LANGNAME_!!!_language build helper}}}"] },
+            { name: "eng", properties: {transparent: false, read: true, write: false, hidden: false}, data: ["{{{LANGNAME_!!!_English}}}"] },
+            { name: "nmt", properties: {transparent: false, read: true, write: false, hidden: false}, data: ["{{{LANGNAME_!!!_ngimëte}}}"] },
+            { name: "jpn", properties: {transparent: false, read: true, write: false, hidden: false}, data: ["{{{LANGNAME_!!!_Japanese}}}"] }
+        ],             
         "C:": [],   
         "C:/Home": [
-            { name: "welcome!", properties: {read: true, write: true, hidden: false}, data: ['Hello!', "Welcome to FroggyOS.", "Type 'help' for a list of commands.", "Have fun! ^v^"] },
+            { name: "welcome!", properties: {transparent: false, read: true, write: true, hidden: false}, data: ['Hello!', "Welcome to FroggyOS.", "Type 'help' for a list of commands.", "Have fun! ^v^"] },
         ],
         "C:/Docs": [],
         "D:": [], 
         "D:/Programs": [
-            { name: "cli", properties: {read: false, write: false, hidden: true}, data: ["str cli = 'this program is hardcoded into froggyOS'", "endprog"] },
-            { name: "lilypad", properties: {read: false, write: false, hidden: true}, data: ["str lilypad = 'this program is hardcoded into froggyOS'", "endprog"] },
-            { name: "test", properties: {read: true, write: true, hidden: false}, data: [
-                "out 'before loop'",
-                "int i = 0",
-                "loop { v:i < 1000 }",
-                "out v:i",
-                "set i = v:i + 1",
-                "wait 0",
-                "endloop",
-                "out 'after loop'",
+            { name: "cli", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["str cli = 'this program is hardcoded into froggyOS'", "endprog"] },
+            { name: "lilypad", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["str lilypad = 'this program is hardcoded into froggyOS'", "endprog"] },
+            { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
+                "out 'meow meow meow :>'",
                 "endprog",
             ] },
-            { name: "help", properties: {read: true, write: false, hidden: false}, data: [
+            { name: "help", properties: {transparent: false, read: true, write: false, hidden: false}, data: [
                 "str category = ''",
                 "out 'Choose a category: '",
                 "prompt 0 category OS File Directory Other",
@@ -979,7 +868,7 @@ const config = {
                 "endif",
                 "endprog",
             ] },
-            { name: "kaerugotchi", properties: {read: true, write: true, hidden: false}, data: [
+            { name: "kaerugotchi", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
                 "str currentEmotion = 'default'",
                 "str currentAction = 'play'",
                 "",
@@ -1234,18 +1123,21 @@ const config = {
             ] },
         ],
         "D:/Macros": [
-            { name: "create-program", properties: {read: true, write: true, hidden: false}, data: [
+            { name: "meow", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
+                "ribbit Meow! ^v^",
+            ] },
+            { name: "create-program", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
                 "!c",
                 "h D:/Programs",
                 "ch $1",
                 "m $1"
             ] },
-            { name: "edit-program", properties: {read: true, write: true, hidden: false}, data: [
+            { name: "edit-program", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
                 "!e",
                 "h D:/Programs",
                 "m $1"
             ] },
-            { name: "reload", properties: {read: true, write: true, hidden: false}, data: [
+            { name: "reload", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
                 "!r",
                 "[[BULLFROG]]urgentsavestate",
                 "[[BULLFROG]]urgentloadstate",
@@ -1253,12 +1145,12 @@ const config = {
                 "clear",
                 "ribbit OS state reloaded"
             ] },
-            { name: "edit-settings", properties: {read: true, write: true, hidden: false}, data: [
+            { name: "edit-settings", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
                 "!es",
                 "h Config:",
                 "m $1",
             ] },
-            { name: "edit-palette", properties: {read: true, write: true, hidden: false}, data: [
+            { name: "edit-palette", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
                 "!ep",
                 "h D:/Palettes",
                 "m $1",
@@ -1267,7 +1159,7 @@ const config = {
         "D:/Program-Data": [],
         "D:/Palettes": [
             // standard and revised palettes:  https://int10h.org/blog/2022/06/ibm-5153-color-true-cga-palette/
-            { name: "standard", properties: {read: true, write: true, hidden: false}, data: [
+            { name: "standard", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
                 "000000", // 00 black
                 "0000AA", // 01 blue
                 "00AA00", // 02 green
@@ -1285,7 +1177,7 @@ const config = {
                 "FFFF55", // 14 yellow
                 "FFFFFF", // 15 white
             ] },
-            { name: "revised", properties: {read: true, write: true, hidden: false}, data: [
+            { name: "revised", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
                 "000000",
                 "0000C4",
                 "00C400",
@@ -1303,7 +1195,7 @@ const config = {
                 "F3F34E",
                 "FFFFFF",
             ] },
-            { name: "standard-dark", properties: {read: true, write: true, hidden: false}, data: [
+            { name: "standard-dark", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
                 "000000", // 00 black (unchanged)
                 "000066", // 01 dark blue
                 "006600", // 02 dark green
@@ -1321,7 +1213,7 @@ const config = {
                 "888822", // 14 deep yellow
                 "AAAAAA", // 15 light grey (less bright than white)
             ] },
-            { name: "cherry", properties: {read: true, write: true, hidden: false}, data: [
+            { name: "cherry", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
                 "000000",
                 "1C219F",
                 "289E42",
@@ -1339,7 +1231,7 @@ const config = {
                 "B7EA8A",
                 "FFFFFF",
             ] },
-            { name: "swamp", properties: {read: true, write: true, hidden: false}, data: [
+            { name: "swamp", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
                 "000000",
                 "4B71AF",
                 "3F9A44",
@@ -1357,7 +1249,7 @@ const config = {
                 "D6B87B",
                 "FFFFFF",
             ] },
-            { name: "swamp-revised", properties: {read: true, write: true, hidden: false}, data: [
+            { name: "swamp-revised", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
                 "000000",
                 "31618D",
                 "298B27",
@@ -1375,7 +1267,7 @@ const config = {
                 "D7D357",
                 "FFFFFF",
             ] },
-            { name: "neon", properties: {read: true, write: true, hidden: false}, data: [
+            { name: "neon", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
                 "000000",
                 "0000FF",
                 "00FF00",
@@ -1395,27 +1287,36 @@ const config = {
             ] },
         ],
         "D:/Spinners": [
-            { name: "default", properties: {read: true, write: true, hidden: false}, data: [
+            { name: "default", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
                 '-', '\\', '|', '/'
             ] },
-            { name: "dots", properties: {read: true, write: true, hidden: false}, data: [
+            { name: "dots", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
                 ".", ":", "¨", ":"
             ] },
-            { name: "circles", properties: {read: true, write: true, hidden: false}, data: [
+            { name: "circles", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
                 ".", "o", "O", "°", "O", "o"
             ] },
-            { name: "cross", properties: {read: true, write: true, hidden: false}, data: [
+            { name: "cross", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
                 "×", "+"
             ] },
-            { name: "wave", properties: {read: true, write: true, hidden: false}, data: [
+            { name: "wave", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
                 "~", "–"
             ] },
-            { name: "arrows", properties: {read: true, write: true, hidden: false}, data: [
+            { name: "arrows", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
                 "<", "^", ">", "v"
             ] },
-            { name: "shade", properties: {read: true, write: true, hidden: false}, data: [
+            { name: "shade", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
                 "·", ":", "!", "+", "x", "%", "#", "%", "x", "+", "!", ":"
             ] }
         ],
     }
 }
+
+Object.keys(presetLanguagesMap).forEach((key, i) => {
+    // if(i > 8) return;
+    // else 
+    config.fileSystem["Config:/lang_files"][0].data.push(Object.keys(presetLanguagesMap)[i])
+    if(presetLanguagesMap[key].eng != undefined) config.fileSystem["Config:/lang_files"][1].data.push(presetLanguagesMap[key].eng);
+    if(presetLanguagesMap[key].nmt != undefined) config.fileSystem["Config:/lang_files"][2].data.push(presetLanguagesMap[key].nmt);
+    if(presetLanguagesMap[key].jpn != undefined) config.fileSystem["Config:/lang_files"][3].data.push(presetLanguagesMap[key].jpn);
+})
