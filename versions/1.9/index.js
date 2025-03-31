@@ -214,8 +214,6 @@ function updateDateTime() {
     let dateString = dateTemplate.replace(/!([a-zA-Z]+)/g, "!$1") // Preserve escaped characters
         .replace(/\b([a-zA-Z]+)\b/g, (match) => replacementMap[match] ?? match); // Replace only whole words
 
-    dateString = dateString.replaceAll("Date_", "");
-
     if(!config.showSpinner) document.getElementById('bar').textContent = dateString.padEnd(79," ");
     else {
         let spinnerFrames = config.fileSystem["D:/Spinners"].find(spinner => spinner.name == config.currentSpinner).data;
