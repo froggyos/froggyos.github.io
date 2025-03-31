@@ -160,12 +160,12 @@ const presetLanguagesMap = {
     // state ====================================
     "T_no_state_found": {
         eng: "No state found.",
-        nmt: "T_no_state_found",
+        nmt: "satéte gewitsu mana",
         jpn: "状態が見つかりませんでした"
     },
     "T_no_urgent_state_found": {
         eng: "No urgent state found.",
-        nmt: "T_no_urgent_state_found",
+        nmt: "satéte apelelala gewitsu mana",
         jpn: "T_no_urgent_state_found"
     },
     "T_state_cleared": {
@@ -175,12 +175,12 @@ const presetLanguagesMap = {
     },
     "T_state_loaded": {
         eng: "State loaded.",
-        nmt: "T_state_loaded",
+        nmt: "satéte nagyu mana",
         jpn: "状態がロードされました"
     },
     "T_state_saved": {
         eng: "State saved. May need to loadstate for some changes to take effect.",
-        nmt: "T_state_saved",
+        nmt: `satéte bátsiyo mana. kana "loadstate" ma lohiəte me fene`,
         jpn: "T_state_saved"
     },
 
@@ -192,7 +192,7 @@ const presetLanguagesMap = {
     },
     "T_provide_file_name_and_new": {
         eng: "Please provide a file name and a new name.",
-        nmt: "T_provide_file_name_and_new",
+        nmt: "apelelala som fiyala tama nam sana tama",
         jpn: "T_provide_file_name_and_new"
     },
     "T_file_does_not_exist": {
@@ -207,7 +207,7 @@ const presetLanguagesMap = {
     },
     "T_file_name_already_exists": {
         eng: "File with that name already exists in this directory.",
-        nmt: "T_file_name_already_exists",
+        nmt: "tama oəfiyala tsefese dilekatüli wa",
         jpn: "T_file_name_already_exists"
     },
     "T_file_name_not_3_char": {
