@@ -225,12 +225,11 @@ function updateDateTime() {
 setInterval(() => {
     setConfigFromSettings()
     programList()
-    updateDateTime()
 }, 1);
 
 setInterval(() => {
     updateDateTime()
-}, 1000);
+}, 100);
 
 setConfigFromSettings()
 programList();
@@ -359,6 +358,7 @@ function createPalettesObject(){
 
     try {
         for(let palette of paletteDir){
+            if(palette.properties.hidden == true) continue;
             palettes[palette.name] = {};
             for(let i = 0; i < palette.data.length; i++){
                 palettes[palette.name][colorArray[i]] = "#"+palette.data[i];
@@ -467,7 +467,7 @@ function createTerminalLine(text, path, other){
     } else {
         let localizedText = localize(text, translateText);
         if(localizedText == null) {
-            terminalLine.textContent = `Index Missing! -> ${text}`;
+            terminalLine.textContent = `Index Missing! -> "${text}"`;
             terminalPath.innerHTML = config.translationErrorText;
         }
         else terminalLine.textContent = localizedText; 
@@ -614,10 +614,21 @@ function sendCommand(command, args, createEditableLineAfter){
         // change color palette
         case "changepalette": {
             let colorPalettes = createPalettesObject();
+            function getDisplayPalettes(){
+                let arr = [];
+                let palettes = config.fileSystem["D:/Palettes"];
+                let displayPalettes = palettes.filter(palette => {
+                    if(palette.properties.hidden == true) return false;
+                    if(palette.properties.transparent == true) return false;
+                    else return true;
+                })
+                return displayPalettes.map(palette => palette.name).join(", ");
+            }
+
             if(args.length == 0){
-                createTerminalLine("T_provide_palette_name.", config.errorText);
+                createTerminalLine("T_provide_palette_name", config.errorText);
                 createTerminalLine(`T_available_color_palettes`, "");
-                createTerminalLine(Object.keys(colorPalettes).join(", "), ">", {translate: false});
+                createTerminalLine(getDisplayPalettes(), ">", {translate: false});
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
@@ -1057,9 +1068,6 @@ function sendCommand(command, args, createEditableLineAfter){
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         } break;
 
-        // rename reqs: can read, can write, not hidden, new name not already in use. 
-        // If in Config:/lang_files, name must be 3 characters long exactly. Use T_file_name_not_3_char descriptor for error
-
         case "rename":
             if(args.length < 2){
                 createTerminalLine("T_provide_file_name_and_new", config.errorText);
@@ -1308,6 +1316,8 @@ function sendCommand(command, args, createEditableLineAfter){
                 break;
             } else {
                 setSetting("currentSpinner", spinner);
+                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                break;
             }
         } break;
 
@@ -1625,13 +1635,14 @@ function createLilypadLine(path, linetype, filename){
     terminalLine.focus();
 }
 
+document.title = `froggyOS v. ${config.version}`;
 changeColorPalette(config.colorPalette);
 createColorTestBar();
 sendCommand('[[BULLFROG]]autoloadstate', [], false);
 sendCommand('[[BULLFROG]]validatelanguage', [], false);
-setTimeout(() => {
-    sendCommand('[[BULLFROG]]greeting', []);
-    document.getElementById("blackout").style.display = "none";
-}, 50)
 
-document.title = `froggyOS v. ${config.version}`;
+setTimeout(() => {
+    document.getElementById("blackout").style.display = "none";
+    sendCommand('[[BULLFROG]]greeting', []);
+    
+}, 100)

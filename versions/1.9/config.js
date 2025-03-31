@@ -476,7 +476,7 @@ const presetLanguagesMap = {
 
     // misc success =========================
     "T_properties_updated": {
-        eng: "properties updated.",
+        eng: "Properties updated.",
         nmt: "T_properties_updated",
         jpn: "T_properties_updated"
     },
@@ -1155,6 +1155,9 @@ const config = {
                 "h D:/Palettes",
                 "m $1",
             ] },
+            { name: "set-US-time-format", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
+                "ft w. mn/d/y H:m:s a",
+            ] },
         ],
         "D:/Program-Data": [],
         "D:/Palettes": [
@@ -1177,7 +1180,7 @@ const config = {
                 "FFFF55", // 14 yellow
                 "FFFFFF", // 15 white
             ] },
-            { name: "revised", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
+            { name: "revised", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
                 "000000",
                 "0000C4",
                 "00C400",
