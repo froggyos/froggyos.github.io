@@ -1759,10 +1759,14 @@ if(!DISABLE_ANIM) innerBar.animate(...getTimings(0)).onfinish = () => {
         innerBar.animate(...getTimings(2)).onfinish = () => {
             innerBar.animate(...getTimings(3)).onfinish = () => {
                 innerBar.animate(...getTimings(4)).onfinish = () => {
+                    let chance = Math.random() > 0.001;//0.001;
+                    if(chance == false) {
+                        console.error("whoa..... this is rare lol! uhhh email froggyos.royal.screw.up@gmail.com if u get this")
+                    }
                     setTimeout(() => {
                         document.getElementById("blackout").remove()
                         sendCommand('[[BULLFROG]]greeting', []);
-                    }, 100)
+                    }, chance ? 100 : 1000000000000000)
                 }
             }
         }
