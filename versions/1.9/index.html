@@ -164,16 +164,6 @@
         height: calc(100vh - 50px);
         width: 350px;
     }
-    #blackout {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
-        background-color: var(--void-space);
-        z-index: 9999;
-    }
-
     #bar-text {
         display: inline-block;
     }
@@ -182,8 +172,37 @@
         float: right;
         padding-right: 3px;
         padding-top: 0.5px;
+        width: 8px;
+        height: 8px;
     }
 
+    #blackout {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background-color: var(--void-space);
+        z-index: 9999;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+    }
+
+    #loading-bar {
+        width: 300px;
+        height: 40px;
+        background-color: var(--void-space);
+        border: 5px solid var(--terminal-background);
+        padding: 5px;
+    }
+
+    #inner-bar {
+        background-color: var(--terminal-background);
+        height: 40px;
+        width: 100%;
+    }
 
 </style>
 <head>
@@ -208,7 +227,13 @@
         </div>
         <div id="terminal"></div>
     </div>
-    <div id="blackout"></div>
+    <div id="blackout">
+        <img src="../../favicon.ico" width="180" height="180">
+        <br><br><br><br>
+        <div id="loading-bar">
+            <div id="inner-bar"></div>
+        </div>
+    </div>
 </body>
     <script src="https://rus1130.github.io/projects/Global/markdownParser.js"></script>
     <script src="https://rus1130.github.io/projects/Global/sniffer.js"></script>

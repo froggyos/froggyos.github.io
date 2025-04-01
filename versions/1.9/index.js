@@ -1724,6 +1724,35 @@ sendCommand('[[BULLFROG]]autoloadstate', [], false);
 sendCommand('[[BULLFROG]]validatelanguage', [], false);
 
 setTimeout(() => {
+
+    // get 4 random numbers between 20 and 80
+
+    let randomNumbers = [Math.floor(Math.random() * 60) + 20, Math.floor(Math.random() * 60) + 20, Math.floor(Math.random() * 60) + 20, Math.floor(Math.random() * 60) + 20].sort((a, b) => a - b);
+
+    let timings = [
+        ["0%", randomNumbers[0] + "%"],
+        [randomNumbers[0] + "%", randomNumbers[1] + "%"],
+        [randomNumbers[1] + "%", randomNumbers[2] + "%"],
+        [randomNumbers[2] + "%", randomNumbers[3] + "%"],
+        [randomNumbers[3] + "%", "100%"]
+    ]
+
+    console.log(timings);
+
+    timings.forEach(timing => {
+        document.getElementById("inner-bar").animate([
+            { width: timing[0] },
+            { width: timing[1] }
+        ], {
+            duration: 1000,
+            easing: "linear",
+            fill: "forwards"
+        })
+
+        // buhh FIX THIS SHIT HAHAHAUIASB
+
+    })
+
     document.getElementById("blackout").remove()
     sendCommand('[[BULLFROG]]greeting', []);
 }, 100)
