@@ -1264,6 +1264,7 @@ function sendCommand(command, args, createEditableLineAfter){
             createTerminalLine("T_bullfrog_commands_uclearstate", ">");
             createTerminalLine("T_bullfrog_commands_autoloadstate", ">");
             createTerminalLine("T_bullfrog_commands_vlang", ">");
+            createTerminalLine("T_bullfrog_commands_tstats", ">");
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
 
@@ -1377,6 +1378,22 @@ function sendCommand(command, args, createEditableLineAfter){
                 createTerminalLine(`T_current_lang_invalid`, config.translationErrorText);
                 setSetting("language", "lbh");
             }
+            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+        } break;
+
+        case "[[BULLFROG]]translationstatus": {
+            let translationFiles = config.fileSystem["Config:/lang_files"].filter(file => file.name != "lbh");
+
+            let lbh = config.fileSystem["Config:/lang_files"].find(file => file.name == "lbh").data;
+
+            translationFiles.forEach((file, i) => {
+                let linesTranslated = 0;
+                for(let i = 1; i < file.data.length; i++){
+                    if(file.data[i] != lbh[i]) linesTranslated++;
+                }
+                let percent = linesTranslated / (lbh.length-1) * 100;
+                createTerminalLine(`${file.name}: ${percent.toFixed(2)}%`, ">", {translate: false});
+            })
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         } break;
 
@@ -1644,5 +1661,4 @@ sendCommand('[[BULLFROG]]validatelanguage', [], false);
 setTimeout(() => {
     document.getElementById("blackout").style.display = "none";
     sendCommand('[[BULLFROG]]greeting', []);
-    
 }, 100)

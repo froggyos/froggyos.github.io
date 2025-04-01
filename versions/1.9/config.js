@@ -49,7 +49,7 @@ const presetLanguagesMap = {
     },
     "T_basic_commands_clone": {
         eng: "clone [file] . . . . . . . . . Clones a file.",
-        nmt: "T_basic_commands_clone",
+        nmt: "clone [fiyala]. . . . . . . . . . . mafo fiyala",
         jpn: "T_basic_commands_clone"
     },
     "T_basic_commands_clearstate": {
@@ -119,7 +119,7 @@ const presetLanguagesMap = {
     },
     "T_basic_commands_rename": {
         eng: "rename [file] [new_name] . . . Renames the file.",
-        nmt: "T_basic_commands_rename",
+        nmt: "rename [fiyala] [sana_tama] . . . . som'on tama ma fiyala",
         jpn: "T_basic_commands_rename"
     },
     "T_basic_commands_ribbit": {
@@ -578,6 +578,11 @@ const presetLanguagesMap = {
         eng: "[[BULLFROG]]validatelanguage - checks if the current language is valid",
         nmt: "T_bullfrog_commands_vlang",
         jpn: "T_bullfrog_commands_vlang"
+    },
+    "T_bullfrog_commands_tstats": {
+        eng: "[[BULLFROG]]translationstatus - get the completion percent of all languages",
+        nmt: "T_bullfrog_commands_tstats",
+        jpn: "T_bullfrog_commands_tstats"
     },
 
     // date and time =========================
@@ -1316,8 +1321,6 @@ const config = {
 }
 
 Object.keys(presetLanguagesMap).forEach((key, i) => {
-    // if(i > 8) return;
-    // else 
     config.fileSystem["Config:/lang_files"][0].data.push(Object.keys(presetLanguagesMap)[i])
     if(presetLanguagesMap[key].eng != undefined) config.fileSystem["Config:/lang_files"][1].data.push(presetLanguagesMap[key].eng);
     if(presetLanguagesMap[key].nmt != undefined) config.fileSystem["Config:/lang_files"][2].data.push(presetLanguagesMap[key].nmt);
