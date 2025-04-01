@@ -8,7 +8,7 @@ const presetLanguagesMap = {
     "T_doesnt_know |||[]|||": {
         eng: `Froggy doesn't know "|||[]|||", sorry.`,
         nmt: `Froggy gepele "|||[]|||", mbayu`,
-        jpn: "T_doesnt_know |||[]|||"
+        jpn: "フロッギーは「|||[]|||」がわかりません、ごめんなさい"
     },
     "T_hello_froggy": {
         eng: "Hello, I'm Froggy! ^v^",
@@ -18,134 +18,134 @@ const presetLanguagesMap = {
     "T_nmt_greeting_1": {
         eng: "Type ‘help’ to receive support with commands, and possibly navigation.",
         nmt: "nenta ‘help’ mbo süm fesúāte kole komandda me, nam giwa 'ata",
-        jpn: "T_nmt_greeting_1"
+        jpn: "コマンドやナビゲーションのサポートを受けるには、「help」と入力してください"
     },
     "T_nmt_greeting_2 |||[]|||": {
         eng: "* Welcome to froggyOS, version |||[]||| *",
         nmt: "* wulë froggyOS, kekyene |||[]||| *",
-        jpn: "T_nmt_greeting_2 |||[]|||"
+        jpn: "* froggyOSへようこそ！バージョン|||[]||| *"
     },
 
     // basic command help ====================
     "T_basic_commands_intro": {
         eng: "* A few basic froggyOS commands *",
         nmt: "* tine hatsamwa komandda me o-froggyOS *",
-        jpn: "* いくつかの基本的な𝚏𝚛𝚘𝚐𝚐𝚢𝙾𝚂コマンド *"
+        jpn: "* いくつかの基本的なfroggyOSコマンド *"
     },
     "T_basic_commands_lang": {
-        eng: "changelanguage [code]. . . . . Changes the current language.",
+        eng: "changelanguage [code]. . . . . . . Changes the current language.",
         nmt: "changelanguage [koda]. . .. . . . . lohi mëzte",
-        jpn: "𝚌𝚑𝚊𝚗𝚐𝚎𝚕𝚊𝚗𝚐𝚞𝚊𝚐𝚎 [コード] . . 現在の言語を変更する"
+        jpn: "changelanguage [code] . . 現在の言語を変更する"
     },
     "T_basic_commands_palette": {
-        eng: "changepalette [palette]. . . . Changes the color palette.",
+        eng: "changepalette [palette]. . . . . . Changes the color palette.",
         nmt: "changepalette [paleta] . .. . . . . lohi pesezte paleta",
-        jpn: "𝚌𝚑𝚊𝚗𝚐𝚎𝚙𝚊𝚕𝚎𝚝𝚝𝚎 [パレット] . . カラーパレットを変更する"
+        jpn: "changepalette [palette] . . カラーパレットを変更する"
     },
     "T_basic_commands_clear": {
-        eng: "clear. . . . . . . . . . . . . Clears the terminal output.",
+        eng: "clear. . . . . . . . . . . . . . . Clears the terminal output.",
         nmt: "clear . . . . . . . . . . . . . . . nggave taminalu tuha",
-        jpn: "𝚌𝚕𝚎𝚊𝚛 . . 端末の出力をクリアする"
+        jpn: "clear . . 端末の出力をクリアする"
     },
     "T_basic_commands_clone": {
-        eng: "clone [file] . . . . . . . . . Clones a file.",
+        eng: "clone [file] . . . . . . . . . . . Clones a file.",
         nmt: "clone [fiyala]. . . . . . . . . . . mafo fiyala",
-        jpn: "T_basic_commands_clone"
+        jpn: "clone [file] . . . . . . . . . ファイルをクローンする"
     },
     "T_basic_commands_clearstate": {
-        eng: "clearstate . . . . . . . . . . Clears froggyOS state.",
+        eng: "clearstate . . . . . . . . . . . . Clears froggyOS state.",
         nmt: "clearstate. . . . . . . . . . . . . ngátiwi satéte o-froggyOS",
-        jpn: "𝚌𝚕𝚎𝚊𝚛𝚜𝚝𝚊𝚝𝚎 . . 𝚏𝚛𝚘𝚐𝚐𝚢𝙾𝚂の状態をクリアする"
+        jpn: "clearstate . . froggyOSの状態をクリアする"
     },
     "T_basic_commands_croak": {
-        eng: "croak [file] . . . . . . . . . Deletes the file.",
+        eng: "croak [file] . . . . . . . . . . . Deletes the file.",
         nmt: "croak [fiyala]. . . . . . . . . . . nggave fiyala",
-        jpn: "𝚌𝚛𝚘𝚊𝚔 [ファイル] . . ファイルを削除する"
+        jpn: "croak [file] . . ファイルを削除する"
     },
     "T_basic_commands_formattime": {
-        eng: "formattime [format]. . . . . . Changes the time format.",
+        eng: "formattime [format]. . . . . . . . Changes the time format.",
         nmt: "formattime [folamata] . . . . . . . lohi lohí folamata",
-        jpn: "𝚏𝚘𝚛𝚖𝚊𝚝𝚝𝚒𝚖𝚎 [形式] . . 時間形式を変更する"
+        jpn: "formattime [format] . . 時間形式を変更する"
     },
     "T_basic_commands_hatch": {
-        eng: "hatch [file] . . . . . . . . . Creates a file.",
+        eng: "hatch [file] . . . . . . . . . . . Creates a file.",
         nmt: "hatch [fiyala]. . . . . . . . . . . mbeno fiyala",
-        jpn: "𝚑𝚊𝚝𝚌𝚑 [ファイル] . . ファイルを作成する"
+        jpn: "hatch [file] . . ファイルを作成する"
     },
     "T_basic_commands_hello": {
-        eng: "hello. . . . . . . . . . . . . Displays a greeting message.",
+        eng: "hello. . . . . . . . . . . . . . . Displays a greeting message.",
         nmt: "hello . . . . . . . . . . . . . . . nenta wüle mem",
-        jpn: "𝚑𝚎𝚕𝚕𝚘 . . 挨拶のメッセージを表示する"
+        jpn: "hello . . 挨拶のメッセージを表示する"
     },
     "T_basic_commands_help": {
-        eng: "help . . . . . . . . . . . . . Displays this message.",
+        eng: "help . . . . . . . . . . . . . . . Displays this message.",
         nmt: "help. . . . . . . . . . . . . . . . nenta lu mem",
-        jpn: "𝚑𝚎𝚕𝚙 . . このメッセージを表示する"
+        jpn: "help . . このメッセージを表示する"
     },
     "T_basic_commands_hop": {
-        eng: "hop [directory]. . . . . . . . Moves to a directory.",
-        nmt: "hop [dilekatüli]. . . . . . . . . . tsi was dilekatüli",
-        jpn: "𝚑𝚘𝚙 [ディレクトリ] . . ディレクトリに移動する"
+        eng: "hop [directory]. . . . . . . . . . Moves to a directory.",
+        nmt: "hop [dilekatüli]. . . . . . . . . . tsi wa dilekatüli",
+        jpn: "hop [directory] . . ディレクトリに移動する"
     },
     "T_basic_commands_list": {
-        eng: "list . . . . . . . . . . . . . Lists files and subdirectories in the current :sp31:directory.",
+        eng: "list . . . . . . . . . . . . . . . Lists files and subdirectories in the :sp35:current directory.",
         nmt: "list. . . . . . . . . . . . . . . . seyaya fiyala me nam dilekatülilala ilo :sp36:dilekatüli wa",
-        jpn: "𝚕𝚒𝚜𝚝 . . 現在のディレクトリ内のファイルとサブディレクトリを表示する"
+        jpn: "list . . 現在のディレクトリ内のファイルとサブディレクトリを表示する"
     },
     "T_basic_commands_listdrives": {
-        eng: "listdrives . . . . . . . . . . Lists all drives.",
+        eng: "listdrives . . . . . . . . . . . . Lists all drives.",
         nmt: "listdrives. . . . . . . . . . . . . seyaya ká'ono dalayavu me",
-        jpn: "𝚕𝚒𝚜𝚝𝚍𝚛𝚒𝚟𝚎𝚜 . . 全てのドライブを表示する"
+        jpn: "listdrives . . 全てのドライブを表示する"
     },
     "T_basic_commands_loadstate": {
-        eng: "loadstate. . . . . . . . . . . Load froggyOS state.",
+        eng: "loadstate. . . . . . . . . . . . . Load froggyOS state.",
         nmt: "loadstate . . . . . . . . . . . . . nagyu satéte o-froggyOS",
-        jpn: "𝚕𝚘𝚊𝚍𝚜𝚝𝚊𝚝𝚎 . . 𝚏𝚛𝚘𝚐𝚐𝚢𝙾𝚂の状態をロードする"
+        jpn: "loadstate . . froggyOSの状態をロードする"
     },
     "T_basic_commands_meta": {
-        eng: "meta [file]. . . . . . . . . . Edits a file.",
+        eng: "meta [file]. . . . . . . . . . . . Edits a file.",
         nmt: "meta [fiyala] . . . . . . . . . . . lohi fiyala kili'ocyá",
-        jpn: "𝚖𝚎𝚝𝚊 [ファイル] . . ファイルを編集する"
+        jpn: "meta [file] . . ファイルを編集する"
     },
     "T_basic_commands_metaprop": {
-        eng: "metaprop [file] [perm] [0/1] . Edits a file's properties.",
+        eng: "metaprop [file] [property] [0/1] . Edits a file's properties.",
         nmt: "metaprop [fiyala] [popatí] [0/1]. . lohi fiyala oəpopatí me",
-        jpn: "𝚖𝚎𝚝𝚊𝚙𝚛𝚘𝚙 [ファイル] [権限] [0/1] . . ファイルのプロパティを変更する"
+        jpn: "metaprop [file] [property] [0/1] . . ファイルのプロパティを変更する"
     },
     "T_basic_commands_opendoc": {
-        eng: "opendocumentation. . . . . . . Opens the froggyOS documentation.",
+        eng: "opendocumentation. . . . . . . . . Opens the froggyOS documentation.",
         nmt: "opendocumentation . . . . . . . . . ndo dokumenndasiyon o-froggyOS",
-        jpn: "𝚘𝚙𝚎𝚗𝚍𝚘𝚌𝚞𝚖𝚎𝚗𝚝𝚊𝚝𝚒𝚘𝚗 . . 𝚏𝚛𝚘𝚐𝚐𝚢𝙾𝚂のマニュアルを開く"
+        jpn: "opendocumentation . . froggyOSのマニュアルを開く"
     },
     "T_basic_commands_rename": {
-        eng: "rename [file] [new_name] . . . Renames the file.",
+        eng: "rename [file] [new_name] . . . . . Renames the file.",
         nmt: "rename [fiyala] [sana_tama] . . . . som'on tama ma fiyala",
-        jpn: "T_basic_commands_rename"
+        jpn: "rename [file] [new_name] . . . ファイル名を変更する"
     },
     "T_basic_commands_ribbit": {
-        eng: "ribbit [text]. . . . . . . . . Displays the text.",
+        eng: "ribbit [text]. . . . . . . . . . . Displays the text.",
         nmt: "ribbit [meməpelezwisi]. . . . . . . nenta meməpelezwisi",
-        jpn: "𝚛𝚒𝚋𝚋𝚒𝚝 [テキスト] . . テキストを表示する"
+        jpn: "ribbit [テキスト] . . テキストを表示する"
     },
     "T_basic_commands_savestate": {
-        eng: "savestate. . . . . . . . . . . Save froggyOS state.",
+        eng: "savestate. . . . . . . . . . . . . Save froggyOS state.",
         nmt: "savestate . . . . . . . . . . . . . bátsiyo satéte o-froggyOS",
-        jpn: "𝚜𝚊𝚟𝚎𝚜𝚝𝚊𝚝𝚎 . . 𝚏𝚛𝚘𝚐𝚐𝚢𝙾𝚂の状態をセーブする"
+        jpn: "savestate . . froggyOSの状態をセーブする"
     },
     "T_basic_commands_spawn": {
-        eng: "spawn [directory]. . . . . . . Creates a directory.",
+        eng: "spawn [directory]. . . . . . . . . Creates a directory.",
         nmt: "spawn [dilekatüli]. . . . . . . . . mbeno dilekatüli",
-        jpn: "𝚜𝚙𝚊𝚠𝚗 [ディレクトリ] . . ディレクトリを作成する"
+        jpn: "spawn [ディレクトリ] . . ディレクトリを作成する"
     },
     "T_basic_commands_spy": {
-        eng: "spy [file] . . . . . . . . . . Reads the file and outputs it to the terminal.",
+        eng: "spy [file] . . . . . . . . . . . . Reads the file and outputs it to the :sp35:terminal.",
         nmt: "spy [fiyala]. . . . . . . . . . . . sensa fiyala nam nenta lu taminalu wa",
-        jpn: "𝚜𝚙𝚢 [ファイル] . . ファイルを読み取る"
+        jpn: "spy [ファイル] . . ファイルを読み取る"
     },
     "T_basic_commands_swimto": {
-        eng: "swimto [program] . . . . . . . Start a program.",
+        eng: "swimto [program] . . . . . . . . . Start a program.",
         nmt: "swimto [program]. . . . . . . . . . igyensa pógám",
-        jpn: "𝚜𝚠𝚒𝚖𝚝𝚘 [プログラム] . . プログラムを開始する"
+        jpn: "swimto [プログラム] . . プログラムを開始する"
     },
     /*
     basic model:
@@ -166,7 +166,7 @@ const presetLanguagesMap = {
     "T_no_urgent_state_found": {
         eng: "No urgent state found.",
         nmt: "satéte apelelala gewitsu mana",
-        jpn: "T_no_urgent_state_found"
+        jpn: "緊急状態が見つかりませんでした"
     },
     "T_state_cleared": {
         eng: "State cleared.",
@@ -181,7 +181,7 @@ const presetLanguagesMap = {
     "T_state_saved": {
         eng: "State saved. May need to loadstate for some changes to take effect.",
         nmt: `satéte bátsiyo mana. kana "loadstate" ma lohiəte me fene`,
-        jpn: "T_state_saved"
+        jpn: "状態をセーブしました。いくつかの変更を適用するには、状態をロードする必要があるかもしれません。"
     },
 
     // file =====================================
@@ -193,7 +193,7 @@ const presetLanguagesMap = {
     "T_provide_file_name_and_new": {
         eng: "Please provide a file name and a new name.",
         nmt: "apelelala som fiyala tama nam sana tama",
-        jpn: "T_provide_file_name_and_new"
+        jpn: "ファイル名と新しいファイル名を入力してください"
     },
     "T_file_does_not_exist": {
         eng: "File does not exist.",
@@ -208,12 +208,12 @@ const presetLanguagesMap = {
     "T_file_name_already_exists": {
         eng: "File with that name already exists in this directory.",
         nmt: "tama oəfiyala tsefese dilekatüli wa",
-        jpn: "T_file_name_already_exists"
+        jpn: "そのファイル名はこのディレクトリにすでに存在します"
     },
     "T_file_name_not_3_char": {
         eng: "File name must be exactly 3 characters long.",
         nmt: "T_file_name_not_3_char",
-        jpn: "T_file_name_not_3_char"
+        jpn: "ファイル名はちょうど3文字でなければなりません"
     },
     "T_no_permission_to_edit_file": {
         eng: "You do not have permission to edit this file.",
@@ -223,17 +223,17 @@ const presetLanguagesMap = {
     "T_no_permission_to_read_file": {
         eng: "You do not have permission to read this file.",
         nmt: "T_no_permission_to_read_file",
-        jpn: "T_no_permission_to_read_file"
+        jpn: "このファイルを読み取る権限がありません"
     },
     "T_no_permission_to_clone": {
         eng: "You do not have permission to clone this file.",
         nmt: "T_no_permission_to_clone",
-        jpn: "T_no_permission_to_clone"
+        jpn: "このファイルをクローンする権限がありません"
     },
     "T_no_permission_to_rename_file": {
         eng: "You do not have permission to rename this file.",
         nmt: "T_no_permission_to_rename_file",
-        jpn: "T_no_permission_to_rename_file"
+        jpn: "このファイル名を変更する権限がありません"
     },
     "T_no_permission_to_delete_file": {
         eng: "You do not have permission to delete this file.",
@@ -248,7 +248,7 @@ const presetLanguagesMap = {
     "T_available_properties": {
         eng: "* Available properties *",
         nmt: "T_available_properties",
-        jpn: "T_available_properties"
+        jpn: "* 利用可能なプロパティ *"
     },
     "T_file_created": {
         eng: "File created.",
@@ -258,12 +258,12 @@ const presetLanguagesMap = {
     "T_file_cloned |||[]|||": {
         eng: `File "|||[]|||" cloned.`,
         nmt: "T_file_cloned |||[]|||",
-        jpn: "T_file_cloned |||[]|||"
+        jpn: "ファイル「|||[]|||」がクローンされました"
     },
     "T_file_renamed": {
         eng: "File renamed.",
         nmt: "T_file_renamed",
-        jpn: "T_file_renamed"
+        jpn: "ファイル名を変更しました"
     },
     "T_file_deleted": {
         eng: "File deleted.",
@@ -292,7 +292,7 @@ const presetLanguagesMap = {
     "T_directory_already_exists": {
         eng: "Directory already exists.",
         nmt: "T_directory_already_exists",
-        jpn: "T_directory_already_exists"
+        jpn: "ディレクトリは既に存在します"
     },
     "T_directory_empty": {
         eng: "This directory is empty.",
@@ -302,12 +302,12 @@ const presetLanguagesMap = {
     "T_cannot_create_directories": {
         eng: "You cannot create directories in this directory.",
         nmt: "T_cannot_create_directories",
-        jpn: "T_cannot_create_directories"
+        jpn: "このディレクトリ内ではディレクトリを作成できません"
     },
     "T_directory_created": {
         eng: "Directory created.",
         nmt: "T_directory_created",
-        jpn: "T_directory_created"
+        jpn: "ディレクトリを作成しました"
     },
 
     // palette ====================================
@@ -363,46 +363,46 @@ const presetLanguagesMap = {
     "T_provide_valid_program": {
         eng: "Please provide a valid program.",
         nmt: "T_provide_valid_program",
-        jpn: "T_provide_valid_program"
+        jpn: "有効なプログラムを入力してください"
     },
     "T_no_permission_to_run_program": {
         eng: "You do not have permission to run this program.",
         nmt: "T_no_permission_to_run_program",
-        jpn: "T_no_permission_to_run_program"
+        jpn: "このプログラムを実行する権限がありません"
     },
     "T_available_programs": {
         eng: "* Available programs *",
         nmt: "T_available_programs",
-        jpn: "T_available_programs"
+        jpn: "* 使用可能なプログラム *"
     },
 
     // spinner ====================================
     "T_spinner_does_not_exist": {
         eng: "Spinner does not exist.",
         nmt: "T_spinner_does_not_exist",
-        jpn: "T_spinner_does_not_exist"
+        jpn: "スピナーが存在しません"
     },
     "T_available_spinners": {
         eng: "* Available spinners *",
         nmt: "T_available_spinners",
-        jpn: "T_available_spinners"
+        jpn: "* 利用可能なスピナー *"
     },
 
     // lang =====================================
     "T_provide_lang_code": {
         eng: "Please provide a language code.",
         nmt: "apelelala som mëzte koda",
-        jpn: "T_provide_lang_code"
+        jpn: "言語のコードを入力してください"
     },
     "T_lang_does_not_exist |||[]|||": {
         eng: `Language with code "|||[]|||" does not exist.`,
         nmt: `mëzte kole "|||[]|||" getsefese`,
-        jpn: "T_lang_does_not_exist |||[]|||"
+        jpn: "コード「|||[]|||」の言語が存在しません"
     },
     "T_invalid_lang_file |||[]|||": {
         eng: `Invalid language file with code "|||[]|||".`,
         nmt: "T_invalid_lang_file |||[]|||",
-        jpn: "T_invalid_lang_file |||[]|||"
+        jpn: "コード「|||[]|||」の言語ファイルは無効です"
     },
     "T_current_lang_invalid": {
         eng: `Current language file is INVALID! Switching to "lbh".`,
@@ -412,78 +412,73 @@ const presetLanguagesMap = {
     "T_invalid_lang": {
         eng: "INVALID",
         nmt: "T_invalid_lang",
-        jpn: "T_invalid_lang"
+        jpn: "無効"
     },
     "T_available_langs": {
         eng: "* Available languages *",
         nmt: "* mëzte me *",
-        jpn: "T_available_langs"
+        jpn: "* 利用可能な言語 *"
     },
     "T_lang_changed": {
         eng: "Language changed.",
         nmt: "mëzte lohi mana",
-        jpn: "T_lang_changed"
+        jpn: "言語が変更されました"
     },
 
     /// miscellaneous provide ... ====================================
     "T_provide_valid_property_type": {
         eng: "Please provide a valid property type.",
         nmt: "T_provide_valid_property_type",
-        jpn: "T_provide_valid_property_type"
-    },
-    "T_provide_valid_value_0_1": {
-        eng: "Please provide a valid value. 0 or 1.",
-        nmt: "T_provide_valid_value_0_1",
-        jpn: "T_provide_valid_value_0_1"
+        jpn: "有効なプロパティタイプを入力してください"
     },
     "T_provide_text_to_display": {
         eng: "Please provide text to display.",
         nmt: "T_provide_text_to_display",
-        jpn: "T_provide_text_to_display"
+        jpn: "表示するテキストを入力してください"
     },
     "T_provide_path": {
         eng: "Please provide a path.",
         nmt: "T_provide_path",
-        jpn: "T_provide_path"
+        jpn: "パスを入力してください"
     },
     "T_invalid_args_provide_1_0": {
         eng: "Invalid argument. Please provide '1' or '0'.",
         nmt: "T_invalid_args_provide_1_0",
-        jpn: "T_invalid_args_provide_1_0"
+        jpn: "無効な引数です。「1」または「0」を入力してください。"
     },
 
     // lilypad ====================================
     "T_lilypad_save_exit": {
         eng: "* press ESC to save and exit lilypad *",
         nmt: "T_lilypad_save_exit",
-        jpn: "T_lilypad_save_exit"
+        jpn: "* セーブしてlilypadを終了するにはESCキーを押してください *"
     },
     "T_lilypad_exit": {
         eng: "* press ESC to exit lilypad *",
         nmt: "T_lilypad_exit",
-        jpn: "T_lilypad_exit"
+        jpn: "* lilypadを終了するにはESCキーを押してください *"
     },
     "T_saving_file": {
         eng: "Saving file...",
         nmt: "T_saving_file",
-        jpn: "T_saving_file"
+        jpn: "ファイルをセーブ中..."
     },
     "T_saving_done": {
         eng: "Done! ^v^",
         nmt: "T_saving_done",
-        jpn: "T_saving_done"
+        jpn: "完了！^v^"
     },
 
     // misc success =========================
     "T_properties_updated": {
         eng: "Properties updated.",
         nmt: "T_properties_updated",
-        jpn: "T_properties_updated"
+        jpn: "プロパティを更新しました"
     },
     "T_documentation_opened": {
         eng: "Documentation opened in a new window.",
         nmt: "T_documentation_opened",
-        jpn: "T_documentation_opened"
+        jpn: "新しいウインドウでマニュアルが開かれました"
     },
 
     // misc error/fail =========================
@@ -507,274 +502,284 @@ const presetLanguagesMap = {
         nmt: "gogowa data UNAYAVA",
         jpn: "エラーデータは利用できません"
     },
+    "T_provide_valid_t_desc": {
+        eng: "Please provide a valid translation descriptor.",
+        nmt: "T_provide_valid_t_desc",
+        jpn: "T_provide_valid_t_desc"
+    },
 
     // bullfrog commands =========================
     "T_bullfrog_commands_intro": {
         eng: "* A few bullfrog commands *",
         nmt: "T_bullfrog_commands_intro",
-        jpn: "T_bullfrog_commands_intro"
+        jpn: "* いくつかのbullfrogコマンド *"
     },
     "T_bullfrog_commands_changepath": {
         eng: "[[BULLFROG]]changepath [path] - Changes the path of the terminal",
         nmt: "T_bullfrog_commands_changepath",
-        jpn: "T_bullfrog_commands_changepath"
+        jpn: "[[BULLFROG]]changepath [path] - 端末のパスを変更する"
     },
     "T_bullfrog_commands_greeting": {
         eng: "[[BULLFROG]]greeting - Displays the greeting message",
         nmt: "T_bullfrog_commands_greeting",
-        jpn: "T_bullfrog_commands_greeting"
+        jpn: "[[BULLFROG]]greeting - 挨拶のメッセージを表示する"
     },
     "T_bullfrog_commands_help": {
         eng: "[[BULLFROG]]help - Displays this message",
-        nmt: "T_bullfrog_commands_greeting",
-        jpn: "T_bullfrog_commands_greeting"
+        nmt: "T_bullfrog_commands_help",
+        jpn: "[[BULLFROG]]help - このメッセージを表示する"
     },
     "T_bullfrog_commands_setstatbar": {
         eng: "[[BULLFROG]]setstatbar [text] - Changes the text in the status bar",
         nmt: "T_bullfrog_commands_setstatbar",
-        jpn: "T_bullfrog_commands_setstatbar"
+        jpn: "[[BULLFROG]]setstatbar [text] - ステータスバーのテキストを変更する"
     },
     "T_bullfrog_commands_statbarlock": {
         eng: "[[BULLFROG]]statbarlock [0/1] - Locks the status bar from updating",
         nmt: "T_bullfrog_commands_statbarlock",
-        jpn: "T_bullfrog_commands_statbarlock"
+        jpn: "[[BULLFROG]]statbarlock [0/1] - ステータスバーの更新をロックする"
     },
     "T_bullfrog_commands_showspinner": {
         eng: "[[BULLFROG]]showspinner [0/1] - Toggles the loading spinner",
         nmt: "T_bullfrog_commands_showspinner",
-        jpn: "T_bullfrog_commands_showspinner"
+        jpn: "[[BULLFROG]]showspinner [0/1] - ローディングスピナーの表示を切り替える"
     },
     "T_bullfrog_commands_debugmode": {
         eng: "[[BULLFROG]]debugmode [0/1] - Toggles debug mode",
         nmt: "T_bullfrog_commands_debugmode",
-        jpn: "T_bullfrog_commands_debugmode"
+        jpn: "[[BULLFROG]]debugmode [0/1] - デバッグモードを切り替える"
     },
     "T_bullfrog_commands_setspinner": {
         eng: "[[BULLFROG]]setspinner [spinner] - Changes the loading spinner",
         nmt: "T_bullfrog_commands_setspinner",
-        jpn: "T_bullfrog_commands_setspinner"
+        jpn: "[[BULLFROG]]setspinner [spinner] - ローディングスピナーを変更する"
     },
     "T_bullfrog_commands_usavestate": {
         eng: "[[BULLFROG]]urgentsavestate - saves state for reloading",
         nmt: "T_bullfrog_commands_usavestate",
-        jpn: "T_bullfrog_commands_usavestate"
+        jpn: "[[BULLFROG]]urgentsavestate - リロードするには状態をセーブする"
     },
     "T_bullfrog_commands_uloadstate": {
         eng: "[[BULLFROG]]urgentloadstate - loads state for reloading",
         nmt: "T_bullfrog_commands_uloadstate",
-        jpn: "T_bullfrog_commands_uloadstate"
+        jpn: "[[BULLFROG]]urgentloadstate - リロードするには状態をセーブする"
     },
     "T_bullfrog_commands_uclearstate": {
         eng: "[[BULLFROG]]urgentclearstate - clears reload state",
         nmt: "T_bullfrog_commands_uclearstate",
-        jpn: "T_bullfrog_commands_uclearstate"
+        jpn: "[[BULLFROG]]urgentclearstate - リロードの状態をクリアする"
     },
     "T_bullfrog_commands_autoloadstate": {
         eng: "[[BULLFROG]]autoloadstate - loads state",
         nmt: "T_bullfrog_commands_autoloadstate",
-        jpn: "T_bullfrog_commands_autoloadstate"
+        jpn: "[[BULLFROG]]autoloadstate - 状態をロードする"
     },
     "T_bullfrog_commands_vlang": {
         eng: "[[BULLFROG]]validatelanguage - checks if the current language is valid",
         nmt: "T_bullfrog_commands_vlang",
         jpn: "T_bullfrog_commands_vlang"
     },
-    "T_bullfrog_commands_tstats": {
-        eng: "[[BULLFROG]]translationstatus - get the completion percent of all languages",
-        nmt: "T_bullfrog_commands_tstats",
-        jpn: "T_bullfrog_commands_tstats"
+    "T_bullfrog_commands_trans": {
+        eng: "[[BULLFROG]]translations - get the completion percent of all languages",
+        nmt: "T_bullfrog_commands_trans",
+        jpn: "T_bullfrog_commands_trans"
+    },
+    "T_bullfrog_commands_trigdiag": {
+        eng: "[[BULLFROG]]triggerdialogue - trigger a specific dialogue option",
+        nmt: "T_bullfrog_commands_trigdiag",
+        jpn: "T_bullfrog_commands_trigdiag"
     },
 
     // date and time =========================
     "T_date_short_sunday": {
         eng: "Sun",
         nmt: "ypg",
-        jpn: "T_date_short_sunday"
+        jpn: "日"
     },
     "T_date_short_monday": {
         eng: "Mon",
         nmt: "ypl",
-        jpn: "T_date_short_monday"
+        jpn: "月"
     },
     "T_date_short_tuesday": {
         eng: "Tue",
         nmt: "ypb",
-        jpn: "T_date_short_tuesday"
+        jpn: "火"
     },
     "T_date_short_wednesday": {
         eng: "Wed",
         nmt: "yps",
-        jpn: "T_date_short_wednesday"
+        jpn: "水"
     },
     "T_date_short_thursday": {
         eng: "Thu",
         nmt: "ypk",
-        jpn: "T_date_short_thursday"
+        jpn: "木"
     },
     "T_date_short_friday": {
         eng: "Fri",
         nmt: "ypm",
-        jpn: "T_date_short_friday"
+        jpn: "金"
     },
     "T_date_short_saturday": {
         eng: "Sat",
         nmt: "ypw",
-        jpn: "T_date_short_saturday"
+        jpn: "土"
     },
     "T_date_long_sunday": {
         eng: "Sunday",
         nmt: "yepë-gela",
-        jpn: "T_date_long_sunday"
+        jpn: "日曜日"
     },
     "T_date_long_monday": {
         eng: "Monday",
         nmt: "yepë-la",
-        jpn: "T_date_long_monday"
+        jpn: "月曜日"
     },
     "T_date_long_tuesday": {
         eng: "Tuesday",
         nmt: "yepë-bese",
-        jpn: "T_date_long_tuesday"
+        jpn: "火曜日"
     },
     "T_date_long_wednesday": {
         eng: "Wednesday",
         nmt: "yepë-sála",
-        jpn: "T_date_long_wednesday"
+        jpn: "水曜日"
     },
     "T_date_long_thursday": {
         eng: "Thursday",
         nmt: "yepë-kimi",
-        jpn: "T_date_long_thursday"
+        jpn: "木曜日"
     },
     "T_date_long_friday": {
         eng: "Friday",
         nmt: "yepë-molo",
-        jpn: "T_date_long_friday"
+        jpn: "金曜日"
     },
     "T_date_long_saturday": {
         eng: "Saturday",
         nmt: "yepë-wé",
-        jpn: "T_date_long_saturday"
+        jpn: "土曜日"
     },
     "T_date_short_january": {
         eng: "Jan",
         nmt: "ygl",
-        jpn: "T_date_short_january"
+        jpn: "1月"
     },
     "T_date_short_february": {
         eng: "Feb",
         nmt: "yla",
-        jpn: "T_date_short_february"
+        jpn: "2月"
     },
     "T_date_short_march": {
         eng: "Mar",
         nmt: "ybs",
-        jpn: "T_date_short_march"
+        jpn: "3月"
     },
     "T_date_short_april": {
         eng: "Apr",
         nmt: "ysl",
-        jpn: "T_date_short_april"
+        jpn: "4月"
     },
     "T_date_short_may": {
         eng: "May",
         nmt: "ykm",
-        jpn: "T_date_short_may"
+        jpn: "5月"
     },
     "T_date_short_june": {
         eng: "Jun",
         nmt: "yml",
-        jpn: "T_date_short_june"
+        jpn: "6月"
     },
     "T_date_short_july": {
         eng: "Jul",
         nmt: "ywé",
-        jpn: "T_date_short_july"
+        jpn: "7月"
     },
     "T_date_short_august": {
         eng: "Aug",
         nmt: "yan",
-        jpn: "T_date_short_august"
+        jpn: "8月"
     },
     "T_date_short_september": {
         eng: "Sep",
         nmt: "ymk",
-        jpn: "T_date_short_september"
+        jpn: "9月"
     },
     "T_date_short_october": {
         eng: "Oct",
         nmt: "ykó",
-        jpn: "T_date_short_october"
+        jpn: "10月"
     },
     "T_date_short_november": {
         eng: "Nov",
         nmt: "ykg",
-        jpn: "T_date_short_november"
+        jpn: "11月"
     },
     "T_date_short_december": {
         eng: "Dec",
         nmt: "ykl",
-        jpn: "T_date_short_december"
+        jpn: "12月"
     },
     "T_date_long_january": {
         eng: "January",
         nmt: "yepëlili-gela",
-        jpn: "T_date_long_january"
+        jpn: "一月"
     },
     "T_date_long_february": {
         eng: "February",
         nmt: "yepëlili-la",
-        jpn: "T_date_long_february"
+        jpn: "二月"
     },
     "T_date_long_march": {
         eng: "March",
         nmt: "yepëlili-bese",
-        jpn: "T_date_long_march"
+        jpn: "三月"
     },
     "T_date_long_april": {
         eng: "April",
         nmt: "yepëlili-sála",
-        jpn: "T_date_long_april"
+        jpn: "四月"
     },
     "T_date_long_may": {
         eng: "May",
         nmt: "yepëlili-kimi",
-        jpn: "T_date_long_may"
+        jpn: "五月"
     },
     "T_date_long_june": {
         eng: "June",
         nmt: "yepëlili-molo",
-        jpn: "T_date_long_june"
+        jpn: "六月"
     },
     "T_date_long_july": {
         eng: "July",
         nmt: "yepëlili-wé",
-        jpn: "T_date_long_july"
+        jpn: "七月"
     },
     "T_date_long_august": {
         eng: "August",
         nmt: "yepëlili-ana",
-        jpn: "T_date_long_august"
+        jpn: "八月"
     },
     "T_date_long_september": {
         eng: "September",
         nmt: "yepëlili-miki",
-        jpn: "T_date_long_september"
+        jpn: "九月"
     },
     "T_date_long_october": {
         eng: "October",
         nmt: "yepëlili-kó",
-        jpn: "T_date_long_october"
+        jpn: "十月"
     },
     "T_date_long_november": {
         eng: "November",
         nmt: "yepëlili-kó-nam-gela",
-        jpn: "T_date_long_november"
+        jpn: "十一月"
     },
     "T_date_long_december": {
         eng: "December",
         nmt: "yepëlili-kó-nam-la",
-        jpn: "T_date_long_december"
+        jpn: "十二月"
     },
 
     // uncategorized messages ==========================

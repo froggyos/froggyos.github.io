@@ -2,8 +2,8 @@
 <style>
     /*https://github.com/mshioda/relaxed-typing-mono-jp/releases/*/
     @font-face {
-        font-family: "RelaxedTypingMonoJP";
-        src: url("./RelaxedTypingMonoJP-Bold.ttf") format("truetype");
+        font-family: "froggyOS-jp-font";
+        src: url("./KokubanMonospace-Regular.ttf") format("truetype");
     }
     body {
         background-color: var(--void-space);
@@ -39,11 +39,7 @@
         background-color: var(--bar-background);
         height: 10px;
         width: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        display: inline-block;
-        padding-left: 4.8px;
+        padding-left: 4px;
         padding-top: 1px;
         box-sizing: border-box;
         cursor: none;
@@ -113,10 +109,21 @@
     }
 
     .text-jp {
-        font-family: "RelaxedTypingMonoJP";
-        line-height: 12px;
+        font-family: "FroggyOS-jp-font";
+        line-height: 11px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+
+    .bar-text-jp {
+        font-family: "FroggyOS-jp-font";
+        line-height: 8px;
         font-size: 12px;
         font-weight: 600;
+    }
+
+    .line-container:has(span.path-jp) {
+        max-height: 12px;
     }
 
     .path-jp {
@@ -166,6 +173,18 @@
         background-color: var(--void-space);
         z-index: 9999;
     }
+
+    #bar-text {
+        display: inline-block;
+    }
+
+    #spinner-text {
+        float: right;
+        padding-right: 3px;
+        padding-top: 0.5px;
+    }
+
+
 </style>
 <head>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -183,7 +202,10 @@
     <textarea id="debug-program-memory" readonly>program memory</textarea>
     <textarea id="debug-os" readonly>os memory</textarea>
     <div id="screen">
-        <div id="bar"></div>
+        <div id="bar">
+            <div id="bar-text"></div>
+            <div id="spinner-text"></div>
+        </div>
         <div id="terminal"></div>
     </div>
     <div id="blackout"></div>

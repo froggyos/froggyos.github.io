@@ -2,6 +2,13 @@
 
 const screen = document.getElementById('screen');
 const terminal = document.getElementById('terminal');
+const bar = document.getElementById('bar');
+
+const barText = document.getElementById('bar-text');
+const spinnerText = document.getElementById('spinner-text');
+
+// if the last character is japanese, switch the font
+let isJp = (text) => /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF「」]/g.test(text);
 
 document.body.onclick = function() {
     try {
@@ -37,22 +44,22 @@ function setConfigFromSettings(){
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!============================================================
 // todo: get rid of the fuckass bitchass shit and make it fix properly (ykwim)
-function localize(english, TRANSLATE_TEXT){
+function localize(descriptor, TRANSLATE_TEXT){
     let replacementData;
 
     if (TRANSLATE_TEXT == undefined) TRANSLATE_TEXT = true;
 
-    if(english.includes("|||[")){
-        replacementData = english.split("|||[")[1].split("]|||")[0];
-        english = english.replaceAll(`|||[${replacementData}]|||`, "|||[]|||");
+    if(descriptor.includes("|||[")){
+        replacementData = descriptor.split("|||[")[1].split("]|||")[0];
+        descriptor = descriptor.replaceAll(`|||[${replacementData}]|||`, "|||[]|||");
     }
 
-    if(TRANSLATE_TEXT == false) return english;
+    if(TRANSLATE_TEXT == false) return descriptor;
 
     let translationMap = config.fileSystem["Config:/lang_files"].find(translation => translation.name == "lbh").data;
     let languageMap = config.fileSystem["Config:/lang_files"].find(translation => translation.name == config.language).data;
 
-    let englishData = translationMap.indexOf(english);
+    let englishData = translationMap.indexOf(descriptor);
     let translation = languageMap[englishData];
 
     if(translation == undefined) return null;
@@ -115,8 +122,7 @@ function programList(){
     }
 }
 
-function updateDateTime() {
-    if(!config.updateStatBar) return;
+function parseTimeFormat(text){
     const now = new Date();
 
     let dowListShort = ['T_date_short_sunday', 'T_date_short_monday', 'T_date_short_tuesday', 'T_date_short_wednesday', 'T_date_short_thursday', 'T_date_short_friday', 'T_date_short_saturday'];
@@ -214,11 +220,34 @@ function updateDateTime() {
     let dateString = dateTemplate.replace(/!([a-zA-Z]+)/g, "!$1") // Preserve escaped characters
         .replace(/\b([a-zA-Z]+)\b/g, (match) => replacementMap[match] ?? match); // Replace only whole words
 
-    if(!config.showSpinner) document.getElementById('bar').textContent = dateString.padEnd(79," ");
-    else {
+    return dateString;
+}
+
+function updateDateTime() {
+    if(!config.updateStatBar) return;
+
+    let dateString = parseTimeFormat(config.timeFormat);
+
+    barText.textContent = dateString;
+    if(config.showSpinner == true) {
         let spinnerFrames = config.fileSystem["D:/Spinners"].find(spinner => spinner.name == config.currentSpinner).data;
-        document.getElementById('bar').textContent = dateString.padEnd(79," ").slice(0, -1) + spinnerFrames[config.spinnerIndex % spinnerFrames.length];
+        spinnerText.textContent = spinnerFrames[config.spinnerIndex % spinnerFrames.length];
         config.spinnerIndex++;
+    } else {
+        spinnerText.textContent = "";
+    }
+
+    if(isJp(barText.textContent)) {
+        let text = barText.textContent;
+        barText.textContent = '';
+        text.split("").forEach((char) => {
+            let span = document.createElement('span');
+            if(isJp(char)) {
+                span.classList.add('bar-text-jp');
+            }
+            span.textContent = char;
+            barText.appendChild(span);
+        })
     }
 }
 
@@ -473,12 +502,23 @@ function createTerminalLine(text, path, other){
         else terminalLine.textContent = localizedText; 
     }
 
-    // if the last character is japanese, switch the font
-    let isJp = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]/g.test(terminalLine.textContent);
-
-    if(isJp && config.language == "jpn") {
-        terminalLine.classList.add('text-jp');
+    if(isJp(terminalLine.textContent) && config.language == "jpn") {
+        let text = terminalLine.textContent;
+        terminalLine.textContent = '';
+        // terminalLine.classList.add('text-jp');
         terminalPath.classList.add("path-jp");
+        text.split("").forEach((char) => {
+            if(isJp(char)) {
+                let span = document.createElement('span');
+                span.classList.add('text-jp');
+                span.textContent = char;
+                terminalLine.appendChild(span);
+            } else {
+                let span = document.createElement('span');  
+                span.textContent = char;
+                terminalLine.appendChild(span);
+            }
+        })
     }
 
     lineContainer.appendChild(terminalPath);
@@ -730,20 +770,21 @@ function sendCommand(command, args, createEditableLineAfter){
         break;
 
         case "ft":
-        case "formattime":
+        case "formattime": {
             if(args.length == 0){
                 createTerminalLine("T_provide_time_format", config.errorText);
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
-            if(args.join(" ").length > 59){
+            let text = args.join(" ");
+            if(parseTimeFormat(text).length > 78){
                 createTerminalLine("T_arg_too_long", config.errorText);
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
             setSetting("timeFormat", args.join(" "));
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
-        break;
+        } break;
 
         // make files
         case "ch":
@@ -1037,7 +1078,7 @@ function sendCommand(command, args, createEditableLineAfter){
             }
 
             if(value == undefined || (value != "0" && value != "1")){
-                createTerminalLine("T_provide_valid_value_0_1", config.errorText);
+                createTerminalLine("T_invalid_args_provide_1_0", config.errorText);
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break
             }
@@ -1264,17 +1305,19 @@ function sendCommand(command, args, createEditableLineAfter){
             createTerminalLine("T_bullfrog_commands_uclearstate", ">");
             createTerminalLine("T_bullfrog_commands_autoloadstate", ">");
             createTerminalLine("T_bullfrog_commands_vlang", ">");
-            createTerminalLine("T_bullfrog_commands_tstats", ">");
+            createTerminalLine("T_bullfrog_commands_trans", ">");
+            createTerminalLine("T_bullfrog_commands_trigdiag", ">");
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
 
         case '[[BULLFROG]]setstatbar':
-            if(args.length > 79){
+            let text = args.join(" ");
+            if(text > 78){
                 createTerminalLine("T_arg_too_long", config.errorText);
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
-            document.getElementById('bar').textContent = args.join(" ");
+            barText.textContent = args.join(" ");
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
 
@@ -1381,7 +1424,7 @@ function sendCommand(command, args, createEditableLineAfter){
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         } break;
 
-        case "[[BULLFROG]]translationstatus": {
+        case "[[BULLFROG]]translations": {
             let translationFiles = config.fileSystem["Config:/lang_files"].filter(file => file.name != "lbh");
 
             let lbh = config.fileSystem["Config:/lang_files"].find(file => file.name == "lbh").data;
@@ -1395,6 +1438,28 @@ function sendCommand(command, args, createEditableLineAfter){
                 createTerminalLine(`${file.name}: ${percent.toFixed(2)}%`, ">", {translate: false});
             })
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+        } break;
+
+        case "[[BULLFROG]]triggerdialogue": {
+            let dialogue = args[0];
+            if(dialogue == undefined){
+                createTerminalLine("T_provide_valid_t_desc", config.errorText);
+                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                break;
+            }
+
+            let localized = localize(dialogue);
+
+            if(localized == undefined){
+                createTerminalLine("T_provide_valid_t_desc", config.errorText);
+                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                break;
+            }
+
+            createTerminalLine(localized, ">", {translate: false});
+            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+            
+
         } break;
 
         default:
@@ -1659,6 +1724,6 @@ sendCommand('[[BULLFROG]]autoloadstate', [], false);
 sendCommand('[[BULLFROG]]validatelanguage', [], false);
 
 setTimeout(() => {
-    document.getElementById("blackout").style.display = "none";
+    document.getElementById("blackout").remove()
     sendCommand('[[BULLFROG]]greeting', []);
 }, 100)
