@@ -1723,36 +1723,54 @@ createColorTestBar();
 sendCommand('[[BULLFROG]]autoloadstate', [], false);
 sendCommand('[[BULLFROG]]validatelanguage', [], false);
 
-setTimeout(() => {
+let randomNumbers = [
+    Math.floor(Math.random() * 60) + 20,
+    Math.floor(Math.random() * 60) + 20,
+    Math.floor(Math.random() * 60) + 20,
+    Math.floor(Math.random() * 60) + 20
+].sort((a, b) => a - b);
 
-    // get 4 random numbers between 20 and 80
+let timings = [
+    ["0%", randomNumbers[0] + "%"],
+    [randomNumbers[0] + "%", randomNumbers[1] + "%"],
+    [randomNumbers[1] + "%", randomNumbers[2] + "%"],
+    [randomNumbers[2] + "%", randomNumbers[3] + "%"],
+    [randomNumbers[3] + "%", "100%"]
+]
 
-    let randomNumbers = [Math.floor(Math.random() * 60) + 20, Math.floor(Math.random() * 60) + 20, Math.floor(Math.random() * 60) + 20, Math.floor(Math.random() * 60) + 20].sort((a, b) => a - b);
+let getTimings = (i) => {
+    return [[
+        { width: timings[i][0] },
+        { width: timings[i][1] },
+        { width: timings[i][1] }    
+    ], {
+        duration: Math.floor(Math.random() * 3000) + 500,
+        easing: "ease-in-out",
+        fill: "forwards"
+    }]
+}
 
-    let timings = [
-        ["0%", randomNumbers[0] + "%"],
-        [randomNumbers[0] + "%", randomNumbers[1] + "%"],
-        [randomNumbers[1] + "%", randomNumbers[2] + "%"],
-        [randomNumbers[2] + "%", randomNumbers[3] + "%"],
-        [randomNumbers[3] + "%", "100%"]
-    ]
+const DISABLE_ANIM = false;
 
-    console.log(timings);
+let innerBar = document.getElementById("inner-bar");
 
-    timings.forEach(timing => {
-        document.getElementById("inner-bar").animate([
-            { width: timing[0] },
-            { width: timing[1] }
-        ], {
-            duration: 1000,
-            easing: "linear",
-            fill: "forwards"
-        })
-
-        // buhh FIX THIS SHIT HAHAHAUIASB
-
-    })
-
-    document.getElementById("blackout").remove()
-    sendCommand('[[BULLFROG]]greeting', []);
-}, 100)
+if(!DISABLE_ANIM) innerBar.animate(...getTimings(0)).onfinish = () => {
+    innerBar.animate(...getTimings(1)).onfinish = () => {
+        innerBar.animate(...getTimings(2)).onfinish = () => {
+            innerBar.animate(...getTimings(3)).onfinish = () => {
+                innerBar.animate(...getTimings(4)).onfinish = () => {
+                    setTimeout(() => {
+                        document.getElementById("blackout").remove()
+                        sendCommand('[[BULLFROG]]greeting', []);
+                    }, 100)
+                }
+            }
+        }
+    }
+}
+else {
+    setTimeout(() => {
+        document.getElementById("blackout").remove()
+        sendCommand('[[BULLFROG]]greeting', []);
+    }, 100)
+}
