@@ -28,7 +28,7 @@ function getSetting(setting, isArray) {
 }
 
 function setConfigFromSettings(){
-    if(config.savingFile) return;
+    // if(config.savingFile) return;
     config.debugMode = (getSetting("debugMode") === "true");
     config.version = getSetting("version");
     config.colorPalette = getSetting("colorPalette");
@@ -254,6 +254,8 @@ function updateDateTime() {
 setInterval(() => {
     setConfigFromSettings()
     programList()
+    if(config.savingFile) setSetting("showSpinner", "true");
+    else setSetting("showSpinner", "false");
 }, 1);
 
 setInterval(() => {
@@ -1037,7 +1039,7 @@ function sendCommand(command, args, createEditableLineAfter){
                 break;
             }
             if(file.properties.write == false){
-                createTerminalLine("T_no_permission_to_edit_file.", config.errorText);
+                createTerminalLine("T_no_permission_to_edit_file", config.errorText);
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
@@ -1679,7 +1681,6 @@ function createLilypadLine(path, linetype, filename){
             if(filename == undefined){
                 createEditableTerminalLine(`${config.currentPath}>`);
             } else {
-                setSetting("showSpinner", "true");
                 createTerminalLine(`T_saving_file`, ">");
 
                 let dataLength = 0;
@@ -1694,7 +1695,6 @@ function createLilypadLine(path, linetype, filename){
                 
                 config.savingFile = true;
                 setTimeout(function(){
-                    setSetting("showSpinner", "false");
                     config.savingFile = false;
                     createTerminalLine(`T_saving_done`, ">");
                     createEditableTerminalLine(`${config.currentPath}>`);
