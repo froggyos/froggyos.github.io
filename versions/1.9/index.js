@@ -217,7 +217,7 @@ function parseTimeFormat(text){
 
     let replacementMap = Object.fromEntries(replacements.map(({ char, value }) => [char, value]));
 
-    let dateString = dateTemplate.replace(/!([a-zA-Z]+)/g, "!$1") // Preserve escaped characters
+    let dateString = text.replace(/!([a-zA-Z]+)/g, "!$1") // Preserve escaped characters
         .replace(/\b([a-zA-Z]+)\b/g, (match) => replacementMap[match] ?? match); // Replace only whole words
 
     return dateString;
@@ -254,8 +254,8 @@ function updateDateTime() {
 setInterval(() => {
     setConfigFromSettings()
     programList()
-    if(config.savingFile) setSetting("showSpinner", "true");
-    else setSetting("showSpinner", "false");
+    // if(config.savingFile) setSetting("showSpinner", "true");
+    // else setSetting("showSpinner", "false");
 }, 1);
 
 setInterval(() => {
@@ -931,7 +931,7 @@ function sendCommand(command, args, createEditableLineAfter){
         case "loadstate":
             let state = localStorage.getItem(`froggyOS-state-${config.version}`);
             if(state == null){
-                createTerminalLine("T_no_state_found.", config.errorText);
+                createTerminalLine("T_no_state_found", config.errorText);
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
@@ -1173,7 +1173,7 @@ function sendCommand(command, args, createEditableLineAfter){
             directory = config.currentPath + "/" + args[0];
 
             if(config.dissallowSubdirectoriesIn.includes(config.currentPath)){
-                createTerminalLine("T_cannot_create_directories", config.errorText);
+                createTerminalLine("T_cannot_create_directories_in_here", config.errorText);
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
@@ -1694,8 +1694,10 @@ function createLilypadLine(path, linetype, filename){
                 });
                 
                 config.savingFile = true;
+                setSetting("showSpinner", "true")
                 setTimeout(function(){
                     config.savingFile = false;
+                    setSetting("showSpinner", "false")
                     createTerminalLine(`T_saving_done`, ">");
                     createEditableTerminalLine(`${config.currentPath}>`);
                     config.programSession++;
@@ -1750,11 +1752,10 @@ let getTimings = (i) => {
     }]
 }
 
-const DISABLE_ANIM = false;
-
+let animSkipped = false;
 let innerBar = document.getElementById("inner-bar");
 
-if(!DISABLE_ANIM) innerBar.animate(...getTimings(0)).onfinish = () => {
+innerBar.animate(...getTimings(0)).onfinish = () => {
     innerBar.animate(...getTimings(1)).onfinish = () => {
         innerBar.animate(...getTimings(2)).onfinish = () => {
             innerBar.animate(...getTimings(3)).onfinish = () => {
@@ -1763,7 +1764,7 @@ if(!DISABLE_ANIM) innerBar.animate(...getTimings(0)).onfinish = () => {
                     if(chance == false) {
                         console.error("whoa..... this is rare lol! uhhh email froggyos.royal.screw.up@gmail.com if u get this")
                     }
-                    setTimeout(() => {
+                    if(!animSkipped) setTimeout(() => {
                         document.getElementById("blackout").remove()
                         sendCommand('[[BULLFROG]]greeting', []);
                     }, chance ? 100 : 1000000000000000)
@@ -1772,9 +1773,10 @@ if(!DISABLE_ANIM) innerBar.animate(...getTimings(0)).onfinish = () => {
         }
     }
 }
-else {
-    setTimeout(() => {
-        document.getElementById("blackout").remove()
-        sendCommand('[[BULLFROG]]greeting', []);
-    }, 100)
+function keypressListener(e){
+    animSkipped = true;
+    document.getElementById("blackout").remove()
+    document.removeEventListener('keyup', keypressListener);
+    sendCommand('[[BULLFROG]]greeting', []);   
 }
+document.addEventListener('keyup', keypressListener);

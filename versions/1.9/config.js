@@ -222,7 +222,7 @@ const presetLanguagesMap = {
     },
     "T_no_permission_to_read_file": {
         eng: "You do not have permission to read this file.",
-        nmt: "T_no_permission_to_read_file",
+        nmt: "'a gewitsuyo pamason sanwa lu fiyala",
         jpn: "このファイルを読み取る権限がありません"
     },
     "T_no_permission_to_clone": {
@@ -247,7 +247,7 @@ const presetLanguagesMap = {
     },
     "T_available_properties": {
         eng: "* Available properties *",
-        nmt: "T_available_properties",
+        nmt: "* popatí me *",
         jpn: "* 利用可能なプロパティ *"
     },
     "T_file_created": {
@@ -291,7 +291,7 @@ const presetLanguagesMap = {
     },
     "T_directory_already_exists": {
         eng: "Directory already exists.",
-        nmt: "T_directory_already_exists",
+        nmt: "dilekatüli tsefese",
         jpn: "ディレクトリは既に存在します"
     },
     "T_directory_empty": {
@@ -299,14 +299,14 @@ const presetLanguagesMap = {
         nmt: "ilo wa dilekatüli säna",
         jpn: "このディレクトリは空です"
     },
-    "T_cannot_create_directories": {
+    "T_cannot_create_directories_in_here": {
         eng: "You cannot create directories in this directory.",
-        nmt: "T_cannot_create_directories",
+        nmt: "'a gembeno dilekatüli me kene dilekatüli wa",
         jpn: "このディレクトリ内ではディレクトリを作成できません"
     },
     "T_directory_created": {
         eng: "Directory created.",
-        nmt: "T_directory_created",
+        nmt: "dilekatüli mbeno mana",
         jpn: "ディレクトリを作成しました"
     },
 
@@ -433,7 +433,7 @@ const presetLanguagesMap = {
     },
     "T_provide_text_to_display": {
         eng: "Please provide text to display.",
-        nmt: "T_provide_text_to_display",
+        nmt: "apelelala som meməpelezwisi nenta",
         jpn: "表示するテキストを入力してください"
     },
     "T_provide_path": {
@@ -472,12 +472,12 @@ const presetLanguagesMap = {
     // misc success =========================
     "T_properties_updated": {
         eng: "Properties updated.",
-        nmt: "T_properties_updated",
+        nmt: "popatí me som'on mana",
         jpn: "プロパティを更新しました"
     },
     "T_documentation_opened": {
         eng: "Documentation opened in a new window.",
-        nmt: "T_documentation_opened",
+        nmt: "dokumenndasiyon ndo mana sana kyesatsa wa",
         jpn: "新しいウインドウでマニュアルが開かれました"
     },
 

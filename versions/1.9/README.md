@@ -61,8 +61,7 @@ Note: colors `00`, `01`, `02`, `05`, `12`, and `15` are tied to their specific U
     * If a language file does not meet requirements (valid name declaration, correct file length), it will be invalid and unable to be used.
 * The **name declaration** must be the first line of the file, and must be in the format `{{{LANGNAME_!!!_[language name]}}}`. For example, the name declaration for the `eng` file is `{{{LANGNAME_!!!_English}}}`.
 * If the default language is invalid, froggyOS will automatically revert to the `lbh` language file.
-* If a supposedly translated text results in `Index Missing! -> [translation descriptor]`, this means that you ROYALLY screwed something up. This can only happen if you edit the `lbh` file. If you manage to trigger this error without editing this file through the dev console, please email what you did to `froggyos.royal.screw.up@gmail.com` so I can replicate it. This type of error will also screw up other translations, it is very noticiable.
-    - The `translation descriptor` in the `Index Missing!` error may not be the exact one you are missing.
+* If a supposedly translated text results in `Index Missing! -> [translation descriptor]`, this means that you ROYALLY screwed something up. This can only happen if you edit the `lbh` file. If you manage to trigger this error without editing this file through the dev console, please email what you did to `froggyos.royal.screw.up@gmail.com` so I can replicate it.
 * If language files are hidden, they will still be able to be used as a language file, they will just not show up in the list of available languages.
 
 ## Command Help
@@ -126,7 +125,7 @@ If you edit the `Settings:` drive directly, some settings won't apply until you 
 * There's some weird stuff going on with `append`. Fix later.
 * something with `outc`? idk
 * `str` variables dont require quotes. make them required
-* the loading spinner goes ZOOMING????
+* the loading spinner slows down with consecutive saves of a long file
 ### Fixed
 * the first line of the macro was not being read
     * because it was assumed the first line was defining the alias, it was just discarded
@@ -138,6 +137,8 @@ If you edit the `Settings:` drive directly, some settings won't apply until you 
 * the inserted `wait` keywords may be messing loops sometimes
     * `wait` keywords were being inserted before every `endloop` command, which stacked. Turns out the `wait` keyword was not necessary, so it was removed.
         * they were VERY much needed lmfao, but instead of them being automatically put in, the user has to do it manually, if it isnt done, there is a rare error message and froggyOS is reloaded
+* the loading spinner goes ZOOMING????
+    * it kept being added to it kept going BABHBAhBAHDBHDBDAHSBAWOOOWOOWOOOWOOOWABHSHAJBSAHBWHSHOOOOSHHHHWOOOOOOWOOOZSHHZOOOOOOOM
 
 # FroggyScript Documentation
 **Note: spaces are part of syntax, and must be used as shown**
