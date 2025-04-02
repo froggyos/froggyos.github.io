@@ -129,7 +129,7 @@ const presetLanguagesMap = {
     },
     "T_basic_commands_savestate": {
         eng: "savestate. . . . . . . . . . . . . Save froggyOS state.",
-        nmt: "savestate . . . . . . . . . . . . . bátsiyo satéte o-froggyOS",
+        nmt: "savestate . . . . . . . . . . . . . esaya satéte o-froggyOS",
         jpn: "savestate . . froggyOSの状態をセーブする"
     },
     "T_basic_commands_spawn": {
@@ -180,7 +180,7 @@ const presetLanguagesMap = {
     },
     "T_state_saved": {
         eng: "State saved. May need to loadstate for some changes to take effect.",
-        nmt: `satéte bátsiyo mana. kana "loadstate" ma lohiəte me fene`,
+        nmt: `satéte esaya mana. kana "loadstate" ma lohiəte me fene`,
         jpn: "状態をセーブしました。いくつかの変更を適用するには、状態をロードする必要があるかもしれません。"
     },
 
@@ -217,7 +217,7 @@ const presetLanguagesMap = {
     },
     "T_no_permission_to_edit_file": {
         eng: "You do not have permission to edit this file.",
-        nmt: "T_no_permission_to_edit_file",
+        nmt: "'a gewitsuyo pamason lohi lu fiyala",
         jpn: "このファイルを変更する権限がありません"
     },
     "T_no_permission_to_read_file": {
@@ -428,7 +428,7 @@ const presetLanguagesMap = {
     /// miscellaneous provide ... ====================================
     "T_provide_valid_property_type": {
         eng: "Please provide a valid property type.",
-        nmt: "T_provide_valid_property_type",
+        nmt: "apelelala som sepu popatí",
         jpn: "有効なプロパティタイプを入力してください"
     },
     "T_provide_text_to_display": {
@@ -450,7 +450,7 @@ const presetLanguagesMap = {
     // lilypad ====================================
     "T_lilypad_save_exit": {
         eng: "* press ESC to save and exit lilypad *",
-        nmt: "T_lilypad_save_exit",
+        nmt: "* tapa ESC esaya mótsi lo lilypad *",
         jpn: "* セーブしてlilypadを終了するにはESCキーを押してください *"
     },
     "T_lilypad_exit": {
@@ -489,7 +489,7 @@ const presetLanguagesMap = {
     },
     "T_missing_file_args": {
         eng: "Missing file argument(s).",
-        nmt: "T_missing_file_args",
+        nmt: "ndaní fiyala ágayuménta me",
         jpn: "ファイルの引数が不足しています"
     },
     "T_invalid_format_object_inter_rule_delimiter": {
