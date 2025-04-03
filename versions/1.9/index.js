@@ -498,7 +498,7 @@ function createTerminalLine(text, path, other){
     } else {
         let localizedText = localize(text, translateText);
         if(localizedText == null) {
-            terminalLine.textContent = `Index Missing! -> ${text.split(" ")[0]}`;
+            terminalLine.textContent = `Index Missing! -> ${text}`;
             terminalPath.innerHTML = config.translationErrorText;
         }
         else terminalLine.textContent = localizedText; 
@@ -1431,14 +1431,27 @@ function sendCommand(command, args, createEditableLineAfter){
 
             let lbh = config.fileSystem["Config:/lang_files"].find(file => file.name == "lbh").data;
 
+            let linesNotTranslated = {};
+
             translationFiles.forEach((file, i) => {
                 let linesTranslated = 0;
+                linesNotTranslated[file.name] = [];
                 for(let i = 1; i < file.data.length; i++){
                     if(file.data[i] != lbh[i]) linesTranslated++;
+                    if(file.data[i] == lbh[i]) linesNotTranslated[file.name].push(file.data[i]);
                 }
                 let percent = linesTranslated / (lbh.length-1) * 100;
                 createTerminalLine(`${file.name}: ${percent.toFixed(2)}%`, ">", {translate: false});
             })
+            createTerminalLine("* descriptors not translated *", "", {translate: false});
+            for(let i in linesNotTranslated){
+                if(linesNotTranslated[i].length != 0) createTerminalLine(`${i}:`, " ", {translate: false});
+                linesNotTranslated[i].forEach((line, index) => {
+                    if(linesNotTranslated[i][index] == undefined) return; // skip undefined lines
+                    createTerminalLine(`${line}`, ">", {translate: false});
+                })
+            }
+
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         } break;
 
