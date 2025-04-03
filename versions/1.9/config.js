@@ -15,12 +15,12 @@ const presetLanguagesMap = {
         nmt: "i katálo, mo Froggy! ^v^",
         jpn: "どうも、フロッギーです！^v^"
     },
-    "T_nmt_greeting_1": {
+    "T_greeting_1": {
         eng: "Type ‘help’ to receive support with commands, and possibly navigation.",
         nmt: "nenta ‘help’ mbo süm fesúāte kole komandda me, nam giwa 'ata",
         jpn: "コマンドやナビゲーションのサポートを受けるには、「help」と入力してください"
     },
-    "T_nmt_greeting_2 |||[]|||": {
+    "T_greeting_2 |||[]|||": {
         eng: "* Welcome to froggyOS, version |||[]||| *",
         nmt: "* wulë froggyOS, kekyene |||[]||| *",
         jpn: "* froggyOSへようこそ！バージョン|||[]||| *"

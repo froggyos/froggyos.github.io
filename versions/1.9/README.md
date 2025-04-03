@@ -62,7 +62,7 @@ Note: colors `00`, `01`, `02`, `05`, `12`, and `15` are tied to their specific U
 * The **name declaration** must be the first line of the file, and must be in the format `{{{LANGNAME_!!!_[language name]}}}`. For example, the name declaration for the `eng` file is `{{{LANGNAME_!!!_English}}}`.
 * If the default language is invalid, froggyOS will automatically revert to the `lbh` language file.
 * If a supposedly translated text results in `Index Missing! -> [translation descriptor]`, this means that you ROYALLY screwed something up. This can only happen if you edit the `lbh` file. If you manage to trigger this error without editing this file through the dev console, please email what you did to `froggyos.royal.screw.up@gmail.com` so I can replicate it.
-* If language files are hidden, they will still be able to be used as a language file, they will just not show up in the list of available languages.
+* Some translation descriptors include `|||[]|||` in it. This must be included in order to reference the descriptor. This is because between the `[]` a string can be placed that will show in the final translation. For example, if you used `T_greeting_2 |||[3 million]|||`, it would return in the `eng` translation as `* Welcome to froggyOS, version 3 million *`.
 
 ## Command Help
 ### formattime

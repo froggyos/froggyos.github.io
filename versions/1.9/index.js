@@ -498,7 +498,7 @@ function createTerminalLine(text, path, other){
     } else {
         let localizedText = localize(text, translateText);
         if(localizedText == null) {
-            terminalLine.textContent = `Index Missing! -> "${text}"`;
+            terminalLine.textContent = `Index Missing! -> ${text.split(" ")[0]}`;
             terminalPath.innerHTML = config.translationErrorText;
         }
         else terminalLine.textContent = localizedText; 
@@ -1287,8 +1287,8 @@ function sendCommand(command, args, createEditableLineAfter){
         break;
 
         case '[[BULLFROG]]greeting': {
-            createTerminalLine("T_nmt_greeting_1", "");
-            createTerminalLine(`T_nmt_greeting_2 |||[${config.version}]|||` , "");
+            createTerminalLine("T_greeting_1", "");
+            createTerminalLine(`T_greeting_2 |||[${config.version}]|||` , "");
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         } break;
 
@@ -1443,7 +1443,7 @@ function sendCommand(command, args, createEditableLineAfter){
         } break;
 
         case "[[BULLFROG]]triggerdialogue": {
-            let dialogue = args[0];
+            let dialogue = args.join(" ");
             if(dialogue == undefined){
                 createTerminalLine("T_provide_valid_t_desc", config.errorText);
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
