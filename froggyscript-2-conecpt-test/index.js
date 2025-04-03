@@ -14,7 +14,6 @@ function typeify(value) {
         originalInput: value,
     };
     // string
-    console.log(value)
     if(value.match(/^["'].*["']$/g)) {
         typeObj.type = "String";
         typeObj.value = value.replace(/^["']|["']$/g, '');
@@ -102,6 +101,6 @@ function interpreter(input) {
             console.error(`${token.value} at line: ${i}`);
             break;
         }
-        console.log(token);
+        console.log(token)
     }
 }
