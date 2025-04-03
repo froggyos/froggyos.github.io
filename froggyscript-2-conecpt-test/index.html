@@ -1,0 +1,38 @@
+<style>
+    textarea {
+        resize: none;
+        height: 920px;
+        width: 330px;
+    }
+
+    textarea:focus {
+        outline: none;
+    }
+</style>
+<head>
+    <script src="https://cdn.jsdelivr.net/npm/mathjs@14.4.0/lib/browser/math.min.js"></script>
+    <script src="./index.js"></script>
+</head>
+<body>
+    <button id="run">Run</button><br>
+    <textarea id="in">
+        str meow = "cat sound"
+        out 1
+        out 1.302934
+        out "te[v:meow]s[v:woof]t"
+        out 2+(3/2)
+        out woof
+        out true
+        out false</textarea>
+    <textarea id="out" readonly></textarea>
+</body>
+<script>
+    const input = document.getElementById('in');
+    const output = document.getElementById('out');
+    const runButton = document.getElementById('run');
+
+    runButton.addEventListener('click', () => {
+        const code = input.value;
+        interpreter(code);
+    });
+</script>
