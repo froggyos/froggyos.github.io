@@ -336,7 +336,7 @@ function createColorTestBar(){
     document.getElementById('color-test-bar').innerHTML = "";
     function getContrastYIQ(hexColor) {
         if (!/^#([0-9A-F]{3}|[0-9A-F]{6}|[0-9A-F]{8})$/i.test(hexColor)) {
-            createTerminalLine(`T_pattete_error_invalid_hex |||[]|||`, config.errorText);
+            createTerminalLine(`T_palette_error_invalid_hex |||[${hexColor}]|||`, config.errorText);
             return 
         }
         

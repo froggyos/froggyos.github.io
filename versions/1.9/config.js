@@ -819,7 +819,7 @@ const config = {
             { name: "language", properties: {transparent: false, read: true, write: true, hidden: false}, data: ["eng"] },
             { name: "debugMode", properties: {transparent: false, read: true, write: true, hidden: false}, data: ["false"] },
             { name: "colorPalette", properties: {transparent: false, read: true, write: true, hidden: false}, data: ["standard"] },
-            { name: "version", properties: {transparent: false, read: true, write: true, hidden: false}, data: ["1.9"] },
+            { name: "version", properties: {transparent: false, read: true, write: true, hidden: false}, data: ["1.9-indev"] },
             { name: "showSpinner", properties: {transparent: false, read: true, write: true, hidden: false}, data: ["false"] },
             { name: "currentSpinner", properties: {transparent: false, read: true, write: true, hidden: false}, data: ["default"] },
             { name: "timeFormat", properties: {transparent: false, read: true, write: true, hidden: false}, data: ["w. y/mn/d h:m:s"] },
