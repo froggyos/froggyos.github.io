@@ -401,7 +401,7 @@ const presetLanguagesMap = {
     },
     "T_invalid_lang_file |||[]|||": {
         eng: `Invalid language file with code "|||[]|||".`,
-        nmt: "T_invalid_lang_file |||[]|||",
+        nmt: `sepu mëzte fiyala kole koda "|||[]|||"`,
         jpn: "コード「|||[]|||」の言語ファイルは無効です"
     },
     "T_current_lang_invalid": {
@@ -411,7 +411,7 @@ const presetLanguagesMap = {
     },
     "T_invalid_lang": {
         eng: "INVALID",
-        nmt: "T_invalid_lang",
+        nmt: "SEPU",
         jpn: "無効"
     },
     "T_available_langs": {
@@ -443,7 +443,7 @@ const presetLanguagesMap = {
     },
     "T_invalid_args_provide_1_0": {
         eng: "Invalid argument. Please provide '1' or '0'.",
-        nmt: "T_invalid_args_provide_1_0",
+        nmt: "sepu ágayuménta. apelelala som '1' ute '0'",
         jpn: "無効な引数です。「1」または「0」を入力してください。"
     },
 
@@ -516,62 +516,62 @@ const presetLanguagesMap = {
     },
     "T_bullfrog_commands_changepath": {
         eng: "[[BULLFROG]]changepath [path] - Changes the path of the terminal",
-        nmt: "T_bullfrog_commands_changepath",
+        nmt: "[[BULLFROG]]changepath [fiyalātáne] - lohi fiyalātáne oətaminalu",
         jpn: "[[BULLFROG]]changepath [path] - 端末のパスを変更する"
     },
     "T_bullfrog_commands_greeting": {
         eng: "[[BULLFROG]]greeting - Displays the greeting message",
-        nmt: "T_bullfrog_commands_greeting",
+        nmt: "[[BULLFROG]]greeting - nenta náha wulë mem",
         jpn: "[[BULLFROG]]greeting - 挨拶のメッセージを表示する"
     },
     "T_bullfrog_commands_help": {
         eng: "[[BULLFROG]]help - Displays this message",
-        nmt: "T_bullfrog_commands_help",
+        nmt: "[[BULLFROG]]help - nenta lu mem",
         jpn: "[[BULLFROG]]help - このメッセージを表示する"
     },
     "T_bullfrog_commands_setstatbar": {
         eng: "[[BULLFROG]]setstatbar [text] - Changes the text in the status bar",
-        nmt: "T_bullfrog_commands_setstatbar",
+        nmt: "[[BULLFROG]]setstatbar [meməpelezwisi] - lohi meməpelezwisi status-bar wa",
         jpn: "[[BULLFROG]]setstatbar [text] - ステータスバーのテキストを変更する"
     },
     "T_bullfrog_commands_statbarlock": {
         eng: "[[BULLFROG]]statbarlock [0/1] - Locks the status bar from updating",
-        nmt: "T_bullfrog_commands_statbarlock",
+        nmt: "[[BULLFROG]]statbarlock [0/1] - bíhuyo'an status-bar ëpidäti",
         jpn: "[[BULLFROG]]statbarlock [0/1] - ステータスバーの更新をロックする"
     },
     "T_bullfrog_commands_showspinner": {
         eng: "[[BULLFROG]]showspinner [0/1] - Toggles the loading spinner",
-        nmt: "T_bullfrog_commands_showspinner",
+        nmt: "[[BULLFROG]]showspinner [0/1] - togela supinär",
         jpn: "[[BULLFROG]]showspinner [0/1] - ローディングスピナーの表示を切り替える"
     },
     "T_bullfrog_commands_debugmode": {
         eng: "[[BULLFROG]]debugmode [0/1] - Toggles debug mode",
-        nmt: "T_bullfrog_commands_debugmode",
+        nmt: "[[BULLFROG]]debugmode [0/1] - togela debug módi",
         jpn: "[[BULLFROG]]debugmode [0/1] - デバッグモードを切り替える"
     },
     "T_bullfrog_commands_setspinner": {
         eng: "[[BULLFROG]]setspinner [spinner] - Changes the loading spinner",
-        nmt: "T_bullfrog_commands_setspinner",
+        nmt: "[[BULLFROG]]setspinner [supinär] - lohi supinär",
         jpn: "[[BULLFROG]]setspinner [spinner] - ローディングスピナーを変更する"
     },
     "T_bullfrog_commands_usavestate": {
         eng: "[[BULLFROG]]urgentsavestate - saves state for reloading",
-        nmt: "T_bullfrog_commands_usavestate",
+        nmt: "[[BULLFROG]]urgentsavestate - esaya satéte ma nagyunagyu",
         jpn: "[[BULLFROG]]urgentsavestate - リロードするには状態をセーブする"
     },
     "T_bullfrog_commands_uloadstate": {
         eng: "[[BULLFROG]]urgentloadstate - loads state for reloading",
-        nmt: "T_bullfrog_commands_uloadstate",
+        nmt: "[[BULLFROG]]urgentloadstate - nagyu satéte ma nagyunagyu",
         jpn: "[[BULLFROG]]urgentloadstate - リロードするには状態をセーブする"
     },
     "T_bullfrog_commands_uclearstate": {
         eng: "[[BULLFROG]]urgentclearstate - clears reload state",
-        nmt: "T_bullfrog_commands_uclearstate",
+        nmt: "[[BULLFROG]]urgentclearstate - ngátiwi nagyunagyu satéte",
         jpn: "[[BULLFROG]]urgentclearstate - リロードの状態をクリアする"
     },
     "T_bullfrog_commands_autoloadstate": {
         eng: "[[BULLFROG]]autoloadstate - loads state",
-        nmt: "T_bullfrog_commands_autoloadstate",
+        nmt: "[[BULLFROG]]autoloadstate - nagyu satéte",
         jpn: "[[BULLFROG]]autoloadstate - 状態をロードする"
     },
     "T_bullfrog_commands_vlang": {
@@ -806,7 +806,6 @@ const config = {
     commandHistoryIndex: -1,
     spinnerIndex: 0,
     currentProgram: "cli",
-    savingFile: false,
     programList: ["cli", "lilypad"],
     programSession: 0,
     errorText: "<span class='error'><span class='error-text'>!!ERROR!!</span> -</span>",

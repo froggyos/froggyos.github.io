@@ -28,7 +28,6 @@ function getSetting(setting, isArray) {
 }
 
 function setConfigFromSettings(){
-    // if(config.savingFile) return;
     config.debugMode = (getSetting("debugMode") === "true");
     config.version = getSetting("version");
     config.colorPalette = getSetting("colorPalette");
@@ -254,8 +253,6 @@ function updateDateTime() {
 setInterval(() => {
     setConfigFromSettings()
     programList()
-    // if(config.savingFile) setSetting("showSpinner", "true");
-    // else setSetting("showSpinner", "false");
 }, 1);
 
 setInterval(() => {
@@ -1608,7 +1605,7 @@ function createLilypadLine(path, linetype, filename){
         }
     });
 
-    terminalLine.addEventListener('keydown', function(e){
+    function terminalLineKeydownHandler(e){
         if(e.key == "Enter"){
             e.preventDefault();
             if(linetype == "code"){
@@ -1706,19 +1703,20 @@ function createLilypadLine(path, linetype, filename){
                     dataLength += line.length;
                 });
                 
-                config.savingFile = true;
                 setSetting("showSpinner", "true")
                 setTimeout(function(){
-                    config.savingFile = false;
                     setSetting("showSpinner", "false")
                     createTerminalLine(`T_saving_done`, ">");
+                    terminalLine.removeEventListener('keydown', terminalLineKeydownHandler);
                     createEditableTerminalLine(`${config.currentPath}>`);
                     config.programSession++;
                 }, dataLength);
                 
             }
         }
-    });
+    };
+
+    terminalLine.addEventListener('keydown', terminalLineKeydownHandler);
 
     lineContainer.appendChild(terminalPath);
     lineContainer.appendChild(terminalLine);
