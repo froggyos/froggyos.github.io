@@ -536,7 +536,7 @@ const presetLanguagesMap = {
     },
     "T_bullfrog_commands_statbarlock": {
         eng: "[[BULLFROG]]statbarlock [0/1] - Locks the status bar from updating",
-        nmt: "[[BULLFROG]]statbarlock [0/1] - bíhuyo'an status-bar ëpidäti",
+        nmt: "[[BULLFROG]]statbarlock [0/1] - bíhu'an status-bar ëpidäti",
         jpn: "[[BULLFROG]]statbarlock [0/1] - ステータスバーの更新をロックする"
     },
     "T_bullfrog_commands_showspinner": {
