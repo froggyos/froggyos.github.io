@@ -808,9 +808,10 @@ const config = {
     currentProgram: "cli",
     programList: ["cli", "lilypad"],
     programSession: 0,
-    errorText: "<span class='error'><span class='error-text'>!!ERROR!!</span> -</span>",
+    errorText: "<span class='error'><span class='error-text'> !!ERROR!!</span> -</span>",
     translationErrorText: "<span class='error'><span class='t-error-text'>!!TRANSLATION ERROR!!</span> -</span>",
     translationWarningText: "<span class='error'><span class='t-warning-text'>!TRANSLATION WARNING!</span> -</span>",
+    alertText: "<span class='error'><span class='alert-text'>ALERT</span> -</span>",
 
     // filesystem
     fileSystem: {
@@ -1189,7 +1190,7 @@ const config = {
                 "FFFF55", // 14 yellow
                 "FFFFFF", // 15 white
             ] },
-            { name: "revised", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
+            { name: "revised", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
                 "000000",
                 "0000C4",
                 "00C400",

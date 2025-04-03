@@ -107,6 +107,11 @@
         color: var(--error-text);
         font-weight: 400 !important;
     }
+    .alert-text {
+        background-color: var(--alert-background);
+        color: var(--error-text);
+        font-weight: 400 !important;
+    }
 
     .text-jp {
         font-family: "FroggyOS-jp-font";
@@ -234,35 +239,9 @@
         </div>
     </div>
 </body>
-    <script src="https://rus1130.github.io/projects/Global/markdownParser.js"></script>
-    <script src="https://rus1130.github.io/projects/Global/sniffer.js"></script>
-    <script src="./config.js"></script>
-    <script src="./formatter.js"></script>
-    <script src="./interpreter.js"></script>
-    <script src="./index.js"></script>
-<script>
-    let ce = document.querySelectorAll('[contenteditable]');
-
-    ce.forEach((el) => {
-        el.addEventListener('paste', function (e) {
-            e.preventDefault();
-            const text = e.clipboardData.getData('text/plain');
-
-            // Use the Selection and Range APIs to insert the text
-            const selection = window.getSelection();
-            if (!selection.rangeCount) return;
-
-            const range = selection.getRangeAt(0);
-            range.deleteContents();
-
-            const textNode = document.createTextNode(text);
-            range.insertNode(textNode);
-
-            // Move the caret to the end of the inserted text
-            range.setStartAfter(textNode);
-            range.setEndAfter(textNode);
-            selection.removeAllRanges();
-            selection.addRange(range);
-        });
-    });
-</script>
+<script src="https://rus1130.github.io/projects/Global/markdownParser.js"></script>
+<script src="https://rus1130.github.io/projects/Global/sniffer.js"></script>
+<script src="./config.js"></script>
+<script src="./formatter.js"></script>
+<script src="./interpreter.js"></script>
+<script src="./index.js"></script>

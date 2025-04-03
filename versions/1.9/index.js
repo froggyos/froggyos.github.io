@@ -281,6 +281,7 @@ const defaultStyling = `
     --error-background: var(--c12);
     --translation-error-backgroud: var(--c05);
     --translation-warning-backgroud: var(--c06);
+    --alert-background: var(--c03);
     --error-text: var(--c15);
 
     --prompt-selected-background: var(--c02);
@@ -1398,6 +1399,8 @@ function sendCommand(command, args, createEditableLineAfter){
                     config[key] = JSON.parse(state)[key];
                 }
                 changeColorPalette(config.colorPalette);
+                // translate
+                createTerminalLine("Loaded froggyOS config from memory.", config.alertText, {translate: false});
             }
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         } break;
@@ -1493,7 +1496,7 @@ function createEditableTerminalLine(path){
     let terminalLine = document.createElement('div');
 
     lineContainer.classList.add('line-container');
-    terminalLine.setAttribute('contenteditable', 'true');
+    terminalLine.setAttribute('contenteditable', 'plaintext-only');
     terminalLine.setAttribute('spellcheck', 'false');
 
     terminalPath.textContent = path;
@@ -1579,7 +1582,7 @@ function createLilypadLine(path, linetype, filename){
     let terminalLine = document.createElement('div');
 
     lineContainer.classList.add('line-container');
-    terminalLine.setAttribute('contenteditable', 'true');
+    terminalLine.setAttribute('contenteditable', 'plaintext-only');
     terminalLine.setAttribute('data-program', `lilypad-session-${config.programSession}`);
     terminalLine.setAttribute('data-filename', filename);
     terminalLine.setAttribute('spellcheck', 'false');
