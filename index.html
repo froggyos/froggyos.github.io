@@ -171,7 +171,7 @@
         "1.9",
     ];
 
-    terminal.innerHTML += `<div class="line-container"><span>></span<div>* Current froggyOS Versions *</div></div>`;
+    terminal.innerHTML += `<div class="line-container"><span style="white-space: pre"> </span<div>* Current froggyOS Versions *</div></div>`;
 
     versionList.forEach(version => {
         terminal.innerHTML += `<div class="line-container" data-version><span>></span><div>${version}</div></div>`;
@@ -263,6 +263,7 @@
 
         if(saveState != null) {
             dateTemplate = JSON.parse(saveState).fileSystem["Settings:"].find(e => e.name == "timeFormat").data[0];
+            
         }
 
         // totally not ai
