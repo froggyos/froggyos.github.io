@@ -2,7 +2,7 @@ const mem = {
     variables: {},
 };
 
-function evaluateWithVariable(expression) {
+function evaluate(expression) {
     // ...
     math.evaluate();
 }
@@ -22,10 +22,11 @@ function typeify(value) {
         typeObj.type = "Boolean";
         typeObj.value = (value === "true");
 
-    } else if(/[(==)(!=)(>=)(<=)]/.test(value)) { // comparison operators
+    } else if(/(==|!=|>=|<=)/.test(value)) { // comparison operators
         typeObj.type = "Boolean";
-        typeObj.value = math.evaluate(value); // evaluateWithVariables(value)
+        typeObj.value = math.evaluate(value); // evaluate(value)
 
+    // 
     } else if(value.match(/^[a-zA-Z_][a-zA-Z0-9_]*$/g)) { // identifier (variable name)
         typeObj.type = "VariableIdentifier";
 
@@ -33,7 +34,7 @@ function typeify(value) {
         let error = false;
         let errMsg = null;
         try {
-            math.evaluate(value) // evaluateWithVariables(value)
+            math.evaluate(value) // evaluate(value)
         } catch (e) {
             error = true;
             errMsg = e.message;
@@ -44,7 +45,7 @@ function typeify(value) {
             typeObj.value = `EvaluationError -> ${typeObj.originalInput} <-`;
         } else {
             typeObj.type = "Number";
-            typeObj.value = math.evaluate(value); // evaluateWithVariables(value)
+            typeObj.value = math.evaluate(value); // evaluate(value)
         }
     } else {
         typeObj.type = "Error";
