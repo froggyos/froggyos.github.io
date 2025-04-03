@@ -1307,7 +1307,7 @@ function sendCommand(command, args, createEditableLineAfter){
             createTerminalLine("T_bullfrog_commands_uclearstate", ">");
             createTerminalLine("T_bullfrog_commands_autoloadstate", ">");
             createTerminalLine("T_bullfrog_commands_vlang", ">");
-            createTerminalLine("T_bullfrog_commands_trans", ">");
+            createTerminalLine("T_bullfrog_commands_translations", ">");
             createTerminalLine("T_bullfrog_commands_trigdiag", ">");
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;

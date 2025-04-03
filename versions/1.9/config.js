@@ -12,7 +12,7 @@ const presetLanguagesMap = {
     },
     "T_hello_froggy": {
         eng: "Hello, I'm Froggy! ^v^",
-        nmt: "katálo, mo Froggy! ^v^",
+        nmt: "i katálo, mo Froggy! ^v^",
         jpn: "どうも、フロッギーです！^v^"
     },
     "T_nmt_greeting_1": {
@@ -362,29 +362,29 @@ const presetLanguagesMap = {
     // program =====================================
     "T_provide_valid_program": {
         eng: "Please provide a valid program.",
-        nmt: "T_provide_valid_program",
+        nmt: "apelelala som apeya pógám",
         jpn: "有効なプログラムを入力してください"
     },
     "T_no_permission_to_run_program": {
         eng: "You do not have permission to run this program.",
-        nmt: "T_no_permission_to_run_program",
+        nmt: "'a gewitsuyo pamason naya lu pógám",
         jpn: "このプログラムを実行する権限がありません"
     },
     "T_available_programs": {
         eng: "* Available programs *",
-        nmt: "T_available_programs",
+        nmt: "* pógám me *",
         jpn: "* 使用可能なプログラム *"
     },
 
     // spinner ====================================
     "T_spinner_does_not_exist": {
         eng: "Spinner does not exist.",
-        nmt: "T_spinner_does_not_exist",
+        nmt: "supinär getsefese",
         jpn: "スピナーが存在しません"
     },
     "T_available_spinners": {
         eng: "* Available spinners *",
-        nmt: "T_available_spinners",
+        nmt: "* supinär me *",
         jpn: "* 利用可能なスピナー *"
     },
 
@@ -428,7 +428,7 @@ const presetLanguagesMap = {
     /// miscellaneous provide ... ====================================
     "T_provide_valid_property_type": {
         eng: "Please provide a valid property type.",
-        nmt: "apelelala som sepu popatí",
+        nmt: "apelelala som apeya popatí",
         jpn: "有効なプロパティタイプを入力してください"
     },
     "T_provide_text_to_display": {
@@ -438,7 +438,7 @@ const presetLanguagesMap = {
     },
     "T_provide_path": {
         eng: "Please provide a path.",
-        nmt: "T_provide_path",
+        nmt: "apelelala som fiyalātáne",
         jpn: "パスを入力してください"
     },
     "T_invalid_args_provide_1_0": {
@@ -455,17 +455,17 @@ const presetLanguagesMap = {
     },
     "T_lilypad_exit": {
         eng: "* press ESC to exit lilypad *",
-        nmt: "T_lilypad_exit",
+        nmt: "* tapa ESC mótsi lilypad *",
         jpn: "* lilypadを終了するにはESCキーを押してください *"
     },
     "T_saving_file": {
         eng: "Saving file...",
-        nmt: "T_saving_file",
+        nmt: "esaya gya fiyala...",
         jpn: "ファイルをセーブ中..."
     },
     "T_saving_done": {
         eng: "Done! ^v^",
-        nmt: "T_saving_done",
+        nmt: "i sepesu! ^v^",
         jpn: "完了！^v^"
     },
 
@@ -511,7 +511,7 @@ const presetLanguagesMap = {
     // bullfrog commands =========================
     "T_bullfrog_commands_intro": {
         eng: "* A few bullfrog commands *",
-        nmt: "T_bullfrog_commands_intro",
+        nmt: "* tine bullfrog komandda me o-froggyOS *",
         jpn: "* いくつかのbullfrogコマンド *"
     },
     "T_bullfrog_commands_changepath": {
@@ -579,10 +579,10 @@ const presetLanguagesMap = {
         nmt: "T_bullfrog_commands_vlang",
         jpn: "T_bullfrog_commands_vlang"
     },
-    "T_bullfrog_commands_trans": {
+    "T_bullfrog_commands_translations": {
         eng: "[[BULLFROG]]translations - get the completion percent of all languages",
-        nmt: "T_bullfrog_commands_trans",
-        jpn: "T_bullfrog_commands_trans"
+        nmt: "T_bullfrog_commands_translations",
+        jpn: "T_bullfrog_commands_translations"
     },
     "T_bullfrog_commands_trigdiag": {
         eng: "[[BULLFROG]]triggerdialogue - trigger a specific dialogue option",
