@@ -3,9 +3,17 @@ const mem = {
 };
 
 function evaluate(expression) {
-    // ...
-    math.evaluate();
+    Object.keys(mem.variables).forEach(variableName => {
+        let variableValue = mem.variables[variableName];
+        expression = expression.replaceAll(variableValue.identifier, variableValue.value);
+    })
+    return math.evaluate(expression);
 }
+
+function getVariable(variableName) {
+    return mem.variables[variableName];
+}
+
 
 function typeify(value) {
     let typeObj = {
@@ -14,9 +22,9 @@ function typeify(value) {
         originalInput: value,
     };
     // string
-    if(value.match(/^["'].*["']$/g)) {
+    if(value.match(/^("|').*("|')$/g)) {
         typeObj.type = "String";
-        typeObj.value = value.replace(/^["']|["']$/g, '');
+        typeObj.value = value.replace(/^("|')|("|')$/g, '');
 
     } else if(value === "true" || value === "false") {
         typeObj.type = "Boolean";
@@ -24,17 +32,38 @@ function typeify(value) {
 
     } else if(/(==|!=|>=|<=)/.test(value)) { // comparison operators
         typeObj.type = "Boolean";
-        typeObj.value = math.evaluate(value); // evaluate(value)
+        let error = false;
+        try {
+            evaluate(value)
+        } catch (e) {
+            error = true;
+        }
 
-    // 
+        if (error) {
+            typeObj.type = "Error";
+            typeObj.value = `EvaluationError -> ${typeObj.originalInput} <-`;
+        } else {
+            // if evaluation was successful, return the boolean result
+            typeObj.value = evaluate(value);
+        }
+
     } else if(value.match(/^[a-zA-Z_][a-zA-Z0-9_]*$/g)) { // identifier (variable name)
         typeObj.type = "VariableIdentifier";
+        let variableValue = getVariable(value);
+        if (variableValue != undefined) {
+            typeObj.value = variableValue.value;
+            typeObj.type = variableValue.type;
+            typeObj.originalInput = "VARIABLE_IDENTIFIER:"+value;
+        } else {
+            typeObj.type = "Error";
+            typeObj.value = `ReferenceError -> variable [${value}] is not defined <-`;
+        }
 
-    } else if(value.match(/\d/g)) {
+    } else if(value.match(/\d|\+|\-|\\|\*|\^/g)) {
         let error = false;
         let errMsg = null;
         try {
-            math.evaluate(value) // evaluate(value)
+            evaluate(value);
         } catch (e) {
             error = true;
             errMsg = e.message;
@@ -45,11 +74,26 @@ function typeify(value) {
             typeObj.value = `EvaluationError -> ${typeObj.originalInput} <-`;
         } else {
             typeObj.type = "Number";
-            typeObj.value = math.evaluate(value); // evaluate(value)
+            typeObj.value = evaluate(value); // evaluate(value)
         }
     } else {
         typeObj.type = "Error";
         typeObj.value = `TypeifyError -> ${value} <-`;
+    }
+
+    // for every instance of [v:.*] in typeObj.value, replace it with the actual value of the variable in mem.variables
+    if(typeObj.type == "String") typeObj.value = typeObj.value.replace(/\[v:(.*?)\]/g, (replacer, match, i, j) => {
+        if(getVariable(match) != undefined) {
+            return getVariable(match).value;
+        } else {
+            return `[UNDEFINED{!}VARIABLE:${match}]`;
+        }
+    });
+
+    if(typeObj.type == "String" && /\[UNDEFINED\{!\}VARIABLE:.*\]/g.test(typeObj.value)) {
+        let variable = typeObj.value.match(/\[UNDEFINED\{!\}VARIABLE:(.*?)\]/g);
+        typeObj.type = "Error";
+        typeObj.value = `ReferenceError -> variable [${variable.map(v => v.replace(/\[UNDEFINED\{!\}VARIABLE:/g, '').replace(/\]$/g, '')).join(', ')}] is not defined <-`;
     }
 
     return typeObj;
@@ -85,15 +129,103 @@ function lexer(input) {
                         value: `TypeError -> [str] declaration can only be assigned type String, found type ${typeify(assignedValue).type} <-`,
                     }
                 } else {
-                    token = {...token, ...typeify(assignedValue) };
+                    token = {...token, ...typeify(assignedValue)};
+
+                    let identifier = input.replace(/^str\s+/, '').split('=')[0].trim();
+
+                    if(getVariable(identifier) == undefined){
+                        mem.variables[identifier] = {
+                            type: token.type,
+                            value: token.value,
+                            identifier: identifier,
+                        };
+                    } else {
+                        token = {
+                            type: "Error",
+                            value: `ReferenceError -> variable [${identifier}] already exists, cannot override <-`,
+                        }
+                    }
                 }
             }
         } break;
+
+        case "int": {
+            // int(any # whitespace)<variable_name>(any # whitespace)=(any # whitespace)
+            if(!input.match(/^int\s+\w+\s+\=\s+/g)) {
+                token = {
+                    type: "Error",
+                    value: `SyntaxError -> [int] declaration must be followed by a variable assignment <-`,
+                };
+            } else {
+                let assignedValue = input.replace(/^int\s+/, '').split('=')[1].trim();
+                let typeValue = typeify(assignedValue);
+                if(typeValue.type != "Number" && typeValue.type != "Error"){
+                    token = {
+                        type: "Error",
+                        value: `TypeError -> [int] declaration can only be assigned type Number, found type ${typeify(assignedValue).type} <-`,
+                    }
+                } else {
+                    token = {...token, ...typeify(assignedValue)};
+
+                    let identifier = input.replace(/^int\s+/, '').split('=')[0].trim();
+
+                    if(getVariable(identifier) == undefined){
+                        mem.variables[identifier] = {
+                            type: token.type,
+                            value: token.value,
+                            identifier: identifier,
+                        };
+                    } else {
+                        token = {
+                            type: "Error",
+                            value: `ReferenceError -> variable [${identifier}] already exists, cannot override <-`,
+                        }
+                    }
+                }
+            }
+        }
+
+        case "bln": {
+            // bln(any # whitespace)<variable_name>(any # whitespace)=(any # whitespace)
+            if(!input.match(/^bln\s+\w+\s+\=\s+/g)) {
+                token = {
+                    type: "Error",
+                    value: `SyntaxError -> [bln] declaration must be followed by a variable assignment <-`,
+                };
+            } else {
+                let assignedValue = input.replace(/^bln\s+/, '').split('=')[1].trim();
+                let typeValue = typeify(assignedValue);
+                if(typeValue.type != "Boolean" && typeValue.type != "Error"){
+                    token = {
+                        type: "Error",
+                        value: `TypeError -> [bln] declaration can only be assigned type Boolean, found type ${typeify(assignedValue).type} <-`,
+                    }
+                } else {
+                    token = {...token, ...typeify(assignedValue)};
+
+                    let identifier = input.replace(/^bln\s+/, '').split('=')[0].trim();
+
+                    if(getVariable(identifier) == undefined){
+                        mem.variables[identifier] = {
+                            type: token.type,
+                            value: token.value,
+                            identifier: identifier,
+                        };
+                    } else {
+                        token = {
+                            type: "Error",
+                            value: `ReferenceError -> variable [${identifier}] already exists, cannot override <-`,
+                        }
+                    }
+                }
+            }
+        }
     }
     return token;
 }
 
 function interpreter(input) {
+    mem.variables = {};
     let lines = input.split('\n');
     for (let line of lines) {
         let i = lines.indexOf(line) + 1;
