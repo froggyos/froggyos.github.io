@@ -183,7 +183,7 @@ function lexer(input) {
                     }
                 }
             }
-        }
+        } break;
 
         case "bln": {
             // bln(any # whitespace)<variable_name>(any # whitespace)=(any # whitespace)
@@ -224,9 +224,14 @@ function lexer(input) {
     return token;
 }
 
+function parseMultilineKeywords(input) {
+    // something will go here soon
+    return input;
+}
+
 function interpreter(input) {
     mem.variables = {};
-    let lines = input.split('\n');
+    let lines = parseMultilineKeywords(input).split('\n');
     for (let line of lines) {
         let i = lines.indexOf(line) + 1;
         let token = lexer(line);
