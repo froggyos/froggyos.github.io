@@ -11,14 +11,14 @@
 </style>
 <head>
     <script src="https://cdn.jsdelivr.net/npm/mathjs@14.4.0/lib/browser/math.min.js"></script>
-    <script src="./index.js"></script>
+    <script src="./index-2.js"></script>
 </head>
 <body>
     <button id="run">Run</button><br>
     <textarea id="in">
-        int one = 13
-        int two = 7
-        out "[v:one] + two"</textarea>
+        nmb one = 13
+        str meow = "12"
+        bln what = false</textarea>
     <textarea id="out" readonly></textarea>
 </body>
 <script>
@@ -27,6 +27,6 @@
 
     runButton.addEventListener('click', () => {
         const code = input.value;
-        interpreter(code);
+        interpreter(code)
     });
 </script>
