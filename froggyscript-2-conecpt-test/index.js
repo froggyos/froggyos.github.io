@@ -108,12 +108,12 @@ function lexer(input, saveVariables) {
 
     switch (keyword) {
         case "out": {
-            let argument = input.split(" ").slice(1).join(" ").trim();
-            let typeValue = typeify(argument);
-            let type = null;
-            if(typeValue.type == "Error" && argument.match(/\d*|\+|\-|\\|\*|\^/g) && !argument.match(/^"\w*"$/g)) type = "Number";
-            else type = typeValue.type;
-            token = {...token, ...{value: argument, type: type} };
+            // let argument = input.split(" ").slice(1).join(" ").trim();
+            // let typeValue = typeify(argument);
+            // let type = null;
+            // if(typeValue.type == "Error" && argument.match(/\d*|\+|\-|\\|\*|\^/g) && !argument.match(/^"\w*"$/g)) type = "Number";
+            // else type = typeValue.type;
+            // token = {...token, ...{value: argument, type: type} };
         } break;
 
         case "str": {
@@ -353,9 +353,7 @@ function interpreter(input) {
             // process tokens here =======================================================
             switch(token.keyword) {
                 case "out": {
-                    console.log(token);
-                    let result = token.type == "String" ? token.value : evaluate(token.value);
-                    document.getElementById("out").value += result + "\n";
+                    // 
                 } break;
                 case "goto": {
                     let newI = token.value - 1;
