@@ -2,6 +2,7 @@ const mem = {
     variables: {},
 };
 
+// change this to evaluate the token and return the token
 function evaluate(expression) {
     Object.keys(mem.variables).forEach(variableName => {
         let variableValue = mem.variables[variableName];
@@ -51,7 +52,7 @@ function typeify(value) {
             });
         }
 
-    } else if(value.match(/^[a-zA-Z_][a-zA-Z0-9_]*$/g)) { // identifier (variable name)
+    } else if(value.match(/^[a-zA-Z_]*$/g)) { // identifier (variable name)
         typeObj.type = "VariableIdentifier";
         let variableValue = getVariable(value);
         if (variableValue != undefined) {
@@ -63,7 +64,7 @@ function typeify(value) {
             typeObj.value = `ReferenceError -> variable [${value}] is not defined <-`;
         }
 
-    } else if(value.match(/\d|\+|\-|\\|\*|\^/g)) {
+    } else if(value.match(/\d*|\+|\-|\\|\*|\^/g)) {
         let error = false;
         let errMsg = null;
         try {
@@ -80,37 +81,25 @@ function typeify(value) {
             typeObj.type = "Number";
             typeObj.value = evaluate(value); // evaluate(value)
 
-            let variableNames = Object.keys(mem.variables).join('|');
-            let regex = new RegExp(`(${variableNames})`, 'g');
-            typeObj.originalInput = typeObj.originalInput.replace(regex, (match) => {
-                return `VARIABLE_IDENTIFIER:${match}`;
-            });
+            if(Object.keys(mem.variables).length > 0) {
+                let variableNames = Object.keys(mem.variables).join('|');
+                let regex = new RegExp(`(${variableNames})`, 'g');
+                typeObj.originalInput = typeObj.originalInput.replace(regex, (match) => {
+                    return `VARIABLE_IDENTIFIER:${match}`;
+                });
+            }
         }
     } else {
         typeObj.type = "Error";
         typeObj.value = `TypeifyError -> ${value} <-`;
     }
 
-    // for every instance of [v:.*] in typeObj.value, replace it with the actual value of the variable in mem.variables
-    if(typeObj.type == "String") typeObj.value = typeObj.value.replace(/\[v:(.*?)\]/g, (replacer, match, i, j) => {
-        if(getVariable(match) != undefined) {
-            return getVariable(match).value;
-        } else {
-            return `[UNDEFINED{!}VARIABLE:${match}]`;
-        }
-    });
-
-    if(typeObj.type == "String" && /\[UNDEFINED\{!\}VARIABLE:.*\]/g.test(typeObj.value)) {
-        let variable = typeObj.value.match(/\[UNDEFINED\{!\}VARIABLE:(.*?)\]/g);
-        typeObj.type = "Error";
-        typeObj.value = `ReferenceError -> variable [${variable.map(v => v.replace(/\[UNDEFINED\{!\}VARIABLE:/g, '').replace(/\]$/g, '')).join(', ')}] is not defined <-`;
-    }
-
     return typeObj;
 }
 
-function lexer(input) {
+function lexer(input, saveVariables) {
     input = input.trim();
+    if(saveVariables == undefined) saveVariables = true;
     
     let token = {};
     let keyword = input.split(" ")[0];
@@ -120,7 +109,11 @@ function lexer(input) {
     switch (keyword) {
         case "out": {
             let argument = input.split(" ").slice(1).join(" ").trim();
-            token = {...token, ...typeify(argument) };
+            let typeValue = typeify(argument);
+            let type = null;
+            if(typeValue.type == "Error" && argument.match(/\d*|\+|\-|\\|\*|\^/g) && !argument.match(/^"\w*"$/g)) type = "Number";
+            else type = typeValue.type;
+            token = {...token, ...{value: argument, type: type} };
         } break;
 
         case "str": {
@@ -144,7 +137,7 @@ function lexer(input) {
                     let identifier = input.replace(/^str\s+/, '').split('=')[0].trim();
 
                     if(getVariable(identifier) == undefined){
-                        mem.variables[identifier] = {
+                        if(saveVariables) mem.variables[identifier] = {
                             type: token.type,
                             value: token.value,
                             identifier: identifier,
@@ -180,7 +173,7 @@ function lexer(input) {
                     let identifier = input.replace(/^int\s+/, '').split('=')[0].trim();
 
                     if(getVariable(identifier) == undefined){
-                        mem.variables[identifier] = {
+                        if(saveVariables) mem.variables[identifier] = {
                             type: token.type,
                             value: token.value,
                             identifier: identifier,
@@ -216,7 +209,7 @@ function lexer(input) {
                     let identifier = input.replace(/^bln\s+/, '').split('=')[0].trim();
 
                     if(getVariable(identifier) == undefined){
-                        mem.variables[identifier] = {
+                        if(saveVariables) mem.variables[identifier] = {
                             type: token.type,
                             value: token.value,
                             identifier: identifier,
@@ -257,12 +250,13 @@ function lexer(input) {
                                 type: "Error",
                                 value: `TypeError -> variable [${variable.identifier}] is type ${variable.type}, cannot assign type ${token.type} <-`,
                             }
+                        } else {
+                            if(saveVariables) mem.variables[identifier] = {
+                                type: token.type,
+                                value: token.value,
+                                identifier: identifier,
+                            };
                         }
-                        mem.variables[identifier] = {
-                            type: token.type,
-                            value: token.value,
-                            identifier: identifier,
-                        };
                     }
                     else {
                         token = {
@@ -285,12 +279,32 @@ function lexer(input) {
                 let identifier = input.replace(/^free\s+/, '').split(' ')[0].trim();
                 let variable = getVariable(identifier);
                 if(variable != undefined){
-                    delete mem.variables[identifier];
+                    if(saveVariables) delete mem.variables[identifier];
                 } else {
                     token = {
                         type: "Error",
                         value: `ReferenceError -> variable [${identifier}] does not exist <-`,
                     }
+                }
+            }
+        }
+
+        case "goto": { 
+            // goto(any # whitespace)<variable_name>(any # whitespace)=(any # whitespace)
+            if(!input.match(/^goto\s+/g)) {
+                token = {
+                    type: "Error",
+                    value: `SyntaxError -> [goto] declaration must be followed by a value <-`,
+                };
+            } else {
+                let identifier = input.replace(/^goto\s+/, '').split(' ')[0].trim();
+                if(typeify(identifier).type != "Number") {
+                    token = {
+                        type: "Error",
+                        value: `TypeError -> [goto] declaration must be followed by a Number, found type ${typeify(identifier).type} <-`,
+                    }
+                } else {
+                    token = {...token, ...typeify(identifier)};
                 }
             }
         }
@@ -305,24 +319,75 @@ function parseMultilineKeywords(input) {
 
 function interpreter(input) {
     mem.variables = {};
+    document.getElementById("out").value = "";
     let lines = parseMultilineKeywords(input).split('\n');
     let i = 0;
-    let interval = setInterval(() => {
+    function interpretSingleLine(interval, single_input) {
         if(i >= lines.length) {
             clearInterval(interval);
             return;
         }
-        let line = lines[i].trim();
-        token = lexer(line);
-        if(token.type === "Error") {
-            console.error(`${token.value} at line: ${i}`);
-            clearInterval(interval);
-        } else {
-            console.log(token)
-            i++;
-            if(i >= lines.length) {
-                clearInterval(interval);
+        let line = single_input;
+        let token = lexer(line);
+        // process string literals
+        if(token.type == "String" && token.value.match(/\[v:\w*\]/)) {
+            // get between [v: and ]
+            let variableName = token.value.match(/\[v:(\w*)\]/)[1];
+            let variableValue = getVariable(variableName);
+            if(variableValue != undefined) {
+                token.value = variableValue.value;
+                token.type = variableValue.type;
+            } else {
+                token = {
+                    type: "Error",
+                    value: `ReferenceError -> variable [${variableName}] does not exist <-`,
+                };
             }
         }
+        if(token.type === "Error") {
+            document.getElementById("out").value += `${token.value} at line: ${i+1}\n`;
+            clearInterval(interval);
+            return;
+        } else {
+            i++;
+            // process tokens here =======================================================
+            switch(token.keyword) {
+                case "out": {
+                    console.log(token);
+                    let result = token.type == "String" ? token.value : evaluate(token.value);
+                    document.getElementById("out").value += result + "\n";
+                } break;
+                case "goto": {
+                    let newI = token.value - 1;
+                    if(newI < 0 || newI > lines.length) {
+                        token = {
+                            type: "Error",
+                            value: `ReferenceError -> [goto] out of bounds, line: ${newI} <-`,
+                        };
+                        clearInterval(interval);
+                        return;
+                    } else {
+                        i = newI;
+                    }
+                }
+            }
+
+            if(token.type === "Error") {
+                document.getElementById("out").value += `${token.value} at line: ${i}`;
+                clearInterval(interval);
+                return;
+            }
+            console.log(token);
+            if(i >= lines.length) {
+                clearInterval(interval);
+                return;
+            }
+        }
+    }
+    let tokens = lines.map(line => lexer(line, false));
+    console.log(tokens);
+    let clockInterval = setInterval(() => {
+        let line = lines[i].trim();
+        interpretSingleLine(clockInterval, line);
     }, 1);
 }

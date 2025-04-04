@@ -16,17 +16,14 @@
 <body>
     <button id="run">Run</button><br>
     <textarea id="in">
-        str meow = "woof"
-        int one = 15
+        int one = 13
         int two = 7
-        set two = 8
-        int tree = one + two</textarea>
+        out "[v:one] + two"</textarea>
     <textarea id="out" readonly></textarea>
 </body>
 <script>
-    const input = document.getElementById('in');
-    const output = document.getElementById('out');
     const runButton = document.getElementById('run');
+    const input = document.getElementById('in');
 
     runButton.addEventListener('click', () => {
         const code = input.value;
