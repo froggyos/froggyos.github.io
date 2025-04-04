@@ -14,7 +14,6 @@ function getVariable(variableName) {
     return mem.variables[variableName];
 }
 
-
 function typeify(value) {
     let typeObj = {
         type: null,
@@ -43,8 +42,13 @@ function typeify(value) {
             typeObj.type = "Error";
             typeObj.value = `EvaluationError -> ${typeObj.originalInput} <-`;
         } else {
-            // if evaluation was successful, return the boolean result
             typeObj.value = evaluate(value);
+
+            let variableNames = Object.keys(mem.variables).join('|');
+            let regex = new RegExp(`(${variableNames})`, 'g');
+            typeObj.originalInput = typeObj.originalInput.replace(regex, (match) => {
+                return `VARIABLE_IDENTIFIER:${match}`;
+            });
         }
 
     } else if(value.match(/^[a-zA-Z_][a-zA-Z0-9_]*$/g)) { // identifier (variable name)
@@ -75,6 +79,12 @@ function typeify(value) {
         } else {
             typeObj.type = "Number";
             typeObj.value = evaluate(value); // evaluate(value)
+
+            let variableNames = Object.keys(mem.variables).join('|');
+            let regex = new RegExp(`(${variableNames})`, 'g');
+            typeObj.originalInput = typeObj.originalInput.replace(regex, (match) => {
+                return `VARIABLE_IDENTIFIER:${match}`;
+            });
         }
     } else {
         typeObj.type = "Error";
@@ -220,6 +230,70 @@ function lexer(input) {
                 }
             }
         }
+
+        case "set": {
+            // set(any # whitespace)<variable_name>(any # whitespace)=(any # whitespace)
+            if(!input.match(/^set\s+\w+\s+\=\s+/g)) {
+                token = {
+                    type: "Error",
+                    value: `SyntaxError -> [set] declaration must be followed by a variable assignment <-`,
+                };
+            } else {
+                let assignedValue = input.replace(/^set\s+/, '').split('=')[1].trim();
+                let typeValue = typeify(assignedValue);
+                if(typeValue.type != "Number" && typeValue.type != "String" && typeValue.type != "Boolean" && typeValue.type != "Error"){
+                    token = {
+                        type: "Error",
+                        value: `TypeError -> [set] declaration can only be assigned type Number, String or Boolean, found type ${typeify(assignedValue).type} <-`,
+                    }
+                } else {
+                    token = {...token, ...typeify(assignedValue)};
+
+                    let identifier = input.replace(/^set\s+/, '').split('=')[0].trim();
+                    let variable = getVariable(identifier);
+                    if(variable != undefined){
+                        if(variable.type != token.type) {
+                            token = {
+                                type: "Error",
+                                value: `TypeError -> variable [${variable.identifier}] is type ${variable.type}, cannot assign type ${token.type} <-`,
+                            }
+                        }
+                        mem.variables[identifier] = {
+                            type: token.type,
+                            value: token.value,
+                            identifier: identifier,
+                        };
+                    }
+                    else {
+                        token = {
+                            type: "Error",
+                            value: `ReferenceError -> variable [${identifier}] does not exist <-`,
+                        }
+                    }
+                }
+            }
+        } break;
+
+        case "free": {
+            // free(any # whitespace)<variable_name>(any # whitespace)=(any # whitespace)
+            if(!input.match(/^free\s+\w+/g)) {
+                token = {
+                    type: "Error",
+                    value: `SyntaxError -> [free] declaration must be followed by a variable <-`,
+                };
+            } else {
+                let identifier = input.replace(/^free\s+/, '').split(' ')[0].trim();
+                let variable = getVariable(identifier);
+                if(variable != undefined){
+                    delete mem.variables[identifier];
+                } else {
+                    token = {
+                        type: "Error",
+                        value: `ReferenceError -> variable [${identifier}] does not exist <-`,
+                    }
+                }
+            }
+        }
     }
     return token;
 }
@@ -232,13 +306,23 @@ function parseMultilineKeywords(input) {
 function interpreter(input) {
     mem.variables = {};
     let lines = parseMultilineKeywords(input).split('\n');
-    for (let line of lines) {
-        let i = lines.indexOf(line) + 1;
-        let token = lexer(line);
+    let i = 0;
+    let interval = setInterval(() => {
+        if(i >= lines.length) {
+            clearInterval(interval);
+            return;
+        }
+        let line = lines[i].trim();
+        token = lexer(line);
         if(token.type === "Error") {
             console.error(`${token.value} at line: ${i}`);
-            break;
+            clearInterval(interval);
+        } else {
+            console.log(token)
+            i++;
+            if(i >= lines.length) {
+                clearInterval(interval);
+            }
         }
-        console.log(token)
-    }
+    }, 1);
 }
