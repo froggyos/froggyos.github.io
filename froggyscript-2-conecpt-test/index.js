@@ -2,14 +2,30 @@ const mem = {
     variables: {},
 };
 
+function output(value) {
+    document.getElementById("out").value += `${value}\n`;
+}
+
 // change this to evaluate the token and return the token
-function evaluate(type, expression) {
-    console.log(type, expression)
-    if(type == "String") Object.keys(mem.variables).forEach(variableName => {
+function evaluate(expression) {
+    let variableNames = Object.keys(mem.variables).filter(variableName => {
         let variableValue = mem.variables[variableName];
-        expression = expression.replaceAll(variableValue.identifier, variableValue.value);
+        if(variableValue && (variableValue.type === "Number")) {
+            return true;
+        }
+        return false;
     })
-    return math.evaluate(expression);
+
+    let scope = {};
+
+    variableNames.forEach(variableName => {
+        let variableValue = mem.variables[variableName];
+        if(variableValue) {
+            scope[variableName] = variableValue.value;
+        }
+    })
+
+    return math.evaluate(expression, scope);
 }
 
 function getVariable(variableName) {
@@ -27,6 +43,17 @@ function typeify(value) {
         typeObj.type = "String";
         typeObj.value = value.replace(/^("|')|("|')$/g, '');
 
+        // string literals
+        let regex = /\[v:([a-zA-Z_]*)\]/g; // find all [v:variable_name]
+        typeObj.value = typeObj.value.replace(regex, (match, variableName) => {
+            let variableValue = getVariable(variableName);
+            if(variableValue != undefined) {
+                return variableValue.value;
+            } else {
+                return match;
+            }
+        });
+
     } else if(value === "true" || value === "false") {
         typeObj.type = "Boolean";
         typeObj.value = (value === "true");
@@ -35,7 +62,7 @@ function typeify(value) {
         typeObj.type = "Boolean";
         let error = false;
         try {
-            evaluate(typeObj.type, value)
+            evaluate(value)
         } catch (e) {
             error = true;
         }
@@ -44,7 +71,7 @@ function typeify(value) {
             typeObj.type = "Error";
             typeObj.value = `EvaluationError -> ${typeObj.originalInput} <-`;
         } else {
-            typeObj.value = evaluate(typeObj.type,value);
+            typeObj.value = evaluate(value);
 
             let variableNames = Object.keys(mem.variables).join('|');
             let regex = new RegExp(`(${variableNames})`, 'g');
@@ -69,7 +96,7 @@ function typeify(value) {
         let error = false;
         let errMsg = null;
         try {
-            evaluate(typeObj.type, value);
+            evaluate(value);
         } catch (e) {
             error = true;
             errMsg = e.message;
@@ -80,7 +107,7 @@ function typeify(value) {
             typeObj.value = `EvaluationError -> ${typeObj.originalInput} <-`;
         } else {
             typeObj.type = "Number";
-            typeObj.value = evaluate(typeObj.type, value); // evaluate(value)
+            typeObj.value = evaluate(value);
 
             if(Object.keys(mem.variables).length > 0) {
                 let variableNames = Object.keys(mem.variables).join('|');
@@ -98,9 +125,8 @@ function typeify(value) {
     return typeObj;
 }
 
-function lexer(input, saveVariables) {
+function lexer(input) {
     input = input.trim();
-    if(saveVariables == undefined) saveVariables = true;
     
     let token = {};
     let keyword = input.split(" ")[0];
@@ -110,9 +136,7 @@ function lexer(input, saveVariables) {
     switch (keyword) {
         case "out": {
             let argument = input.replace(/^out\s+/, '').trim();
-            let type = typeify(argument);
-            console.log(type)
-            token = {...token, ...{value: argument, type: type} };
+            token = {...token, ...typeify(argument) };
         } break;
 
         case "str": {
@@ -136,7 +160,7 @@ function lexer(input, saveVariables) {
                     let identifier = input.replace(/^str\s+/, '').split('=')[0].trim();
 
                     if(getVariable(identifier) == undefined){
-                        if(saveVariables) mem.variables[identifier] = {
+                        mem.variables[identifier] = {
                             type: token.type,
                             value: token.value,
                             identifier: identifier,
@@ -151,28 +175,28 @@ function lexer(input, saveVariables) {
             }
         } break;
 
-        case "int": {
-            // int(any # whitespace)<variable_name>(any # whitespace)=(any # whitespace)
-            if(!input.match(/^int\s+\w+\s+\=\s+/g)) {
+        case "num": {
+            // num(any # whitespace)<variable_name>(any # whitespace)=(any # whitespace)
+            if(!input.match(/^num\s+\w+\s+\=\s+/g)) {
                 token = {
                     type: "Error",
-                    value: `SyntaxError -> [int] declaration must be followed by a variable assignment <-`,
+                    value: `SyntaxError -> [num] declaration must be followed by a variable assignment <-`,
                 };
             } else {
-                let assignedValue = input.replace(/^int\s+/, '').split('=')[1].trim();
+                let assignedValue = input.replace(/^num\s+/, '').split('=')[1].trim();
                 let typeValue = typeify(assignedValue);
                 if(typeValue.type != "Number" && typeValue.type != "Error"){
                     token = {
                         type: "Error",
-                        value: `TypeError -> [int] declaration can only be assigned type Number, found type ${typeify(assignedValue).type} <-`,
+                        value: `TypeError -> [num] declaration can only be assigned type Number, found type ${typeify(assignedValue).type} <-`,
                     }
                 } else {
                     token = {...token, ...typeify(assignedValue)};
 
-                    let identifier = input.replace(/^int\s+/, '').split('=')[0].trim();
+                    let identifier = input.replace(/^num\s+/, '').split('=')[0].trim();
 
                     if(getVariable(identifier) == undefined){
-                        if(saveVariables) mem.variables[identifier] = {
+                        mem.variables[identifier] = {
                             type: token.type,
                             value: token.value,
                             identifier: identifier,
@@ -208,7 +232,7 @@ function lexer(input, saveVariables) {
                     let identifier = input.replace(/^bln\s+/, '').split('=')[0].trim();
 
                     if(getVariable(identifier) == undefined){
-                        if(saveVariables) mem.variables[identifier] = {
+                        mem.variables[identifier] = {
                             type: token.type,
                             value: token.value,
                             identifier: identifier,
@@ -221,7 +245,7 @@ function lexer(input, saveVariables) {
                     }
                 }
             }
-        }
+        } break;
 
         case "set": {
             // set(any # whitespace)<variable_name>(any # whitespace)=(any # whitespace)
@@ -250,7 +274,7 @@ function lexer(input, saveVariables) {
                                 value: `TypeError -> variable [${variable.identifier}] is type ${variable.type}, cannot assign type ${token.type} <-`,
                             }
                         } else {
-                            if(saveVariables) mem.variables[identifier] = {
+                            mem.variables[identifier] = {
                                 type: token.type,
                                 value: token.value,
                                 identifier: identifier,
@@ -278,7 +302,7 @@ function lexer(input, saveVariables) {
                 let identifier = input.replace(/^free\s+/, '').split(' ')[0].trim();
                 let variable = getVariable(identifier);
                 if(variable != undefined){
-                    if(saveVariables) delete mem.variables[identifier];
+                    delete mem.variables[identifier];
                 } else {
                     token = {
                         type: "Error",
@@ -328,49 +352,28 @@ function interpreter(input) {
         }
         let line = single_input;
         let token = lexer(line);
-        // process string literals
-        if(token.type == "String" && token.value.match(/\[v:\w*\]/)) {
-            // get between [v: and ]
-            let variableName = token.value.match(/\[v:(\w*)\]/)[1];
-            let variableValue = getVariable(variableName);
-            if(variableValue != undefined) {
-                token.value = variableValue.value;
-                token.type = variableValue.type;
-            } else {
-                token = {
-                    type: "Error",
-                    value: `ReferenceError -> variable [${variableName}] does not exist <-`,
-                };
-            }
-        }
         if(token.type === "Error") {
-            document.getElementById("out").value += `${token.value} at line: ${i+1}\n`;
+            output(`${token.value} at line: ${i+1}\n`);
             clearInterval(interval);
             return;
         } else {
-            i++;
             // process tokens here =======================================================
             switch(token.keyword) {
                 case "out": {
-                    // 
+                    output(token.value)
                 } break;
                 case "goto": {
-                    let newI = token.value - 1;
-                    if(newI < 0 || newI > lines.length) {
-                        token = {
-                            type: "Error",
-                            value: `ReferenceError -> [goto] out of bounds, line: ${newI} <-`,
-                        };
-                        clearInterval(interval);
-                        return;
+                    let newI = token.value - 2;
+                    if(newI >= 0 && newI < lines.length) {
+                        i = newI; // -1 because of the increment in the outer loop
                     } else {
-                        i = newI;
+                        output(`GotoError -> cannot go to line ${newI} <-`);
                     }
                 }
             }
 
             if(token.type === "Error") {
-                document.getElementById("out").value += `${token.value} at line: ${i}`;
+                output(`${token.value} at line: ${i}`);
                 clearInterval(interval);
                 return;
             }
@@ -378,12 +381,19 @@ function interpreter(input) {
                 clearInterval(interval);
                 return;
             }
+
+            i++;
         }
+
+        return token;
     }
-    let tokens = lines.map(line => lexer(line, false));
-    console.log(tokens);
-    let clockInterval = setInterval(() => {
-        let line = lines[i].trim();
-        interpretSingleLine(clockInterval, line);
-    }, 1);
+    let clock = setInterval(() => {
+        if(i < lines.length) {
+            let line = lines[i]
+            let token = interpretSingleLine(clock, line);
+            console.log(token)
+        } else {
+            clearInterval(clock);
+        }
+    }, 3);
 }
