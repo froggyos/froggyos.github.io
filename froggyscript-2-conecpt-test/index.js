@@ -3,8 +3,8 @@ const mem = {
         Pi: {
             type: "Number",
             value: Math.PI,
-            mutable: false,
             identifier: "Pi",
+            mutable: false,
         }
     },
 };
@@ -14,8 +14,6 @@ const defaultVariables = JSON.parse(JSON.stringify(mem.variables));
 function output(value) {
     document.getElementById("out").value += `${value}\n`;
 }
-
-
 
 // change this to evaluate the token and return the token
 function evaluate(expression) {
