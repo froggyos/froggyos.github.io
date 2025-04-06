@@ -156,6 +156,8 @@
 <script>
     let terminal = document.getElementById("terminal");
 
+    const indev = true;
+
     const versionList = [
         "beta",
         "1.0",
@@ -173,8 +175,8 @@
 
     terminal.innerHTML += `<div class="line-container"><span style="white-space: pre"> </span<div>* Current froggyOS Versions *</div></div>`;
 
-    versionList.forEach(version => {
-        terminal.innerHTML += `<div class="line-container" data-version><span>></span><div>${version}</div></div>`;
+    versionList.forEach((version, i) => {
+        terminal.innerHTML += `<div class="line-container" data-version><span>></span><div>${version}${i == versionList.length - 1 && indev ? "-indev" : ""}</div></div>`;
     });
 
     let currentSelected = versionList.length - 1;

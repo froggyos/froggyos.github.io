@@ -6,6 +6,8 @@ function output(value) {
     document.getElementById("out").value += `${value}\n`;
 }
 
+
+
 // change this to evaluate the token and return the token
 function evaluate(expression) {
     let variableNames = Object.keys(mem.variables).filter(variableName => {
@@ -58,7 +60,7 @@ function typeify(value) {
         typeObj.type = "Boolean";
         typeObj.value = (value === "true");
 
-    } else if(/(==|!=|>=|<=)/.test(value)) { // comparison operators
+    } else if(/(==|!=|>=|<=|>|<)/.test(value)) { // comparison operators
         typeObj.type = "Boolean";
         let error = false;
         try {
@@ -75,9 +77,17 @@ function typeify(value) {
 
             let variableNames = Object.keys(mem.variables).join('|');
             let regex = new RegExp(`(${variableNames})`, 'g');
-            typeObj.originalInput = typeObj.originalInput.replace(regex, (match) => {
-                return `VARIABLE_IDENTIFIER:${match}`;
-            });
+            if(variableNames && variableNames.length > 0) {
+                // replace the variable names in the expression with their values for evaluation
+                typeObj.originalInput = typeObj.originalInput.replace(regex, (match) => {
+                    let variableValue = getVariable(match);
+                    if(variableValue) {
+                        return variableValue.value;
+                    } else {
+                        return match; // fallback to original if not found
+                    }
+                });
+            }
         }
 
     } else if(value.match(/^[a-zA-Z_]*$/g)) { // identifier (variable name)
@@ -125,7 +135,16 @@ function typeify(value) {
     return typeObj;
 }
 
-function lexer(input) {
+function writeVariable(identifier, type, value, mut) {
+    mem.variables[identifier] = {
+        type: type,
+        value: value,
+        identifier: identifier,
+        mutable: mut
+    };
+}
+
+function processSingleLine(input) {
     input = input.trim();
     
     let token = {};
@@ -134,114 +153,125 @@ function lexer(input) {
     token.keyword = keyword;
 
     switch (keyword) {
+        case "if": {
+            let conditionPart = input.replace(/^if\s+/, '').split('then')[0].trim();
+            if(!conditionPart) {
+                token = {
+                    type: "Error",
+                    value: `SyntaxError -> [if] condition cannot be empty <-`,
+                };
+                break;
+            }
+            let conditionType = typeify(conditionPart);
+            if(conditionType.type !== "Boolean" && conditionType.type !== "Error") {
+                token = {
+                    type: "Error",
+                    value: `TypeError -> [if] condition must evaluate to Boolean, found type ${conditionType.type} <-`,
+                };
+            } else {
+                token = {...token, ...conditionType, endKeywordIndex: null, elseKeywordIndex: null };
+            }
+        } break;
+
         case "out": {
             let argument = input.replace(/^out\s+/, '').trim();
             token = {...token, ...typeify(argument) };
         } break;
 
+        case "cstr":
         case "str": {
             // str(any # whitespace)<variable_name>(any # whitespace)=(any # whitespace)
-            if(!input.match(/^str\s+\w+\s+\=\s+/g)) {
+            if(!input.match(/^(c?)str\s+\w+\s+\=\s+/g)) {
                 token = {
                     type: "Error",
-                    value: `SyntaxError -> [str] declaration must be followed by a variable assignment <-`,
+                    value: `SyntaxError -> [${keyword}] declaration must be followed by a variable assignment <-`,
                 };
             } else {
-                let assignedValue = input.replace(/^str\s+/, '').split('=')[1].trim();
+                let assignedValue = input.replace(/^(c?)str\s+/, '').split('=')[1].trim();
                 let typeValue = typeify(assignedValue);
                 if(typeValue.type != "String" && typeValue.type != "Error"){
                     token = {
                         type: "Error",
-                        value: `TypeError -> [str] declaration can only be assigned type String, found type ${typeify(assignedValue).type} <-`,
+                        value: `TypeError -> [${keyword}] declaration can only be assigned type String, found type ${typeify(assignedValue).type} <-`,
                     }
                 } else {
-                    token = {...token, ...typeify(assignedValue)};
+                    let identifier = input.replace(/^(c?)str\s+/, '').split('=')[0].trim();
 
-                    let identifier = input.replace(/^str\s+/, '').split('=')[0].trim();
-
-                    if(getVariable(identifier) == undefined){
-                        mem.variables[identifier] = {
-                            type: token.type,
-                            value: token.value,
-                            identifier: identifier,
-                        };
-                    } else {
+                    if(getVariable(identifier) != undefined){
                         token = {
                             type: "Error",
                             value: `ReferenceError -> variable [${identifier}] already exists, cannot override <-`,
                         }
+                    } else {
+                        token = {...token, ...typeify(assignedValue), identifier: identifier }; 
+                        if(keyword == "str") token = { ...token, mutable: true }
+                        else token = { ...token, mutable: false };
                     }
                 }
             }
         } break;
 
+        case "cnum":
         case "num": {
             // num(any # whitespace)<variable_name>(any # whitespace)=(any # whitespace)
-            if(!input.match(/^num\s+\w+\s+\=\s+/g)) {
+            if(!input.match(/^(c?)num\s+\w+\s+\=\s+/g)) {
                 token = {
                     type: "Error",
-                    value: `SyntaxError -> [num] declaration must be followed by a variable assignment <-`,
+                    value: `SyntaxError -> [${keyword}] declaration must be followed by a variable assignment <-`,
                 };
             } else {
-                let assignedValue = input.replace(/^num\s+/, '').split('=')[1].trim();
+                let assignedValue = input.replace(/^(c?)num\s+/, '').split('=')[1].trim();
                 let typeValue = typeify(assignedValue);
                 if(typeValue.type != "Number" && typeValue.type != "Error"){
                     token = {
                         type: "Error",
-                        value: `TypeError -> [num] declaration can only be assigned type Number, found type ${typeify(assignedValue).type} <-`,
+                        value: `TypeError -> [${keyword}] declaration can only be assigned type Number, found type ${typeify(assignedValue).type} <-`,
                     }
                 } else {
-                    token = {...token, ...typeify(assignedValue)};
+                    let identifier = input.replace(/^(c?)num\s+/, '').split('=')[0].trim();
 
-                    let identifier = input.replace(/^num\s+/, '').split('=')[0].trim();
-
-                    if(getVariable(identifier) == undefined){
-                        mem.variables[identifier] = {
-                            type: token.type,
-                            value: token.value,
-                            identifier: identifier,
-                        };
-                    } else {
+                    if(getVariable(identifier) != undefined){
                         token = {
                             type: "Error",
                             value: `ReferenceError -> variable [${identifier}] already exists, cannot override <-`,
                         }
+                    } else {
+                        token = {...token, ...typeify(assignedValue), identifier: identifier };
+                        if(keyword == "num") token = { ...token, mutable: true }
+                        else token = { ...token, mutable: false };
                     }
                 }
             }
         } break;
 
+        case "cbln":
         case "bln": {
             // bln(any # whitespace)<variable_name>(any # whitespace)=(any # whitespace)
-            if(!input.match(/^bln\s+\w+\s+\=\s+/g)) {
+            if(!input.match(/^(c?)bln\s+\w+\s+\=\s+/g)) {
                 token = {
                     type: "Error",
-                    value: `SyntaxError -> [bln] declaration must be followed by a variable assignment <-`,
+                    value: `SyntaxError -> [${keyword}] declaration must be followed by a variable assignment <-`,
                 };
             } else {
-                let assignedValue = input.replace(/^bln\s+/, '').split('=')[1].trim();
+                let assignedValue = input.replace(/^(c?)bln\s+/, '').split('=')[1].trim();
                 let typeValue = typeify(assignedValue);
                 if(typeValue.type != "Boolean" && typeValue.type != "Error"){
                     token = {
                         type: "Error",
-                        value: `TypeError -> [bln] declaration can only be assigned type Boolean, found type ${typeify(assignedValue).type} <-`,
+                        value: `TypeError -> [${keyword}] declaration can only be assigned type Boolean, found type ${typeify(assignedValue).type} <-`,
                     }
                 } else {
-                    token = {...token, ...typeify(assignedValue)};
+                    let identifier = input.replace(/^(c?)bln\s+/, '').split('=')[0].trim();
 
-                    let identifier = input.replace(/^bln\s+/, '').split('=')[0].trim();
-
-                    if(getVariable(identifier) == undefined){
-                        mem.variables[identifier] = {
-                            type: token.type,
-                            value: token.value,
-                            identifier: identifier,
-                        };
-                    } else {
+                    if(getVariable(identifier) != undefined){
                         token = {
                             type: "Error",
                             value: `ReferenceError -> variable [${identifier}] already exists, cannot override <-`,
                         }
+                    } else {
+                        token = {...token, ...typeify(assignedValue), identifier: identifier };
+                        if(keyword == "bln") token = { ...token, mutable: true }
+                        else token = { ...token, mutable: false };
                     }
                 }
             }
@@ -256,38 +286,9 @@ function lexer(input) {
                 };
             } else {
                 let assignedValue = input.replace(/^set\s+/, '').split('=')[1].trim();
-                let typeValue = typeify(assignedValue);
-                if(typeValue.type != "Number" && typeValue.type != "String" && typeValue.type != "Boolean" && typeValue.type != "Error"){
-                    token = {
-                        type: "Error",
-                        value: `TypeError -> [set] declaration can only be assigned type Number, String or Boolean, found type ${typeify(assignedValue).type} <-`,
-                    }
-                } else {
-                    token = {...token, ...typeify(assignedValue)};
+                let identifier = input.replace(/^set\s+/, '').split('=')[0].trim();
 
-                    let identifier = input.replace(/^set\s+/, '').split('=')[0].trim();
-                    let variable = getVariable(identifier);
-                    if(variable != undefined){
-                        if(variable.type != token.type) {
-                            token = {
-                                type: "Error",
-                                value: `TypeError -> variable [${variable.identifier}] is type ${variable.type}, cannot assign type ${token.type} <-`,
-                            }
-                        } else {
-                            mem.variables[identifier] = {
-                                type: token.type,
-                                value: token.value,
-                                identifier: identifier,
-                            };
-                        }
-                    }
-                    else {
-                        token = {
-                            type: "Error",
-                            value: `ReferenceError -> variable [${identifier}] does not exist <-`,
-                        }
-                    }
-                }
+                token = {...token, ...typeify(assignedValue), identifier: identifier };
             }
         } break;
 
@@ -300,17 +301,17 @@ function lexer(input) {
                 };
             } else {
                 let identifier = input.replace(/^free\s+/, '').split(' ')[0].trim();
-                let variable = getVariable(identifier);
-                if(variable != undefined){
-                    delete mem.variables[identifier];
-                } else {
-                    token = {
-                        type: "Error",
-                        value: `ReferenceError -> variable [${identifier}] does not exist <-`,
-                    }
-                }
+                token = { ...token, identifier: identifier };
             }
-        }
+        } break;
+
+        case "//": {
+            token = {
+                keyword: "//",
+                type: "Comment",
+                content: input.replace(/^\/\/\s*/, '').trim()
+            }
+        } break;
 
         case "goto": { 
             // goto(any # whitespace)<variable_name>(any # whitespace)=(any # whitespace)
@@ -335,65 +336,175 @@ function lexer(input) {
     return token;
 }
 
-function parseMultilineKeywords(input) {
-    // something will go here soon
-    return input;
-}
-
 function interpreter(input) {
     mem.variables = {};
     document.getElementById("out").value = "";
-    let lines = parseMultilineKeywords(input).split('\n');
-    let i = 0;
+    let lines = input.split('\n');
+    let clock_interval = 0;
+
     function interpretSingleLine(interval, single_input) {
-        if(i >= lines.length) {
+        if(clock_interval >= lines.length) {
             clearInterval(interval);
             return;
         }
         let line = single_input;
-        let token = lexer(line);
+        let token = processSingleLine(line);
         if(token.type === "Error") {
-            output(`${token.value} at line: ${i+1}\n`);
+            output(`${token.value} at line: ${clock_interval}\n`);
             clearInterval(interval);
             return;
         } else {
             // process tokens here =======================================================
             switch(token.keyword) {
-                case "out": {
-                    output(token.value)
-                } break;
-                case "goto": {
-                    let newI = token.value - 2;
-                    if(newI >= 0 && newI < lines.length) {
-                        i = newI; // -1 because of the increment in the outer loop
+                case "free": {
+                    if(getVariable(token.identifier) == undefined) {
+                        token = {
+                            type: "Error",
+                            value: `ReferenceError -> variable [${token.identifier}] does not exist <-`,
+                        };
+                    } else if(getVariable(token.identifier).mutable === false) {
+                        token = {
+                            type: "Error",
+                            value: `TypeError -> variable [${token.identifier}] is immutable and cannot be freed <-`,
+                        };
                     } else {
-                        output(`GotoError -> cannot go to line ${newI} <-`);
+                        delete mem.variables[token.identifier];
                     }
-                }
+                } break;
+
+                case "if": {
+                    let stack = [];
+                    let elseIndex = null;
+                    let endIndex = null;
+                
+                    for (let i = clock_interval + 1; i < lines.length; i++) {
+                        let currentKeyword = lines[i].trim().split(" ")[0];
+                
+                        if (currentKeyword === "if") {
+                            stack.push("if");
+                        } else if (currentKeyword === "endif") {
+                            if (stack.length === 0) {
+                                endIndex = i;
+                                break;
+                            } else {
+                                stack.pop();
+                            }
+                        } else if (currentKeyword === "else" && stack.length === 0) {
+                            elseIndex = i;
+                        }
+                    }
+
+                    token.elseKeywordIndex = elseIndex;
+                    token.endKeywordIndex = endIndex;
+                
+                    if (endIndex === null) {
+                        token = {
+                            type: "Error",
+                            value: `SyntaxError -> Missing matching [endif] for [if] <-`,
+
+                        }
+                    } else {
+                        if (token.value === true) {
+                            if (elseIndex !== null) {
+                                lines[elseIndex] = `goto ${endIndex}`;
+                            }
+                            // Do nothing if linkedElse is null
+                        } else if (token.value === false) {
+                            if (elseIndex === null) {
+                                clock_interval = endIndex;
+                            } else {
+                                clock_interval = elseIndex;
+                            }
+                        }
+                    }
+                } break;
+
+                case "set": {
+                    let referencedVar = getVariable(token.identifier);
+
+                    if (referencedVar == undefined) {
+                        token = {
+                            type: "Error",
+                            value: `ReferenceError -> variable [${token.identifier}] does not exist <-`,
+                        };
+                    } else if (referencedVar.mutable === false) {
+                        token = {
+                            type: "Error",
+                            value: `TypeError -> variable [${token.identifier}] is immutable and cannot be reassigned <-`,
+                        };
+                    } else {
+                        // Write the new value to the variable
+                        if (token.type === "Error") {
+                            token = {
+                                type: "Error",
+                                value: `EvaluationError -> cannot evaluate [${token.originalInput}] <-`,
+                            };
+                        } else {
+                            writeVariable(token.identifier, referencedVar.type, token.value, true);
+                        }
+                    }
+                } break;
+
+                case "cstr":
+                case "cnum":
+                case "cbln": {
+                    writeVariable(token.identifier, token.type, token.value, false);
+                } break;
+                
+                case "num":
+                case "bln":
+                case "str": {
+                    writeVariable(token.identifier, token.type, token.value, true);
+                } break;
+
+                case "out": {
+                    output(token.value);
+                } break;
+
+                case "goto": {
+                    let newI = token.value;
+                    if(newI >= 0 && newI < lines.length) {
+                        clock_interval = newI - 1;
+                    } else {
+                        token = {
+                            type: "Error",
+                            value: `GotoError -> Line ${newI} does not exist <-`,
+                        }
+                    }
+                } break;
+
+                case "else":
+                case "endif":
+                case "//": { } break;
+
+                default: {
+                    token = {
+                        type: "Error",
+                        value: `InterpreterError -> Unknown keyword [${token.keyword}] <-`,
+                    }
+                } break;
             }
 
             if(token.type === "Error") {
-                output(`${token.value} at line: ${i}`);
+                output(`${token.value} at line: ${clock_interval}`);
                 clearInterval(interval);
                 return;
             }
-            if(i >= lines.length) {
+            if(clock_interval >= lines.length) {
                 clearInterval(interval);
                 return;
             }
-
-            i++;
         }
 
         return token;
     }
+
     let clock = setInterval(() => {
-        if(i < lines.length) {
-            let line = lines[i]
+        if(clock_interval < lines.length) {
+            let line = lines[clock_interval]
             let token = interpretSingleLine(clock, line);
             console.log(token)
-        } else {
-            clearInterval(clock);
-        }
-    }, 3);
+            clock_interval++;
+        } 
+    }, 1);
 }

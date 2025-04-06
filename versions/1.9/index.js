@@ -1596,7 +1596,7 @@ function createLilypadLine(path, linetype, filename){
         if(linetype == "code"){
             let lines = document.querySelectorAll(`[data-program='lilypad-session-${config.programSession}']`);
             for(let i = 0; i < lines.length; i++){
-                let lineNumber = String(i+1).padStart(3, "0");
+                let lineNumber = String(i+1).padStart(3, "0"); // CHANGE THIS TO i !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                 lines[i].previousElementSibling.textContent = lineNumber;
             }
         } else if (linetype == "palette"){
