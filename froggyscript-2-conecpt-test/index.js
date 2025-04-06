@@ -1,18 +1,30 @@
 const mem = {
-    variables: {
-        Pi: {
-            type: "Number",
-            value: Math.PI,
-            identifier: "Pi",
-            mutable: false,
-        }
-    },
+    variables: {}
 };
 
-const defaultVariables = JSON.parse(JSON.stringify(mem.variables));
+const defaultVariables = {
+    Pi: {
+        type: "Number",
+        value: Math.PI,
+        identifier: "Pi",
+        mutable: false,
+    }
+}
 
 function output(value) {
     document.getElementById("out").value += `${value}\n`;
+}
+
+function resetVariables() {
+    delete mem.variables;
+    mem.variables = {};
+    // initialize default variables
+    Object.keys(defaultVariables).forEach(variableName => {
+        let variableValue = defaultVariables[variableName];
+        if(variableValue) {
+            mem.variables[variableName] = variableValue;
+        }
+    });
 }
 
 // change this to evaluate the token and return the token
@@ -344,10 +356,11 @@ function processSingleLine(input) {
 }
 
 function interpreter(input) {
-    mem.variables = defaultVariables;
     document.getElementById("out").value = "";
     let lines = input.split('\n');
     let clock_interval = 0;
+
+    resetVariables()
 
     function interpretSingleLine(interval, single_input) {
         if(clock_interval >= lines.length) {
@@ -483,7 +496,7 @@ function interpreter(input) {
                 case "":
                 case "else":
                 case "endif":
-                case "//": { } break;
+                case "--": { } break;
 
                 default: {
                     token = {
@@ -494,11 +507,13 @@ function interpreter(input) {
             }
 
             if(token.type === "Error") {
+                resetVariables()
                 output(`${token.value} at line: ${clock_interval}`);
                 clearInterval(interval);
                 return;
             }
             if(clock_interval >= lines.length) {
+                resetVariables()
                 clearInterval(interval);
                 return;
             }
