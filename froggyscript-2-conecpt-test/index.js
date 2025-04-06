@@ -1,13 +1,15 @@
 const mem = {
     variables: {
-        Inf: {
+        Pi: {
             type: "Number",
-            value: Infinity,
-            identifier: "Inf",
-            mutable: false
+            value: Math.PI,
+            mutable: false,
+            identifier: "Pi",
         }
     },
 };
+
+const defaultVariables = JSON.parse(JSON.stringify(mem.variables));
 
 function output(value) {
     document.getElementById("out").value += `${value}\n`;
@@ -344,7 +346,7 @@ function processSingleLine(input) {
 }
 
 function interpreter(input) {
-    mem.variables = {};
+    mem.variables = defaultVariables;
     document.getElementById("out").value = "";
     let lines = input.split('\n');
     let clock_interval = 0;
