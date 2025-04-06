@@ -256,8 +256,13 @@ function processSingleLine(input) {
                         }
                     } else {
                         token = {...token, ...typeify(assignedValue), identifier: identifier };
-                        if(keyword == "num") token = { ...token, mutable: true }
-                        else token = { ...token, mutable: false };
+                        if(token.originalInput.includes("pi")) {
+                            token.type = "Error";
+                            token.value = `EvaluationError -> [pi] is unreliable, use [Pi] instead <-`;
+                        } else {
+                            if(keyword == "num") token = { ...token, mutable: true }
+                            else token = { ...token, mutable: false };
+                        }
                     }
                 }
             }
@@ -324,11 +329,11 @@ function processSingleLine(input) {
             }
         } break;
 
-        case "//": {
+        case "--": {
             token = {
-                keyword: "//",
+                keyword: "--",
                 type: "Comment",
-                content: input.replace(/^\/\/\s*/, '').trim()
+                content: input.replace(/^--\s*/, '').trim()
             }
         } break;
 
@@ -385,7 +390,7 @@ function interpreter(input) {
                     } else if(getVariable(token.identifier).mutable === false) {
                         token = {
                             type: "Error",
-                            value: `TypeError -> variable [${token.identifier}] is immutable and cannot be freed <-`,
+                            value: `PermissionError -> variable [${token.identifier}] is immutable and cannot be freed <-`,
                         };
                     } else {
                         delete mem.variables[token.identifier];
@@ -450,7 +455,7 @@ function interpreter(input) {
                     } else if (referencedVar.mutable === false) {
                         token = {
                             type: "Error",
-                            value: `TypeError -> variable [${token.identifier}] is immutable and cannot be reassigned <-`,
+                            value: `PermissionError -> variable [${token.identifier}] is immutable and cannot be reassigned <-`,
                         };
                     } else {
                         // Write the new value to the variable
@@ -458,6 +463,11 @@ function interpreter(input) {
                             token = {
                                 type: "Error",
                                 value: `EvaluationError -> cannot evaluate [${token.originalInput}] <-`,
+                            };
+                        } else if(referencedVar.type !== token.type) {
+                            token = {
+                                type: "Error",
+                                value: `TypeError -> cannot assign type [${token.type}] to variable [${token.identifier}] of type [${referencedVar.type}] <-`,
                             };
                         } else {
                             writeVariable(token.identifier, referencedVar.type, token.value, true);
