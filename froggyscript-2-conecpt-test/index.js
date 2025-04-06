@@ -172,16 +172,42 @@ function processSingleLine(input) {
     token.keyword = keyword;
 
     switch (keyword) {
+        case "endloop": {
+            let startOfLoopIndex = +input.split(" ")[1]; // remove the keyword to find the loop start index
+
+            token = { ...token, goto: startOfLoopIndex }
+        } break;
+
+        case "loop": {
+            let condition = input.replace(/^loop\s+/, '').trim();
+            if(!condition) {
+                token = {
+                    type: "Error",
+                    value: `SyntaxError -> [loop] condition cannot be empty <-`,
+                };
+                break;
+            }
+            let conditionType = typeify(condition);
+            if(conditionType.type !== "Boolean" && conditionType.type !== "Error") {
+                token = {
+                    type: "Error",
+                    value: `TypeError -> [loop] condition must evaluate to Boolean, found type ${conditionType.type} <-`,
+                };
+            } else {
+                token = {...token, ...conditionType, originalInput: condition, endloopIndex: null };
+            }
+        } break;
+
         case "if": {
-            let conditionPart = input.replace(/^if\s+/, '').split('then')[0].trim();
-            if(!conditionPart) {
+            let condition = input.replace(/^if\s+/, '').split('then')[0].trim();
+            if(!condition) {
                 token = {
                     type: "Error",
                     value: `SyntaxError -> [if] condition cannot be empty <-`,
                 };
                 break;
             }
-            let conditionType = typeify(conditionPart);
+            let conditionType = typeify(condition);
             if(conditionType.type !== "Boolean" && conditionType.type !== "Error") {
                 token = {
                     type: "Error",
@@ -362,7 +388,7 @@ function processSingleLine(input) {
 
 function interpreter(input) {
     document.getElementById("out").value = "";
-    let lines = input.split('\n');
+    let lines = input.split('\n').map(x => x.trim()).filter(x => x.length > 0 && x !== "--");
     let clock_interval = 0;
 
     resetVariables()
@@ -381,6 +407,54 @@ function interpreter(input) {
         } else {
             // process tokens here =======================================================
             switch(token.keyword) {
+                case "endloop": {
+                    if(isNaN(token.goto)) {
+                        token = {
+                            type: "Error",
+                            value: `SyntaxError -> [endloop] cannot be used without a matching [loop] <-`,
+                        };
+                    }
+
+                    let loopCondition = lines[token.goto].replace("loop", "").trim();
+                    if(evaluate(loopCondition)) {
+                        clock_interval = token.goto;
+                    }
+                } break;
+
+                case "loop": {
+                    // find paired endloop index
+                    let stack = [];
+                    let endIndex = null;
+                    for (let i = clock_interval + 1; i < lines.length; i++) {
+                        let currentKeyword = lines[i].trim().split(" ")[0];
+                        
+                        if (currentKeyword === "loop") {
+                            stack.push("loop");
+                        } else if (currentKeyword === "endloop") {
+                            if (stack.length === 0) {
+                                endIndex = i;
+                                break;
+                            } else {
+                                stack.pop();
+                            }
+                        }
+                    }
+                    token.endloopIndex = endIndex;
+
+                    if (endIndex === null) {
+                        token = {
+                            type: "Error",
+                            value: `SyntaxError -> Missing matching [endloop] for [loop] <-`,
+                        };
+                    }
+
+                    if(!token.value){
+                        clock_interval = token.endloopIndex;
+                    } else {
+                        lines[token.endloopIndex] += " " + clock_interval;
+                    }
+                } break;
+
                 case "free": {
                     if(getVariable(token.identifier) == undefined) {
                         token = {
@@ -503,10 +577,8 @@ function interpreter(input) {
                     }
                 } break;
 
-                case "":
                 case "else":
-                case "endif":
-                case "--": { } break;
+                case "endif": { } break;
 
                 default: {
                     token = {
@@ -539,5 +611,5 @@ function interpreter(input) {
             console.log(token)
             clock_interval++;
         } 
-    }, 1);
+    }, 1000);
 }

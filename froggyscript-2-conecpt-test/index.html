@@ -27,9 +27,12 @@ goto 3
 -->
     <button id="run">Run</button><br>
     <textarea id="in">
-        num one = 2
-        out one + two
-    </textarea>
+        num i = 0
+        loop i <= 10
+        out i
+            set i = i + 1
+            
+        endloop</textarea>
     <textarea id="out" readonly></textarea>
 </body>
 <script>
