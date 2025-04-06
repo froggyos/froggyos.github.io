@@ -1,5 +1,12 @@
 const mem = {
-    variables: {},
+    variables: {
+        Inf: {
+            type: "Number",
+            value: Infinity,
+            identifier: "Inf",
+            mutable: false
+        }
+    },
 };
 
 function output(value) {
@@ -473,6 +480,7 @@ function interpreter(input) {
                     }
                 } break;
 
+                case "":
                 case "else":
                 case "endif":
                 case "//": { } break;
