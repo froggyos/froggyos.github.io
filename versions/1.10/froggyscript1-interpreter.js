@@ -1,4 +1,4 @@
-function format(input) {
+function FROGGYSCRIPT1_format(input) {
     let formatted = {
         functions: {},
         lines: [],
@@ -483,7 +483,7 @@ function weirdError(){
     }, 5000);
 }
 
-function interpreter(formatted){
+function FROGGYSCRIPT1_interpreter(formatted){
 
     let lineIndex = 0;
     let iteration = 0;

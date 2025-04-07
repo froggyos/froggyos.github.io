@@ -1262,13 +1262,13 @@ function sendCommand(command, args, createEditableLineAfter){
                     break;
                 }
 
-                let formatted = format(file.data);
+                let formatted = FROGGYSCRIPT1_format(file.data);
                 if(formatted.errors.length > 0){
                     createTerminalLine(formatted.errors[0], config.errorText, {translate: false});
                     if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 } else {
                     config.currentProgram = args[0];
-                    interpreter(formatted);
+                    FROGGYSCRIPT1_interpreter(formatted);
                 }
             }
         break;
