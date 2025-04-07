@@ -1774,14 +1774,14 @@ innerBar.animate(...getTimings(0)).onfinish = () => {
         innerBar.animate(...getTimings(2)).onfinish = () => {
             innerBar.animate(...getTimings(3)).onfinish = () => {
                 innerBar.animate(...getTimings(4)).onfinish = () => {
-                    let chance = Math.random() > 0.001;//0.001;
-                    if(chance == false) {
+                    let loadForever = Math.random() < 0.001;//0.001;
+                    if(loadForever == true) {
                         console.error("whoa..... this is rare lol! uhhh email froggyos.royal.screw.up@gmail.com if u get this")
                     }
                     if(!animSkipped) setTimeout(() => {
                         document.getElementById("blackout").remove()
                         sendCommand('[[BULLFROG]]greeting', []);
-                    }, chance ? 100 : 1000000000000000)
+                    }, loadForever ? 1000000000000000 : 100)
                 }
             }
         }

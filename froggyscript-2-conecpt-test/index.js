@@ -12,7 +12,7 @@ const defaultVariables = {
 }
 
 function output(value) {
-    document.getElementById("out").value += `${value}\n`;
+    console.log(value);
 }
 
 function resetVariables() {
@@ -608,8 +608,8 @@ function interpreter(input) {
         if(clock_interval < lines.length) {
             let line = lines[clock_interval]
             let token = interpretSingleLine(clock, line);
-            console.log(token)
+            // console.log(token)
             clock_interval++;
         } 
-    }, 1000);
+    }, 1);
 }
