@@ -12,7 +12,7 @@ const defaultVariables = {
 }
 
 function output(value) {
-    console.log(value);
+    document.getElementById("out").value += value + "\n";
 }
 
 function resetVariables() {

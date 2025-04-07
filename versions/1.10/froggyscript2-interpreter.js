@@ -39,8 +39,6 @@ function evaluate(expression) {
         return false;
     })
 
-    let scope = {};
-
     variableNames.forEach(variableName => {
         let variableValue = FroggyscriptMemory.variables[variableName];
         console.log(variableValue)
@@ -48,6 +46,8 @@ function evaluate(expression) {
             scope[variableName] = variableValue.value;
         }
     })
+
+    console.log(expression, scope)
 
     return math.evaluate(expression, scope);
 }
@@ -138,6 +138,7 @@ function typeify(value) {
             typeObj.type = "Error";
             typeObj.value = `EvaluationError -> ${typeObj.originalInput} <-`;
         } else {
+            console.log(evaluate(value))
             typeObj.type = "Number";
             typeObj.value = evaluate(value);
 
@@ -151,7 +152,7 @@ function typeify(value) {
         }
     } else {
         typeObj.type = "Error";
-        typeObj.value = `TypeifyError -> ${value} <-`;
+        typeObj.value = `TypeifyError -> ${errMsg} <-`;
     }
 
     return typeObj;
