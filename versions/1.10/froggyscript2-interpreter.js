@@ -62,6 +62,7 @@ function typeify(value) {
         value: null,
         originalInput: value,
     };
+    // the error is somewhere here, or with the evaluate function ==========!!!!!!!!!!!==
     // string
     if(value.match(/^("|').*("|')$/g)) {
         typeObj.type = "String";
