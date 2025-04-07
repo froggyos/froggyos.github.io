@@ -844,8 +844,18 @@ const config = {
             { name: "cli", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["str cli = 'this program is hardcoded into froggyOS'", "endprog"] },
             { name: "lilypad", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["str lilypad = 'this program is hardcoded into froggyOS'", "endprog"] },
             { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
-                "out 'meow meow meow :>'",
-                "endprog",
+                "num one = 1000",
+                "out one"
+            ] },
+            { name: "fibonacci", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
+                "num nOne = 0",
+                "num nTwo = 1",
+                "num sum = 0",
+                "set sum = nOne + nTwo",
+                "out sum",
+                "set nTwo = nOne",
+                "set nOne = sum",
+                "goto 3",
             ] },
         ],
         "D:/Macros": [

@@ -1262,14 +1262,8 @@ function sendCommand(command, args, createEditableLineAfter){
                     break;
                 }
 
-                let formatted = FROGGYSCRIPT1_format(file.data);
-                if(formatted.errors.length > 0){
-                    createTerminalLine(formatted.errors[0], config.errorText, {translate: false});
-                    if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
-                } else {
-                    config.currentProgram = args[0];
-                    FROGGYSCRIPT1_interpreter(formatted);
-                }
+                console.log(file.data.join("\n"));
+                FROGGYSCRIPT2_interpreter(file.data.join("\n"));
             }
         break;
 
@@ -1766,31 +1760,40 @@ let getTimings = (i) => {
     }]
 }
 
+const SKIP_ANIMATION = true;
+
 let animSkipped = false;
 let innerBar = document.getElementById("inner-bar");
 
-innerBar.animate(...getTimings(0)).onfinish = () => {
-    innerBar.animate(...getTimings(1)).onfinish = () => {
-        innerBar.animate(...getTimings(2)).onfinish = () => {
-            innerBar.animate(...getTimings(3)).onfinish = () => {
-                innerBar.animate(...getTimings(4)).onfinish = () => {
-                    let loadForever = Math.random() < 0.001;//0.001;
-                    if(loadForever == true) {
-                        console.error("whoa..... this is rare lol! uhhh email froggyos.royal.screw.up@gmail.com if u get this")
+if(!SKIP_ANIMATION) {
+    innerBar.animate(...getTimings(0)).onfinish = () => {
+        innerBar.animate(...getTimings(1)).onfinish = () => {
+            innerBar.animate(...getTimings(2)).onfinish = () => {
+                innerBar.animate(...getTimings(3)).onfinish = () => {
+                    innerBar.animate(...getTimings(4)).onfinish = () => {
+                        let loadForever = Math.random() < 0.001;//0.001;
+                        if(loadForever == true) {
+                            console.error("whoa..... this is rare lol! uhhh email froggyos.royal.screw.up@gmail.com if u get this")
+                        }
+                        if(!animSkipped) setTimeout(() => {
+                            document.getElementById("blackout").remove()
+                            sendCommand('[[BULLFROG]]greeting', []);
+                        }, loadForever ? 1000000000000000 : 100)
                     }
-                    if(!animSkipped) setTimeout(() => {
-                        document.getElementById("blackout").remove()
-                        sendCommand('[[BULLFROG]]greeting', []);
-                    }, loadForever ? 1000000000000000 : 100)
                 }
             }
         }
     }
-}
-function keypressListener(e){
-    animSkipped = true;
+
+    function keypressListener(e){
+        animSkipped = true;
+        document.getElementById("blackout").remove()
+        document.removeEventListener('keyup', keypressListener);
+        sendCommand('[[BULLFROG]]greeting', []);   
+    }
+    document.addEventListener('keyup', keypressListener);
+
+} else {
     document.getElementById("blackout").remove()
-    document.removeEventListener('keyup', keypressListener);
-    sendCommand('[[BULLFROG]]greeting', []);   
+    sendCommand('[[BULLFROG]]greeting', []);       
 }
-document.addEventListener('keyup', keypressListener);

@@ -27,11 +27,14 @@ goto 3
 -->
     <button id="run">Run</button><br>
     <textarea id="in">
-        num i = 0
-        loop i <= 10
-            out i
-            set i = i + 1
-        endloop</textarea>
+        num nOne = 0
+        num nTwo = 1
+        num sum = 0
+        set sum = nOne + nTwo
+        out sum
+        set nTwo = nOne
+        set nOne = sum
+        goto 3</textarea>
     <textarea id="out" readonly></textarea>
 </body>
 <script>
