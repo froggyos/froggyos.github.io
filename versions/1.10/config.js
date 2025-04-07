@@ -845,7 +845,8 @@ const config = {
             { name: "lilypad", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["str lilypad = 'this program is hardcoded into froggyOS'", "endprog"] },
             { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
                 "num one = 1000",
-                "out one + one"
+                "out one + one",
+                "endprog",
             ] },
             { name: "fibonacci", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
                 "num nOne = 0",
@@ -856,6 +857,7 @@ const config = {
                 "set nTwo = nOne",
                 "set nOne = sum",
                 "goto 3",
+                "endprog"
             ] },
         ],
         "D:/Macros": [

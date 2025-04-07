@@ -533,32 +533,6 @@ function getFileWithName(path, name){
     return file.find(file => file.name == name);
 }
 
-function cleanInnerQuotes(input) {
-    if ((input.startsWith('"') && input.endsWith('"')) || (input.startsWith("'") && input.endsWith("'"))) {
-        let quoteType = input[0];
-        let innerContent = input.slice(1, -1);
-        let cleanedContent = innerContent.replace(/["']/g, '');
-        return quoteType + cleanedContent + quoteType;
-    }
-    return input;
-}
-
-function cleanQuotes(input){
-    return input.replaceAll(/["']/g, '');
-}
-
-function evaluate(string){
-    try {
-        if(/`([^`\\]*(\\.[^`\\]*)*)`/g.test(string)){
-            throw new Error();
-        }
-        parsedString = new Function(`return (${string});`)();
-        return parsedString;
-    } catch (err) {
-        return null;
-    }
-}
-
 function updateLineHighlighting() {
     let lines = document.querySelectorAll(`[data-program='lilypad-session-${config.programSession}']`);
     lines.forEach(line => {
@@ -1262,7 +1236,7 @@ function sendCommand(command, args, createEditableLineAfter){
                     break;
                 }
 
-                FROGGYSCRIPT2_interpreter(file.data.join("\n"));
+                interpreter(file.data.join("\n"));
             }
         break;
 

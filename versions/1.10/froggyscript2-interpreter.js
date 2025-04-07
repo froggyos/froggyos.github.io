@@ -11,10 +11,11 @@ const defaultVariables = {
     }
 }
 
-function output(value, error) {
-    if(error == undefined) error = false;
-    if(error) createTerminalLine(value.toString(), config.errorText, {translate: false});
-    else createTerminalLine(value.toString(), ">", {translate: false});
+function output(value, isError) {
+    if(isError == undefined) isError = false;
+    if(isError) createTerminalLine(value.toString(), config.errorText, {translate: false});
+    else createTerminalLine(value.toString(), "", {translate: false});
+    //document.getElementById("out").value += value + "\n";
 }
 
 function resetVariables() {
@@ -39,15 +40,14 @@ function evaluate(expression) {
         return false;
     })
 
+    let scope = {};
+
     variableNames.forEach(variableName => {
         let variableValue = FroggyscriptMemory.variables[variableName];
-        console.log(variableValue)
         if(variableValue) {
             scope[variableName] = variableValue.value;
         }
     })
-
-    console.log(expression, scope)
 
     return math.evaluate(expression, scope);
 }
@@ -62,7 +62,6 @@ function typeify(value) {
         value: null,
         originalInput: value,
     };
-    // the error is somewhere here, or with the evaluate function ==========!!!!!!!!!!!==
     // string
     if(value.match(/^("|').*("|')$/g)) {
         typeObj.type = "String";
@@ -139,7 +138,6 @@ function typeify(value) {
             typeObj.type = "Error";
             typeObj.value = `EvaluationError -> ${typeObj.originalInput} <-`;
         } else {
-            console.log(evaluate(value))
             typeObj.type = "Number";
             typeObj.value = evaluate(value);
 
@@ -153,7 +151,7 @@ function typeify(value) {
         }
     } else {
         typeObj.type = "Error";
-        typeObj.value = `TypeifyError -> ${errMsg} <-`;
+        typeObj.value = `TypeifyError -> ${value} <-`;
     }
 
     return typeObj;
@@ -177,6 +175,9 @@ function processSingleLine(input) {
     token.keyword = keyword;
 
     switch (keyword) {
+        case "endprog": {
+            token = { ...token };
+        }
         case "endloop": {
             let startOfLoopIndex = +input.split(" ")[1]; // remove the keyword to find the loop start index
 
@@ -391,30 +392,38 @@ function processSingleLine(input) {
     return token;
 }
 
-function FROGGYSCRIPT2_interpreter(input) {
-    // document.getElementById("out").value = "";
+function interpreter(input) {
     let lines = input.split('\n').map(x => x.trim()).filter(x => x.length > 0 && x !== "--");
     let clock_interval = 0;
 
     resetVariables()
 
+    if(lines[lines.length - 1].trim() !== "endprog") {
+        output(`SyntaxError -> [endprog] must be the last line of the program <-`, true);
+        return;
+    }
+
     function interpretSingleLine(interval, single_input) {
         if(clock_interval >= lines.length) {
             clearInterval(interval);
-            createEditableTerminalLine(`${config.currentPath}>`);
             return;
         }
         let line = single_input;
         let token = processSingleLine(line);
         if(token.type === "Error") {
-            output(`${token.value} at line: ${clock_interval}`, true);
+            output(`${token.value} at line: ${clock_interval}\n`, true);
             clearInterval(interval);
-            createEditableTerminalLine(`${config.currentPath}>`);
             return;
         } else {
-            console.log(token)
             // process tokens here =======================================================
             switch(token.keyword) {
+                case "endprog": {
+                    resetVariables()
+                    clearInterval(interval);
+                    createEditableTerminalLine(config.currentPath);
+                    return;
+                } break;
+
                 case "endloop": {
                     if(isNaN(token.goto)) {
                         token = {
@@ -600,13 +609,11 @@ function FROGGYSCRIPT2_interpreter(input) {
                 resetVariables()
                 output(`${token.value} at line: ${clock_interval}`, true);
                 clearInterval(interval);
-                createEditableTerminalLine(`${config.currentPath}>`);
                 return;
             }
             if(clock_interval >= lines.length) {
                 resetVariables()
                 clearInterval(interval);
-                createEditableTerminalLine(`${config.currentPath}>`);
                 return;
             }
         }

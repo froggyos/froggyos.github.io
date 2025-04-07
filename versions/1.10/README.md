@@ -140,7 +140,7 @@ If you edit the `Settings:` drive directly, some settings won't apply until you 
 * the loading spinner goes ZOOMING????
     * it kept being added to it kept going BABHBAhBAHDBHDBDAHSBAWOOOWOOWOOOWOOOWABHSHAJBSAHBWHSHOOOOSHHHHWOOOOOOWOOOZSHHZOOOOOOOM
 
-# FroggyScript Documentation
+# FroggyScript2 Documentation
 **Note: spaces are part of syntax, and must be used as shown**
 
 Operators:
@@ -157,37 +157,37 @@ endprog
 you can just write if it doesnt start with a keyword
 -- or you can (and are recommended to) use the comment keyword just to be safe
 ```
-### Wait
+<!-- ### Wait
 ```
 wait [time in milliseconds]
 
 wait 1000
 wait v:number
-```
-### Clear Screen
+``` -->
+<!-- ### Clear Screen
 ```
 clearterminal
-```
-### Change Color Palette
+``` -->
+<!-- ### Change Color Palette
 ```
 changepalette [palette name]
 
 changepalette standard
 changepalette cherry
-```
+``` -->
 
 ## Output
-### Output
+### Basic Output
 ```
-out [input]
+out [argument]
 
-out v:variable_name
+out variable_name
 out "text"
-out "text with spaces"
-out 'more text'
-out "i can put a v:variable inside a string"
+out "more text"
+out 1
+out "text with a [v:variable] inside"
 ```
-### Formatted Output
+<!-- ### Formatted Output
 #### General
 * index `0` is the 1st character.
 * You can  use variables as values for color codes, variables of length 2 or less will be converted to color codes automatically.
@@ -216,20 +216,24 @@ outc {t=c02, tr=4-26 | b=c04, br=57-71} "from the 5th to 29th character, the tex
 * to set different ranges, separate subrules with a `|`: `{[property]=[value] | [property]=[value]}`
     * If a range is not specified, the subrule will apply to the entire string
     * The value for Italic is `1` to be enabled, and `0` to be disabled
- 
+  -->
 ## Variables
 ### Create a Variable
 
 ```
+-- string
 str [variable_name] = [value]
-int [variable_name] = [value]
+-- number
+num [variable_name] = [value]
+-- boolean
+bln [variable_name] = [value]
 
 str test = 'single'
 str test = "double"
 str test = "multiple words"
 
 int age = 20
-str output = "i am v:age years old"
+str output = "i am [v:age] years old"
 ```
 ### Edit a Variable
 ```
@@ -238,16 +242,20 @@ set [variable_name] = [value]
 set test = 5
 set test = 'text'
 set test = "many word"
-set i = v:i + 1
+
+set i = i + 1
+
+// throws a TypeError
+set i = test
 ```
 
 ### Delete a Variable
 ```
-free v:[variable_name]
+free [variable_name]
 
-free v:test
+free test
 ```
-## String Manipulation
+<!-- ## String Manipulation
 ### Append
 ```
 append [variable] [value]
@@ -257,8 +265,8 @@ append test ing the append keyword
 append test ' ing it some more'
 append test "AND MORE"
 append test v:variable
-```
-## User Input
+``` -->
+<!-- ## User Input
 ### Define a File Argument
 ```
 filearg [variable_name] [type]
@@ -313,60 +321,55 @@ endfunc
 f: [func_name]
 
 f: name
-```
+``` -->
 
 ## Control Flow
 ### If Statement
 ```
-if {[condition]}
+if [condition]
     [code]
 endif
 
-if {v:variable_name == "value"}
+if variable_name == "value"
     set variable_name = 'new value'
 endif
 
-if {6 < 7} 
-    f: name
-endif
-
-if {[condition]}
+if [condition]
     [if true]
 else
     [if false]
 endif
 
-if {v:variable_name == 4}
-    f: something
+if variable_name == 4
+    out "something"
 else
-    f: somethingElse
+    out "something else"
 endif
 ```
 
 ### Loop
-**NOTE: you may need to include `wait 0` before endloop keywords**
 ```
-loop {[condition]}
+loop [condition]
     [code]
 endloop
 
-loop {v:i < 5}
-    out v:i
-    set i = v:i + 1
+loop i < 5
+    out i
+    set i = i + 1
 endloop
 
 int i = 0
 int j = 0
-loop { v:i < 5 }
-    loop { v:j < 4 }
-        out v:i * v:j
-        set j = v:j + 1
+loop i < 5
+    loop j < 4
+        out i * j
+        set j = j + 1
     endloop
-    set i = v:i + 1
+    set i = i + 1
     set j = 0
 endloop
 ```
-## Program Data
+<!-- ## Program Data
 ### Saving Data
 Saves the contents of `[variable]` to the corresponding file in the `D:/Program-Data` file
 ```
@@ -376,4 +379,4 @@ savedata [variable]
 From the corresponding `D:/Program-Data` file, loads the contents of entry of `[variable]` to the variable called `[variable]`
 ```
 loaddata [variable]
-```
+``` -->
