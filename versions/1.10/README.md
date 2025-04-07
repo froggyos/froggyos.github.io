@@ -157,13 +157,13 @@ endprog
 you can just write if it doesnt start with a keyword
 -- or you can (and are recommended to) use the comment keyword just to be safe
 ```
-<!-- ### Wait
+### Wait
 ```
 wait [time in milliseconds]
 
 wait 1000
-wait v:number
-``` -->
+wait number
+```
 <!-- ### Clear Screen
 ```
 clearterminal

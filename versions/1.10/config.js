@@ -812,6 +812,7 @@ const config = {
     translationErrorText: "<span class='error'><span class='t-error-text'>!!TRANSLATION ERROR!!</span> -</span>",
     translationWarningText: "<span class='error'><span class='t-warning-text'>!TRANSLATION WARNING!</span> -</span>",
     alertText: "<span class='error'><span class='alert-text'>ALERT</span> -</span>",
+    programErrorText: " -- <span class='error'><span class='program-error-text'>!! -> {{}} <- !!</span></span> --",
 
     // filesystem
     fileSystem: {
@@ -857,6 +858,24 @@ const config = {
                 "set nTwo = nOne",
                 "set nOne = sum",
                 "goto 3",
+                "endprog"
+            ] },
+            { name: "loop", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
+                "num i = 0",
+                "num n = 100",
+                "loop i < n",
+                "out i",
+                "set i = i + 1",
+                "wait 'gyatt'",
+                "endloop",
+                "endprog"
+            ] },
+            { name: "hello-world", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
+                "out 'Hello, World!'",
+                "endprog"
+            ] },
+            { name: "test2", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
+                "out 'test2'",
                 "endprog"
             ] },
         ],

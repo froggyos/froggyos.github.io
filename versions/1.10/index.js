@@ -281,6 +281,7 @@ const defaultStyling = `
     --error-background: var(--c12);
     --translation-error-backgroud: var(--c05);
     --translation-warning-backgroud: var(--c06);
+    --program-error-background: var(--c04);
     --alert-background: var(--c03);
     --error-text: var(--c15);
 
@@ -1733,7 +1734,7 @@ let getTimings = (i) => {
     }]
 }
 
-const SKIP_ANIMATION = true;
+const SKIP_ANIMATION = false;
 
 let animSkipped = false;
 let innerBar = document.getElementById("inner-bar");
