@@ -1,0 +1,246 @@
+<!--mrjuice43, Rus1130, 2025/01/10-->
+<style>
+    /*https://github.com/mshioda/relaxed-typing-mono-jp/releases/*/
+    @font-face {
+        font-family: "froggyOS-jp-font";
+        src: url("./fonts/KokubanMonospace-Regular.ttf") format("truetype");
+    }
+    body {
+        background-color: var(--void-space);
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+
+        font-variant-ligatures: none;
+        font-family: "Press Start 2P", serif;
+        font-size: 8px;
+        cursor: none;
+        text-decoration: none;
+        -webkit-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+    }
+
+    #screen {
+        width: 640px;
+        height: 480px;
+        background-color: var(--terminal-background);
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: center;
+        padding-top: 0;
+        box-sizing: border-box;
+    }
+    #bar {
+        background-color: var(--bar-background);
+        height: 10px;
+        width: 100%;
+        padding-left: 4px;
+        padding-top: 1px;
+        box-sizing: border-box;
+        cursor: none;
+        color: var(--bar-text);
+    }
+    #terminal {
+        width: 100%;
+        height: calc(100% - 20px);
+        background-color: var(--terminal-background);
+        display: flex;
+        flex-direction: column;
+        padding: 4px;
+        box-sizing: border-box;
+        overflow-y: auto;
+        scrollbar-width: none;
+        padding-bottom: 0px;
+        padding-right: 0px;
+    }
+    #color-test-bar {
+        position: absolute;
+        top: 0;
+        left: 0;
+    }
+    
+    .line-container {
+        display: flex;
+        flex-direction: row;
+        color: var(--terminal-line-text);
+        background-color: var(--terminal-line-background);
+        outline: none;
+    }
+    .line-container > :first-child {
+        padding-right: 8px;
+        white-space: pre;
+    }
+    .line-container > div {
+        min-width: 1px;
+        width: 100%;
+        white-space: pre-wrap;
+        overflow-wrap: break-word;
+    }
+    .line-container > div:focus {
+        outline: none;
+    }
+    .selected {
+        background-color: var(--prompt-selected-background);
+        color: var(--prompt-selected-text);
+    }
+    .error {
+        white-space: nowrap;
+        font-family: "Press Start 2P" !important;
+    }
+    .error-text {
+        background-color: var(--error-background);
+        color: var(--error-text);
+        font-weight: 400 !important;
+    }
+    .t-error-text {
+        background-color: var(--translation-error-backgroud);
+        color: var(--error-text);
+        font-weight: 400 !important;
+    }
+    .t-warning-text {
+        background-color: var(--translation-warning-backgroud);
+        color: var(--error-text);
+        font-weight: 400 !important;
+    }
+    .alert-text {
+        background-color: var(--alert-background);
+        color: var(--error-text);
+        font-weight: 400 !important;
+    }
+
+    .text-jp {
+        font-family: "FroggyOS-jp-font";
+        line-height: 11px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+
+    .bar-text-jp {
+        font-family: "FroggyOS-jp-font";
+        line-height: 8px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .line-container:has(span.path-jp) {
+        max-height: 12px;
+    }
+
+    .path-jp {
+        line-height: 14px;
+        font-size: 8px;
+    }
+
+    ::selection {
+        background-color: var(--terminal-line-selection-background);
+        color: var(--terminal-line-selection-text);
+    }
+
+    /* Debugging */
+    #froggyscript-debug-button {
+        position: absolute;
+        display: none;
+        top: 0;
+        right: 0;
+        background-color: var(--bar-background);
+        color: var(--bar-text);
+        width: 50px;
+        height: 50px;
+        cursor: pointer;
+    }
+    #debug-program-memory {
+        position: absolute;
+        display: none;
+        top: calc(48px * 2);
+        height: calc(100vh - 48px * 2);
+        width: calc(48px * 8);
+        left: 0;
+    }
+    #debug-os {
+        position: absolute;
+        display: none;
+        top: 50px;
+        right: 0;
+        height: calc(100vh - 50px);
+        width: 350px;
+    }
+    #bar-text {
+        display: inline-block;
+    }
+
+    #spinner-text {
+        float: right;
+        padding-right: 3px;
+        padding-top: 0.5px;
+        width: 8px;
+        height: 8px;
+    }
+
+    #blackout {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background-color: var(--void-space);
+        z-index: 9999;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+    }
+
+    #loading-bar {
+        width: 300px;
+        height: 40px;
+        background-color: var(--void-space);
+        border: 5px solid var(--terminal-background);
+        padding: 5px;
+    }
+
+    #inner-bar {
+        background-color: var(--terminal-background);
+        height: 40px;
+        width: 100%;
+    }
+
+</style>
+<head>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP&display=swap" rel="stylesheet">
+    <meta property="og:title" content="froggyOS" />
+    <meta property="og:url" content="https://froggyos.github.io" />
+    <meta name="theme-color" content="#00AA00" data-react-helmet="true" />
+    <meta property="og:description" content="a frog-themed OS simulation" />
+</head>
+<body>
+    <div id="color-test-bar"></div>
+    <div id="froggyscript-debug-button">step</div>
+    <textarea id="debug-program-memory" readonly>program memory</textarea>
+    <textarea id="debug-os" readonly>os memory</textarea>
+    <div id="screen">
+        <div id="bar">
+            <div id="bar-text"></div>
+            <div id="spinner-text"></div>
+        </div>
+        <div id="terminal"></div>
+    </div>
+    <div id="blackout">
+        <img src="../../favicon.ico" width="180" height="180" style="margin-bottom: 36px;">
+        <div id="loading-bar">
+            <div id="inner-bar"></div>
+        </div>
+    </div>
+</body>
+<script src="https://rus1130.github.io/projects/Global/markdownParser.js"></script>
+<script src="https://rus1130.github.io/projects/Global/sniffer.js"></script>
+<script src="./config.js"></script>
+<script src="./froggyscript1-interpreter.js"></script>
+<script src="./index.js"></script>

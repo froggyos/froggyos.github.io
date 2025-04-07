@@ -212,7 +212,7 @@ const presetLanguagesMap = {
     },
     "T_file_name_not_3_char": {
         eng: "File name must be exactly 3 characters long.",
-        nmt: "T_file_name_not_3_char",
+        nmt: "fiyala tama süm'an u'u 3 gina me kekéne",
         jpn: "ファイル名はちょうど3文字でなければなりません"
     },
     "T_no_permission_to_edit_file": {
@@ -227,12 +227,12 @@ const presetLanguagesMap = {
     },
     "T_no_permission_to_clone": {
         eng: "You do not have permission to clone this file.",
-        nmt: "T_no_permission_to_clone",
+        nmt: "'a getsefese pamason mafu lu fiyala",
         jpn: "このファイルをクローンする権限がありません"
     },
     "T_no_permission_to_rename_file": {
         eng: "You do not have permission to rename this file.",
-        nmt: "T_no_permission_to_rename_file",
+        nmt: "'a getsefese pamason som'on tama ma lu fiyala",
         jpn: "このファイル名を変更する権限がありません"
     },
     "T_no_permission_to_delete_file": {
@@ -257,18 +257,18 @@ const presetLanguagesMap = {
     },
     "T_file_cloned |||[]|||": {
         eng: `File "|||[]|||" cloned.`,
-        nmt: "T_file_cloned |||[]|||",
+        nmt: `fiyala "|||[]|||" mafu mana'a`,
         jpn: "ファイル「|||[]|||」がクローンされました"
     },
     "T_file_renamed": {
         eng: "File renamed.",
-        nmt: "T_file_renamed",
+        nmt: "fiyala som'on mana'a tama",
         jpn: "ファイル名を変更しました"
     },
     "T_file_deleted": {
         eng: "File deleted.",
-        nmt: "T_file_deleted",
-        jpn: "T_file_deleted"
+        nmt: "fiyala nggave mana'a",
+        jpn: "ファイルを削除しました"
     },
 
     // time format ====================================
@@ -406,8 +406,8 @@ const presetLanguagesMap = {
     },
     "T_current_lang_invalid": {
         eng: `Current language file is INVALID! Switching to "lbh".`,
-        nmt: `T_current_lang_invalid`,
-        jpn: `T_current_lang_invalid`
+        nmt: `i mewana mëzte fiyala wa SEPE. lohi "lbh"`,
+        jpn: `現在の言語ファイルが無効です！「lbh」に切り替えています`
     },
     "T_invalid_lang": {
         eng: "INVALID",
@@ -504,8 +504,8 @@ const presetLanguagesMap = {
     },
     "T_provide_valid_t_desc": {
         eng: "Please provide a valid translation descriptor.",
-        nmt: "T_provide_valid_t_desc",
-        jpn: "T_provide_valid_t_desc"
+        nmt: "apelelala som apeya mëmëzte dësikipita",
+        jpn: "有効な翻訳ディスクリプターを入力してください"
     },
 
     // bullfrog commands =========================
@@ -576,18 +576,18 @@ const presetLanguagesMap = {
     },
     "T_bullfrog_commands_vlang": {
         eng: "[[BULLFROG]]validatelanguage - checks if the current language is valid",
-        nmt: "T_bullfrog_commands_vlang",
-        jpn: "T_bullfrog_commands_vlang"
+        nmt: "[[BULLFROG]]validatelanguage - nehu kansa mweana mëzta wa sepe",
+        jpn: "[[BULLFROG]]validatelanguage - 現在の言語は有効か無効か確認する"
     },
     "T_bullfrog_commands_translations": {
         eng: "[[BULLFROG]]translations - get the completion percent of all languages",
-        nmt: "T_bullfrog_commands_translations",
-        jpn: "T_bullfrog_commands_translations"
+        nmt: "[[BULLFROG]]translations - süm mëmëzte me",
+        jpn: "[[BULLFROG]]translations - すべての言語の完了率を表示する"
     },
     "T_bullfrog_commands_trigdiag": {
         eng: "[[BULLFROG]]triggerdialogue - trigger a specific dialogue option",
-        nmt: "T_bullfrog_commands_trigdiag",
-        jpn: "T_bullfrog_commands_trigdiag"
+        nmt: "[[BULLFROG]]triggerdialogue - bene náha meməpelezwisi ndisé",
+        jpn: "[[[BULLFROG]]triggerdialogue - 特定の対話を開始する",
     },
 
     // date and time =========================
@@ -819,7 +819,7 @@ const config = {
             { name: "language", properties: {transparent: false, read: true, write: true, hidden: false}, data: ["eng"] },
             { name: "debugMode", properties: {transparent: false, read: true, write: true, hidden: false}, data: ["false"] },
             { name: "colorPalette", properties: {transparent: false, read: true, write: true, hidden: false}, data: ["standard"] },
-            { name: "version", properties: {transparent: false, read: true, write: true, hidden: false}, data: ["1.9-indev"] },
+            { name: "version", properties: {transparent: false, read: true, write: true, hidden: false}, data: ["1.9"] },
             { name: "showSpinner", properties: {transparent: false, read: true, write: true, hidden: false}, data: ["false"] },
             { name: "currentSpinner", properties: {transparent: false, read: true, write: true, hidden: false}, data: ["default"] },
             { name: "timeFormat", properties: {transparent: false, read: true, write: true, hidden: false}, data: ["w. y/mn/d h:m:s"] },
