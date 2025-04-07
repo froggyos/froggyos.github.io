@@ -1262,7 +1262,6 @@ function sendCommand(command, args, createEditableLineAfter){
                     break;
                 }
 
-                console.log(file.data.join("\n"));
                 FROGGYSCRIPT2_interpreter(file.data.join("\n"));
             }
         break;
