@@ -169,6 +169,12 @@ changepalette [palette name]
 changepalette standard
 changepalette cherry
 ``` -->
+### String Literals
+```
+num age = 21 
+out "I am $[24 - 3] years old"
+out "I am $[age] years old"
+```
 
 ## Output
 ### Basic Output
@@ -179,7 +185,6 @@ out variable_name
 out "text"
 out "more text"
 out 1
-out "text with a $[variable] inside"
 ```
 <!-- ### Formatted Output
 #### General
@@ -228,7 +233,6 @@ str test = "multiple words"
 
 int age = 20
 str output = "i am $[age] years old"
-str output = "i am $[26 - 5] years old"
 ```
 ### Edit a Variable
 ```
