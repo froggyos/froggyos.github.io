@@ -636,8 +636,6 @@ function interpreter(input) {
                 } break;
             }
 
-            console.log(token)
-
             if(token.type === "Error") {
                 resetVariables()
                 outputError(token);
