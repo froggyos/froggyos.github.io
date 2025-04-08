@@ -1069,7 +1069,7 @@ function sendCommand(command, args, createEditableLineAfter){
 
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
-
+x
         case "docs":
         case "opendocumentation": {
 
@@ -1237,7 +1237,10 @@ function sendCommand(command, args, createEditableLineAfter){
                     break;
                 }
 
-                interpreter(file.data.join("\n"));
+                // get all file arguments besides the first one
+
+
+                interpreter(file.data.join("\n"), args.slice(1));
             }
         break;
 

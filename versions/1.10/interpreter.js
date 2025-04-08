@@ -193,6 +193,63 @@ function writeVariable(identifier, type, value, mut) {
     };
 }
 
+/*
+    case "ask":
+        let span = document.createElement('span');
+        let inputElement = document.createElement('div');
+        let elementToAppend = document.createElement('div');
+
+        inputElement.setAttribute('contenteditable', 'true');
+        inputElement.setAttribute('spellcheck', 'true');
+
+        span.textContent = "?";
+
+        elementToAppend.appendChild(span);
+        elementToAppend.appendChild(inputElement);
+
+        elementToAppend.classList.add('line-container');
+
+        terminal.appendChild(elementToAppend);
+        inputElement.focus();
+
+        inputElement.addEventListener('keydown', function(e){
+            if(e.key == "Enter") e.preventDefault();
+        }); 
+
+        inputElement.addEventListener('keyup', function(e){
+            if(e.key == "Enter"){
+                e.preventDefault();
+                inputElement.setAttribute('contenteditable', 'false');
+
+                // RESUME PAUSE HERE
+                setSetting("showSpinner", "false");
+
+                let userInput = inputElement.textContent;
+                let variable = line.args.variable;
+
+                if(variables["v:" + variable] == undefined){
+                    endProgram(`Variable [${variable}] does not exist.`);
+                    return;
+                }
+
+                if(variables["v:" + variable].type == "str"){
+                    variables["v:" + variable].value = userInput;
+                }
+
+                if(variables["v:" + variable].type == "int"){
+                    if(isNaN(userInput)){
+                        endProgram(`Invalid integer value.`);
+                        return;
+                    } else {
+                        variables["v:" + variable].value = parseInt(userInput);
+                    }
+                }
+                
+                parseNext();
+            }
+        });
+*/
+
 function processSingleLine(input, clock_interval) {
     input = input.trim();
     
@@ -202,6 +259,31 @@ function processSingleLine(input, clock_interval) {
     token.keyword = keyword;
 
     switch (keyword) {
+        case "ask": {
+            let variable = input.split(" ")[1].trim();
+
+            if(variable == undefined) {
+                token = new ScriptError("SyntaxError", `[ask] must be followed by a variable name`, clock_interval);
+            } else if(getVariable(variable) == undefined) {
+                token = new ScriptError("ReferenceError", `variable [${variable}] does not exist`, clock_interval);
+            } else {
+                token = { ...token, variableName: variable };
+            }
+        } break;
+        case "filearg": {
+            let variable = input.split(" ")[1].trim();
+            let type = input.split(" ")[2].trim();
+
+            // if type isnt String, Number
+            if(type !== "String" && type !== "Number") {
+                token = new ScriptError("TypeError", `[filearg] must be followed by a type (String, Number), found [${type}]`, clock_interval);
+            } else if(variable == undefined) {
+                token = new ScriptError("SyntaxError", `[filearg] must be followed by a variable name`, clock_interval);
+            }
+
+            token = { ...token, variableName: variable, variableType: type };
+        } break;
+
         case "func": {
             let funcName = input.replace(/^func\s+/, '').split(' ')[0].trim();
 
@@ -426,10 +508,11 @@ function processSingleLine(input, clock_interval) {
     return token;
 }
 
-function interpreter(input) {
-
+function interpreter(input, fileArguments) {
     let lines = input.split('\n').map(x => x.trim()).filter(x => x.length > 0 && x !== "--");
     let clock_interval = 0;
+
+    let fileArgumentCount = 0;
 
     resetVariables()
 
@@ -439,7 +522,7 @@ function interpreter(input) {
         return;
     }
 
-    let paused = false;
+    let CLOCK_PAUSED = false;
 
     function interpretSingleLine(interval, single_input) {
         if(clock_interval >= lines.length) {
@@ -455,9 +538,79 @@ function interpreter(input) {
             setSetting("showSpinner", ["false"])
             return;
         } else {
-            console.log(token)
             // process tokens here =======================================================
             switch(token.keyword) {
+                case "ask": {
+                    CLOCK_PAUSED = true;
+                    let span = document.createElement('span');
+                    let inputElement = document.createElement('div');
+                    let elementToAppend = document.createElement('div');
+            
+                    inputElement.setAttribute('contenteditable', 'plaintext-only');
+                    inputElement.setAttribute('spellcheck', 'true');
+            
+                    span.textContent = "?";
+            
+                    elementToAppend.appendChild(span);
+                    elementToAppend.appendChild(inputElement);
+            
+                    elementToAppend.classList.add('line-container');
+            
+                    terminal.appendChild(elementToAppend);
+                    inputElement.focus();
+
+                    setSetting("showSpinner", "true");
+                    inputElement.addEventListener('keydown', function(e){
+                        if(e.key == "Enter") e.preventDefault();
+                    }); 
+
+                    inputElement.addEventListener('keyup', function(e){
+                        if(e.key == "Enter") {
+                            setSetting("showSpinner", "false");
+                            e.preventDefault();
+                            inputElement.setAttribute('contenteditable', 'false');
+
+                            token = { ...token, value: inputElement.textContent };
+
+                            // if token.value is not a number, surround it with quotes
+                            if(isNaN(token.value)) {
+                                token.value = `"${token.value}"`;
+                            }
+                            
+                            lines[clock_interval-1] = `set ${token.variableName} = ${token.value}`;                       
+                            CLOCK_PAUSED = false;
+                            clock_interval--;                            
+                        }
+                    }); 
+
+                } break;
+
+                case "filearg": {
+                    let expectedType = token.variableType;
+
+                    let inputValue = fileArguments[fileArgumentCount];
+
+                    if(expectedType === "Number") inputValue = parseFloat(inputValue);
+
+                    if(FroggyscriptMemory.variables[token.variableName] != undefined) {
+                        token = new ScriptError("ReferenceError", `variable [${token.variableName}] already exists, cannot override`, clock_interval);
+                    } else if(fileArguments[fileArgumentCount] == undefined) {
+                        token = new ScriptError("FileError", `file argument [${fileArgumentCount}] does not exist`, clock_interval);
+                    } else if(isNaN(inputValue) && expectedType === "Number") {
+                        token = new ScriptError("TypeError", `file argument [${fileArgumentCount}] must be of type [${expectedType}]`, clock_interval);
+                    } else {
+                        FroggyscriptMemory.variables[token.variableName] = {
+                            type: token.variableType,
+                            value: inputValue,
+                            identifier: token.variableName,
+                            mutable: true
+                        };
+
+                        fileArgumentCount++;
+                    }
+                    
+                } break;
+
                 case "func": {
                     // find matching endfunc
                     let stack = [];
@@ -491,10 +644,6 @@ function interpreter(input) {
                     }
 
                     clock_interval = token.endfuncIndex;
-                } break;
-
-                case "endfunc": {
-
                 } break;
 
                 case "f:": {
@@ -567,10 +716,10 @@ function interpreter(input) {
                 case "wait": {
                     let ms = token.value;
 
-                    paused = true;
+                    CLOCK_PAUSED = true;
 
                     setTimeout(() => {
-                        paused = false;
+                        CLOCK_PAUSED = false;
                     }, ms);
 
                 } break;
@@ -730,6 +879,7 @@ function interpreter(input) {
                 } break;
 
                 case "else":
+                case "endfunc":
                 case "endif": { } break;
 
                 default: {
@@ -756,10 +906,10 @@ function interpreter(input) {
     FroggyscriptMemory.variables.TimeMs.value = Date.now();
 
     let clock = setInterval(() => {
-        if(!paused) {
+        if(CLOCK_PAUSED == false) {
             if(clock_interval < lines.length) {
                 let line = lines[clock_interval]
-                interpretSingleLine(clock, line);
+                let token = interpretSingleLine(clock, line);
                 clock_interval++;
             } 
         }

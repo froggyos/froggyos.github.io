@@ -127,6 +127,7 @@ If you edit the `Settings:` drive directly, some settings won't apply until you 
 # FroggyScript2 Documentation
 ## General Utilities
 ### End the Program
+An error **WILL** be thrown is this is not the last line of the program.
 ```
 endprog
 ```
@@ -248,13 +249,14 @@ append test ' ing it some more'
 append test "AND MORE"
 append test v:variable
 ``` -->
-<!-- ## User Input
+## User Input
 ### Define a File Argument
+The `filearg` keyword will create an **immutable** variable with the provided keyword and cannot override other variable values.
 ```
 filearg [variable_name] [type]
-filearg name str
-filearg age int
-out "hello I am v:name and I am v:age years old"
+filearg name String
+filearg age Number
+out "hello I am [name] and I am [age] years old"
 
 -- when running the program
 C:/Home> st [program_name] [arg1] [arg2]
@@ -268,11 +270,10 @@ ask [variable]
 ask name
 
 -- example usage
-str name = ''
+str name = "";
 out "What is your name?"
 ask name
-out 'Hello v:name.'
-endprog
+out 'Hello $[name]!'
 
 -- when running the program
 C:/Home> st [program_name]
@@ -280,14 +281,15 @@ C:/Home> st [program_name]
 ? Froggy
 > Hello Froggy.
 ```
+<!-- 
 ### User Input with Navigable Options
 ```
 prompt [default highlighted option] [variable] [...options]
 
 prompt 0 output 0 1 2 3
 prompt highlightedOption outputVariable the_options cannot_have spaces_in them
-```
--->
+``` -->
+
 ## Functions
 ### Create a Function
 ```

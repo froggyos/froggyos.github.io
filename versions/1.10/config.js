@@ -845,9 +845,10 @@ const config = {
             { name: "cli", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["str cli = 'this program is hardcoded into froggyOS'", "endprog"] },
             { name: "lilypad", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["str lilypad = 'this program is hardcoded into froggyOS'", "endprog"] },
             { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
-                "str string1 = 'yes!'",
-                "str string2 = 'no!'",
-                "out '$[TimeMs]'",
+                "str name = ''",
+                'out "Whats your name?"',
+                "ask name",
+                "out 'hi, $[name]!'",
                 "endprog"
             ] },
             { name: "fibonacci", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
@@ -855,7 +856,7 @@ const config = {
                 "num nTwo = 1",
                 "num sum = 0",
                 "set sum = nOne + nTwo",
-                "out '[v:nOne] + [v:nTwo] = [v:sum]'",
+                "out sum",
                 "set nTwo = nOne",
                 "set nOne = sum",
                 "wait 100",
