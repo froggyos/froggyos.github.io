@@ -122,24 +122,7 @@ Properties:
 If you edit the `Settings:` drive directly, some settings won't apply until you reload the froggyOS state. An easy way to do this would be to run the `reload` macro.
 
 ## Bugs
-### Known
-* There's some weird stuff going on with `append`. Fix later.
-* something with `outc`? idk
-* `str` variables dont require quotes. make them required
-* the loading spinner slows down with consecutive saves of a long file
-### Fixed
-* the first line of the macro was not being read
-    * because it was assumed the first line was defining the alias, it was just discarded
-* cannot call functions inside of functions. This is because functions are parsed by the formatter instead of the parser. This is because it was easier to do than implementing an isolated parser that has the variables from the other, parent parser
-    * functions are now referenced by line numbers
-* something with `if` statements???? check it out later
-    * `if` keywords work correctly now, but `else` might not work as expected.
-* load state doesnt work with palettes
-* the inserted `wait` keywords may be messing loops sometimes
-    * `wait` keywords were being inserted before every `endloop` command, which stacked. Turns out the `wait` keyword was not necessary, so it was removed.
-        * they were VERY much needed lmfao, but instead of them being automatically put in, the user has to do it manually, if it isnt done, there is a rare error message and froggyOS is reloaded
-* the loading spinner goes ZOOMING????
-    * it kept being added to it kept going BABHBAhBAHDBHDBDAHSBAWOOOWOOWOOOWOOOWABHSHAJBSAHBWHSHOOOOSHHHHWOOOOOOWOOOZSHHZOOOOOOOM
+* the loading spinner slows down with consecutive saves of a long file (?)
 
 # FroggyScript2 Documentation
 ## General Utilities
