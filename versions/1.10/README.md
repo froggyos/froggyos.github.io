@@ -179,7 +179,7 @@ out variable_name
 out "text"
 out "more text"
 out 1
-out "text with a [v:variable] inside"
+out "text with a $[variable] inside"
 ```
 <!-- ### Formatted Output
 #### General
@@ -227,7 +227,8 @@ str test = "double"
 str test = "multiple words"
 
 int age = 20
-str output = "i am [v:age] years old"
+str output = "i am $[age] years old"
+str output = "i am $[26 - 5] years old"
 ```
 ### Edit a Variable
 ```
@@ -299,6 +300,7 @@ prompt [default highlighted option] [variable] [...options]
 prompt 0 output 0 1 2 3
 prompt highlightedOption outputVariable the_options cannot_have spaces_in them
 ```
+-->
 ## Functions
 ### Create a Function
 ```
@@ -315,7 +317,7 @@ endfunc
 f: [func_name]
 
 f: name
-``` -->
+```
 
 ## Control Flow
 ### If Statement
