@@ -1734,7 +1734,7 @@ let getTimings = (i) => {
     }]
 }
 
-const SKIP_ANIMATION = false;
+const SKIP_ANIMATION = true;
 
 let animSkipped = false;
 let innerBar = document.getElementById("inner-bar");

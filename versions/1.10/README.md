@@ -141,25 +141,18 @@ If you edit the `Settings:` drive directly, some settings won't apply until you 
     * it kept being added to it kept going BABHBAhBAHDBHDBDAHSBAWOOOWOOWOOOWOOOWABHSHAJBSAHBWHSHOOOOSHHHHWOOOOOOWOOOZSHHZOOOOOOOM
 
 # FroggyScript2 Documentation
-**Note: spaces are part of syntax, and must be used as shown**
-
-Operators:
-* All JavaScript operators are valid
-
 ## General Utilities
 ### End the Program
-If this isn't called anywhere, once execution reaches the end of the file, froggyOS **will** brick itself. I could make it *not* do that, but that would be boring.
 ```
 endprog
 ```
 ### Comments
 ```
-you can just write if it doesnt start with a keyword
--- or you can (and are recommended to) use the comment keyword just to be safe
+-- comment!
 ```
 ### Wait
 ```
-wait [time in milliseconds]
+wait [time]
 
 wait 1000
 wait number
@@ -239,10 +232,10 @@ str output = "i am [v:age] years old"
 ```
 set [variable_name] = [value]
 
-set test = 5
-set test = 'text'
-set test = "many word"
+num test = 5
+str test = "text"
 
+set test = "many word"
 set i = i + 1
 
 // throws a TypeError
@@ -347,7 +340,8 @@ else
 endif
 ```
 
-### Loop
+### Loops
+#### Standard Loop
 ```
 loop [condition]
     [code]
@@ -369,6 +363,21 @@ loop i < 5
     set j = 0
 endloop
 ```
+
+#### Quickloop
+Quickloops are different from standard loops in that the entire loop is executed *almost instantly*, while standard loops are executed one line at a time, which is around 1ms per line.
+
+```
+quickloop [loop_iterations]
+    [code]
+endquickloop
+
+quickloop 100
+    out "hello"
+endquickloop
+-- outputs "hello" 100 times in a row
+```
+
 <!-- ## Program Data
 ### Saving Data
 Saves the contents of `[variable]` to the corresponding file in the `D:/Program-Data` file
