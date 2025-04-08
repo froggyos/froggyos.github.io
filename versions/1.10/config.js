@@ -858,28 +858,16 @@ const config = {
                 "num nTwo = 1",
                 "num sum = 0",
                 "set sum = nOne + nTwo",
-                "out sum",
+                "out '[v:nOne] + [v:nTwo] = [v:sum]'",
                 "set nTwo = nOne",
                 "set nOne = sum",
+                "wait 100",
                 "goto 3",
                 "endprog"
             ] },
-            { name: "loop", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
-                "num i = 0",
-                "num n = 100",
-                "loop i < n",
-                "out i",
-                "set i = i + 1",
-                "wait 'gyatt'",
-                "endloop",
-                "endprog"
-            ] },
-            { name: "hello-world", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
-                "out 'Hello, World!'",
-                "endprog"
-            ] },
-            { name: "test2", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
-                "out 'test2'",
+            { name: "infinite-loop", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
+                "out 'bleh!'",
+                "goto 0",
                 "endprog"
             ] },
         ],

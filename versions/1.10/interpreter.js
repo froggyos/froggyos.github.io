@@ -395,6 +395,7 @@ function interpreter(input) {
 
     if(lines[lines.length - 1].trim() !== "endprog") {
         output(`PrecheckError -> [endprog] must be the last line of the program <-`);
+        createEditableTerminalLine(config.currentPath + ">");
         return;
     }
 
@@ -661,4 +662,12 @@ function interpreter(input) {
             } 
         }
     }, 1);
+
+    document.body.addEventListener("keydown", function(e){
+        if(e.key == "Delete"){
+            clearInterval(clock);
+            createTerminalLine("Program escaped.", config.alertText, {translate: false});
+            createEditableTerminalLine(config.currentPath + ">");
+        }
+    }, {once: true});
 }

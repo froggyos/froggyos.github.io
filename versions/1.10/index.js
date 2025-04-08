@@ -1019,7 +1019,7 @@ function sendCommand(command, args, createEditableLineAfter){
             createTerminalLine("T_lilypad_save_exit", "");
             for(let i = 0; i < file.data.length; i++){
                 if(config.allowedProgramDirectories.includes(config.currentPath)){
-                    createLilypadLine(String(i+1).padStart(3, "0"), "code", file.name);
+                    createLilypadLine(String(i).padStart(3, "0"), "code", file.name);
                 } else if (config.currentPath == "D:/Palettes") {
                     createLilypadLine(String(i).padStart(2, "0"), "palette", file.name);
                 } else createLilypadLine(">", undefined, file.name);
@@ -1564,7 +1564,7 @@ function createLilypadLine(path, linetype, filename){
         if(linetype == "code"){
             let lines = document.querySelectorAll(`[data-program='lilypad-session-${config.programSession}']`);
             for(let i = 0; i < lines.length; i++){
-                let lineNumber = String(i+1).padStart(3, "0"); // CHANGE THIS TO i !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                let lineNumber = String(i).padStart(3, "0");
                 lines[i].previousElementSibling.textContent = lineNumber;
             }
         } else if (linetype == "palette"){

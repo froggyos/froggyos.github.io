@@ -2,6 +2,7 @@
 
 * in paths, `.` will be replaced with the current directory
 * programs can *only* be written in designated directories
+* you can press the `DEL` key to escape programs (ex. an infinite loop)
 
 ## Palette Conventions
 There are no set colors that you must have, but these are the color conventions.
