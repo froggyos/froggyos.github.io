@@ -267,7 +267,7 @@ function processSingleLine(input, clock_interval) {
             } else if(getVariable(variable) == undefined) {
                 token = new ScriptError("ReferenceError", `variable [${variable}] does not exist`, clock_interval);
             } else {
-                token = { ...token, variableName: variable };
+                token = { ...token, variableName: variable, variableType: getVariable(variable).type };
             }
         } break;
         case "filearg": {
@@ -572,14 +572,16 @@ function interpreter(input, fileArguments) {
 
                             token = { ...token, value: inputElement.textContent };
 
-                            // if token.value is not a number, surround it with quotes
-                            if(isNaN(token.value)) {
-                                token.value = `"${token.value}"`;
-                            }
+                            let expectedType = getVariable(token.variableName).type;
+
+
+                            // fix type mismatches here 
+
+                            if(expectedType == "String") token.value = `"${token.value}"`;
                             
                             lines[clock_interval-1] = `set ${token.variableName} = ${token.value}`;                       
                             CLOCK_PAUSED = false;
-                            clock_interval--;                            
+                            clock_interval--;        
                         }
                     }); 
 

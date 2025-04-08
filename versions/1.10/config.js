@@ -845,7 +845,7 @@ const config = {
             { name: "cli", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["str cli = 'this program is hardcoded into froggyOS'", "endprog"] },
             { name: "lilypad", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["str lilypad = 'this program is hardcoded into froggyOS'", "endprog"] },
             { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
-                "str name = ''",
+                "num name = 0",
                 'out "Whats your name?"',
                 "ask name",
                 "out 'hi, $[name]!'",
@@ -861,11 +861,6 @@ const config = {
                 "set nOne = sum",
                 "wait 100",
                 "goto 3",
-                "endprog"
-            ] },
-            { name: "infinite-loop", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
-                "out 'bleh!'",
-                "goto 0",
                 "endprog"
             ] },
         ],
