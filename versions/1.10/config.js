@@ -847,7 +847,7 @@ const config = {
             { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
                 "str string1 = 'yes!'",
                 "str string2 = 'no!'",
-                "out '$[string1] and $[string2]'",
+                "out '$[TimeMs]'",
                 "endprog"
             ] },
             { name: "fibonacci", properties: {transparent: false, read: true, write: true, hidden: false}, data: [

@@ -22,12 +22,12 @@ const defaultVariables = {
         identifier: "false",
         mutable: false,
     },
-    TimeMS: {
+    TimeMs: {
         type: "Number",
         value: Date.now(),
         identifier: "TimeMS",
         mutable: false,
-    }
+    },
 }
 
 class ScriptError {
@@ -105,7 +105,11 @@ function typeify(value, clock_interval) {
         if(matches) {
             matches.forEach(match => {
                 let expression = match.replace(/\$\[|\]/g, '');
-                typeObj.value = typeObj.value.replace(match, evaluate(expression));
+                try {
+                    typeObj.value = typeObj.value.replace(match, evaluate(expression));
+                } catch (e) {
+                    typeObj = new ScriptError("EvaluationError", `cannot evaluate [${expression}] in [${typeObj.originalInput}]`, clock_interval);
+                }
             })
         }
 
@@ -749,8 +753,9 @@ function interpreter(input) {
         return token;
     }
 
+    FroggyscriptMemory.variables.TimeMs.value = Date.now();
+
     let clock = setInterval(() => {
-        FroggyscriptMemory.variables.TimeMS.value = Date.now();
         if(!paused) {
             if(clock_interval < lines.length) {
                 let line = lines[clock_interval]
