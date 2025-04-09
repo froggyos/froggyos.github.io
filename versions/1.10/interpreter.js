@@ -3,6 +3,8 @@ const FroggyscriptMemory = {
     functions: {},
 };
 
+let OS_RUNTIME_START = Date.now();
+
 const defaultVariables = {
     Pi: {
         type: "Number",
@@ -22,10 +24,24 @@ const defaultVariables = {
         identifier: "false",
         mutable: false,
     },
-    TimeMs: {
+
+
+    Time_OSRuntime: {
+        type: "Number",
+        value: 0,
+        identifier: "Time_OSRuntime",
+        mutable: false,
+    },
+    Time_ProgramRuntime: {
+        type: "Number",
+        value: 0,
+        identifier: "Time_ProgramRuntime",
+        mutable: false,
+    },
+    Time_MsEpoch: {
         type: "Number",
         value: Date.now(),
-        identifier: "TimeMS",
+        identifier: "Time_MsEpoch",
         mutable: false,
     },
 }
@@ -43,11 +59,19 @@ function output(value) {
     createTerminalLine(value.toString(), "", {translate: false});
 }
 
-function outputError(token) {
+function resetTerminalForUse(interval){
+    resetVariables()
+    clearInterval(interval);
+    setSetting("showSpinner", ["false"])
+    setSetting("currentSpinner", [getSetting("defaultSpinner")]);
+}
+
+function outputError(token, interval) {
     createTerminalLine("", config.programErrorText.replace("{{}}", token.error), {translate: false});
     createTerminalLine(" ", "", {translate: false});
     createTerminalLine(token.value, "", {translate: false});
     createTerminalLine(`At line: ${token.line}`, "", {translate: false});
+    resetTerminalForUse(interval);
     createEditableTerminalLine(config.currentPath + ">");
 }
 
@@ -99,16 +123,16 @@ function typeify(value, clock_interval) {
         typeObj.value = value.replace(/^("|')|("|')$/g, '');
 
         // match every instance of \$\[\w+\]
-        let regex = /\$\[[^\]]+\]/g;
+        let regex = /\$\|[^\|]+\|/g;
         let matches = value.match(regex);
 
         if(matches) {
             matches.forEach(match => {
-                let expression = match.replace(/\$\[|\]/g, '');
+                let expression = match.replace(/\$\||\|/g, '');
                 try {
                     typeObj.value = typeObj.value.replace(match, evaluate(expression));
                 } catch (e) {
-                    typeObj = new ScriptError("EvaluationError", `cannot evaluate [${expression}] in [${typeObj.originalInput}]`, clock_interval);
+                    typeObj = new ScriptError("EvaluationError", `Cannot evaluate [${expression}] in [${typeObj.originalInput}]`, clock_interval);
                 }
             })
         }
@@ -123,7 +147,7 @@ function typeify(value, clock_interval) {
         }
 
         if (error) {
-            typeObj = new ScriptError("EvaluationError", `cannot evaluate [${value}]`, clock_interval);
+            typeObj = new ScriptError("EvaluationError", `Cannot evaluate [${value}]`, clock_interval);
         } else {
             typeObj.value = evaluate(value);
 
@@ -150,7 +174,7 @@ function typeify(value, clock_interval) {
             typeObj.type = variableValue.type;
             typeObj.originalInput = "VARIABLE_IDENTIFIER:"+value;
         } else {
-            typeObj = new ScriptError("ReferenceError", `variable [${value}] is not defined`, clock_interval);
+            typeObj = new ScriptError("ReferenceError", `Variable [${value}] is not defined`, clock_interval);
         }
 
     } else if(value.match(/\d*|\+|\-|\\|\*|\^/g)) {
@@ -164,7 +188,7 @@ function typeify(value, clock_interval) {
         }
 
         if (error) {
-            typeObj = new ScriptError("EvaluationError", `cannot evaluate [${value}]`, clock_interval);
+            typeObj = new ScriptError("EvaluationError", `Cannot evaluate [${value}]`, clock_interval);
         } else {
             typeObj.type = "Number";
             typeObj.value = evaluate(value);
@@ -178,7 +202,7 @@ function typeify(value, clock_interval) {
             }
         }
     } else {
-        typeObj = new ScriptError("TypeifyError", `cannot evaluate [${value}]`, clock_interval);
+        typeObj = new ScriptError("TypeifyError", `Cannot coalesce [${value}]`, clock_interval);
     }
 
     return typeObj;
@@ -192,63 +216,6 @@ function writeVariable(identifier, type, value, mut) {
         mutable: mut
     };
 }
-
-/*
-    case "ask":
-        let span = document.createElement('span');
-        let inputElement = document.createElement('div');
-        let elementToAppend = document.createElement('div');
-
-        inputElement.setAttribute('contenteditable', 'true');
-        inputElement.setAttribute('spellcheck', 'true');
-
-        span.textContent = "?";
-
-        elementToAppend.appendChild(span);
-        elementToAppend.appendChild(inputElement);
-
-        elementToAppend.classList.add('line-container');
-
-        terminal.appendChild(elementToAppend);
-        inputElement.focus();
-
-        inputElement.addEventListener('keydown', function(e){
-            if(e.key == "Enter") e.preventDefault();
-        }); 
-
-        inputElement.addEventListener('keyup', function(e){
-            if(e.key == "Enter"){
-                e.preventDefault();
-                inputElement.setAttribute('contenteditable', 'false');
-
-                // RESUME PAUSE HERE
-                setSetting("showSpinner", "false");
-
-                let userInput = inputElement.textContent;
-                let variable = line.args.variable;
-
-                if(variables["v:" + variable] == undefined){
-                    endProgram(`Variable [${variable}] does not exist.`);
-                    return;
-                }
-
-                if(variables["v:" + variable].type == "str"){
-                    variables["v:" + variable].value = userInput;
-                }
-
-                if(variables["v:" + variable].type == "int"){
-                    if(isNaN(userInput)){
-                        endProgram(`Invalid integer value.`);
-                        return;
-                    } else {
-                        variables["v:" + variable].value = parseInt(userInput);
-                    }
-                }
-                
-                parseNext();
-            }
-        });
-*/
 
 function processSingleLine(input, clock_interval) {
     input = input.trim();
@@ -265,7 +232,7 @@ function processSingleLine(input, clock_interval) {
             if(variable == undefined) {
                 token = new ScriptError("SyntaxError", `[ask] must be followed by a variable name`, clock_interval);
             } else if(getVariable(variable) == undefined) {
-                token = new ScriptError("ReferenceError", `variable [${variable}] does not exist`, clock_interval);
+                token = new ScriptError("ReferenceError", `Variable [${variable}] does not exist`, clock_interval);
             } else {
                 token = { ...token, variableName: variable, variableType: getVariable(variable).type };
             }
@@ -301,7 +268,7 @@ function processSingleLine(input, clock_interval) {
             let functionName = input.replace(/^f:\s+/, '').split(' ')[0].trim();
 
             if(FroggyscriptMemory.functions[functionName] == undefined) {
-                token = new ScriptError("ReferenceError", `function [${functionName}] does not exist`, clock_interval);
+                token = new ScriptError("ReferenceError", `Function [${functionName}] does not exist`, clock_interval);
             }
             else token = { ...token, name: functionName };
         } break;
@@ -398,7 +365,7 @@ function processSingleLine(input, clock_interval) {
                     let identifier = input.replace(/^(c?)str\s+/, '').split('=')[0].trim();
 
                     if(getVariable(identifier) != undefined){
-                        token = new ScriptError("ReferenceError", `variable [${identifier}] already exists, cannot override`, clock_interval);
+                        token = new ScriptError("ReferenceError", `Variable [${identifier}] already exists, cannot override`, clock_interval);
                     } else {
                         token = {...token, ...typeify(assignedValue, clock_interval), identifier: identifier }; 
                         if(keyword == "str") token = { ...token, mutable: true }
@@ -422,14 +389,19 @@ function processSingleLine(input, clock_interval) {
                     let identifier = input.replace(/^(c?)num\s+/, '').split('=')[0].trim();
 
                     if(getVariable(identifier) != undefined){
-                        token = new ScriptError("ReferenceError", `variable [${identifier}] already exists, cannot override`, clock_interval);
+                        token = new ScriptError("ReferenceError", `Variable [${identifier}] already exists, cannot override`, clock_interval);
                     } else {
-                        token = {...token, ...typeify(assignedValue, clock_interval), identifier: identifier };
-                        if(token.originalInput.includes("pi")) {
-                            token = new ScriptError("EvaluationError", `EvaluationError -> [pi] is unreliable, use [Pi] instead`, clock_interval);
+                        let typed = typeify(assignedValue, clock_interval)
+                        token = {...token, ...typed, identifier: identifier };
+                        if(typed.type == "Error") {
+                            token = typed;
                         } else {
-                            if(keyword == "num") token = { ...token, mutable: true }
-                            else token = { ...token, mutable: false };
+                            if(/\bpi\b/g.test(token.originalInput)) {
+                                token = new ScriptError("EvaluationError", `[pi] is unreliable, use [Pi] instead`, clock_interval);
+                            } else {
+                                if(keyword == "num") token = { ...token, mutable: true }
+                                else token = { ...token, mutable: false };
+                            }
                         }
                     }
                 }
@@ -450,7 +422,7 @@ function processSingleLine(input, clock_interval) {
                     let identifier = input.replace(/^(c?)bln\s+/, '').split('=')[0].trim();
 
                     if(getVariable(identifier) != undefined){
-                        token = new ScriptError("ReferenceError", `variable [${identifier}] already exists, cannot override`, clock_interval);
+                        token = new ScriptError("ReferenceError", `Variable [${identifier}] already exists, cannot override`, clock_interval);
                     } else {
                         token = {...token, ...typeify(assignedValue, clock_interval), identifier: identifier };
                         if(keyword == "bln") token = { ...token, mutable: true }
@@ -524,18 +496,14 @@ function interpreter(input, fileArguments) {
 
     let CLOCK_PAUSED = false;
 
+    const PROGRAM_RUNTIME_START = Date.now();
+
     function interpretSingleLine(interval, single_input) {
-        if(clock_interval >= lines.length) {
-            clearInterval(interval);
-            return;
-        }
         let line = single_input;
         
         let token = processSingleLine(line, clock_interval);
         if(token.type === "Error") {
-            outputError(token, true);
-            clearInterval(interval);
-            setSetting("showSpinner", ["false"])
+            outputError(token, interval);
             return;
         } else {
             // process tokens here =======================================================
@@ -574,10 +542,8 @@ function interpreter(input, fileArguments) {
 
                             let expectedType = getVariable(token.variableName).type;
 
-
-                            // fix type mismatches here 
-
-                            if(expectedType == "String") token.value = `"${token.value}"`;
+                            if(expectedType == "Number" && /^\d+$/.test(token.value)) token.value = parseInt(token.value);
+                            else token.value = `"${token.value}"`;
                             
                             lines[clock_interval-1] = `set ${token.variableName} = ${token.value}`;                       
                             CLOCK_PAUSED = false;
@@ -595,18 +561,15 @@ function interpreter(input, fileArguments) {
                     if(expectedType === "Number") inputValue = parseFloat(inputValue);
 
                     if(FroggyscriptMemory.variables[token.variableName] != undefined) {
-                        token = new ScriptError("ReferenceError", `variable [${token.variableName}] already exists, cannot override`, clock_interval);
+                        token = new ScriptError("ReferenceError", `Variable [${token.variableName}] already exists, cannot override`, clock_interval);
+
                     } else if(fileArguments[fileArgumentCount] == undefined) {
-                        token = new ScriptError("FileError", `file argument [${fileArgumentCount}] does not exist`, clock_interval);
+                        token = new ScriptError("FileError", `File argument [${fileArgumentCount}] does not exist`, clock_interval);
+
                     } else if(isNaN(inputValue) && expectedType === "Number") {
-                        token = new ScriptError("TypeError", `file argument [${fileArgumentCount}] must be of type [${expectedType}]`, clock_interval);
+                        token = new ScriptError("TypeError", `File argument [${fileArgumentCount}] must be of type [${expectedType}]`, clock_interval);
                     } else {
-                        FroggyscriptMemory.variables[token.variableName] = {
-                            type: token.variableType,
-                            value: inputValue,
-                            identifier: token.variableName,
-                            mutable: true
-                        };
+                        writeVariable(token.variableName, token.variableType, inputValue, true);
 
                         fileArgumentCount++;
                     }
@@ -659,9 +622,7 @@ function interpreter(input, fileArguments) {
                         let line = funcLines[i];
                         let token = processSingleLine(line, clock_interval);
                         if(token.type === "Error") {
-                            outputError(token, true);
-                            clearInterval(interval);
-                            setSetting("showSpinner", ["false"])
+                            outputError(token);
                             return;
                         } else {
                             interpretSingleLine(interval, line);
@@ -670,7 +631,6 @@ function interpreter(input, fileArguments) {
                 } break;
 
                 case "endquickloop": {
-
                     let loopAmount = typeify(lines[token.goto].replace("quickloop", "").trim(), clock_interval).value;
 
                     let linesToLoop = lines.slice(token.goto + 1, clock_interval).map(x => x.trim()).filter(x => x.length > 0 && x !== "--");
@@ -680,20 +640,19 @@ function interpreter(input, fileArguments) {
                             let line = linesToLoop[j];
                             let token = processSingleLine(line, clock_interval);
                             if(token.type === "Error") {
-                                outputError(token, true);
-                                clearInterval(interval);
-                                setSetting("showSpinner", ["false"])
+                                outputError(token);
                                 return;
                             } else {
                                 interpretSingleLine(interval, line);
                             }
                         }
                     }
-
                 } break; 
 
                 case "quickloop": {
-                    // find matching quickloop
+                    setSetting("showSpinner", ["true"])
+                    setSetting("currentSpinner", ["quickloop-in-progress"])
+
                     let stack = [];
                     let endIndex = null;
                     for (let i = clock_interval + 1; i < lines.length; i++) {
@@ -730,6 +689,7 @@ function interpreter(input, fileArguments) {
                     resetVariables()
                     clearInterval(interval);
                     setSetting("showSpinner", ["false"])
+                    setSetting("currentSpinner", [getSetting("defaultSpinner")]);
                     createEditableTerminalLine(config.currentPath + ">");
                     return;
                 } break;
@@ -781,9 +741,10 @@ function interpreter(input, fileArguments) {
 
                 case "free": {
                     if(getVariable(token.identifier) == undefined) {
-                        token = new ScriptError("ReferenceError", `variable [${token.identifier}] does not exist`, clock_interval);
+                        token = new ScriptError("ReferenceError", `Variable [${token.identifier}] does not exist`, clock_interval);
+
                     } else if(getVariable(token.identifier).mutable === false) {
-                        token = new ScriptError("PermissionError", `variable [${token.identifier}] is immutable and cannot be freed`, clock_interval);
+                        token = new ScriptError("PermissionError", `Variable [${token.identifier}] is immutable and cannot be freed`, clock_interval);
                     } else {
                         delete FroggyscriptMemory.variables[token.identifier];
                     }
@@ -840,15 +801,15 @@ function interpreter(input, fileArguments) {
                     let referencedVar = getVariable(token.identifier);
 
                     if (referencedVar == undefined) {
-                        token = new ScriptError("ReferenceError", `variable [${token.identifier}] does not exist`, clock_interval);
+                        token = new ScriptError("ReferenceError", `Variable [${token.identifier}] does not exist`, clock_interval);
                     } else if (referencedVar.mutable === false) {
-                        token = new ScriptError("PermissionError", `variable [${token.identifier}] is immutable and cannot be reassigned`, clock_interval);
+                        token = new ScriptError("PermissionError", `Variable [${token.identifier}] is immutable and cannot be reassigned`, clock_interval);
                     } else {
                         // Write the new value to the variable
                         if (token.type === "Error") {
-                            token = new ScriptError("EvaluationError", `cannot evaluate [${token.originalInput}]`, clock_interval);
+                            token = new ScriptError("EvaluationError", `Cannot evaluate [${token.originalInput}]`, clock_interval);
                         } else if(referencedVar.type !== token.type) {
-                            token = new ScriptError("TypeError", `cannot assign type [${token.type}] to variable [${token.identifier}] of type [${referencedVar.type}]`, clock_interval);
+                            token = new ScriptError("TypeError", `Cannot assign type [${token.type}] to variable [${token.identifier}], variable [${token.identifier}] \nis of type [${referencedVar.type}]`, clock_interval);
                         } else {
                             writeVariable(token.identifier, referencedVar.type, token.value, true);
                         }
@@ -876,7 +837,7 @@ function interpreter(input, fileArguments) {
                     if(newI >= 0 && newI < lines.length) {
                         clock_interval = newI - 1;
                     } else {
-                        token = new ScriptError("ReferenceError", `gotoError -> Line ${newI} does not exist`, clock_interval);
+                        token = new ScriptError("ReferenceError", `Line ${newI} does not exist`, clock_interval);
                     }
                 } break;
 
@@ -890,14 +851,11 @@ function interpreter(input, fileArguments) {
             }
 
             if(token.type === "Error") {
-                resetVariables()
-                outputError(token);
-                clearInterval(interval);
+                outputError(token, interval);
                 return;
             }
             if(clock_interval >= lines.length) {
-                resetVariables()
-                clearInterval(interval);
+                resetTerminalForUse(interval);
                 return;
             }
         }
@@ -905,10 +863,13 @@ function interpreter(input, fileArguments) {
         return token;
     }
 
-    FroggyscriptMemory.variables.TimeMs.value = Date.now();
-
     let clock = setInterval(() => {
         if(CLOCK_PAUSED == false) {
+
+            FroggyscriptMemory.variables.Time_OSRuntime.value = Date.now() - OS_RUNTIME_START;
+            FroggyscriptMemory.variables.Time_ProgramRuntime.value = Date.now() - PROGRAM_RUNTIME_START;
+            FroggyscriptMemory.variables.Time_MsEpoch.value = Date.now();
+
             if(clock_interval < lines.length) {
                 let line = lines[clock_interval]
                 let token = interpretSingleLine(clock, line);
@@ -917,10 +878,20 @@ function interpreter(input, fileArguments) {
         }
     }, 1);
 
+    // window.pauseInterpreter = () => {
+    //     CLOCK_PAUSED = true;
+    // }
+
+    // window.debugFroggyScript = () => {
+    //     CLOCK_PAUSED = false;
+    //     setTimeout(() => CLOCK_PAUSED = true, 1);
+    // }
+
     document.body.addEventListener("keydown", function(e){
         if(e.key == "Delete"){
             clearInterval(clock);
             createTerminalLine("Program escaped.", config.alertText, {translate: false});
+            setSetting("showSpinner", ["false"])
             createEditableTerminalLine(config.currentPath + ">");
         }
     }, {once: true});

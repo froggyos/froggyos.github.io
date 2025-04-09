@@ -142,6 +142,16 @@ wait [time]
 wait 1000
 wait number
 ```
+### Default Variables
+The default variables are immutable.
+```
+true - true
+false - false
+Pi - 3.141592653589793
+Time_MsEpoch - time since epoch (January 1, 1970) in milliseconds
+Time_OSRuntime - OS uptime in milliseconds
+Time_ProgramRuntime - program uptime in milliseconds
+```
 <!-- ### Clear Screen
 ```
 clearterminal
@@ -156,8 +166,8 @@ changepalette cherry
 ### String Literals
 ```
 num age = 21 
-out "I am $[24 - 3] years old"
-out "I am $[age] years old"
+out "I am $|24 - 3| years old"
+out "I am $|age| years old"
 ```
 
 ## Output
@@ -216,7 +226,7 @@ str test = "double"
 str test = "multiple words"
 
 int age = 20
-str output = "i am $[age] years old"
+str output = "i am $|age| years old"
 ```
 ### Edit a Variable
 ```
@@ -273,7 +283,7 @@ ask name
 str name = "";
 out "What is your name?"
 ask name
-out 'Hello $[name]!'
+out 'Hello $|name|!'
 
 -- when running the program
 C:/Home> st [program_name]

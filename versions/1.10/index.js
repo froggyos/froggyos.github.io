@@ -33,6 +33,7 @@ function setConfigFromSettings(){
     config.colorPalette = getSetting("colorPalette");
     config.showSpinner = (getSetting("showSpinner") === "true");
     config.currentSpinner = getSetting("currentSpinner");
+    config.defaultSpinner = getSetting("defaultSpinner");
     config.timeFormat = getSetting("timeFormat");
     config.updateStatBar = (getSetting("updateStatBar") === "true");
     config.allowedProgramDirectories = getSetting("allowedProgramDirectories", true);
