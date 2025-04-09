@@ -74,7 +74,7 @@ function outputError(token, interval) {
     createTerminalLine("", config.programErrorText.replace("{{}}", token.error), {translate: false});
     createTerminalLine(" ", "", {translate: false});
     createTerminalLine(token.value, "", {translate: false});
-    createTerminalLine(`At line: ${token.line}`, "", {translate: false});
+    createTerminalLine(`At line: ${token.line+1}`, "", {translate: false});
     resetTerminalForUse(interval);
     createEditableTerminalLine(config.currentPath + ">");
 }
@@ -874,7 +874,7 @@ function interpreter(input, fileArguments) {
                         if (token.type === "Error") {
                             token = new ScriptError("EvaluationError", `Cannot evaluate [${token.originalInput}]`, clock_interval);
                         } else if(referencedVar.type !== token.type) {
-                            token = new ScriptError("TypeError", `Cannot assign type [${token.type}] to variable [${token.identifier}], variable [${token.identifier}] \nis of type [${referencedVar.type}]`, clock_interval);
+                            token = new ScriptError("TypeError", `Cannot assign value of type [${token.type}] to variable [${token.identifier}] of type [${referencedVar.type}]`, clock_interval);
                         } else {
                             writeVariable(token.identifier, referencedVar.type, token.value, true);
                         }
