@@ -59,6 +59,10 @@ function output(value) {
     createTerminalLine(value.toString(), "", {translate: false});
 }
 
+function outputWithFormatting(value, formatArray) {
+    createTerminalLine(value.toString(), "", {translate: false, formatting: formatArray});
+}
+
 function resetTerminalForUse(interval){
     resetVariables()
     clearInterval(interval);
@@ -226,6 +230,63 @@ function processSingleLine(input, clock_interval) {
     token.keyword = keyword;
 
     switch (keyword) {
+        case "outf": {
+            let formatting = input.match(/\{.*\}/g)[0].replace(/[\{\}]/g, "").trim().split("|");
+            let formatArray = [];
+
+            let formatError = null;
+
+        
+            for(let i = 0; i < formatting.length; i++){
+                let formattingObject = {};
+                formatting[i].split(",").forEach((format) => {
+                    if(format === "") return;
+                    format.trim();
+                    let [key, value] = format.split("=").map(value => value.trim());
+
+                    if(key == "t" || key == "b" || key == "i"){
+                        formattingObject.type = "blanket";
+                        formattingObject[key] = value;
+                    } else if (key == "tr" || key == "br" || key == "ir") {
+                        let [start, end] = value.split("-").map(value => value.trim());
+
+                        let typedStart = typeify(start, clock_interval);
+                        let typedEnd = typeify(end, clock_interval);
+
+                        if(typedStart.type != "Number") {
+                            token = new ScriptError("TypeError", `FormatObject -> [${key}] must be followed by a Number, found type ${typedStart.type}`, clock_interval);
+                        } else if(typedEnd.type != "Number") {
+                            token = new ScriptError("TypeError", `FormatObject -> [${key}] must be followed by a Number, found type ${typedStart.type}`, clock_interval);
+                        } else {
+
+                            if(typedStart.type == "Error") formatError = typedStart;
+                            else if(typedEnd.type == "Error") formatError = typedEnd;
+                            else {
+                                formattingObject.type = "range";
+                                formattingObject[`${key}_start`] = typedStart.value.toString();
+                                formattingObject[`${key}_end`] = typedEnd.value.toString();
+                            }
+                        }
+                    }
+                })
+                formatArray.push(formattingObject);
+            }
+
+            if(formatError != null){
+                token = {...token, ...formatError }
+            } else {
+                let output = input.replace(/outf\w+\{.+\}/g, "");
+
+                output = typeify(output.replace(/outf/g, "").replace(/\{.*\}/g, "").trim(), clock_interval);
+    
+                if(output.type == "Error"){
+                    token = new ScriptError(output.error, output.value, output.line)
+                } else {
+                    token = { ...token, format: formatArray, output: output.value };
+                }
+            }
+        } break;
+
         case "ask": {
             let variable = input.split(" ")[1].trim();
 
@@ -508,6 +569,10 @@ function interpreter(input, fileArguments) {
         } else {
             // process tokens here =======================================================
             switch(token.keyword) {
+                case "outf": {
+                    outputWithFormatting(token.output, token.format);
+                } break;
+
                 case "ask": {
                     CLOCK_PAUSED = true;
                     let span = document.createElement('span');

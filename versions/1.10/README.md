@@ -180,20 +180,19 @@ out "text"
 out "more text"
 out 1
 ```
-<!-- ### Formatted Output
+### Formatted Output
 #### General
 * index `0` is the 1st character.
-* You can  use variables as values for color codes, variables of length 2 or less will be converted to color codes automatically.
 * There is very little error checking on the formatting objects, so make sure they're correct.
 * The whitespace inside of the formatting object does not matter.
 ```
-outc [format] [text]
+outf [format] [text]
 
-outc {t=c01} "this is blue text"
-outc {b=c00} "this is a black background"
-outc {t=c02, b=c01} "this is green green text on a blue background"
-outc {t=c02, tr=0-15} "from the 1st to 16th character, the text will be blue" 
-outc {t=c02, tr=4-26 | b=c04, br=57-71} "from the 5th to 29th character, the text will be blue. AND from the 58th to the 72nd character the background will be red" 
+outf {t=c01} "this is blue text"
+outf {b=c00} "this is a black background"
+outf {t=c02, b=c01} "this is green green text on a blue background"
+outf {t=c02, tr=0-15} "from the 1st to 16th character, the text will be blue" 
+outf {t=c02, tr=4-26 | b=c04, br=57-71} "from the 5th to 29th character, the text will be blue. AND from the 58th to the 72nd character the background will be red" 
 ```
 #### Format Object
 * `{}` is a formatting object
@@ -209,7 +208,7 @@ outc {t=c02, tr=4-26 | b=c04, br=57-71} "from the 5th to 29th character, the tex
 * to set different ranges, separate subrules with a `|`: `{[property]=[value] | [property]=[value]}`
     * If a range is not specified, the subrule will apply to the entire string
     * The value for Italic is `1` to be enabled, and `0` to be disabled
-  -->
+ 
 ## Variables
 ### Create a Variable
 

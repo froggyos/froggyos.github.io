@@ -492,7 +492,7 @@ const presetLanguagesMap = {
         nmt: "ndaní fiyala ágayuménta me",
         jpn: "ファイルの引数が不足しています"
     },
-    "T_invalid_format_object_inter_rule_delimiter": {
+    "T_UNUSED_invalid_format_object_inter_rule_delimiter": {
         eng: "Invalid FormatObject (INTER-RULE DELIMITER) syntax.",
         nmt: "gogowa FormatObject (LU GAYANA MEMƏPELEWISI) sebesikya",
         jpn: "無効なフォーマットオブジェクト（インター・ルール・デリミター）構文です"
@@ -847,8 +847,12 @@ const config = {
             { name: "cli", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["str cli = 'this program is hardcoded into froggyOS'", "endprog"] },
             { name: "lilypad", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["str lilypad = 'this program is hardcoded into froggyOS'", "endprog"] },
             { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
-                "filearg age Number",
-                "out age",
+                'num meow = 0',
+                'outf {t=c01} "this is blue text"',
+                'outf {b=c00} "this is a black background"',
+                'outf {t=c02, b=c01} "this is green green text on a blue background"',
+                'outf {t=c01, tr=meow-15} "from the 1st to 16th character, the text will be blue" ',
+                'outf {t=c01, tr=4-26 | b=c04, br=57-71} "from the 5th to 29th character, the text will be blue. AND from the 58th to the 72nd character the background will be red"',
                 "endprog"
             ] },
             { name: "loop-test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
