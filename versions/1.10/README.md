@@ -23,7 +23,7 @@ There are no set colors that you must have, but these are the color conventions.
 * `14` - light orange/yellow
 * `15` - white, the terminal background color, top bar and error text color, and the selected text and option color
 
-Note: colors `00`-`06`, `12`, and `15` are tied to their specific UI elements and this **cannot** be changed (yet). Some palettes are hardcoded to changes these values around. This will able to be done by the user via palette files in future versions.
+Note: colors `00` - `06`, `12`, and `15` are tied to their specific UI elements and this **cannot** be changed (yet). Some palettes are hardcoded to changes these values around. This will able to be done by the user via palette files in future versions.
 
 ### Current Color Palettes
 * standard
