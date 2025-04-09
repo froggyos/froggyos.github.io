@@ -199,8 +199,8 @@ outc [format] [text]
 outc {t=c01} "this is blue text"
 outc {b=c00} "this is a black background"
 outc {t=c02, b=c01} "this is green green text on a blue background"
-outc {t=c02, tr=0-15} "from the 1st to 16th character, the text will be blue" 
-outc {t=c02, tr=4-26 | b=c04, br=57-71} "from the 5th to 29th character, the text will be blue. AND from the 58th to the 72nd character the background will be red" 
+outc {t=c01, tr=0-15} "from the 1st to 16th character, the text will be blue" 
+outc {t=c01, tr=4-26 | b=c04, br=57-71} "from the 5th to 29th character, the text will be blue. AND from the 58th to the 72nd character the background will be red" 
 ```
 #### Format Object
 * `{}` is a formatting object
