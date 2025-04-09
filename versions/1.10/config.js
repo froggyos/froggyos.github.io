@@ -847,6 +847,11 @@ const config = {
             { name: "cli", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["str cli = 'this program is hardcoded into froggyOS'", "endprog"] },
             { name: "lilypad", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["str lilypad = 'this program is hardcoded into froggyOS'", "endprog"] },
             { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
+                "filearg age Number",
+                "out age",
+                "endprog"
+            ] },
+            { name: "loop-test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
                 "num loopTest = 0",
                 "num quickloopTest = 0",
                 "num dummy = 0",
@@ -962,15 +967,20 @@ const config = {
                 "endprog",
             ] },
             { name: "fibonacci", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
+                "num i = 0",
+                "num amount = 0",
                 "num nOne = 0",
                 "num nTwo = 1",
                 "num sum = 0",
+                "out 'How many fibonacci numbers do you want to generate?'",
+                "ask amount",
+                "loop i < amount",
+                "set i = i + 1",
                 "set sum = nOne + nTwo",
                 "out sum",
                 "set nTwo = nOne",
                 "set nOne = sum",
-                "wait 100",
-                "goto 3",
+                "endloop",
                 "endprog"
             ] },
         ],
