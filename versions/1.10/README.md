@@ -124,7 +124,7 @@ If you edit the `Settings:` drive directly, some settings won't apply until you 
 ## Bugs
 * the loading spinner slows down with consecutive saves of a long file (?)
 
-# FroggyScript2 Documentation
+# FroggyScript Documentation
 ## General Utilities
 ### End the Program
 An error **WILL** be thrown is this is not the last line of the program.
@@ -263,9 +263,11 @@ append test v:variable
 The `filearg` keyword will create an **immutable** variable with the provided keyword and cannot override other variable values.
 ```
 filearg [variable_name] [type]
+
+-- example program
 filearg name String
 filearg age Number
-out "hello I am [name] and I am [age] years old"
+out "hello I am $|name| and I am $|age| years old"
 
 -- when running the program
 C:/Home> st [program_name] [arg1] [arg2]
@@ -278,7 +280,7 @@ ask [variable]
 
 ask name
 
--- example usage
+-- example program
 str name = "";
 out "What is your name?"
 ask name
@@ -300,7 +302,7 @@ out 'You are $|age| years old.'
 -- in the terminal
 C:/Home> st [program_name]
 > How old are you?
-? Hello
+? Froggy
 -- Throws a TypeError because [age] is type Number while the input for [ask] was type String
 ```
 <!-- 
