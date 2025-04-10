@@ -125,9 +125,10 @@ If you edit the `Settings:` drive directly, some settings won't apply until you 
 * the loading spinner slows down with consecutive saves of a long file (?)
 
 # FroggyScript Documentation
+In the documentation, `[argument="default_value"]` denotes a default argument value
 ## General Utilities
 ### End the Program
-An error **WILL** be thrown is this is not the last line of the program.
+* An error **WILL** be thrown is this is not the last line of the program.
 ```
 endprog
 ```
@@ -152,10 +153,10 @@ Time_MsEpoch - time since epoch (January 1, 1970) in milliseconds
 Time_OSRuntime - OS uptime in milliseconds
 Time_ProgramRuntime - program uptime in milliseconds
 ```
-<!-- ### Clear Screen
+### Clear Screen
 ```
 clearterminal
-``` -->
+```
 <!-- ### Change Color Palette
 ```
 changepalette [palette name]
@@ -183,16 +184,15 @@ out 1
 ### Formatted Output
 #### General
 * index `0` is the 1st character.
-* There is very little error checking on the formatting objects, so make sure they're correct.
-* The whitespace inside of the formatting object does not matter.
+* There is less than normal error checking on the formatting objects, so make sure they're correct.
 ```
 outf [format] [text]
 
 outf {t=c01} "this is blue text"
 outf {b=c00} "this is a black background"
-outf {t=c02, b=c01} "this is green green text on a blue background"
-outf {t=c02, tr=0-15} "from the 1st to 16th character, the text will be blue" 
-outf {t=c02, tr=4-26 | b=c04, br=57-71} "from the 5th to 29th character, the text will be blue. AND from the 58th to the 72nd character the background will be red" 
+outf {t=c06, b=c01} "this is brown text on a blue background"
+outf {t=c01, tr=0-21} "from char 0 to char 21, the text will be blue" 
+outf {t=c01, tr=4-48 | b=c04, br=57-91} "from the char 4 to char 48, the text will be blue. AND from char 57 to char 91 the background will be red"
 ```
 #### Format Object
 * `{}` is a formatting object
@@ -206,7 +206,7 @@ outf {t=c02, tr=4-26 | b=c04, br=57-71} "from the 5th to 29th character, the tex
     * `ir` - italic range
 * you can set multiple subrules by separating them with commas: `{[property]=[value],[property]=[value]}`
 * to set different ranges, separate subrules with a `|`: `{[property]=[value] | [property]=[value]}`
-    * If a range is not specified, the subrule will apply to the entire string
+    * If a range is not specified, it will apply to the entire string
     * The value for Italic is `1` to be enabled, and `0` to be disabled
  
 ## Variables
@@ -215,8 +215,10 @@ outf {t=c02, tr=4-26 | b=c04, br=57-71} "from the 5th to 29th character, the tex
 ```
 -- string
 str [variable_name] = [value]
+
 -- number
 num [variable_name] = [value]
+
 -- boolean
 bln [variable_name] = [value]
 
@@ -224,8 +226,16 @@ str test = 'single'
 str test = "double"
 str test = "multiple words"
 
+-- string literals
 int age = 20
 str output = "i am $|age| years old"
+```
+To append strings to one another:
+```
+str test = "hello"
+set test = "$|test|, world!"
+out test
+-- outputs "hello, world!"
 ```
 ### Edit a Variable
 ```
@@ -237,8 +247,8 @@ str test = "text"
 set test = "many word"
 set i = i + 1
 
-// throws a TypeError
 set i = test
+-- throws a TypeError
 ```
 
 ### Delete a Variable
@@ -247,27 +257,17 @@ free [variable_name]
 
 free test
 ```
-<!-- ## String Manipulation
-### Append
-```
-append [variable] [value]
-
-append test ing
-append test ing the append keyword
-append test ' ing it some more'
-append test "AND MORE"
-append test v:variable
-``` -->
 ## User Input
 ### Define a File Argument
 The `filearg` keyword will create an **immutable** variable with the provided keyword and cannot override other variable values.
 ```
 filearg [variable_name] [type]
 
--- example program
+-- default usage
 filearg name String
 filearg age Number
 out "hello I am $|name| and I am $|age| years old"
+endprog
 
 -- when running the program
 C:/Home> st [program_name] [arg1] [arg2]
@@ -276,15 +276,17 @@ C:/Home> st about_froggy froggy 7
 ```
 ### Typeable User Input
 ```
-ask [variable]
+ask [variable] [prefix='?']
 
 ask name
+ask name "!"
 
--- example program
+-- default usage
 str name = "";
 out "What is your name?"
 ask name
 out 'Hello $|name|!'
+endprog
 
 -- in the terminal
 C:/Home> st [program_name]
@@ -292,12 +294,25 @@ C:/Home> st [program_name]
 ? Froggy
 > Hello Froggy!
 
+-- custom prefix
+str name = "";
+out "What is your name?"
+ask name "!"
+out 'Hello $|name|!'
 
--- new program
+-- in the terminal
+C:/Home> st [program_name]
+> What is your name?
+! Froggy
+> Hello Froggy!
+engprog
+
+-- TypeError
 int age = 0;
 out "How old are you?"
 ask age
 out 'You are $|age| years old.'
+engprog
 
 -- in the terminal
 C:/Home> st [program_name]
@@ -381,7 +396,7 @@ endloop
 ```
 
 #### Quickloop
-Quickloops are different from standard loops in that the entire loop is executed *almost instantly*, while standard loops are executed one line at a time, which is around 1ms per line.
+Quickloops are different from standard loops in that the entire loop is executed *almost instantly*, while standard loops are executed one line at a time.
 
 ```
 quickloop [loop_iterations]
@@ -393,7 +408,14 @@ quickloop 100
 endquickloop
 -- outputs "hello" 100 times in a row
 ```
-
+## Type Manipulation
+### stringify
+This will change the type of a **variable** from a number to a string.
+```
+num number = 5
+stringify number
+-- variable "number" is now a string
+```
 <!-- ## Program Data
 ### Saving Data
 Saves the contents of `[variable]` to the corresponding file in the `D:/Program-Data` file

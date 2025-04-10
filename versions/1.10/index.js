@@ -450,19 +450,9 @@ function createTerminalLine(text, path, other){
 
                 if(format.type == "blanket"){
                     if(format?.t) {
-                        if(format.t.length != 3) {
-                            createTerminalLine("T_invalid_format_object_inter_rule_delimiter", `${config.errorText}`);
-                            createTerminalLine("T_error_data_unavailable", `${config.errorText}`);
-                            return;
-                        }
                         properties.push(`color: var(--${format.t})`)
                     }
                     if(format?.b) {
-                        if(format.b.length != 3) {
-                            createTerminalLine("T_invalid_format_object_inter_rule_delimiter", `${config.errorText}`);
-                            createTerminalLine("T_error_data_unavailable", `${config.errorText}`);
-                            return;
-                        }
                         properties.push(`background-color: var(--${format.b})`)
                     }
                     if(format?.i) if(format.i == "1") properties.push(`font-style: italic`)
@@ -1763,13 +1753,11 @@ if(!SKIP_ANIMATION) {
         }
     }
 
-    function keypressListener(e){
+    document.addEventListener('keyup', function(e){
         animSkipped = true;
         document.getElementById("blackout").remove()
-        document.removeEventListener('keyup', keypressListener);
         sendCommand('[[BULLFROG]]greeting', []);   
-    }
-    document.addEventListener('keyup', keypressListener);
+    }, {once: true});
 
 } else {
     document.getElementById("blackout").remove()

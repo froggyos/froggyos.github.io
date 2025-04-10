@@ -497,7 +497,7 @@ const presetLanguagesMap = {
         nmt: "gogowa FormatObject (LU GAYANA MEMƏPELEWISI) sebesikya",
         jpn: "無効なフォーマットオブジェクト（インター・ルール・デリミター）構文です"
     },
-    "T_error_data_unavailable": {
+    "T_UNUSED_error_data_unavailable": {
         eng: "Error Data UNAVAILABLE",
         nmt: "gogowa data UNAYAVA",
         jpn: "エラーデータは利用できません"
@@ -847,10 +847,21 @@ const config = {
             { name: "cli", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["str cli = 'this program is hardcoded into froggyOS'", "endprog"] },
             { name: "lilypad", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["str lilypad = 'this program is hardcoded into froggyOS'", "endprog"] },
             { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
-                "cstr meow = ''",
-                "ask meow",
+                'num number = 5',
+                "str test = ''",
+                'stringify number',
+                'ask test number',
                 "endprog"
             ] },
+            // { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
+            //     'outf {t=c01,i=1} "this is blue text"',
+            //     'outf {b=c00} "this is a black background"',
+            //     'outf {t=c06, b=c01} "this is brown text on a blue background"',
+            //     'outf {t=c01, tr=0-21} "from char 0 to char 21, the text will be blue" ',
+            //     'outf {t=c01, tr=4-48 | b=c04, br=57-91} "from the char 4 to char 48, the text will be blue. AND from char 57 to char 91 the background will be red" ',
+            //     "clearterminal",
+            //     "endprog"
+            // ] },
             { name: "loop-test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
                 "num loopTest = 0",
                 "num quickloopTest = 0",

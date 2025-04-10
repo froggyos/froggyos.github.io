@@ -230,72 +230,136 @@ function processSingleLine(input, clock_interval) {
     token.keyword = keyword;
 
     switch (keyword) {
+        // incomplete
+        case "stringify": {
+            let variable = input.split(" ")[1].trim();
+            if(typeify(variable, clock_interval).type == "Error") {
+                token = typeify(variable, clock_interval);
+            } else {
+                token = { ...token, variableName: variable, variableType: getVariable(variable).type };
+            }
+        } break;
+
         case "outf": {
-            let formatting = input.match(/\{.*\}/g)[0].replace(/[\{\}]/g, "").trim().split("|");
-            let formatArray = [];
+            // match the first instance of \{.*\} 
+            let formatting = input.match(/\{.*?\}/)
 
-            let formatError = null;
+            if(formatting == null){
+                token = new ScriptError("SyntaxError", `[outf] must be followed by a formatting string`, clock_interval);
+            } else {
+                formatting = formatting[0].replace(/[\{\}]/g, "").trim().split("|");
+                let formatArray = [];
 
-        
-            for(let i = 0; i < formatting.length; i++){
-                let formattingObject = {};
-                formatting[i].split(",").forEach((format) => {
-                    if(format === "") return;
-                    format.trim();
-                    let [key, value] = format.split("=").map(value => value.trim());
+                let formatError = null;
 
-                    if(key == "t" || key == "b" || key == "i"){
-                        formattingObject.type = "blanket";
-                        formattingObject[key] = value;
-                    } else if (key == "tr" || key == "br" || key == "ir") {
-                        let [start, end] = value.split("-").map(value => value.trim());
+            
+                for(let i = 0; i < formatting.length; i++){
+                    let formattingObject = {};
+                    formatting[i].split(",").forEach((format) => {
+                        if(format === "") return;
+                        format.trim();
+                        let [key, value] = format.split("=").map(value => value.trim());
 
-                        let typedStart = typeify(start, clock_interval);
-                        let typedEnd = typeify(end, clock_interval);
+                        if(key == "t" || key == "b" || key == "i"){
+                            formattingObject.type = "blanket";
+                            formattingObject[key] = value;
+                            // if key is i and value isnt 1 or 0
+                            if(key == "i" && value != "1" && value != "0") {
+                                token = new ScriptError("TypeError", `[${key}] must be followed by a 1 or 0, found ${value}`, clock_interval);
+                            }
+                        } else if (key == "tr" || key == "br" || key == "ir") {
+                            let [start, end] = value.split("-").map(value => value.trim());
 
-                        if(typedStart.type != "Number") {
-                            token = new ScriptError("TypeError", `FormatObject -> [${key}] must be followed by a Number, found type ${typedStart.type}`, clock_interval);
-                        } else if(typedEnd.type != "Number") {
-                            token = new ScriptError("TypeError", `FormatObject -> [${key}] must be followed by a Number, found type ${typedStart.type}`, clock_interval);
-                        } else {
+                            let rangeError = false;
 
-                            if(typedStart.type == "Error") formatError = typedStart;
-                            else if(typedEnd.type == "Error") formatError = typedEnd;
-                            else {
-                                formattingObject.type = "range";
-                                formattingObject[`${key}_start`] = typedStart.value.toString();
-                                formattingObject[`${key}_end`] = typedEnd.value.toString();
+                            try {
+                                typeify(start, clock_interval);
+                                typeify(end, clock_interval);
+                            } catch (e){
+                                rangeError = true;
+                            }
+
+                            if(rangeError){
+                                console.log(formatting[i])
+                                token = new ScriptError("TypeError", `[${key}] in:\n${formatting[i].trim()}\nmust be followed by a range (start-end)`, clock_interval);
+                            } else {
+
+                                let typedStart = typeify(start, clock_interval);
+                                let typedEnd = typeify(end, clock_interval);
+
+                                if(typedStart.type != "Number") {
+                                    token = new ScriptError("TypeError", `[${key}] range start in:\n${formatting[i].trim()}\nmust be followed by a Number, found type ${typedStart.type} ${typedStart.type == "Error" ? "(unresolved variable?)":""}`, clock_interval);
+                                } else if(typedEnd.type != "Number") {
+                                    token = new ScriptError("TypeError", `[${key}] range end in:\n${formatting[i].trim()}\nmust be followed by a Number, found type ${typedEnd.type} ${typedEnd.type == "Error" ? "(unresolved variable?)":""}`, clock_interval);
+                                } else {
+
+                                    if(typedStart.type == "Error") formatError = typedStart;
+                                    else if(typedEnd.type == "Error") formatError = typedEnd;
+                                    else {
+                                        formattingObject.type = "range";
+                                        formattingObject[`${key}_start`] = typedStart.value.toString();
+                                        formattingObject[`${key}_end`] = typedEnd.value.toString();
+                                    }
+                                }
                             }
                         }
-                    }
-                })
-                formatArray.push(formattingObject);
-            }
+                    })
+                    formatArray.push(formattingObject);
+                }
 
-            if(formatError != null){
-                token = {...token, ...formatError }
-            } else {
-                let output = input.replace(/outf\w+\{.+\}/g, "");
-
-                output = typeify(output.replace(/outf/g, "").replace(/\{.*\}/g, "").trim(), clock_interval);
-    
-                if(output.type == "Error"){
-                    token = new ScriptError(output.error, output.value, output.line)
+                if(formatError != null){
+                    token = {...token, ...formatError }
                 } else {
-                    token = { ...token, format: formatArray, output: output.value };
+                    let output = input.replace(/outf/g, "").replace(/\{.*?\}/, "").trim()
+                    let typedOutput = typeify(input.replace(/outf/g, "").replace(/\{.*?\}/, "").trim(), clock_interval);
+
+                    
+                    if(output == "") {
+                        token = new ScriptError("SyntaxError", `[outf] must be followed by a value`, clock_interval);
+                    } else if(typedOutput.type == "Error"){
+                        token = new ScriptError(typedOutput.error, typedOutput.value, typedOutput.line)
+                    } else {
+                        let error = false;
+                        let errorIndex = null;
+                        formatArray.forEach((format, i) => {
+                            if(format.t) if(format.t.length != 3) {
+                                error = "t";
+                                errorIndex = i
+                            }
+                            if(format.b) if(format.b.length != 3) {
+                                error = "b";
+                                errorIndex = i
+                            }
+                        })
+
+                        if(error != false){
+                            console.log(formatting[errorIndex], error)
+                            token = new ScriptError("SyntaxError", `[${error}] in:\n${formatting[errorIndex].trim()}\nmust be followed by a color code (cXX)`, clock_interval);
+                        } else token = { ...token, format: formatArray, output: typedOutput.value };
+                    }
                 }
             }
         } break;
 
         case "ask": {
             let variable = input.split(" ")[1].trim();
+            let prefix = input.replace(`ask ${variable}`, "").trim();
+
+            if(prefix == "") prefix = "'?'";
+
+            console.log(getVariable(variable))
 
             if(variable == undefined) {
                 token = new ScriptError("SyntaxError", `[ask] must be followed by a variable name`, clock_interval);
             } else if(getVariable(variable) == undefined) {
                 token = new ScriptError("ReferenceError", `Variable [${variable}] does not exist`, clock_interval);
+            } else if(typeify(prefix, clock_interval).type == "Error") {
+                token = typeify(prefix, clock_interval);
+            } else if(getVariable(variable).type != "String") {
+                // theres something going on here !=============!!!=============
+                token = new ScriptError("TypeError", `[ask] prefix must be type String, found type ${getVariable(variable).type}`, clock_interval);
             } else {
-                token = { ...token, variableName: variable, variableType: getVariable(variable).type };
+                token = { ...token, variableName: variable, variableType: getVariable(variable).type, prefix: typeify(prefix, clock_interval).value };
             }
         } break;
         case "filearg": {
@@ -569,6 +633,14 @@ function interpreter(input, fileArguments) {
         } else {
             // process tokens here =======================================================
             switch(token.keyword) {
+                case "stringify": {
+                    console.log(token)
+                } break;
+
+                case "clearterminal": {
+                    document.getElementById("terminal").innerHTML = "";
+                } break;
+
                 case "outf": {
                     outputWithFormatting(token.output, token.format);
                 } break;
@@ -582,7 +654,7 @@ function interpreter(input, fileArguments) {
                     inputElement.setAttribute('contenteditable', 'plaintext-only');
                     inputElement.setAttribute('spellcheck', 'true');
             
-                    span.textContent = "?";
+                    span.textContent = token.prefix;
             
                     elementToAppend.appendChild(span);
                     elementToAppend.appendChild(inputElement);
