@@ -953,7 +953,7 @@ function interpreter(input, fileArguments) {
                         if (token.type === "Error") {
                             token = new ScriptError("EvaluationError", `Cannot evaluate [${token.originalInput}]`, clock_interval);
                         } else if(referencedVar.type !== token.type) {
-                            token = new ScriptError("TypeError", `Cannot assign value of type [${token.type}] to variable [${token.identifier}] of type [${referencedVar.type}]`, clock_interval);
+                            token = new ScriptError("TypeError", `Cannot assign a value of type [${token.type}] to variable [${token.identifier}], which\nis of type [${referencedVar.type}]`, clock_interval);
                         } else {
                             writeVariable(token.identifier, referencedVar.type, token.value, true);
                         }
