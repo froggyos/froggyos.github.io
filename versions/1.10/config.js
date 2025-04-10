@@ -847,7 +847,7 @@ const config = {
             { name: "cli", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["str cli = 'this program is hardcoded into froggyOS'", "endprog"] },
             { name: "lilypad", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["str lilypad = 'this program is hardcoded into froggyOS'", "endprog"] },
             { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
-                "filearg meow String",
+                "filearg meow Number",
                 "out meow",
                 "endprog"
             ] },
@@ -871,9 +871,9 @@ const config = {
                 "out 'normal loop doing an EMPTY loop that counts to 1000: $|Time_MsEpoch - loopStartTime|ms'",
                 "num quickloopStartTime = Time_MsEpoch",
                 "quickloop 3000",
-                ..."set dummy = dummy + 1,".repeat(50).replace(/,$/,"").split(","),
+                ..."set dummy = dummy + 1,".repeat(100).replace(/,$/,"").split(","),
                 "endquickloop",
-                "out 'quickloop doing 3000 loops of 50 dummy [set] calls: $|Time_MsEpoch - quickloopStartTime|ms'",
+                "out 'quickloop doing 3000 loops of 100 dummy [set] calls: $|Time_MsEpoch - quickloopStartTime|ms'",
                 "endprog",
             ] },
             { name: "fibonacci", properties: {transparent: false, read: true, write: true, hidden: false}, data: [

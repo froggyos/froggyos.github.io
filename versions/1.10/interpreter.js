@@ -363,8 +363,8 @@ function processSingleLine(input, clock_interval) {
             let variable = input.split(" ")[1].trim();
             let type = input.split(" ")[2].trim();
 
-            if(type !== "String" && type !== "Number" && type !== "Boolean") {
-                token = new ScriptError("TypeError", `[filearg] must be followed by a type (String, Number, Boolean), found [${type}]`, clock_interval);
+            if(type !== "String" && type !== "Number") {
+                token = new ScriptError("TypeError", `[filearg] must be followed by a type (String, Number), found [${type}]`, clock_interval);
             } else if(variable == undefined) {
                 token = new ScriptError("SyntaxError", `[filearg] must be followed by a variable name`, clock_interval);
             } else {
@@ -709,7 +709,7 @@ function interpreter(input, fileArguments) {
                     } else if(isNaN(inputValue) && expectedType === "Number") {
                         token = new ScriptError("TypeError", `File argument [${fileArgumentCount}] must be of type [${expectedType}]`, clock_interval);
                     } else {
-                        writeVariable(token.variableName, token.variableType, inputValue, true);
+                        writeVariable(token.variableName, token.variableType, inputValue, false);
 
                         fileArgumentCount++;
                     }
