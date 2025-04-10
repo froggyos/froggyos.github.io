@@ -230,7 +230,6 @@ function processSingleLine(input, clock_interval) {
     token.keyword = keyword;
 
     switch (keyword) {
-        // incomplete
         case "stringify": {
             let variable = input.split(" ")[1].trim();
             if(typeify(variable, clock_interval).type == "Error") {
@@ -280,7 +279,6 @@ function processSingleLine(input, clock_interval) {
                             }
 
                             if(rangeError){
-                                console.log(formatting[i])
                                 token = new ScriptError("TypeError", `[${key}] in:\n${formatting[i].trim()}\nmust be followed by a range (start-end)`, clock_interval);
                             } else {
 
@@ -333,7 +331,6 @@ function processSingleLine(input, clock_interval) {
                         })
 
                         if(error != false){
-                            console.log(formatting[errorIndex], error)
                             token = new ScriptError("SyntaxError", `[${error}] in:\n${formatting[errorIndex].trim()}\nmust be followed by a color code (cXX)`, clock_interval);
                         } else token = { ...token, format: formatArray, output: typedOutput.value };
                     }
@@ -347,33 +344,32 @@ function processSingleLine(input, clock_interval) {
 
             if(prefix == "") prefix = "'?'";
 
-            console.log(getVariable(variable))
-
             if(variable == undefined) {
                 token = new ScriptError("SyntaxError", `[ask] must be followed by a variable name`, clock_interval);
             } else if(getVariable(variable) == undefined) {
                 token = new ScriptError("ReferenceError", `Variable [${variable}] does not exist`, clock_interval);
-            } else if(typeify(prefix, clock_interval).type == "Error") {
-                token = typeify(prefix, clock_interval);
-            } else if(getVariable(variable).type != "String") {
-                // theres something going on here !=============!!!=============
-                token = new ScriptError("TypeError", `[ask] prefix must be type String, found type ${getVariable(variable).type}`, clock_interval);
             } else {
-                token = { ...token, variableName: variable, variableType: getVariable(variable).type, prefix: typeify(prefix, clock_interval).value };
+                let typedPrefix = typeify(prefix, clock_interval);
+                if(typedPrefix.type == "Error") {
+                    token = typedPrefix;
+                } else if(typedPrefix.type != "String") {
+                    token = new ScriptError("TypeError", `[ask] prefix must be type String, found type ${typedPrefix.type}`, clock_interval);
+                } else {
+                    token = { ...token, variableName: variable, variableType: getVariable(variable).type, prefix: typedPrefix.value };
+                }
             }
         } break;
         case "filearg": {
             let variable = input.split(" ")[1].trim();
             let type = input.split(" ")[2].trim();
 
-            // if type isnt String, Number
-            if(type !== "String" && type !== "Number") {
-                token = new ScriptError("TypeError", `[filearg] must be followed by a type (String, Number), found [${type}]`, clock_interval);
+            if(type !== "String" && type !== "Number" && type !== "Boolean") {
+                token = new ScriptError("TypeError", `[filearg] must be followed by a type (String, Number, Boolean), found [${type}]`, clock_interval);
             } else if(variable == undefined) {
                 token = new ScriptError("SyntaxError", `[filearg] must be followed by a variable name`, clock_interval);
+            } else {
+                token = { ...token, variableName: variable, variableType: type };
             }
-
-            token = { ...token, variableName: variable, variableType: type };
         } break;
 
         case "func": {
@@ -407,7 +403,7 @@ function processSingleLine(input, clock_interval) {
         case "quickloop": {
             let times = input.replace(/^quickloop\s+/, '').trim();
             if(!times) {
-                token = new ScriptError("SyntaxError", `[quickloop] cannot be empty`, clock_interval);
+                token = new ScriptError("SyntaxError", `[quickloop] must have a loop count`, clock_interval);
                 break;
             }
             let timesType = typeify(times, clock_interval);
@@ -634,7 +630,14 @@ function interpreter(input, fileArguments) {
             // process tokens here =======================================================
             switch(token.keyword) {
                 case "stringify": {
-                    console.log(token)
+                    if(getVariable(token.variableName).mutable === false) {
+                        token = new ScriptError("PermissionError", `Variable [${token.variableName}] is immutable and cannot be reassigned`, clock_interval);
+                    }else if(token.variableType != "Number"){
+                        token = new ScriptError("TypeError", `[${token.variableName}] must be of type Number`, clock_interval);
+                    } else {
+                        let variable = getVariable(token.variableName);
+                        writeVariable(variable.identifier, "String", variable.value.toString(), variable.mutable);
+                    }
                 } break;
 
                 case "clearterminal": {
@@ -697,11 +700,11 @@ function interpreter(input, fileArguments) {
 
                     if(expectedType === "Number") inputValue = parseFloat(inputValue);
 
-                    if(FroggyscriptMemory.variables[token.variableName] != undefined) {
-                        token = new ScriptError("ReferenceError", `Variable [${token.variableName}] already exists, cannot override`, clock_interval);
+                    if(inputValue == undefined){
+                        token = new ScriptError("TypeError", `Missing file argument [${fileArgumentCount}] (expecting type ${expectedType})`, clock_interval);
 
-                    } else if(fileArguments[fileArgumentCount] == undefined) {
-                        token = new ScriptError("FileError", `File argument [${fileArgumentCount}] does not exist`, clock_interval);
+                    } else if(FroggyscriptMemory.variables[token.variableName] != undefined) {
+                        token = new ScriptError("ReferenceError", `Variable [${token.variableName}] already exists, cannot override`, clock_interval);
 
                     } else if(isNaN(inputValue) && expectedType === "Number") {
                         token = new ScriptError("TypeError", `File argument [${fileArgumentCount}] must be of type [${expectedType}]`, clock_interval);
@@ -787,9 +790,6 @@ function interpreter(input, fileArguments) {
                 } break; 
 
                 case "quickloop": {
-                    setSetting("showSpinner", ["true"])
-                    setSetting("currentSpinner", ["quickloop-in-progress"])
-
                     let stack = [];
                     let endIndex = null;
                     for (let i = clock_interval + 1; i < lines.length; i++) {
@@ -806,9 +806,16 @@ function interpreter(input, fileArguments) {
                             }
                         }
                     }
-                    token.endQuickloopIndex = endIndex;
 
-                    lines[token.endQuickloopIndex] += " " + clock_interval;
+                    if(endIndex === null) {
+                        token = new ScriptError("SyntaxError", `Missing matching [endquickloop] for [quickloop]`, clock_interval);
+                    } else {
+                        setSetting("showSpinner", ["true"])
+                        setSetting("currentSpinner", ["quickloop-in-progress"])
+
+                        token.endQuickloopIndex = endIndex;
+                        lines[token.endQuickloopIndex] += " " + clock_interval;
+                    }
                 } break;
 
                 case "wait": {

@@ -276,7 +276,7 @@ C:/Home> st about_froggy froggy 7
 ```
 ### Typeable User Input
 ```
-ask [variable] [prefix='?']
+ask [variable] [prefix<S>='?']
 
 ask name
 ask name "!"
@@ -414,7 +414,7 @@ This will change the type of a **variable** from a number to a string.
 ```
 num number = 5
 stringify number
--- variable "number" is now a string
+-- variable "number" is now a string with value "5"
 ```
 <!-- ## Program Data
 ### Saving Data
