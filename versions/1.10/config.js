@@ -847,9 +847,8 @@ const config = {
             { name: "cli", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["str cli = 'this program is hardcoded into froggyOS'", "endprog"] },
             { name: "lilypad", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["str lilypad = 'this program is hardcoded into froggyOS'", "endprog"] },
             { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
-                "loop true",
-                "out 'looping'",
-                "endloop",
+                "cstr meow = ''",
+                "ask meow",
                 "endprog"
             ] },
             { name: "loop-test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
