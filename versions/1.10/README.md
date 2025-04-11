@@ -122,10 +122,11 @@ Properties:
 If you edit the `Settings:` drive directly, some settings won't apply until you reload the froggyOS state. An easy way to do this would be to run the `reload` macro.
 
 ## Bugs
-* the loading spinner slows down with consecutive saves of a long file (?)
+* you cannot set values to array indexes
+* variables in unnamed arrays must be used in string literals to be parsed properly
 
 # FroggyScript Documentation
-In the documentation, `[argument="default_value"]` denotes a default argument value
+`[argument="default_value"]` denotes a default argument value
 ## General Utilities
 ### End the Program
 * An error **WILL** be thrown is this is not the last line of the program.
@@ -164,12 +165,6 @@ changepalette [palette name]
 changepalette standard
 changepalette cherry
 ``` -->
-### String Literals
-```
-num age = 21 
-out "I am $|24 - 3| years old"
-out "I am $|age| years old"
-```
 
 ## Output
 ### Basic Output
@@ -210,17 +205,10 @@ outf {t=c01, tr=4-48 | b=c04, br=57-91} "from the char 4 to char 48, the text wi
     * The value for Italic is `1` to be enabled, and `0` to be disabled
  
 ## Variables
-### Create a Variable
-
+### Types
+#### String
 ```
--- string
 str [variable_name] = [value]
-
--- number
-num [variable_name] = [value]
-
--- boolean
-bln [variable_name] = [value]
 
 str test = 'single'
 str test = "double"
@@ -237,7 +225,52 @@ set test = "$|test|, world!"
 out test
 -- outputs "hello, world!"
 ```
+#### Number
+```
+num [variable_name] = [value]
+
+num i = 9
+```
+#### Boolean
+```
+-- boolean
+bln [variable_name] = [value]
+
+bln test = true
+```
+#### Array
+* Indexing starts at `0`.
+##### Named
+```
+arr [variable_name] = [value], [value], ...
+
+arr test1 = 1, 2, 3, 4, 5
+arr test2 = "a", "b", "c", "d", "e"
+arr test3 = "a", 1, true, 2.5, "b"
+
+-- get indexes
+out test1:0
+out test2:1
+
+num index = 4
+out test3:index
+```
+##### Unnamed
+* Prefixing strings with `$` will force a type of `Array`. Variables in Unnamed Arrays must be used inside of string literals.
+```
+out 'one', 'two', 'three'
+-- outputs one', 'two, 'three
+
+out $'one', 'two', 'three'
+-- outputs {{Array}}
+
+str variable = "thirty three million"
+out $'$|variable|', 'two', 'three':0
+-- outputs thirty three million
+```
+
 ### Edit a Variable
+You may only edit a variable if the value is of the same type.
 ```
 set [variable_name] = [value]
 
@@ -257,7 +290,7 @@ free [variable_name]
 
 free test
 ```
-## User Input
+## Input
 ### Define a File Argument
 The `filearg` keyword will create an **immutable** variable with the provided keyword and cannot override other variable values.
 ```
@@ -274,9 +307,9 @@ C:/Home> st [program_name] [arg1] [arg2]
 C:/Home> st about_froggy froggy 7
 > hello I am froggy and I am 7 years old
 ```
-### Typeable User Input
+### Typeable Input
 ```
-ask [variable] [prefix<S>='?']
+ask [variable] [prefix='?']
 
 ask name
 ask name "!"
@@ -321,7 +354,7 @@ C:/Home> st [program_name]
 -- Throws a TypeError because [age] is type Number while the input for [ask] was type String
 ```
 <!-- 
-### User Input with Navigable Options
+### Input with Navigable Options
 ```
 prompt [default highlighted option] [variable] [...options]
 

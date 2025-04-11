@@ -847,17 +847,19 @@ const config = {
             { name: "cli", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["str cli = 'this program is hardcoded into froggyOS'", "endprog"] },
             { name: "lilypad", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["str lilypad = 'this program is hardcoded into froggyOS'", "endprog"] },
             { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
-                "filearg meow Number",
-                "out meow",
+                "str variable = 'variable?! whoa'",
+                "num number = 4",
+                "arr test = 1, 'this is another ,test', 'more t,ests!', 'bah'",
+                "out $'$|variable|', '$|variable|', 'woof'",
                 "endprog"
             ] },
             // { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
+            //     "arr meow = 4,48",
             //     'outf {t=c01,i=1} "this is blue text"',
             //     'outf {b=c00} "this is a black background"',
             //     'outf {t=c06, b=c01} "this is brown text on a blue background"',
             //     'outf {t=c01, tr=0-21} "from char 0 to char 21, the text will be blue" ',
-            //     'outf {t=c01, tr=4-48 | b=c04, br=57-91} "from the char 4 to char 48, the text will be blue. AND from char 57 to char 91 the background will be red" ',
-            //     "clearterminal",
+            //     'outf {t=c01, tr=meow:0-meow:1 | b=c04, br=57-91} "from the char 4 to char 48, the text will be blue. AND from char 57 to char 91 the background will be red" ',
             //     "endprog"
             // ] },
             { name: "loop-test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
