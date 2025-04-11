@@ -55,14 +55,15 @@ class ScriptError {
     }
 }
 
-function output(value) {
-    let out = value.type == "Array" ? "{{Array}}" : value.value.toString();
+function output(token) {
+    //console.log(token.value.map(x => x.value).join(";"));
+    let out = token.type == "Array" ? token.value.map(x => x.value).join(";") : token.value.toString();
     createTerminalLine(out, "", {translate: false});
 }
 
-function outputWithFormatting(value, formatArray) {
-    let out = value.type == "Array" ? "{{Array}}" : value.value.toString();
-    createTerminalLine(out, "", {translate: false, formatting: formatArray});
+function outputWithFormatting(token, formatting) {
+    let out = token.type == "Array" ? token.value.map(x => x.value).join(";") : token.value.toString();
+    createTerminalLine(out, "", {translate: false, formatting: formatting});
 }
 
 function resetTerminalForUse(interval){
@@ -123,8 +124,9 @@ function typeify(value, clock_interval) {
         value: null,
         originalInput: value,
     };
+
     if(value.match(/^("|').*("|')$/g)) {// string
-        value = value.replace(/^\$/, '');
+       //  value = value.replace(/^\$/, '');
         typeObj.type = "String";
         typeObj.value = value.replace(/^("|')|("|')$/g, '');
 
@@ -142,7 +144,9 @@ function typeify(value, clock_interval) {
                 }
             })
         }
-    } else if(value.match(/^\$(('|"))(?:(?!\1).)*\1(,\s*\1(?:(?!\1).)*\1)*(:\w+)?$/)){
+
+        typeObj.origin = "String";
+    } else if(value.match(/^\$("|')?\d+.*("|')(:\w+)?$/)){ // /^\$("|').*("|')(:\w+)?$/
 
         value = value.replace(/^\$/, '');
 
@@ -202,7 +206,7 @@ function typeify(value, clock_interval) {
             }
         }
 
-
+        typeObj.origin = "Array";
     } else if(/(==|!=|>=|<=|>|<)/.test(value)) { // comparison operators
         typeObj.type = "Boolean";
         let error = false;
@@ -232,6 +236,8 @@ function typeify(value, clock_interval) {
             }
         }
 
+        typeObj.origin = "ComparisonOperator";
+
     } else if(value.match(/^[a-zA-Z_]+(:.+)?$/g)) { // identifier (variable name)
         typeObj.type = "VariableIdentifier";
 
@@ -244,31 +250,38 @@ function typeify(value, clock_interval) {
             if(variableValue.type == "String"){
                 typeObj.value = variableValue.value;
                 typeObj.type = variableValue.type;
-            } else if(variableValue.type == "Array"){
-                if(value.split(":")[1] == undefined){
-                    typeObj.value = `{{Array}}`;
+            } else if(variableValue.type == "Array" || variableValue.type == "Number"){
+                if(value.split(":")[1] == undefined && variableValue.type == "Array"){
+                    typeObj.value = variableValue.value.map(x => x.value).join(";")
                     typeObj.type = "String";
                 } else {
-                    let index = evaluate(value.split(":")[1]);
+                    if(variableValue.type == "Array"){
+                        let index = evaluate(value.split(":")[1]);
 
-                    if(index == undefined){
-                        typeObj = new ScriptError("SyntaxError", `Malformed index syntax`, clock_interval);
-                    } else {
-                        let indexValue = variableValue.value[index];
-
-                        if(indexValue == undefined){
-                            typeObj = new ScriptError("ReferenceError", `Index [${index}] is out of bounds for array [${name}]`, clock_interval);
+                        if(index == undefined){
+                            typeObj = new ScriptError("SyntaxError", `Bad index`, clock_interval);
                         } else {
-                            typeObj.value = indexValue.value;
-                            typeObj.type = indexValue.type;
-                            typeObj.originalInput = typeObj.originalInput.replace(":", "[INDEX]")
+                            let indexValue = variableValue.value[index];
+    
+                            if(indexValue == undefined){
+                                typeObj = new ScriptError("ReferenceError", `Index [${index}] is out of bounds for array [${name}]`, clock_interval);
+                            } else {
+                                typeObj.value = indexValue.value;
+                                typeObj.type = indexValue.type;
+                                typeObj.originalInput = typeObj.originalInput.replace(":", "[INDEX]")
+                            }
                         }
+                    } else {
+                        typeObj.value = variableValue.value;
+                        typeObj.type = variableValue.type;
                     }
                 }
             }
         } else {
             typeObj = new ScriptError("ReferenceError", `Variable [${value}] is not defined`, clock_interval);
         }
+
+        typeObj.origin = "VariableIdentifier";
 
     } else if(value.match(/\d*|\+|\-|\\|\*|\^/g)) {
         let error = false;
@@ -294,10 +307,11 @@ function typeify(value, clock_interval) {
                 });
             }
         }
-    } else {
-        typeObj = new ScriptError("TypeifyError", `Cannot coalesce [${value}]`, clock_interval);
-    }
 
+        typeObj.origin = "Number";
+    } else {
+        typeObj = new ScriptError("TypeifyError", `Cannot typeify [${value}]`, clock_interval);
+    }
     return typeObj;
 }
 
@@ -319,6 +333,41 @@ function processSingleLine(input, clock_interval) {
     token.keyword = keyword;
 
     switch (keyword) {
+        case "return": {
+            let returnValue = input.replace(/^return\s+/, '').trim();
+            if(returnValue == "") {
+                token = new ScriptError("SyntaxError", `[return] must be followed by a value`, clock_interval);
+            } else {
+                let typeValue = typeify(returnValue, clock_interval);
+                if(typeValue.type == "Error"){
+                    token = typeValue;
+                } else {
+                    token = { ...token, ...typeValue };
+                }
+            }
+        } break; 
+
+        case "setReturnValue": {
+            let variable = input.split(" ")[1].trim();
+            let functionName = input.split(" ")[2].trim();
+
+            if(variable == undefined) {
+                token = new ScriptError("SyntaxError", `[setReturnValue] must be followed by a variable name`, clock_interval);
+            } else if(getVariable(variable) == undefined) {
+                token = new ScriptError("ReferenceError", `Variable [${variable}] does not exist`, clock_interval);
+            } else if(getVariable(variable).mutable === false) {
+                token = new ScriptError("PermissionError", `Variable [${variable}] is immutable and cannot be reassigned`, clock_interval);
+            }
+
+            // get function body
+            let functionBody = FroggyscriptMemory.functions[functionName];
+            if(functionBody == undefined) {
+                token = new ScriptError("ReferenceError", `Function [${functionName}] does not exist`, clock_interval);
+            } else {
+                token = { ...token, variableName: variable, function: functionBody };
+            }
+        } break;
+
         case "arr": {
             let value = input.replace(/^arr\s+/, '').split('=')[1].trim();
             let name = input.replace(/^arr\s+/, '').split('=')[0].trim();
@@ -328,17 +377,17 @@ function processSingleLine(input, clock_interval) {
             let inQuotes = false;
 
             for (let i = 0; i < value.length; i++) {
-            const char = value[i];
+                const char = value[i];
 
-            if (char === `'`) {
-                inQuotes = !inQuotes;
-                current += char;
-            } else if (char === ',' && !inQuotes) {
-                values.push(current.trim());
-                current = '';
-            } else {
-                current += char;
-            }
+                if (char === `'`) {
+                    inQuotes = !inQuotes;
+                    current += char;
+                } else if (char === ',' && !inQuotes) {
+                    values.push(current.trim());
+                    current = '';
+                } else {
+                    current += char;
+                }
             }
 
             if (current.length > 0) {
@@ -609,7 +658,8 @@ function processSingleLine(input, clock_interval) {
 
         case "out": {
             let argument = input.replace(/^out\s+/, '').trim();
-            token = {...token, ...typeify(argument, clock_interval) };
+            let typed = typeify(argument, clock_interval);
+            token = {...token, ...typed };
         } break;
 
         case "cstr":
@@ -644,6 +694,7 @@ function processSingleLine(input, clock_interval) {
             } else {
                 let assignedValue = input.replace(/^(c?)num\s+/, '').split('=')[1].trim();
                 let typeValue = typeify(assignedValue, clock_interval);
+
                 if(typeValue.type != "Number" && typeValue.type != "Error"){
                     token = new ScriptError("TypeError", `[${keyword}] declaration can only be assigned type Number, found type ${typeValue.type}`, clock_interval);
                 } else {
@@ -770,6 +821,42 @@ function interpreter(input, fileArguments) {
         } else {
             // process tokens here =======================================================
             switch(token.keyword) {
+                case "setReturnValue": {
+                    let errorInFunction = false;
+
+                    let func = token.function;
+                    let funcStart = func.start;
+                    let funcEnd = func.end;
+                    let funcLines = lines.slice(funcStart + 1, funcEnd).map(x => x.trim()).filter(x => x.length > 0 && x !== "--");
+                    let lastToken = null;
+    
+                    for(let i = 0; i < funcLines.length; i++) {
+                        let line = funcLines[i];
+                        lastToken = processSingleLine(line, clock_interval);
+                        if(lastToken.type === "Error") {
+                            errorInFunction = true;
+                            token = lastToken;
+                        } else {
+                            interpretSingleLine(interval, line);
+                        }
+                    }
+
+                    if(lastToken.keyword != "return" && lastToken.type != "Error") {
+                        token = new ScriptError("SyntaxError", `Function [${token.function.name}] must end with a [return] statement`, clock_interval);
+                    } else if(!errorInFunction) {
+                        token = { ...lastToken, keyword: token.keyword, identifier: token.variableName }
+                        let variable = getVariable(token.identifier);
+
+                        if(token.type != variable.type){
+                            token = new ScriptError("TypeError", `Variable [${token.identifier}] must be of type ${variable.type}`, clock_interval);
+                        } else writeVariable(token.identifier, token.type, token.value, true);
+                    } else {
+                        token.error = `Function >> ${token.error}`
+                    }
+
+
+                } break;
+
                 case "arr": {
                     let name = token.identifier;
                     let values = token.value;
@@ -1132,6 +1219,7 @@ function interpreter(input, fileArguments) {
                     }
                 } break;
 
+                case "return":
                 case "else":
                 case "endfunc":
                 case "endif": { } break;
@@ -1164,7 +1252,7 @@ function interpreter(input, fileArguments) {
             if(clock_interval < lines.length) {
                 let line = lines[clock_interval]
                 let token = interpretSingleLine(clock, line);
-                console.log(token)
+                //console.log(token)
                 clock_interval++;
             } 
         }

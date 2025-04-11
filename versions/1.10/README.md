@@ -379,6 +379,18 @@ f: [func_name]
 
 f: name
 ```
+### Return Values
+If the function ends in the keyword `return`, the value of whatever passed will be the return value.
+```
+setReturnValue [variable] [func_name]
+
+func name
+    return 5
+endfunc
+
+num i = 0
+setReturnValue i name
+```
 
 ## Control Flow
 ### If Statement
