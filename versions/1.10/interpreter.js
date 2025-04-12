@@ -56,13 +56,11 @@ class ScriptError {
 }
 
 function output(token) {
-    let out = token.type == "Array" ? token.value.map(x => x.value).join(";") : token.value.toString();
-    createTerminalLine(out, "", {translate: false});
+    createTerminalLine(token.value, "", {translate: false});
 }
 
-function outputWithFormatting(token, formatting) {
-    let out = token.type == "Array" ? token.value.map(x => x.value).join(";") : token.value.toString();
-    createTerminalLine(out, "", {translate: false, formatting: formatting});
+function outputWithFormatting(token) {
+    createTerminalLine(token.value, "", {translate: false, formatting: token.format});
 }
 
 function resetTerminalForUse(interval){
@@ -125,6 +123,8 @@ function typeify(value, clock_interval) {
         value: null,
         originalInput: value,
     };
+
+    if(value == undefined) return new ScriptError("TypeifyError", `Cannot typeify [${value}]`, clock_interval);
 
     value = value.replace(/^\..+\. /, "");
 
@@ -568,7 +568,7 @@ function processSingleLine(input, clock_interval) {
 
                         if(error != false){
                             token = new ScriptError("SyntaxError", `[${error}] in:\n${formatting[errorIndex].trim()}\nmust be followed by a color code (cXX)`, clock_interval);
-                        } else token = { ...token, format: formatArray, output: typedOutput.value };
+                        } else token = { ...token, format: formatArray, value: typedOutput.value };
                     }
                 }
             }
@@ -703,6 +703,12 @@ function processSingleLine(input, clock_interval) {
         case "out": {
             let argument = input.replace(/^out\s+/, '').trim();
             let typed = typeify(argument, clock_interval);
+
+            if(typed.type == "Array"){
+                typed.type = "String"
+                typed.value = "{{Array}}"
+            }
+
             token = {...token, ...typed };
         } break;
 
@@ -819,46 +825,20 @@ function processSingleLine(input, clock_interval) {
         }
     }
 
-    if(token.methodName != null){
-        switch(token.methodName){
-            case "replace": {
-                if(token.type != "String") token = new ScriptError("TypeError", `[.replace.] expects type String, found type ${token.type}`, clock_interval);
-                else {
-                    let [search, replace] = token.methodArgs;
-                    search = typeify(search, clock_interval).value;
-                    replace = typeify(replace, clock_interval).value;
-                    token.value = token.value.replace(search, replace);
-                }
-            } break;
-
-            case "type": {
-                token.value = token.type;
-                token.type = "String";
-            } break;
-
-            case "join": {
-                if(token.type != "Array") token = new ScriptError("TypeError", `[.join.] expects type Array, found type ${token.type}`, clock_interval);
-                else {
-                    let values = token.value.map(value => value.value).join(token.methodArgs[0]);
-                    token.type = "String";
-                    token.value = values;
-                }
-            } break;
-
-            case "length": {
-                if(token.type != "String" && token.type != "Array") token = new ScriptError("TypeError", `[.length.] expects type String or Array, found type ${token.type}`, clock_interval);
-                token.value = token.value.length;
-                token.type = "Number";
-            } break;
-
-            default: {
-                token = new ScriptError("MethodError", `Method [${token.methodName}] does not exist`, clock_interval);
-            }
-        }
+    // type error checkers
+    if(token.type == "FunctionIdentifier") {
+        token = typeErrorCheckers(token, clock_interval);
     }
 
-    // type error checkers
-    if(token.type != "ReturnFunction") switch(token.keyword){
+    if(token.methodName){
+        token = methodParser(token, clock_interval);
+    }
+
+    return token;
+}
+
+function typeErrorCheckers(token, clock_interval) {
+    switch(token.keyword){
         case "prompt": {
             if(token.variableType != "String") token = new ScriptError("TypeError", `[prompt] variable must be type String, found type ${token.variableType}`, clock_interval);
             else if(token.defaultOption != undefined && token.defaultOption != "") {
@@ -901,6 +881,54 @@ function processSingleLine(input, clock_interval) {
     return token;
 }
 
+function methodParser(token, clock_interval){
+    switch(token.methodName){
+        case "stringify": {
+            if(token.type != "Number") token = new ScriptError("TypeError", `[.stringify.] expects type Number, found type ${token.type}`, clock_interval);
+            else {
+                token.value = token.value.toString();
+                token.type = "String";
+            }
+        } break;
+
+        case "replace": {
+            if(token.type != "String") token = new ScriptError("TypeError", `[.replace.] expects type String, found type ${token.type}`, clock_interval);
+            else {
+                let [search, replace] = token.methodArgs;
+                search = typeify(search, clock_interval).value;
+                replace = typeify(replace, clock_interval).value;
+                token.value = token.value.replace(search, replace);
+            }
+        } break;
+
+        case "type": {
+            token.value = token.type;
+            token.type = "String";
+        } break;
+
+        case "join": {
+            if(token.type != "Array") token = new ScriptError("TypeError", `[.join.] expects type Array, found type ${token.type}`, clock_interval);
+            else {
+                let values = token.value.map(value => value.value).join(token.methodArgs[0]);
+                token.type = "String";
+                token.value = values;
+            }
+        } break;
+
+        case "length": {
+            if(token.type != "String" && token.type != "Array") token = new ScriptError("TypeError", `[.length.] expects type String or Array, found type ${token.type}`, clock_interval);
+            token.value = token.value.length;
+            token.type = "Number";
+        } break;
+
+        default: {
+            token = new ScriptError("SyntaxError", `[${token.methodName}] is not a valid method`, clock_interval);
+        }
+    }
+
+    return token;
+}
+
 function interpreter(input, fileArguments) {
     let lines = input.split('\n').map(x => x.trim()).filter(x => x.length > 0 && x !== "--");
     PROGRAM_LINES = lines;
@@ -925,6 +953,10 @@ function interpreter(input, fileArguments) {
     function interpretSingleLine(interval, single_input) {
         let line = single_input;
 
+        if(line.match(/^@.+$/)){
+            line = line.replace(/^@/, 'f: ');
+        }
+
         let token = processSingleLine(line, clock_interval, lines);
 
         if(token.type == "ReturnFunction"){
@@ -942,9 +974,14 @@ function interpreter(input, fileArguments) {
                     interpretSingleLine(interval, line);
                 }
             }
+
+            token.type = lastToken.type;
+            token.value = lastToken.value;
         }
 
-        // ALL THIS SHIT IS FUCKED UP MEGA
+        if(token.methodName) token = methodParser(token, clock_interval);
+
+        token = typeErrorCheckers(token, clock_interval);
 
 
         if(token.type === "Error") {
@@ -1079,7 +1116,7 @@ function interpreter(input, fileArguments) {
                 } break;
 
                 case "outf": {
-                    outputWithFormatting(token, token.format);
+                    outputWithFormatting(token);
                 } break;
 
                 case "ask": {

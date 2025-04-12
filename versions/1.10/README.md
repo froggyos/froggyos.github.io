@@ -6,22 +6,22 @@
 
 ## Palette Conventions
 There are no set colors that you must have, but these are the color conventions.
-* `00` - black, the void surrounding the terminal
-* `01` - blue, the top bar background color
-* `02` - green, text color, as well as selected text and option background color
-* `03` - cyan
-* `04` - red
-* `05` - magenta, translation error color text background
+* `00` - black – the void surrounding the terminal
+* `01` - blue – the top bar background
+* `02` - green – text, as well as selected text and option background color
+* `03` - cyan – alert background
+* `04` - red – program error background
+* `05` - magenta – translation error background
 * `06` - orange/brown
 * `07` - light grey
 * `08` - dark grey
 * `09` - light blue
 * `10` - light green
 * `11` - light cyan
-* `12` - light red, error background color
+* `12` - light red — generic error background
 * `13` - light magenta
 * `14` - light orange/yellow
-* `15` - white, the terminal background color, top bar and error text color, and the selected text and option color
+* `15` - white – the terminal background, top bar and error text, and the selected text and option
 
 Note: colors `00` - `06`, `12`, and `15` are tied to their specific UI elements and this **cannot** be changed (yet). Some palettes are hardcoded to changes these values around. This will able to be done by the user via palette files in future versions.
 
@@ -128,6 +128,7 @@ If you edit the `Settings:` drive directly, some settings won't apply until you 
 # FroggyScript Documentation
 `[argument="default_value"]` denotes a default argument value
 ## General Utilities
+
 ### End the Program
 * An error **WILL** be thrown is this is not the last line of the program.
 ```
@@ -144,8 +145,12 @@ wait [time]
 wait 1000
 wait number
 ```
-### Default Variables
-The default variables are immutable.
+### Clear Screen
+```
+clearterminal
+```
+### Preset Variables
+These variables are immutable.
 ```
 true - true
 false - false
@@ -154,10 +159,6 @@ Time_MsEpoch - time since epoch (January 1, 1970) in milliseconds
 Time_OSRuntime - OS uptime in milliseconds
 Time_ProgramRuntime - program uptime in milliseconds
 ```
-### Clear Screen
-```
-clearterminal
-```
 <!-- ### Change Color Palette
 ```
 changepalette [palette name]
@@ -165,45 +166,6 @@ changepalette [palette name]
 changepalette standard
 changepalette cherry
 ``` -->
-
-## Output
-### Basic Output
-```
-out [argument]
-
-out variable_name
-out "text"
-out "more text"
-out 1
-```
-### Formatted Output
-#### General
-* index `0` is the 1st character.
-* There is less than normal error checking on the formatting objects, so make sure they're correct.
-```
-outf [format] [text]
-
-outf {t=c01} "this is blue text"
-outf {b=c00} "this is a black background"
-outf {t=c06, b=c01} "this is brown text on a blue background"
-outf {t=c01, tr=0-21} "from char 0 to char 21, the text will be blue" 
-outf {t=c01, tr=4-48 | b=c04, br=57-91} "from the char 4 to char 48, the text will be blue. AND from char 57 to char 91 the background will be red"
-```
-#### Format Object
-* `{}` is a formatting object
-* you can set a subrule using this general format: `{[property]=[value]}`
-* valid properties:
-    * `t` - text color
-    * `b` - background color
-    * `i` - italic
-    * `tr` - text color range
-    * `br` - background color range
-    * `ir` - italic range
-* you can set multiple subrules by separating them with commas: `{[property]=[value],[property]=[value]}`
-* to set different ranges, separate subrules with a `|`: `{[property]=[value] | [property]=[value]}`
-    * If a range is not specified, it will apply to the entire string
-    * The value for Italic is `1` to be enabled, and `0` to be disabled
- 
 ## Variables
 ### Types
 #### String
@@ -290,6 +252,46 @@ free [variable_name]
 
 free test
 ```
+
+## Output
+### Basic Output
+```
+out [argument]
+
+out variable_name
+out "text"
+out "more text"
+out 1
+```
+### Formatted Output
+#### General
+* index `0` is the 1st character.
+* There is less than normal error checking on the formatting objects, so make sure they're correct.
+```
+outf [format] [text]
+
+outf {t=c01} "this is blue text"
+outf {b=c00} "this is a black background"
+outf {t=c06, b=c01} "this is brown text on a blue background"
+outf {t=c01, tr=0-21} "from char 0 to char 21, the text will be blue" 
+outf {t=c01, tr=4-48 | b=c04, br=57-91} "from the char 4 to char 48, the text will be blue. AND from char 57 to char 91 the background will be red"
+```
+#### Format Object
+* `{}` is a formatting object
+* you can set a subrule using this general format: `{[property]=[value]}`
+* valid properties:
+    * `t` - text color
+    * `b` - background color
+    * `i` - italic
+    * `tr` - text color range
+    * `br` - background color range
+    * `ir` - italic range
+* you can set multiple subrules by separating them with commas: `{[property]=[value],[property]=[value]}`
+* to set different ranges, separate subrules with a `|`: `{[property]=[value] | [property]=[value]}`
+    * If a range is not specified, it will apply to the entire string
+    * The value for Italic is `1` to be enabled, and `0` to be disabled
+
+
 ## Input
 ### Define a File Argument
 The `filearg` keyword will create an **immutable** variable with the provided keyword and cannot override other variable values.
@@ -376,20 +378,22 @@ endfunc
 ### Call a Function
 ```
 f: [func_name]
+@[name]
 
 f: name
+@name
 ```
-### Return Values
-**INCOMPLETE**
+#### Return Values
 If the function ends in the keyword `return`, the value of whatever passed will be the return value.
 ```
-setReturnValue [variable] [func_name]
-
 func name
     return 5
 endfunc
 
 num i = @name
+
+-- does not work:
+num i = f: name
 ```
 
 ## Control Flow
@@ -428,11 +432,12 @@ loop i < 5
     set i = i + 1
 endloop
 
-int i = 0
-int j = 0
+num i = 0
+num j = 0
+num number = 0
 loop i < 5
     loop j < 4
-        out i * j
+        set number = number + 1
         set j = j + 1
     endloop
     set i = i + 1
@@ -453,9 +458,18 @@ quickloop 100
 endquickloop
 -- outputs "hello" 100 times in a row
 ```
+## Type Manipulation
+### stringify
+Converts a Number to a String
+```
+num test = 5
+stringify 5
+-- "5"
+```
 ## Methods
+Arguments are separated by `;`.
 ### join
-Join the elements of an array into a string, separated by the provided separator.
+Join the elements of an array into a string, delimited by the provided separator.
 ```
 arr test = "a", "b", "c", "d", "e"
 str output = .join;", ". test
@@ -490,13 +504,12 @@ str test = "hello world!"
 str output = .replace;"hello";"goodbye". test
 -- "goodbye world!"
 ```
-## Type Manipulation
 ### stringify
-This will change the type of a **variable** from a number to a string.
+Converts a Number to a String
 ```
-num number = 5
-stringify number
--- variable "number" is now a string with value "5"
+num test = 5
+str output = .stringify. test
+-- "5"
 ```
 <!-- ## Program Data
 ### Saving Data

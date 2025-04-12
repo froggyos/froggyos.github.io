@@ -49,12 +49,12 @@ function localize(descriptor, TRANSLATE_TEXT){
 
     if (TRANSLATE_TEXT == undefined) TRANSLATE_TEXT = true;
 
+    if(TRANSLATE_TEXT == false) return descriptor;
+
     if(descriptor.includes("|||[")){
         replacementData = descriptor.split("|||[")[1].split("]|||")[0];
         descriptor = descriptor.replaceAll(`|||[${replacementData}]|||`, "|||[]|||");
     }
-
-    if(TRANSLATE_TEXT == false) return descriptor;
 
     let translationMap = config.fileSystem["Config:/lang_files"].find(translation => translation.name == "lbh").data;
     let languageMap = config.fileSystem["Config:/lang_files"].find(translation => translation.name == config.language).data;
