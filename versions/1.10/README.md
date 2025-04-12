@@ -353,14 +353,14 @@ C:/Home> st [program_name]
 ? Froggy
 -- Throws a TypeError because [age] is type Number while the input for [ask] was type String
 ```
-<!-- 
+
 ### Input with Navigable Options
 ```
-prompt [default highlighted option] [variable] [...options]
+prompt [variable] [default highlighted option] [options]
 
-prompt 0 output 0 1 2 3
-prompt highlightedOption outputVariable the_options cannot_have spaces_in them
-``` -->
+str output = ''
+prompt output 0 $'hello', "world!", "I am froggy!"
+```
 
 ## Functions
 ### Create a Function
@@ -380,6 +380,7 @@ f: [func_name]
 f: name
 ```
 ### Return Values
+**INCOMPLETE**
 If the function ends in the keyword `return`, the value of whatever passed will be the return value.
 ```
 setReturnValue [variable] [func_name]
@@ -388,8 +389,7 @@ func name
     return 5
 endfunc
 
-num i = 0
-setReturnValue i name
+num i = @name
 ```
 
 ## Control Flow

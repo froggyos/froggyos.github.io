@@ -56,7 +56,6 @@ class ScriptError {
 }
 
 function output(token) {
-    //console.log(token.value.map(x => x.value).join(";"));
     let out = token.type == "Array" ? token.value.map(x => x.value).join(";") : token.value.toString();
     createTerminalLine(out, "", {translate: false});
 }
@@ -242,6 +241,22 @@ function typeify(value, clock_interval) {
 
         typeObj.origin = "ComparisonOperator";
 
+    } else if(value.match(/^@[a-zA-Z_]+$/g)){ // function
+        let functionName = value.replace(/^@/, '');
+        let functionBody = FroggyscriptMemory.functions[functionName];
+
+        if(functionBody == undefined) {
+            typeObj = new ScriptError("ReferenceError", `Function [${functionName}] does not exist`, clock_interval);
+        } else {
+            let functionLines = PROGRAM_LINES.slice(functionBody.start + 1, functionBody.end);
+
+            typeObj.name = functionName;
+            typeObj.body = functionLines;
+            typeObj.type = "ReturnFunction"   
+        }
+
+        typeObj.origin = "FunctionIdentifier";
+
     } else if(value.match(/^[a-zA-Z_]+(:.+)?$/g)) { // identifier (variable name)
         typeObj.type = "VariableIdentifier";
 
@@ -287,7 +302,7 @@ function typeify(value, clock_interval) {
 
         typeObj.origin = "VariableIdentifier";
 
-    } else if(value.match(/\d*|\+|\-|\\|\*|\^/g)) {
+    } else if(value.match(/^\d*|\+|\-|\\|\*|\^/g)) {
         let error = false;
         let errMsg = null;
         try {
@@ -328,6 +343,8 @@ function writeVariable(identifier, type, value, mut) {
     };
 }
 
+let PROGRAM_LINES = [];
+
 function processSingleLine(input, clock_interval) {
     input = input.trim();
     
@@ -341,10 +358,28 @@ function processSingleLine(input, clock_interval) {
 
     if(methodDefinition != null){
         token.methodName = methodDefinition[1]
-        token.methodArgs = methodDefinition[2].split(";")
+        token.methodArgs = methodDefinition[2]?.split(";")
     }
 
     switch (keyword) {
+        case "prompt": {
+            // prompt [variable] [default highlighted option] [...options]
+            let variable = input.split(" ")[1].trim();
+            let defaultOption = input.split(" ")[2].trim();
+            let options = input.replace(/^prompt\s+\w+\s+\w+\s+/, '');
+
+            if(variable == undefined) {
+                token = new ScriptError("SyntaxError", `[prompt] must be followed by a variable name`, clock_interval);
+            } else if(getVariable(variable) == undefined) {
+                token = new ScriptError("ReferenceError", `Variable [${variable}] does not exist`, clock_interval);
+            } else if(getVariable(variable).mutable === false) {
+                token = new ScriptError("PermissionError", `Variable [${variable}] is immutable and cannot be reassigned`, clock_interval);
+            }
+
+            token = { ...token, variableType: getVariable(variable).type, variableName: variable, defaultOption: defaultOption, options: options };
+
+        } break;
+
         case "return": {
             let returnValue = input.replace(/^return\s+/, '').trim();
             if(returnValue == "") {
@@ -480,7 +515,7 @@ function processSingleLine(input, clock_interval) {
                             }
 
                             if(rangeError){
-                                token = new ScriptError("TypeError", `[${key}] in:\n${formatting[i].trim()}\nmust be followed by a range (start-end)`, clock_interval);
+                                token = new ScriptError("RangeError", `[${key}] in:\n${formatting[i].trim()}\nmust be followed by a range (start-end)`, clock_interval);
                             } else {
 
                                 let typedStart = typeify(start, clock_interval);
@@ -784,8 +819,6 @@ function processSingleLine(input, clock_interval) {
         }
     }
 
-    console.log(token)
-
     if(token.methodName != null){
         switch(token.methodName){
             case "replace": {
@@ -825,7 +858,22 @@ function processSingleLine(input, clock_interval) {
     }
 
     // type error checkers
-    switch(token.keyword){
+    if(token.type != "ReturnFunction") switch(token.keyword){
+        case "prompt": {
+            if(token.variableType != "String") token = new ScriptError("TypeError", `[prompt] variable must be type String, found type ${token.variableType}`, clock_interval);
+            else if(token.defaultOption != undefined && token.defaultOption != "") {
+                let defaultOptionType = typeify(token.defaultOption, clock_interval);
+                if(defaultOptionType.type != "Number") token = new ScriptError("TypeError", `[prompt] default option must be type Number`, clock_interval);
+            } else if(token.options == "") {
+                token = new ScriptError("SyntaxError", `[prompt] must have at least one option`, clock_interval);
+            } else if(typeify(token.options).type != "Array"){
+                token = new ScriptError("TypeError", `[prompt] options must be type Array, found type ${typeify(token.options).type}`, clock_interval);
+            }
+
+            token.options = typeify(token.options, clock_interval);
+            token.defaultOption = typeify(token.defaultOption, clock_interval);
+        } break;
+
         case "if": {
             if(token.type != "Boolean") token = new ScriptError("TypeError", `[if] condition must evaluate to Boolean, found type ${token.type}`, clock_interval);
         } break;
@@ -855,6 +903,7 @@ function processSingleLine(input, clock_interval) {
 
 function interpreter(input, fileArguments) {
     let lines = input.split('\n').map(x => x.trim()).filter(x => x.length > 0 && x !== "--");
+    PROGRAM_LINES = lines;
     let clock_interval = 0;
 
     let fileArgumentCount = 0;
@@ -867,14 +916,36 @@ function interpreter(input, fileArguments) {
         return;
     }
 
+    let cliPromptCount = 0;
+
     let CLOCK_PAUSED = false;
 
     const PROGRAM_RUNTIME_START = Date.now();
 
     function interpretSingleLine(interval, single_input) {
         let line = single_input;
-        
-        let token = processSingleLine(line, clock_interval);
+
+        let token = processSingleLine(line, clock_interval, lines);
+
+        if(token.type == "ReturnFunction"){
+            let body = token.body;
+            let lastToken = null;
+            let errorInFunction = false
+
+            for(let i = 0; i < body.length; i++) {
+                let line = body[i];
+                lastToken = processSingleLine(line, clock_interval);
+                if(lastToken.type === "Error") {
+                    errorInFunction = true;
+                    token = lastToken;
+                } else {
+                    interpretSingleLine(interval, line);
+                }
+            }
+        }
+
+        // ALL THIS SHIT IS FUCKED UP MEGA
+
 
         if(token.type === "Error") {
             outputError(token, interval);
@@ -882,6 +953,74 @@ function interpreter(input, fileArguments) {
         } else {
             // process tokens here =======================================================
             switch(token.keyword) {
+                case "prompt": {
+                    CLOCK_PAUSED = true;
+
+                    let selectedIndex = token.defaultOption.value;
+                    let arrayOptions = token.options.value.map(x => x.value);
+
+                    if(selectedIndex < 0 || selectedIndex >= arrayOptions.length){
+                        token = new ScriptError("RangeError", `[${selectedIndex}] is out of range of options`, clock_interval);
+                    } else {
+                        cliPromptCount++;
+
+                        let terminalLineElement = document.createElement('div');
+                        terminalLineElement.classList.add('line-container');
+
+                        let spanElement = document.createElement('span');
+                        spanElement.textContent = ">";
+
+                        terminalLineElement.appendChild(spanElement);
+
+                        for(let i = 0; i < arrayOptions.length; i++){
+                            let option = document.createElement('span');
+                            option.setAttribute("data-program", `cli-session-${config.programSession}-${cliPromptCount}`);
+                            option.textContent = arrayOptions[i];
+                            if(i == selectedIndex) {
+                                option.classList.add('selected');
+                            }
+                            option.style.paddingLeft = 0;
+                            terminalLineElement.appendChild(option);
+                            terminalLineElement.appendChild(document.createTextNode(" "));
+                        }
+
+                        function promptHandler(e){
+                            let options = document.querySelectorAll(`[data-program='cli-session-${config.programSession}-${cliPromptCount}']`);
+                            e.preventDefault();
+
+                            if(e.key == "ArrowLeft"){
+                                if(selectedIndex > 0) selectedIndex--;
+                                options.forEach(option => option.classList.remove('selected'));
+                                options[selectedIndex].classList.add('selected');
+                            }
+
+                            if(e.key == "ArrowRight"){
+                                if(selectedIndex < options.length - 1) selectedIndex++;
+                                options.forEach(option => option.classList.remove('selected'));
+                                options[selectedIndex].classList.add('selected');
+                            }
+
+                            if(e.key == "Enter"){
+                                e.preventDefault();
+                                document.body.removeEventListener('keyup', promptHandler);
+                                setSetting("showSpinner", "false");
+
+                                let selectedValue = options[selectedIndex].textContent;
+                                
+                                lines[clock_interval-1] = `set ${token.variableName} = "${selectedValue}"`;
+                                CLOCK_PAUSED = false;
+                                clock_interval--;        
+                                
+
+                            }
+                        }
+
+                        document.body.addEventListener('keyup', promptHandler);
+                        terminal.appendChild(terminalLineElement);
+                        setSetting("showSpinner", "true");
+                    }
+                } break;
+
                 case "setReturnValue": {
                     let errorInFunction = false;
 
@@ -1313,7 +1452,6 @@ function interpreter(input, fileArguments) {
             if(clock_interval < lines.length) {
                 let line = lines[clock_interval]
                 let token = interpretSingleLine(clock, line);
-                //console.log(token)
                 clock_interval++;
             } 
         }
