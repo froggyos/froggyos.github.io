@@ -256,13 +256,13 @@ num index = 4
 out test3:index
 ```
 ##### Unnamed
-* Prefixing strings with `$` will force a type of `Array`. Variables in Unnamed Arrays must be used inside of string literals.
+* Prefixing strings with `$` will force a type of `Array`.
 ```
 out 'one', 'two', 'three'
 -- outputs one', 'two, 'three
 
 out $'one', 'two', 'three'
--- outputs {{Array}}
+-- outputs one;two;three
 
 str variable = "thirty three million"
 out $'$|variable|', 'two', 'three':0

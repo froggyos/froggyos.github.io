@@ -847,15 +847,9 @@ const config = {
             { name: "cli", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["str cli = 'this program is hardcoded into froggyOS'", "endprog"] },
             { name: "lilypad", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["str lilypad = 'this program is hardcoded into froggyOS'", "endprog"] },
             { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
-                "str string = 'wow!'",
-                "func test",
-                "   out 'ba'",
-                "   out 'ba'",
-                "   return stiring",
-                "endfunc",
-                "str string2 = ''",
-                "setReturnValue string2 test",
-                "out string2",
+                "out .type. $'one', 'two', 'three'",
+                "str type = .type. 1",
+                "out type",
                 "endprog"
             ] },
             // { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [

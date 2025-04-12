@@ -125,7 +125,7 @@ function typeify(value, clock_interval) {
         originalInput: value,
     };
 
-    if(value.match(/^("|').*("|')$/g)) {// string
+    if(value.match(/^("|')\w*("|')$/g)) {// string
        //  value = value.replace(/^\$/, '');
         typeObj.type = "String";
         typeObj.value = value.replace(/^("|')|("|')$/g, '');
@@ -146,7 +146,7 @@ function typeify(value, clock_interval) {
         }
 
         typeObj.origin = "String";
-    } else if(value.match(/^\$("|')?\d+.*("|')(:\w+)?$/)){ // /^\$("|').*("|')(:\w+)?$/
+    } else if(value.match(/^\$("|')?(\d|\w)+.*("|')(:\w+)?$/)){ // /^\$("|').*("|')(:\w+)?$/
 
         value = value.replace(/^\$/, '');
 
@@ -155,17 +155,17 @@ function typeify(value, clock_interval) {
         let inQuotes = false;
 
         for (let i = 0; i < value.length; i++) {
-        const char = value[i];
+            const char = value[i];
 
-        if (char === `'`) {
-            inQuotes = !inQuotes;
-            current += char;
-        } else if (char === ',' && !inQuotes) {
-            values.push(current.trim());
-            current = '';
-        } else {
-            current += char;
-        }
+            if (char === `'`) {
+                inQuotes = !inQuotes;
+                current += char;
+            } else if (char === ',' && !inQuotes) {
+                values.push(current.trim());
+                current = '';
+            } else {
+                current += char;
+            }
         }
 
         if (current.length > 0) {
@@ -328,9 +328,15 @@ function processSingleLine(input, clock_interval) {
     input = input.trim();
     
     let token = {};
+
+    let method = input.match(/\.\w+\./);
+
+    input = input.replace(/\.\w+\./, "").trim();
+
     let keyword = input.split(" ")[0];
 
     token.keyword = keyword;
+    token.method = method == null ? null : method[0].replace(/\./g, "");
 
     switch (keyword) {
         case "return": {
@@ -671,8 +677,9 @@ function processSingleLine(input, clock_interval) {
                 let assignedValue = input.replace(/^(c?)str\s+/, '').split('=')[1].trim();
                 let typeValue = typeify(assignedValue, clock_interval);
                 if(typeValue.type != "String" && typeValue.type != "Error"){
-                    token = new ScriptError("TypeError", `[${keyword}] declaration can only be assigned type String, found type ${typeValue.type}`, clock_interval);
+                    token = { ...token, potentialError: new ScriptError("TypeError", `[${keyword}] declaration can only be assigned type String, found type ${typeValue.type}`, clock_interval) };
                 } else {
+                
                     let identifier = input.replace(/^(c?)str\s+/, '').split('=')[0].trim();
 
                     if(getVariable(identifier) != undefined){
@@ -790,6 +797,34 @@ function processSingleLine(input, clock_interval) {
             }
         }
     }
+
+    // if(token.method != null){
+    //     switch(token.method){
+    //         case "type": {
+    //             token.value = token.type;
+    //             token.type = "String";
+    //         } break;
+    //     }
+    // }
+
+    // // type error checkers
+    // switch(token.keyword){
+    //     case "cnum":
+    //     case "num": {
+    //         if(token.type != "Number") token = new ScriptError("TypeError", `[${token.keyword}] declaration can only be assigned type Number, found type ${token.type}`, clock_interval);
+    //     } break;
+
+    //     case "cstr":
+    //     case "str": {
+    //         if(token.type != "String") token = new ScriptError("TypeError", `[${token.keyword}] declaration can only be assigned type String, found type ${token.type}`, clock_interval);
+    //     } break;
+
+    //     case "cbln":
+    //     case "bln": {
+    //         if(token.type != "Boolean") token = new ScriptError("TypeError", `[${token.keyword}] declaration can only be assigned type Boolean, found type ${token.type}`, clock_interval);
+    //     } break;
+    // }
+
     return token;
 }
 
@@ -815,6 +850,7 @@ function interpreter(input, fileArguments) {
         let line = single_input;
         
         let token = processSingleLine(line, clock_interval);
+
         if(token.type === "Error") {
             outputError(token, interval);
             return;
@@ -1203,6 +1239,7 @@ function interpreter(input, fileArguments) {
                 case "num":
                 case "bln":
                 case "str": {
+                    console.log(token)
                     writeVariable(token.identifier, token.type, token.value, true);
                 } break;
 
