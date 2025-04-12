@@ -123,7 +123,7 @@ If you edit the `Settings:` drive directly, some settings won't apply until you 
 
 ## Bugs
 * you cannot set values to array indexes
-* variables in unnamed arrays must be used in string literals to be parsed properly
+* since the addition of methods, i think most types will not coalesce properly.
 
 # FroggyScript Documentation
 `[argument="default_value"]` denotes a default argument value
@@ -452,6 +452,43 @@ quickloop 100
     out "hello"
 endquickloop
 -- outputs "hello" 100 times in a row
+```
+## Methods
+### join
+Join the elements of an array into a string, separated by the provided separator.
+```
+arr test = "a", "b", "c", "d", "e"
+str output = .join;", ". test
+-- "a, b, c, d, e"
+```
+### type
+Outputs the type of the input as a string.
+```
+arr test = "a", "b", "c", "d", "e"
+str output = .type. test
+-- "Array"
+
+num test = 5
+str output = .type. test
+-- "Number"
+```
+### length
+Length of the input array or string.
+```
+arr test = "a", "b", "c", "d", "e"
+num output = .length. test
+-- 5
+
+str test = "hello world!"
+num output = .length. test
+-- 12
+```
+### replace
+Replace the first instance of the first argument with the second argument.
+```
+str test = "hello world!"
+str output = .replace;"hello";"goodbye". test
+-- "goodbye world!"
 ```
 ## Type Manipulation
 ### stringify

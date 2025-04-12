@@ -100,6 +100,8 @@ function resetVariables() {
 
 // change this to evaluate the token and return the token
 function evaluate(expression) {
+    expression = expression.replace(/^\..+\. /, '');
+
     let variableNames = Object.keys(FroggyscriptMemory.variables);
 
     let scope = {};
@@ -125,7 +127,9 @@ function typeify(value, clock_interval) {
         originalInput: value,
     };
 
-    if(value.match(/^("|')\w*("|')$/g)) {// string
+    value = value.replace(/^\..+\. /, "");
+
+    if(value.match(/^("|').*("|')$/g)) {// string
        //  value = value.replace(/^\$/, '');
         typeObj.type = "String";
         typeObj.value = value.replace(/^("|')|("|')$/g, '');
@@ -252,8 +256,8 @@ function typeify(value, clock_interval) {
                 typeObj.type = variableValue.type;
             } else if(variableValue.type == "Array" || variableValue.type == "Number"){
                 if(value.split(":")[1] == undefined && variableValue.type == "Array"){
-                    typeObj.value = variableValue.value.map(x => x.value).join(";")
-                    typeObj.type = "String";
+                    typeObj.value = variableValue.value;
+                    typeObj.type = variableValue.type;
                 } else {
                     if(variableValue.type == "Array"){
                         let index = evaluate(value.split(":")[1]);
@@ -329,14 +333,16 @@ function processSingleLine(input, clock_interval) {
     
     let token = {};
 
-    let method = input.match(/\.\w+\./);
-
-    input = input.replace(/\.\w+\./, "").trim();
-
     let keyword = input.split(" ")[0];
 
+    let methodDefinition = input.match(/\.(\w+);?(.+)?\./);
+
     token.keyword = keyword;
-    token.method = method == null ? null : method[0].replace(/\./g, "");
+
+    if(methodDefinition != null){
+        token.methodName = methodDefinition[1]
+        token.methodArgs = methodDefinition[2].split(";")
+    }
 
     switch (keyword) {
         case "return": {
@@ -655,11 +661,8 @@ function processSingleLine(input, clock_interval) {
                 break;
             }
             let conditionType = typeify(condition, clock_interval);
-            if(conditionType.type !== "Boolean" && conditionType.type !== "Error") {
-                token = new ScriptError("TypeError", `[if] condition must evaluate to Boolean, found type ${conditionType.type}`, clock_interval);
-            } else {
-                token = {...token, ...conditionType, endKeywordIndex: null, elseKeywordIndex: null };
-            }
+            token = {...token, ...conditionType, endKeywordIndex: null, elseKeywordIndex: null };
+            
         } break;
 
         case "out": {
@@ -675,20 +678,15 @@ function processSingleLine(input, clock_interval) {
                 token = new ScriptError("SyntaxError", `[${keyword}] declaration must be followed by a variable assignment`, clock_interval);
             } else {
                 let assignedValue = input.replace(/^(c?)str\s+/, '').split('=')[1].trim();
-                let typeValue = typeify(assignedValue, clock_interval);
-                if(typeValue.type != "String" && typeValue.type != "Error"){
-                    token = { ...token, potentialError: new ScriptError("TypeError", `[${keyword}] declaration can only be assigned type String, found type ${typeValue.type}`, clock_interval) };
-                } else {
-                
-                    let identifier = input.replace(/^(c?)str\s+/, '').split('=')[0].trim();
 
-                    if(getVariable(identifier) != undefined){
-                        token = new ScriptError("ReferenceError", `Variable [${identifier}] already exists, cannot override`, clock_interval);
-                    } else {
-                        token = {...token, ...typeify(assignedValue, clock_interval), identifier: identifier }; 
-                        if(keyword == "str") token = { ...token, mutable: true }
-                        else token = { ...token, mutable: false };
-                    }
+                let identifier = input.replace(/^(c?)str\s+/, '').split('=')[0].trim();
+
+                if(getVariable(identifier) != undefined){
+                    token = new ScriptError("ReferenceError", `Variable [${identifier}] already exists, cannot override`, clock_interval);
+                } else {
+                    token = {...token, ...typeify(assignedValue, clock_interval), identifier: identifier }; 
+                    if(keyword == "str") token = { ...token, mutable: true }
+                    else token = { ...token, mutable: false };
                 }
             }
         } break;
@@ -700,27 +698,22 @@ function processSingleLine(input, clock_interval) {
                 token = new ScriptError("SyntaxError", `[${keyword}] declaration must be followed by a variable assignment`, clock_interval);
             } else {
                 let assignedValue = input.replace(/^(c?)num\s+/, '').split('=')[1].trim();
-                let typeValue = typeify(assignedValue, clock_interval);
 
-                if(typeValue.type != "Number" && typeValue.type != "Error"){
-                    token = new ScriptError("TypeError", `[${keyword}] declaration can only be assigned type Number, found type ${typeValue.type}`, clock_interval);
+                let identifier = input.replace(/^(c?)num\s+/, '').split('=')[0].trim();
+
+                if(getVariable(identifier) != undefined){
+                    token = new ScriptError("ReferenceError", `Variable [${identifier}] already exists, cannot override`, clock_interval);
                 } else {
-                    let identifier = input.replace(/^(c?)num\s+/, '').split('=')[0].trim();
-
-                    if(getVariable(identifier) != undefined){
-                        token = new ScriptError("ReferenceError", `Variable [${identifier}] already exists, cannot override`, clock_interval);
+                    let typed = typeify(assignedValue, clock_interval)
+                    token = {...token, ...typed, identifier: identifier };
+                    if(typed.type == "Error") {
+                        token = typed;
                     } else {
-                        let typed = typeify(assignedValue, clock_interval)
-                        token = {...token, ...typed, identifier: identifier };
-                        if(typed.type == "Error") {
-                            token = typed;
+                        if(/\bpi\b/g.test(token.originalInput)) {
+                            token = new ScriptError("EvaluationError", `[pi] is unreliable, use [Pi] instead`, clock_interval);
                         } else {
-                            if(/\bpi\b/g.test(token.originalInput)) {
-                                token = new ScriptError("EvaluationError", `[pi] is unreliable, use [Pi] instead`, clock_interval);
-                            } else {
-                                if(keyword == "num") token = { ...token, mutable: true }
-                                else token = { ...token, mutable: false };
-                            }
+                            if(keyword == "num") token = { ...token, mutable: true }
+                            else token = { ...token, mutable: false };
                         }
                     }
                 }
@@ -734,20 +727,17 @@ function processSingleLine(input, clock_interval) {
                 token = new ScriptError("SyntaxError", `[${keyword}] declaration must be followed by a variable assignment`, clock_interval);
             } else {
                 let assignedValue = input.replace(/^(c?)bln\s+/, '').split('=')[1].trim();
-                let typeValue = typeify(assignedValue, clock_interval);
-                if(typeValue.type != "Boolean" && typeValue.type != "Error"){
-                    token = new ScriptError("TypeError", `[${keyword}] declaration can only be assigned type Boolean, found type ${typeValue.type}`, clock_interval);
-                } else {
-                    let identifier = input.replace(/^(c?)bln\s+/, '').split('=')[0].trim();
 
-                    if(getVariable(identifier) != undefined){
-                        token = new ScriptError("ReferenceError", `Variable [${identifier}] already exists, cannot override`, clock_interval);
-                    } else {
-                        token = {...token, ...typeify(assignedValue, clock_interval), identifier: identifier };
-                        if(keyword == "bln") token = { ...token, mutable: true }
-                        else token = { ...token, mutable: false };
-                    }
+                let identifier = input.replace(/^(c?)bln\s+/, '').split('=')[0].trim();
+
+                if(getVariable(identifier) != undefined){
+                    token = new ScriptError("ReferenceError", `Variable [${identifier}] already exists, cannot override`, clock_interval);
+                } else {
+                    token = {...token, ...typeify(assignedValue, clock_interval), identifier: identifier };
+                    if(keyword == "bln") token = { ...token, mutable: true }
+                    else token = { ...token, mutable: false };
                 }
+                
             }
         } break;
 
@@ -789,41 +779,76 @@ function processSingleLine(input, clock_interval) {
             } else {
                 let identifier = input.replace(/^goto\s+/, '').split(' ')[0].trim();
                 let typeifyValue = typeify(identifier, clock_interval);
-                if(typeifyValue.type != "Number") {
-                    token = new ScriptError("TypeError", `[goto] declaration must be followed by a Number, found type ${typeifyValue.type}`, clock_interval);
-                } else {
-                    token = {...token, ...typeifyValue};
-                }
+                token = {...token, ...typeifyValue};
             }
         }
     }
 
-    // if(token.method != null){
-    //     switch(token.method){
-    //         case "type": {
-    //             token.value = token.type;
-    //             token.type = "String";
-    //         } break;
-    //     }
-    // }
+    console.log(token)
 
-    // // type error checkers
-    // switch(token.keyword){
-    //     case "cnum":
-    //     case "num": {
-    //         if(token.type != "Number") token = new ScriptError("TypeError", `[${token.keyword}] declaration can only be assigned type Number, found type ${token.type}`, clock_interval);
-    //     } break;
+    if(token.methodName != null){
+        switch(token.methodName){
+            case "replace": {
+                if(token.type != "String") token = new ScriptError("TypeError", `[.replace.] expects type String, found type ${token.type}`, clock_interval);
+                else {
+                    let [search, replace] = token.methodArgs;
+                    search = typeify(search, clock_interval).value;
+                    replace = typeify(replace, clock_interval).value;
+                    token.value = token.value.replace(search, replace);
+                }
+            } break;
 
-    //     case "cstr":
-    //     case "str": {
-    //         if(token.type != "String") token = new ScriptError("TypeError", `[${token.keyword}] declaration can only be assigned type String, found type ${token.type}`, clock_interval);
-    //     } break;
+            case "type": {
+                token.value = token.type;
+                token.type = "String";
+            } break;
 
-    //     case "cbln":
-    //     case "bln": {
-    //         if(token.type != "Boolean") token = new ScriptError("TypeError", `[${token.keyword}] declaration can only be assigned type Boolean, found type ${token.type}`, clock_interval);
-    //     } break;
-    // }
+            case "join": {
+                if(token.type != "Array") token = new ScriptError("TypeError", `[.join.] expects type Array, found type ${token.type}`, clock_interval);
+                else {
+                    let values = token.value.map(value => value.value).join(token.methodArgs[0]);
+                    token.type = "String";
+                    token.value = values;
+                }
+            } break;
+
+            case "length": {
+                if(token.type != "String" && token.type != "Array") token = new ScriptError("TypeError", `[.length.] expects type String or Array, found type ${token.type}`, clock_interval);
+                token.value = token.value.length;
+                token.type = "Number";
+            } break;
+
+            default: {
+                token = new ScriptError("MethodError", `Method [${token.methodName}] does not exist`, clock_interval);
+            }
+        }
+    }
+
+    // type error checkers
+    switch(token.keyword){
+        case "if": {
+            if(token.type != "Boolean") token = new ScriptError("TypeError", `[if] condition must evaluate to Boolean, found type ${token.type}`, clock_interval);
+        } break;
+
+        case "goto": {
+            if(token.type != "Number") token = new ScriptError("TypeError", `[goto] declaration can only be assigned type Number, found type ${token.type}`, clock_interval);
+        } break;
+
+        case "cnum":
+        case "num": {
+            if(token.type != "Number") token = new ScriptError("TypeError", `[${token.keyword}] declaration can only be assigned type Number, found type ${token.type}`, clock_interval);
+        } break;
+
+        case "cstr":
+        case "str": {
+            if(token.type != "String") token = new ScriptError("TypeError", `[${token.keyword}] declaration can only be assigned type String, found type ${token.type}`, clock_interval);
+        } break;
+
+        case "cbln":
+        case "bln": {
+            if(token.type != "Boolean") token = new ScriptError("TypeError", `[${token.keyword}] declaration can only be assigned type Boolean, found type ${token.type}`, clock_interval);
+        } break;
+    }
 
     return token;
 }
@@ -1239,7 +1264,6 @@ function interpreter(input, fileArguments) {
                 case "num":
                 case "bln":
                 case "str": {
-                    console.log(token)
                     writeVariable(token.identifier, token.type, token.value, true);
                 } break;
 
