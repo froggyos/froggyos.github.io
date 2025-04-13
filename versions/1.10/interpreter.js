@@ -1,6 +1,7 @@
 const FroggyscriptMemory = {
     variables: {},
     functions: {},
+    savedData: {}
 };
 
 let OS_RUNTIME_START = Date.now();
@@ -66,8 +67,9 @@ function outputWithFormatting(token) {
 function resetTerminalForUse(interval){
     resetVariables()
     clearInterval(interval);
-    setSetting("showSpinner", ["false"])
-    setSetting("currentSpinner", [getSetting("defaultSpinner")]);
+    setSetting("showSpinner", "false")
+    setSetting("currentSpinner", getSetting("defaultSpinner"));
+    config.currentProgram = "cli";
 }
 
 function outputError(token, interval) {
@@ -82,6 +84,7 @@ function outputError(token, interval) {
 function resetVariables() {
     delete FroggyscriptMemory.variables;
     delete FroggyscriptMemory.functions;
+    delete FroggyscriptMemory.savedData;
 
     FroggyscriptMemory.variables = {};
     // initialize default variables
@@ -93,6 +96,7 @@ function resetVariables() {
     });
 
     FroggyscriptMemory.functions = {};
+    FroggyscriptMemory.savedData = {};
 }
 
 // change this to evaluate the token and return the token
@@ -362,6 +366,26 @@ function processSingleLine(input, clock_interval) {
     }
 
     switch (keyword) {
+        case "savedata": {
+            let key = input.split(" ")[1].trim();
+            let value = input.split(" ").slice(2).join(" ").trim();
+
+            if(key == ''){
+                token = new ScriptError("SyntaxError", `[savedata] must be followed by a key`, clock_interval);
+            } else if(value == ''){
+                token = new ScriptError("SyntaxError", `[savedata] must be followed by a value`, clock_interval);
+            }
+
+            let typed = typeify(value, clock_interval);
+            if(typed.type == "Error"){
+                token = typed;
+            } else {
+                token = { ...token, key: key, value: typed };
+            }
+
+
+
+        } break;
         case "prompt": {
             // prompt [variable] [default highlighted option] [...options]
             let variable = input.split(" ")[1].trim();
@@ -929,6 +953,11 @@ function methodParser(token, clock_interval){
     return token;
 }
 
+resetVariables();
+setInterval(() => {
+    FroggyscriptMemory.variables.Time_OSRuntime.value = Date.now() - OS_RUNTIME_START
+}, 1);
+
 function interpreter(input, fileArguments) {
     let lines = input.split('\n').map(x => x.trim()).filter(x => x.length > 0 && x !== "--");
     PROGRAM_LINES = lines;
@@ -990,6 +1019,45 @@ function interpreter(input, fileArguments) {
         } else {
             // process tokens here =======================================================
             switch(token.keyword) {
+                case "savedata": {
+                    let key = token.key;
+                    let value = token.value;
+                    let valueType = value.type;
+
+                    let dataArray = [];
+
+                    if(valueType == "Array"){
+                        dataArray.push(`KEY ${key} TYPE ${valueType} START`)
+                        for(let i = 0; i < value.value.length; i++){
+                            let index = value.value[i];
+                            dataArray.push(`INDEX TYPE ${index.type} VALUE ${index.value}`)
+                        }
+                        dataArray.push(`KEY ${key} TYPE ${valueType} END`)
+                    } else {
+                        dataArray.push(`KEY ${key} TYPE ${valueType} VALUE ${value.value} END`)
+                    }
+
+                    let fileData = config.fileSystem['D:/Program-Data'].find(x => x.name == config.currentProgram);
+
+                    if(valueType == "Array"){
+                        let startIndex = fileData.data.findIndex(x => x.match(new RegExp(`^KEY ${key} TYPE ${valueType} START$`)));
+
+                        let endIndex = fileData.data.findIndex(x => x.match(new RegExp(`^KEY ${key} TYPE ${valueType} END$`)));
+
+                        if((startIndex == -1 && endIndex != -1) || (startIndex != -1 && endIndex == -1)){
+                            token = new ScriptError("ProgramDataError", `The program data in D:/Program-Data is malformed. Cannot save data`, clock_interval);
+                        }
+                    } else {
+                        let dataIndex = fileData.data.findIndex(x => x.match(new RegExp(`^KEY ${key} TYPE ${valueType} VALUE (.+?) END`)));
+
+                        if(dataIndex == -1){
+                            fileData.data.push(...dataArray);
+                        } else {
+                            fileData.data[dataIndex] = dataArray[0];
+                        }
+                    }
+                } break;
+
                 case "prompt": {
                     CLOCK_PAUSED = true;
 
@@ -1479,13 +1547,81 @@ function interpreter(input, fileArguments) {
         return token;
     }
 
+    let dataError = 0;
+
     let clock = setInterval(() => {
+        FroggyscriptMemory.variables.Time_ProgramRuntime.value = Date.now() - PROGRAM_RUNTIME_START;
+        FroggyscriptMemory.variables.Time_MsEpoch.value = Date.now();
+
+        let programDataFile = config.fileSystem['D:/Program-Data'].find(x => x.name == config.currentProgram).data;
+
+        for(let i = 0; i < programDataFile.length; i++){
+            let dataLine = programDataFile[i];
+
+            let dataMatchNotArray = dataLine.match(
+                /^KEY (.+?) TYPE (String|Number|Boolean) VALUE (.+?) END$/
+            )
+
+            if(dataMatchNotArray != null){
+                let key = dataMatchNotArray[1];
+                let type = dataMatchNotArray[2];
+                let value = dataMatchNotArray[3];
+
+                if(type == "String") value = `"${value}"`;
+
+                FroggyscriptMemory.savedData[key] = typeify(value)
+            } else {
+                let dataMatchArrayStart = dataLine.match(
+                    /^KEY (.+?) TYPE Array START$/
+                )
+
+                let dataMatchArrayEnd = dataLine.match(
+                    /^KEY (.+?) TYPE Array END$/
+                )
+
+                if(dataMatchArrayStart == null || dataMatchArrayEnd == null){
+                    dataError++;
+                }
+
+                if(dataMatchArrayStart != null){
+                    let key = dataMatchArrayStart[1];
+                    let type = "Array";
+                    let value = [];
+
+                    for(let j = i + 1; j < programDataFile.length; j++){
+                        let arrayDataLine = programDataFile[j];
+
+                        let arrayDataMatch = arrayDataLine.match(
+                            /^TYPE (String|Number|Boolean) VALUE (.+?)$/
+                        )
+
+                        if(arrayDataMatch != null){
+                            let arrayType = arrayDataMatch[1];
+                            let arrayValue = arrayDataMatch[2];
+
+                            if(arrayType == "String") arrayValue = `"${arrayValue}"`;
+
+                            value.push(typeify(arrayValue))
+                        }
+                        // } else {
+                        //     let arrayEndMatch = arrayDataLine.match(
+                        //         /^KEY (.+?) TYPE Array END$/
+                        //     )
+                        // }
+                    }
+
+                    FroggyscriptMemory.savedData[key] = {type, value}
+                }
+            }
+        }
+
+        console.log(FroggyscriptMemory.savedData)
+
+        if(dataError == 1){
+            createTerminalLine(`Program data is malformed. Some data cannot be loaded`, config.alertText, {translate: false});
+        }
+
         if(CLOCK_PAUSED == false) {
-
-            FroggyscriptMemory.variables.Time_OSRuntime.value = Date.now() - OS_RUNTIME_START;
-            FroggyscriptMemory.variables.Time_ProgramRuntime.value = Date.now() - PROGRAM_RUNTIME_START;
-            FroggyscriptMemory.variables.Time_MsEpoch.value = Date.now();
-
             if(clock_interval < lines.length) {
                 let line = lines[clock_interval]
                 let token = interpretSingleLine(clock, line);

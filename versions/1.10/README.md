@@ -294,7 +294,7 @@ outf {t=c01, tr=4-48 | b=c04, br=57-91} "from the char 4 to char 48, the text wi
 
 ## Input
 ### Define a File Argument
-The `filearg` keyword will create an **immutable** variable with the provided keyword and cannot override other variable values.
+File arguments are passed in the terminal when running the program. The `filearg` keyword will create an **immutable** variable with the provided keyword and cannot override other variable values, even if that variable is mutable.
 ```
 filearg [variable_name] [type]
 
@@ -511,12 +511,13 @@ num test = 5
 str output = .stringify. test
 -- "5"
 ```
-<!-- ## Program Data
+## Program Data
 ### Saving Data
-Saves the contents of `[variable]` to the corresponding file in the `D:/Program-Data` file
+Saves the contents of `[variable]` to the corresponding file in the `D:/Program-Data` file. The key cannot contain spaces.
 ```
-savedata [variable]
+savedata [key] [value]
 ```
+<!-- 
 ### Loading Data
 From the corresponding `D:/Program-Data` file, loads the contents of entry of `[variable]` to the variable called `[variable]`
 ```

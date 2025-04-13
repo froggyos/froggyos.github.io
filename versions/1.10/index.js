@@ -329,6 +329,20 @@ function changeColorPalette(name){
     createColorTestBar();
 }
 
+/*
+    to do: make it so you can swap palette colors in palette objects
+
+    after the 15 colors, the prefix switches to "def" and then the css is listed as follows
+    void-space c00
+    bar-background c01
+    bar-text c15
+    etc.
+
+    can get rid of reset styling because the css will be built on line 307
+    make sure to switch from defining colors to the def lines in the loop
+    can also get rid of lines 315-328
+*/
+
 function createColorTestBar(){
     const colorPalettes = createPalettesObject();
 
@@ -1203,10 +1217,8 @@ x
 
             config.programSession++
             if(args[0] == "cli"){
-                config.currentProgram = "cli";
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
             } else if(args[0] == "lilypad"){
-                config.currentProgram = "lilypad";
                 createTerminalLine("T_lilypad_exit", "");
                 createLilypadLine(">", undefined, undefined);
             } else {
@@ -1230,7 +1242,7 @@ x
 
                 // get all file arguments besides the first one
 
-
+                config.currentProgram = args[0];
                 interpreter(file.data.join("\n"), args.slice(1));
             }
         break;

@@ -847,22 +847,9 @@ const config = {
             { name: "cli", properties: {transparent:     false, read: false, write: false, hidden: true}, data: ["str cli = 'this program is hardcoded into froggyOS'", "endprog"] },
             { name: "lilypad", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["str lilypad = 'this program is hardcoded into froggyOS'", "endprog"] },
             { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
-                "num i = 0",
-                "num j = 0",
-                "num number = 0",
-                "loop i < 5",
-                "    loop j < 4",
-                "        set number = number + 1",
-                "        set j = j + 1",
-                "    endloop",
-                "    set i = i + 1",
-                "set j = 0",
-                "endloop",
-                "out number",
-                // "arr options = '1', '2', '3'",
-                // "str output = ''",
-                // "prompt output 0 options",
-                // "out .type. output",
+                "arr options = '1', '2', 4",
+                "str text = 'what the sigma'",
+                "savedata optionsArray options",
                 "endprog"
             ] },
             // { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
@@ -945,7 +932,17 @@ const config = {
                 "ft w. mn/d/y H:m:s a",
             ] },
         ],
-        "D:/Program-Data": [],
+        "D:/Program-Data": [
+            { name: "test", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
+                "KEY optionsArray TYPE Array START",
+                "TYPE String VALUE 1",
+                "TYPE String VALUE 2",
+                "TYPE Number VALUE 3",
+                "KEY optionsArray TYPE Array END",
+                "KEY testing TYPE String VALUE wow hello there!!! END",
+                "KEY testing2 TYPE String VALUE what the fuck!>!>!>! END",
+            ] },
+        ],
         "D:/Palettes": [
             // standard and revised palettes:  https://int10h.org/blog/2022/06/ibm-5153-color-true-cga-palette/
             { name: "standard", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
