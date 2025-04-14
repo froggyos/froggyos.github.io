@@ -262,67 +262,45 @@ programList();
 updateDateTime();
 
 // CSS STYLING ==============================================================================================
-const defaultStyling = `
-    --void-space: var(--c00);
-
-    --bar-background: var(--c01);
-    --bar-text: var(--c15);
-
-    --terminal-background: var(--c15);
-
-    --terminal-line-background: var(--c15);
-    --terminal-line-highlighted-background: var(--c14);
-    --terminal-line-text: var(--c02);
-    --terminal-line-selection-background: var(--c02);
-    --terminal-line-selection-text: var(--c15);
-
-    --error-background: var(--c12);
-    --translation-error-backgroud: var(--c05);
-    --translation-warning-backgroud: var(--c06);
-    --program-error-background: var(--c04);
-    --alert-background: var(--c03);
-    --error-text: var(--c15);
-
-    --prompt-selected-background: var(--c02);
-    --prompt-selected-text: var(--c15);
-`
-
-let resetStyling = () => {
-    let root = document.querySelector(':root');
-    let defaultStylingArray = defaultStyling.split("\n");
-    for(let line of defaultStylingArray){
-        if(line == "") continue;
-        let [property, value] = line.split(":");
-        root.style.setProperty(property.trim(), value.trim().replace(";",""));
-    }
-}
-
 function changeColorPalette(name){
     const colorPalettes = createPalettesObject();
     let palette = colorPalettes[name];
+
+    let variableDefinitions = getFileWithName("D:/Palettes", name).data.splice(16);
+
     let root = document.querySelector(':root');
-    for(let color in palette){
-        root.style.setProperty(`--${color}`, palette[color]);
+    console.log(palette);
+
+    for(let i = 0; i < Object.keys(palette).length; i++){
+        let color = Object.keys(palette)[i];
+        let hex = palette[color];
+        root.style.setProperty(`--${color}`, hex);
+    }
+
+    for(let i = 0; i < variableDefinitions.length; i++){
+        let variable = variableDefinitions[i].split(" ")[0];
+        let color = variableDefinitions[i].split(" ")[1];
+
+        root.style.setProperty(`--${variable}`, `var(--${color})`);
     }
 
     setSetting("colorPalette", name);
     config.colorPalette = name;
 
-    resetStyling();
-    if(name == "standard"){
-    }
-    if(name == "revised"){
-    }
-    if(name == "cherry"){
-        root.style.setProperty(`--terminal-line-highlighted-background`, "var(--c10)");
-        root.style.setProperty(`--error-background`, "var(--c04)");
-    }
-    if(name == "swamp"){
-        root.style.setProperty(`--error-background`, "var(--c04)");
-    }
-    if(name == "swamp-revised"){
-        root.style.setProperty(`--error-background`, "var(--c04)");
-    }
+    // if(name == "standard"){
+    // }
+    // if(name == "revised"){
+    // }
+    // if(name == "cherry"){
+    //     root.style.setProperty(`--terminal-line-highlighted-background`, "var(--c10)");
+    //     root.style.setProperty(`--error-background`, "var(--c04)");
+    // }
+    // if(name == "swamp"){
+    //     root.style.setProperty(`--error-background`, "var(--c04)");
+    // }
+    // if(name == "swamp-revised"){
+    //     root.style.setProperty(`--error-background`, "var(--c04)");
+    // }
     createColorTestBar();
 }
 
@@ -402,7 +380,7 @@ function createPalettesObject(){
         for(let palette of paletteDir){
             if(palette.properties.hidden == true) continue;
             palettes[palette.name] = {};
-            for(let i = 0; i < palette.data.length; i++){
+            for(let i = 0; i < colorArray.length; i++){
                 palettes[palette.name][colorArray[i]] = "#"+palette.data[i];
             }
         }
@@ -1564,30 +1542,30 @@ function createLilypadLine(path, linetype, filename){
 
     let highlightedLineUpdater = setInterval(updateLineHighlighting, 1);
 
+    function updateLinePrefixes(linetype){
+        let lines = document.querySelectorAll(`[data-program='lilypad-session-${config.programSession}']`);
+        lines.forEach((line, index) => {
+            if(linetype == "code"){
+                let prefix = String(index + 1).padStart(3, "0");
+                line.previousElementSibling.textContent = prefix;
+            } else if(linetype == "palette"){
+                let prefix = String(index).padStart(2, "0");
+                if(index > 15) prefix = ">>"
+                line.previousElementSibling.textContent = prefix;
+            } else {
+                line.previousElementSibling.textContent = ">";
+            }
+        })
+    }
+
     function terminalLineKeydownHandler(e){
         if(e.key == "Enter"){
             e.preventDefault();
-            if(linetype == "code"){
-                let lines = document.querySelectorAll(`[data-program='lilypad-session-${config.programSession}']`);
-                let prefix = String(+lines[lines.length - 1].previousElementSibling.textContent+1).padStart(3, '0');
-                createLilypadLine(prefix, "code", filename);
-            } else if (linetype == "palette") {
 
-                createLilypadLine("##", "palette", filename);
-
-                let lines = document.querySelectorAll(`[data-program='lilypad-session-${config.programSession}']`);
-
-                let lineNumber = 0;
-
-                // FIX!!!========================
-
-                lines.forEach(line => {
-                    line.previousElementSibling.textContent = line.previousElementSibling.textContent.replaceAll("##", lineNumber.toString().padStart(2, "0"));
-                    lineNumber++
-                })
-            } else {
-                createLilypadLine(">", undefined, filename);
-            }
+            if(linetype == "code") createLilypadLine("   ", linetype, filename);
+            else if(linetype == "palette") createLilypadLine("  ", linetype, filename);
+            else createLilypadLine(" ", linetype, filename);
+            updateLinePrefixes(linetype);
         }
         if(e.key == "Backspace"){
             if(terminalLine.textContent.length == 0) {
@@ -1604,6 +1582,7 @@ function createLilypadLine(path, linetype, filename){
                     previousLine.textContent = previousLine.textContent + "​";
                     moveCaretToEnd(previousLine);
                     parent.remove();
+                    updateLinePrefixes(linetype);
                 }
             }
         };

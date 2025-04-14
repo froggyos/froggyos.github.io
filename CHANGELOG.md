@@ -131,5 +131,5 @@ idk
 
 # 1.11
 ```
-
+~ changed the way palettes work to allow for more customization
 ```

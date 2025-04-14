@@ -962,6 +962,23 @@ const config = {
                 "FF55FF", // 13 light magenta
                 "FFFF55", // 14 yellow
                 "FFFFFF", // 15 white
+                "void-space c00",
+                "bar-background c01",
+                "bar-text c15",
+                "terminal-background c15",
+                "terminal-line-background c15",
+                "terminal-line-highlighted-background c14",
+                "terminal-line-text c02",
+                "terminal-line-selection-background c02",
+                "terminal-line-selection-text c15",
+                "error-background c12",
+                "translation-error-backgroud c05",
+                "translation-warning-backgroud c06",
+                "program-error-background c04",
+                "alert-background c03",
+                "error-text c15",
+                "prompt-selected-background c02",
+                "prompt-selected-text c15"
             ] },
             { name: "revised", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
                 "000000",
