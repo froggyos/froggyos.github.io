@@ -25,14 +25,13 @@ literally everything is new
 * removed command
     - pulse
 + new hidden command
-~ changed hidden command prefix
 + added lilypad (text editor)
     - filesystem does not exist yet
+~ changed hidden command prefix
 ```
 
 # 1.2
 ```
-+ filesystem now exists
 * new commands
     + croak    - deletes files
     + hatch    - creates files
@@ -40,6 +39,7 @@ literally everything is new
     + meta     - changes file data
     + metaperm - changes file permissions
     + spawn    - creates directories
++ filesystem now exists
 ```
 
 # 1.3
@@ -58,27 +58,25 @@ literally everything is new
     + str
     + int
     + set
-    + if/else
-        + endif
+    + if/else/endif
     + out
-    + loop
-        + endloop
+    + loop/endloop
     + endprog
 + parser file for FroggyScript
 ```
 
 # 1.4
 ```
-~ changed metaprop to metaperm
-+ new hidden commands
-~ separated FroggyScript keywords into their own interpreter file
-~ changed parser file to formatter file (name more accurate)
-+ new FroggyScript keywords
+* new FroggyScript keywords
     + append
     + free
     + clearterminal
     + wait
++ new hidden commands
 + gave the command error prefix color
+~ changed metaprop to metaperm
+~ separated FroggyScript keywords into their own interpreter file
+~ changed parser file to formatter file (name more accurate)
 ```
 
 # 1.5
@@ -88,9 +86,20 @@ literally everything is new
     + listdrives
 + new hidden command
 + separated config to its own file
++ new FroggyScript keywords
+    + func/endfunc
+    + f:
+    + savedata
+    + loaddata
++ added different color palettes
 ```
 
-# 1.5-lbc2
+## 1.5-lbc2
 ```
 * Won't tell you :3
+```
+
+# 1.6
+```
++ added debugging for FroggyScript
 ```
