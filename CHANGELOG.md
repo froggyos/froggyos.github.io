@@ -116,7 +116,10 @@ idk
 
 # 1.9
 ```
-idk
+* added ability to translate froggyOS to other languages
+    + english
+    + japanese
+    + ngimëte (conlang)
 ```
 
 # 1.10
