@@ -327,7 +327,7 @@ function changeColorPalette(name){
 }
 
 /*
-    to do: make it so you can swap palette colors in palette objects
+    to do: make it so you can swap the colors to specific css variables
 
     after the 15 colors, the prefix switches to "def" and then the css is listed as follows
     void-space c00
@@ -335,9 +335,9 @@ function changeColorPalette(name){
     bar-text c15
     etc.
 
-    can get rid of reset styling because the css will be built on line 307
+    can get rid of reset styling because the css will be built on line ~304
     make sure to switch from defining colors to the def lines in the loop
-    can also get rid of lines 315-328
+    can also get rid of lines 312-325
 */
 
 function createColorTestBar(){
@@ -628,6 +628,7 @@ function sendCommand(command, args, createEditableLineAfter){
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
             }, 10)
         } break;
+        
         // change color palette
         case "changepalette": {
             let colorPalettes = createPalettesObject();
