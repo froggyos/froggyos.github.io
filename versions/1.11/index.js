@@ -1564,33 +1564,27 @@ function createLilypadLine(path, linetype, filename){
 
     let highlightedLineUpdater = setInterval(updateLineHighlighting, 1);
 
-    terminalLine.addEventListener('keyup', function(e){
-        if(linetype == "code"){
-            let lines = document.querySelectorAll(`[data-program='lilypad-session-${config.programSession}']`);
-            for(let i = 0; i < lines.length; i++){
-                let lineNumber = String(i+1).padStart(3, "0");
-                lines[i].previousElementSibling.textContent = lineNumber;
-            }
-        } else if (linetype == "palette"){
-            let lines = document.querySelectorAll(`[data-program='lilypad-session-${config.programSession}']`);
-            for(let i = 0; i < lines.length; i++){
-                let lineNumber = String(i).padStart(2, "0");
-                lines[i].previousElementSibling.textContent = lineNumber;
-            }
-        }
-    });
-
     function terminalLineKeydownHandler(e){
         if(e.key == "Enter"){
             e.preventDefault();
             if(linetype == "code"){
                 let lines = document.querySelectorAll(`[data-program='lilypad-session-${config.programSession}']`);
-                let lineNumber = String(+lines[lines.length - 1].previousElementSibling.textContent+1).padStart(3, '0');
-                createLilypadLine(lineNumber, "code", filename);
+                let prefix = String(+lines[lines.length - 1].previousElementSibling.textContent+1).padStart(3, '0');
+                createLilypadLine(prefix, "code", filename);
             } else if (linetype == "palette") {
+
+                createLilypadLine("##", "palette", filename);
+
                 let lines = document.querySelectorAll(`[data-program='lilypad-session-${config.programSession}']`);
-                let lineNumber = String(+lines[lines.length - 1].previousElementSibling.textContent).padStart(2, '0');
-                if(+lineNumber < 15) createLilypadLine(lineNumber, "palette", filename);
+
+                let lineNumber = 0;
+
+                // FIX!!!========================
+
+                lines.forEach(line => {
+                    line.previousElementSibling.textContent = line.previousElementSibling.textContent.replaceAll("##", lineNumber.toString().padStart(2, "0"));
+                    lineNumber++
+                })
             } else {
                 createLilypadLine(">", undefined, filename);
             }

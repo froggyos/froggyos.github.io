@@ -128,3 +128,8 @@ idk
 ~ revamped FroggyScript
     - check documentation for keyword list
 ```
+
+# 1.11
+```
+
+```
