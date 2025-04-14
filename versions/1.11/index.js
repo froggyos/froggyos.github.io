@@ -281,7 +281,7 @@ function changeColorPalette(name){
         let variable = variableDefinitions[i].split(" ")[0];
         let color = variableDefinitions[i].split(" ")[1];
 
-        root.style.setProperty(`--${variable}`, `var(--${color})`);
+        root.style.setProperty(`--${variable}`, `var(--c${color})`);
     }
 
     setSetting("colorPalette", name);
