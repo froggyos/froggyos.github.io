@@ -120,6 +120,7 @@ idk
     + english
     + japanese
     + ngimëte (conlang)
++ added a loading screen
 ```
 
 # 1.10
