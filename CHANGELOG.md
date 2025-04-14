@@ -103,3 +103,24 @@ literally everything is new
 ```
 + added debugging for FroggyScript
 ```
+
+# 1.7
+```
+idk
+```
+
+# 1.8
+```
+idk
+```
+
+# 1.9
+```
+idk
+```
+
+# 1.10
+```
+~ revamped FroggyScript
+    - check documentation for keyword list
+```
