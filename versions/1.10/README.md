@@ -159,13 +159,6 @@ Time_MsEpoch - time since epoch (January 1, 1970) in milliseconds
 Time_OSRuntime - OS uptime in milliseconds
 Time_ProgramRuntime - program uptime in milliseconds
 ```
-<!-- ### Change Color Palette
-```
-changepalette [palette name]
-
-changepalette standard
-changepalette cherry
-``` -->
 ## Variables
 ### Types
 #### String
