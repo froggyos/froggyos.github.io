@@ -23,7 +23,7 @@ literally everything is new
 * new command
     + swimto - runs program
 * removed command
-    -pulse
+    - pulse
 + new hidden command
 ~ changed hidden command prefix
 + added lilypad (text editor)
@@ -52,15 +52,40 @@ literally everything is new
     + spy       - outputs contents of a file to terminal
 + added command aliases
 + added FroggyScript (custom programming language)
-        + ask
-        + prompt
-        + filearg
-        + str
-        + int
-        + set
-        + if/else
-            + endif
-        + out
-        + loop
-            + endloop
+    + ask
+    + prompt
+    + filearg
+    + str
+    + int
+    + set
+    + if/else
+        + endif
+    + out
+    + loop
+        + endloop
+    + endprog
++ parser file for FroggyScript
+```
+
+# 1.4
+```
+~ changed metaprop to metaperm
++ new hidden commands
+~ separated FroggyScript keywords into their own interpreter file
+~ changed parser file to formatter file (name more accurate)
++ new FroggyScript keywords
+    + append
+    + free
+    + clearterminal
+    + wait
++ gave the command error prefix color
+```
+
+# 1.5
+```
+```
+
+# 1.5-lbc2
+```
+Can't tell you :3
 ```
