@@ -45,6 +45,22 @@ literally everything is new
 # 1.3
 ```
 * new commands
-    + list - lists files in current directory
+    + list      - lists files in current directory
+    + loadstate - loads froggyOS state from localStorage
+    + macro     - creates a macro (list of commands to run sequentially)
+    + savestate - saves froggyOS state to localStorage
+    + spy       - outputs contents of a file to terminal
 + added command aliases
++ added FroggyScript (custom programming language)
+        + ask
+        + prompt
+        + filearg
+        + str
+        + int
+        + set
+        + if/else
+            + endif
+        + out
+        + loop
+            + endloop
 ```
