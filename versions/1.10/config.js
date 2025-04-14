@@ -821,7 +821,7 @@ const config = {
             { name: "language", properties: {transparent: false, read: true, write: true, hidden: false}, data: ["eng"] },
             { name: "debugMode", properties: {transparent: false, read: true, write: true, hidden: false}, data: ["false"] },
             { name: "colorPalette", properties: {transparent: false, read: true, write: true, hidden: false}, data: ["standard"] },
-            { name: "version", properties: {transparent: false, read: true, write: true, hidden: false}, data: ["1.10-indev"] },
+            { name: "version", properties: {transparent: false, read: true, write: true, hidden: false}, data: ["1.10"] },
             { name: "showSpinner", properties: {transparent: false, read: true, write: true, hidden: false}, data: ["false"] },
             { name: "currentSpinner", properties: {transparent: false, read: true, write: true, hidden: false}, data: ["default"] },
             { name: "defaultSpinner", properties: {transparent: false, read: true, write: true, hidden: false}, data: ["default"] },
