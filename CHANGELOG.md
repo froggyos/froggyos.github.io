@@ -92,5 +92,5 @@ literally everything is new
 
 # 1.5-lbc2
 ```
-Can't tell you :3
+* Won't tell you :3
 ```
