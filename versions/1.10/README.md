@@ -332,13 +332,13 @@ C:/Home> st [program_name]
 -- custom prefix
 str name = "";
 out "What is your name?"
-ask name "!"
+ask name "custom"
 out 'Hello $|name|!'
 
 -- in the terminal
 C:/Home> st [program_name]
 > What is your name?
-! Froggy
+custom Froggy
 > Hello Froggy!
 engprog
 
@@ -358,7 +358,7 @@ C:/Home> st [program_name]
 
 ### Input with Navigable Options
 ```
-prompt [variable] [default highlighted option] [options]
+prompt [variable] [default highlighted option] [options<Array>]
 
 str output = ''
 prompt output 0 $'hello', "world!", "I am froggy!"

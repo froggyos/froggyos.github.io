@@ -42,8 +42,6 @@ function setConfigFromSettings(){
     config.validateLanguageOnStartup = (getSetting("validateLanguageOnStartup") === "true");
 }
 
-// !!!!!!!!!!!!!!!!!!!!!!!!!!!============================================================
-// todo: get rid of the fuckass bitchass shit and make it fix properly (ykwim)
 function localize(descriptor, TRANSLATE_TEXT){
     let replacementData;
 
@@ -81,7 +79,6 @@ function localize(descriptor, TRANSLATE_TEXT){
 }
 
 function programList(){
-    // here, eventually sync the configs changed to files with their config object counterparts, to avoid refactoring literally everything
     let files = [];
     for(let directory of config.allowedProgramDirectories){
         if(config.fileSystem[directory] == undefined) continue;
