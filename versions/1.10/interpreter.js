@@ -153,7 +153,7 @@ function typeify(value, clock_interval) {
         }
 
         typeObj.origin = "String";
-    } else if(value.match(/^\$("|')?(\d|\w)+.*("|')(:\w+)?$/)){ // /^\$("|').*("|')(:\w+)?$/
+    } else if(value.match(/^\$("|')?.*\1?$/)){ // /^\$("|').*("|')(:\w+)?$/
 
         value = value.replace(/^\$/, '');
 
@@ -366,6 +366,19 @@ function processSingleLine(input, clock_interval) {
     }
 
     switch (keyword) {
+        case "loaddata": {
+            let variable = input.split(" ")[1].trim();
+            let key = input.split(" ").slice(2).join(" ").trim();
+
+            if(getVariable(variable) == undefined) {
+                token = new ScriptError("ReferenceError", `Variable [${variable}] does not exist`, clock_interval);
+            } else if(getVariable(variable).mutable === false) {
+                token = new ScriptError("PermissionError", `Variable [${variable}] is immutable and cannot be reassigned`, clock_interval);
+            }
+
+            token = { ...token, variableName: variable, key: key };
+        } break;
+
         case "savedata": {
             let key = input.split(" ")[1].trim();
             let value = input.split(" ").slice(2).join(" ").trim();
@@ -380,6 +393,7 @@ function processSingleLine(input, clock_interval) {
             if(typed.type == "Error"){
                 token = typed;
             } else {
+                let value = typed.value;
                 token = { ...token, key: key, value: typed };
             }
 
@@ -415,27 +429,6 @@ function processSingleLine(input, clock_interval) {
                 } else {
                     token = { ...token, ...typeValue };
                 }
-            }
-        } break; 
-
-        case "setReturnValue": {
-            let variable = input.split(" ")[1].trim();
-            let functionName = input.split(" ")[2].trim();
-
-            if(variable == undefined) {
-                token = new ScriptError("SyntaxError", `[setReturnValue] must be followed by a variable name`, clock_interval);
-            } else if(getVariable(variable) == undefined) {
-                token = new ScriptError("ReferenceError", `Variable [${variable}] does not exist`, clock_interval);
-            } else if(getVariable(variable).mutable === false) {
-                token = new ScriptError("PermissionError", `Variable [${variable}] is immutable and cannot be reassigned`, clock_interval);
-            }
-
-            // get function body
-            let functionBody = FroggyscriptMemory.functions[functionName];
-            if(functionBody == undefined) {
-                token = new ScriptError("ReferenceError", `Function [${functionName}] does not exist`, clock_interval);
-            } else {
-                token = { ...token, variableName: variable, function: functionBody };
             }
         } break;
 
@@ -1019,6 +1012,23 @@ function interpreter(input, fileArguments) {
         } else {
             // process tokens here =======================================================
             switch(token.keyword) {
+                case "loaddata": {
+                    let key = token.key
+                    let variable = token.variableName;
+
+                    if(FroggyscriptMemory.savedData[key] == undefined){
+                        token = new ScriptError("ReferenceError", `Key [${key}] does not exist`, clock_interval);
+                    } else {
+                        let retrievedData = FroggyscriptMemory.savedData[key];
+                        let valueToSet = retrievedData.value
+                        
+                        if(retrievedData.type == "String") valueToSet = `"${valueToSet}"`;
+
+                        lines[clock_interval] = `set ${variable} = ${valueToSet}`;
+                        clock_interval--;
+                    }
+                } break;    
+
                 case "savedata": {
                     let key = token.key;
                     let value = token.value;
@@ -1124,42 +1134,6 @@ function interpreter(input, fileArguments) {
                         terminal.appendChild(terminalLineElement);
                         setSetting("showSpinner", "true");
                     }
-                } break;
-
-                case "setReturnValue": {
-                    let errorInFunction = false;
-
-                    let func = token.function;
-                    let funcStart = func.start;
-                    let funcEnd = func.end;
-                    let funcLines = lines.slice(funcStart + 1, funcEnd).map(x => x.trim()).filter(x => x.length > 0 && x !== "--");
-                    let lastToken = null;
-    
-                    for(let i = 0; i < funcLines.length; i++) {
-                        let line = funcLines[i];
-                        lastToken = processSingleLine(line, clock_interval);
-                        if(lastToken.type === "Error") {
-                            errorInFunction = true;
-                            token = lastToken;
-                        } else {
-                            interpretSingleLine(interval, line);
-                        }
-                    }
-
-                    if(lastToken.keyword != "return" && lastToken.type != "Error") {
-                        token = new ScriptError("SyntaxError", `Function [${token.function.name}] must end with a [return] statement`, clock_interval);
-                    } else if(!errorInFunction) {
-                        token = { ...lastToken, keyword: token.keyword, identifier: token.variableName }
-                        let variable = getVariable(token.identifier);
-
-                        if(token.type != variable.type){
-                            token = new ScriptError("TypeError", `Variable [${token.identifier}] must be of type ${variable.type}`, clock_interval);
-                        } else writeVariable(token.identifier, token.type, token.value, true);
-                    } else {
-                        token.error = `Function >> ${token.error}`
-                    }
-
-
                 } break;
 
                 case "arr": {
@@ -1600,22 +1574,15 @@ function interpreter(input, fileArguments) {
                             let arrayValue = arrayDataMatch[2];
 
                             if(arrayType == "String") arrayValue = `"${arrayValue}"`;
-
-                            value.push(typeify(arrayValue))
+                            value.push(arrayValue)
                         }
-                        // } else {
-                        //     let arrayEndMatch = arrayDataLine.match(
-                        //         /^KEY (.+?) TYPE Array END$/
-                        //     )
-                        // }
                     }
 
+                    value = "$"+value.join(",")
                     FroggyscriptMemory.savedData[key] = {type, value}
                 }
             }
         }
-
-        console.log(FroggyscriptMemory.savedData)
 
         if(dataError == 1){
             createTerminalLine(`Program data is malformed. Some data cannot be loaded`, config.alertText, {translate: false});

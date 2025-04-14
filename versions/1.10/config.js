@@ -809,7 +809,7 @@ const config = {
     currentProgram: "cli",
     programList: ["cli", "lilypad"],
     programSession: 0,
-    errorText: "<span class='error'><span class='error-text'> !!ERROR!!</span> -</span>",
+    errorText: "<span class='error'><span class='error-text'>!!ERROR!!</span> -</span>",
     translationErrorText: "<span class='error'><span class='t-error-text'>!!TRANSLATION ERROR!!</span> -</span>",
     translationWarningText: "<span class='error'><span class='t-warning-text'>!TRANSLATION WARNING!</span> -</span>",
     alertText: "<span class='error'><span class='alert-text'>ALERT</span> -</span>",
@@ -847,9 +847,9 @@ const config = {
             { name: "cli", properties: {transparent:     false, read: false, write: false, hidden: true}, data: ["str cli = 'this program is hardcoded into froggyOS'", "endprog"] },
             { name: "lilypad", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["str lilypad = 'this program is hardcoded into froggyOS'", "endprog"] },
             { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
-                "arr options = '1', '2', 4",
-                "str text = 'what the sigma'",
-                "savedata optionsArray options",
+                "str test = ''",
+                "loaddata test optionsArray",
+                "out test",
                 "endprog"
             ] },
             // { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
