@@ -83,6 +83,11 @@ literally everything is new
 
 # 1.5
 ```
+* new commands
+    + changepalette
+    + listdrives
++ new hidden command
++ separated config to its own file
 ```
 
 # 1.5-lbc2
