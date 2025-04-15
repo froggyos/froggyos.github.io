@@ -34,7 +34,7 @@ function setConfigFromSettings(){
     config.showSpinner = (getSetting("showSpinner") === "true");
     config.currentSpinner = getSetting("currentSpinner");
     config.defaultSpinner = getSetting("defaultSpinner");
-    config.timeFormat = getSetting("timeFormat");
+    config.timeFormat = getSetting("timeFormat").slice(0, 78);
     config.updateStatBar = (getSetting("updateStatBar") === "true");
     config.allowedProgramDirectories = getSetting("allowedProgramDirectories", true);
     config.dissallowSubdirectoriesIn = getSetting("dissallowSubdirectoriesIn", true);
@@ -266,10 +266,9 @@ function changeColorPalette(name){
     const colorPalettes = createPalettesObject();
     let palette = colorPalettes[name];
 
-    let variableDefinitions = getFileWithName("D:/Palettes", name).data.splice(16);
+    let variableDefinitions = structuredClone(getFileWithName("D:/Palettes", name)).data.splice(16);
 
     let root = document.querySelector(':root');
-    console.log(palette);
 
     for(let i = 0; i < Object.keys(palette).length; i++){
         let color = Object.keys(palette)[i];
@@ -286,21 +285,6 @@ function changeColorPalette(name){
 
     setSetting("colorPalette", name);
     config.colorPalette = name;
-
-    // if(name == "standard"){
-    // }
-    // if(name == "revised"){
-    // }
-    // if(name == "cherry"){
-    //     root.style.setProperty(`--terminal-line-highlighted-background`, "var(--c10)");
-    //     root.style.setProperty(`--error-background`, "var(--c04)");
-    // }
-    // if(name == "swamp"){
-    //     root.style.setProperty(`--error-background`, "var(--c04)");
-    // }
-    // if(name == "swamp-revised"){
-    //     root.style.setProperty(`--error-background`, "var(--c04)");
-    // }
     createColorTestBar();
 }
 
@@ -557,7 +541,7 @@ function sendCommand(command, args, createEditableLineAfter){
         case "changelanguage": {
             let langCodes = config.fileSystem["Config:/lang_files"].map(file => file.name);
 
-            function getDisplayCodes(){
+            function getDisplayCodes(){ 
                 let arr = [];
                 let displayCodes = config.fileSystem["Config:/lang_files"]
                     .filter(file => {
@@ -611,7 +595,6 @@ function sendCommand(command, args, createEditableLineAfter){
         case "changepalette": {
             let colorPalettes = createPalettesObject();
             function getDisplayPalettes(){
-                let arr = [];
                 let palettes = config.fileSystem["D:/Palettes"];
                 let displayPalettes = palettes.filter(palette => {
                     if(palette.properties.hidden == true) return false;
@@ -1643,16 +1626,17 @@ function createLilypadLine(path, linetype, filename){
 
                 let dataLength = 0;
 
-                file.name = filename;
-                let fileIndex = config.fileSystem[config.currentPath].findIndex(file => file.name == filename);
-                config.fileSystem[config.currentPath][fileIndex].data = file.data;
-
                 file.data.forEach(line => {
                     dataLength += line.length;
                 });
                 
                 setSetting("showSpinner", "true")
                 setTimeout(function(){
+
+                    file.name = filename;
+                    let fileIndex = config.fileSystem[config.currentPath].findIndex(file => file.name == filename);
+                    config.fileSystem[config.currentPath][fileIndex].data = file.data;
+
                     setSetting("showSpinner", "false")
                     createTerminalLine(`T_saving_done`, ">");
                     terminalLine.removeEventListener('keydown', terminalLineKeydownHandler);

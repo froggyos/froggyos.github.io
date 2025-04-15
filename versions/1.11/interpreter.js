@@ -1524,6 +1524,7 @@ function interpreter(input, fileArguments) {
     let dataError = 0;
 
     let clock = setInterval(() => {
+        if(CLOCK_PAUSED) return;
         FroggyscriptMemory.variables.Time_ProgramRuntime.value = Date.now() - PROGRAM_RUNTIME_START;
         FroggyscriptMemory.variables.Time_MsEpoch.value = Date.now();
 
@@ -1553,7 +1554,7 @@ function interpreter(input, fileArguments) {
                     /^KEY (.+?) TYPE Array END$/
                 )
 
-                if(dataMatchArrayStart == null || dataMatchArrayEnd == null){
+                if(programDataFile[0] != '' && (dataMatchArrayStart == null || dataMatchArrayEnd == null)){
                     dataError++;
                 }
 

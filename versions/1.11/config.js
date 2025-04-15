@@ -997,6 +997,23 @@ const config = {
                 "F34EF3",
                 "F3F34E",
                 "FFFFFF",
+                "void-space 00",
+                "bar-background 01",
+                "bar-text 15",
+                "terminal-background 15",
+                "terminal-line-background 15",
+                "terminal-line-highlighted-background 14",
+                "terminal-line-text 02",
+                "terminal-line-selection-background 02",
+                "terminal-line-selection-text 15",
+                "error-background 12",
+                "translation-error-backgroud 05",
+                "translation-warning-backgroud 06",
+                "program-error-background 04",
+                "alert-background 03",
+                "error-text 15",
+                "prompt-selected-background 02",
+                "prompt-selected-text 15"
             ] },
             { name: "standard-dark", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
                 "000000", // 00 black (unchanged)
@@ -1015,31 +1032,65 @@ const config = {
                 "882288", // 13 deep magenta
                 "888822", // 14 deep yellow
                 "AAAAAA", // 15 light grey (less bright than white)
+                "void-space 00",
+                "bar-background 01",
+                "bar-text 15",
+                "terminal-background 15",
+                "terminal-line-background 15",
+                "terminal-line-highlighted-background 14",
+                "terminal-line-text 02",
+                "terminal-line-selection-background 02",
+                "terminal-line-selection-text 15",
+                "error-background 12",
+                "translation-error-backgroud 05",
+                "translation-warning-backgroud 06",
+                "program-error-background 04",
+                "alert-background 03",
+                "error-text 15",
+                "prompt-selected-background 02",
+                "prompt-selected-text 15"
             ] },
             { name: "cherry", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
-                "000000",
-                "1C219F",
-                "289E42",
-                "17ABAE",
-                "E48579",
-                "980C6C",
-                "BC3517",
-                "C2C5C6",
-                "464C50",
-                "5790E4",
-                "FF9F58",
-                "68DCCD",
-                "831326",
-                "D97BC7",
-                "B7EA8A",
-                "FFFFFF",
+                "000000", 
+                "1C219F", 
+                "289E42", 
+                "17ABAE", 
+                "831326", 
+                "980C6C", 
+                "BC3517", 
+                "C2C5C6", 
+                "464C50", 
+                "5790E4", 
+                "B7EA8A", 
+                "68DCCD", 
+                "E48579", 
+                "D97BC7", 
+                "FF9F58", 
+                "FFFFFF", 
+                "void-space 00",
+                "bar-background 01",
+                "bar-text 15",
+                "terminal-background 15",
+                "terminal-line-background 15",
+                "terminal-line-highlighted-background 10",
+                "terminal-line-text 02",
+                "terminal-line-selection-background 02",
+                "terminal-line-selection-text 15",
+                "error-background 12",
+                "translation-error-backgroud 05",
+                "translation-warning-backgroud 06",
+                "program-error-background 04",
+                "alert-background 03",
+                "error-text 15",
+                "prompt-selected-background 02",
+                "prompt-selected-text 15"
             ] },
             { name: "swamp", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
                 "000000",
                 "4B71AF",
                 "3F9A44",
                 "3B9994",
-                "DEA4A5",
+                "984547",
                 "9A3F95",
                 "C27E4B",
                 "B2B2B2",
@@ -1047,28 +1098,62 @@ const config = {
                 "96A2CF",
                 "93C495",
                 "AECFCD",
-                "984547",
+                "DEA4A5",
                 "D7ABD4",
                 "D6B87B",
                 "FFFFFF",
+                "void-space 00",
+                "bar-background 01",
+                "bar-text 15",
+                "terminal-background 15",
+                "terminal-line-background 15",
+                "terminal-line-highlighted-background 10",
+                "terminal-line-text 02",
+                "terminal-line-selection-background 02",
+                "terminal-line-selection-text 15",
+                "error-background 12",
+                "translation-error-backgroud 05",
+                "translation-warning-backgroud 06",
+                "program-error-background 04",
+                "alert-background 03",
+                "error-text 15",
+                "prompt-selected-background 02",
+                "prompt-selected-text 15"
             ] },
             { name: "swamp-revised", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
-                "000000",
-                "31618D",
-                "298B27",
-                "268B67",
-                "D3977F",
-                "773669",
-                "BF833A",
-                "97A791",
-                "465C3F",
-                "8DBDD5",
-                "81CB7D",
-                "91C9B9",
-                "753B29",
-                "CBA9DB",
-                "D7D357",
-                "FFFFFF",
+                "000000",// 00
+                "31618D",// 01
+                "298B27",// 02
+                "268B67",// 03
+                "753B29",// 04
+                "773669",// 05
+                "BF833A",// 06
+                "97A791",// 07
+                "465C3F",// 08
+                "8DBDD5",// 09
+                "81CB7D",// 10
+                "91C9B9",// 11
+                "D3977F",// 12
+                "CBA9DB",// 13
+                "D7D357",// 14
+                "FFFFFF",// 15
+                "void-space 00",
+                "bar-background 01",
+                "bar-text 15",
+                "terminal-background 15",
+                "terminal-line-background 15",
+                "terminal-line-highlighted-background 14",
+                "terminal-line-text 02",
+                "terminal-line-selection-background 02",
+                "terminal-line-selection-text 15",
+                "error-background 12",
+                "translation-error-backgroud 05",
+                "translation-warning-backgroud 06",
+                "program-error-background 04",
+                "alert-background 09",
+                "error-text 15",
+                "prompt-selected-background 02",
+                "prompt-selected-text 15"
             ] },
             { name: "neon", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
                 "000000",
@@ -1087,6 +1172,23 @@ const config = {
                 "FF55FF",
                 "FFFF55",
                 "FFFFFF",
+                "void-space 00",
+                "bar-background 01",
+                "bar-text 15",
+                "terminal-background 15",
+                "terminal-line-background 15",
+                "terminal-line-highlighted-background 14",
+                "terminal-line-text 02",
+                "terminal-line-selection-background 02",
+                "terminal-line-selection-text 15",
+                "error-background 12",
+                "translation-error-backgroud 05",
+                "translation-warning-backgroud 06",
+                "program-error-background 04",
+                "alert-background 03",
+                "error-text 15",
+                "prompt-selected-background 02",
+                "prompt-selected-text 15"
             ] },
         ],
         "D:/Spinners": [
@@ -1110,6 +1212,12 @@ const config = {
             ] },
             { name: "shade", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
                 "·", ":", "!", "+", "x", "%", "#", "%", "x", "+", "!", ":"
+            ] },
+            { name: "dancing-line", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
+                "_", "-", "¯", "-"
+            ] },
+            { name: "spring", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
+                "-", "=", "Ξ", "="
             ] },
             { name: "quickloop-in-progress", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
                 "Q"
