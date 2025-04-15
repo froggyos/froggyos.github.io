@@ -608,7 +608,7 @@ function processSingleLine(input, clock_interval) {
                 } else if(typedPrefix.type != "String") {
                     token = new ScriptError("TypeError", `[ask] prefix must be type String, found type ${typedPrefix.type}`, clock_interval);
                 } else {
-                    token = { ...token, variableName: variable, variableType: getVariable(variable).type, prefix: typedPrefix.value };
+                    token = { ...token, variableName: variable, variableType: getVariable(variable).type, prefix: typedPrefix };
                 }
             }
         } break;
@@ -649,7 +649,6 @@ function processSingleLine(input, clock_interval) {
 
         case "endquickloop": {
             let startOfQuickloopIndex = +input.split(" ")[1]; // remove the keyword to find the loop start index
-
             token = { ...token, goto: startOfQuickloopIndex }
         } break;
 
@@ -764,6 +763,7 @@ function processSingleLine(input, clock_interval) {
                 } else {
                     let typed = typeify(assignedValue, clock_interval)
                     token = {...token, ...typed, identifier: identifier };
+
                     if(typed.type == "Error") {
                         token = typed;
                     } else {
@@ -865,10 +865,10 @@ function typeErrorCheckers(token, clock_interval) {
                 token = new ScriptError("SyntaxError", `[prompt] must have at least one option`, clock_interval);
             } else if(typeify(token.options).type != "Array"){
                 token = new ScriptError("TypeError", `[prompt] options must be type Array, found type ${typeify(token.options).type}`, clock_interval);
+            } else {
+                token.options = typeify(token.options, clock_interval);
+                token.defaultOption = typeify(token.defaultOption, clock_interval);
             }
-
-            token.options = typeify(token.options, clock_interval);
-            token.defaultOption = typeify(token.defaultOption, clock_interval);
         } break;
 
         case "if": {
@@ -1001,7 +1001,7 @@ function interpreter(input, fileArguments) {
             token.value = lastToken.value;
         }
 
-        if(token.methodName) token = methodParser(token, clock_interval);
+        //if(token.methodName) token = methodParser(token, clock_interval);
 
         token = typeErrorCheckers(token, clock_interval);
 
@@ -1170,7 +1170,7 @@ function interpreter(input, fileArguments) {
                     inputElement.setAttribute('contenteditable', 'plaintext-only');
                     inputElement.setAttribute('spellcheck', 'true');
             
-                    span.textContent = token.prefix;
+                    span.textContent = token.prefix.value;
             
                     elementToAppend.appendChild(span);
                     elementToAppend.appendChild(inputElement);

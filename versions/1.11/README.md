@@ -6,25 +6,22 @@
 
 ## Palette Conventions
 There are no set colors that you must have, but these are the color conventions.
-* `00` - black – the void surrounding the terminal
-* `01` - blue – the top bar background
-* `02` - green – text, as well as selected text and option background color
-* `03` - cyan – alert background
-* `04` - red – program error background
-* `05` - magenta – translation error background
+* `00` - black
+* `01` - blue
+* `02` - green
+* `03` - cyan
+* `04` - red
+* `05` - magenta
 * `06` - orange/brown
 * `07` - light grey
 * `08` - dark grey
 * `09` - light blue
 * `10` - light green
 * `11` - light cyan
-* `12` - light red — generic error background
+* `12` - light red
 * `13` - light magenta
 * `14` - light orange/yellow
-* `15` - white – the terminal background, top bar and error text, and the selected text and option
-
-Note: colors `00` - `06`, `12`, and `15` are tied to their specific UI elements and this **cannot** be changed (yet). Some palettes are hardcoded to changes these values around. This will able to be done by the user via palette files in future versions.
-
+* `15` - white
 ### Current Color Palettes
 * standard
 * revised

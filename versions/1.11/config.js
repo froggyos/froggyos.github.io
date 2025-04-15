@@ -844,12 +844,16 @@ const config = {
         "C:/Docs": [],
         "D:": [], 
         "D:/Programs": [
-            { name: "cli", properties: {transparent:     false, read: false, write: false, hidden: true}, data: ["str cli = 'this program is hardcoded into froggyOS'", "endprog"] },
+            { name: "cli", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["str cli = 'this program is hardcoded into froggyOS'", "endprog"] },
             { name: "lilypad", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["str lilypad = 'this program is hardcoded into froggyOS'", "endprog"] },
             { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
-                "str test = ''",
-                "loaddata test optionsArray",
-                "out test",
+                "arr meow = 1,2,3,4,5,6,7,8,9,10",
+                "num i = 0",
+                "num len = .length. meow",
+                "loop i < len",
+                "out meow:i",
+                "set i = i + 1",
+                "endloop",
                 "endprog"
             ] },
             // { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
@@ -916,7 +920,9 @@ const config = {
                 "[[BULLFROG]]urgentloadstate",
                 "[[BULLFROG]]urgentclearstate",
                 "clear",
-                "ribbit OS state reloaded"
+                "ribbit OS state reloaded",
+                "[[BULLFROG]]greeting",
+                "[[BULLFROG]]changepath C:/Home"
             ] },
             { name: "edit-settings", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
                 "!es",
