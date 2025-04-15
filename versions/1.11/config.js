@@ -847,13 +847,7 @@ const config = {
             { name: "cli", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["str cli = 'this program is hardcoded into froggyOS'", "endprog"] },
             { name: "lilypad", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["str lilypad = 'this program is hardcoded into froggyOS'", "endprog"] },
             { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
-                "arr meow = 1,2,3,4,5,6,7,8,9,10",
-                "num i = 0",
-                "num len = .length. meow",
-                "loop i < len",
-                "out meow:i",
-                "set i = i + 1",
-                "endloop",
+                "error 'penis'",
                 "endprog"
             ] },
             // { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
@@ -939,15 +933,7 @@ const config = {
             ] },
         ],
         "D:/Program-Data": [
-            { name: "test", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
-                "KEY optionsArray TYPE Array START",
-                "TYPE String VALUE 1",
-                "TYPE String VALUE 2",
-                "TYPE Number VALUE 3",
-                "KEY optionsArray TYPE Array END",
-                "KEY testing TYPE String VALUE wow hello there!!! END",
-                "KEY testing2 TYPE String VALUE what the fuck!>!>!>! END",
-            ] },
+            { name: "test", properties: {transparent: false, read: true, write: true, hidden: false}, data: [] },
         ],
         "D:/Palettes": [
             // standard and revised palettes:  https://int10h.org/blog/2022/06/ibm-5153-color-true-cga-palette/
@@ -1225,8 +1211,23 @@ const config = {
             { name: "spring", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
                 "-", "=", "Ξ", "="
             ] },
+            { name: "claw", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
+                "<", "{", "(", ")", "}", ">"
+            ] },
+            { name: "burst", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
+                "·", "•", "*"
+            ] },
+            { name: "fire", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
+                "s", "§", "¿"
+            ] },
             { name: "quickloop-in-progress", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
                 "Q"
+            ] },
+            { name: "ask-in-progress", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
+                "?", "§", "¿"
+            ] },
+            { name: "prompt-in-progress", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
+                "¶"
             ] },
         ],
     }

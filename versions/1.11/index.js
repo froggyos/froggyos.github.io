@@ -99,7 +99,7 @@ function programList(){
                     write: false,
                     hidden: false
                 },
-                data: [""]
+                data: []
             });
         }
     }

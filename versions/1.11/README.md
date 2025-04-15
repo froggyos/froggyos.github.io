@@ -281,7 +281,17 @@ outf {t=c01, tr=4-48 | b=c04, br=57-91} "from the char 4 to char 48, the text wi
     * If a range is not specified, it will apply to the entire string
     * The value for Italic is `1` to be enabled, and `0` to be disabled
 
+### Error
+Error does not end the program early; to do that, you can follow with the `endprog` keyword.
+```
+error [error_message]
 
+error "this is an error message"
+
+-- when ran
+C:/Home> st [program_name]
+!!ERROR!! - this is an error message
+```
 ## Input
 ### Define a File Argument
 File arguments are passed in the terminal when running the program. The `filearg` keyword will create an **immutable** variable with the provided keyword and cannot override other variable values, even if that variable is mutable.

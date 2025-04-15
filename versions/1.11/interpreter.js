@@ -81,6 +81,10 @@ function outputError(token, interval) {
     createEditableTerminalLine(config.currentPath + ">");
 }
 
+function singleLineError(message){
+    createTerminalLine(message, config.errorText, {translate: false});
+}
+
 function resetVariables() {
     delete FroggyscriptMemory.variables;
     delete FroggyscriptMemory.functions;
@@ -129,10 +133,10 @@ function typeify(value, clock_interval) {
     };
 
     if(value == undefined) return new ScriptError("TypeifyError", `Cannot typeify [${value}]`, clock_interval);
-
+    
     value = value.replace(/^\..+\. /, "");
 
-    if(value.match(/^("|').*("|')$/g)) {// string
+    if(value.match(/^("|').*\1$/g)) {// string
        //  value = value.replace(/^\$/, '');
         typeObj.type = "String";
         typeObj.value = value.replace(/^("|')|("|')$/g, '');
@@ -412,6 +416,29 @@ function processSingleLine(input, clock_interval) {
                 token = new ScriptError("ReferenceError", `Variable [${variable}] does not exist`, clock_interval);
             } else if(getVariable(variable).mutable === false) {
                 token = new ScriptError("PermissionError", `Variable [${variable}] is immutable and cannot be reassigned`, clock_interval);
+            }
+
+            options = typeify(options, clock_interval);
+            defaultOption = typeify(defaultOption, clock_interval);
+
+            if(options.type == "Error") {
+                token = options;
+                break;
+            }
+
+            if(defaultOption.type == "Error") {
+                token = defaultOption;
+                break;
+            }
+
+            if(options.type != "Array") {
+                token = new ScriptError("TypeError", `[prompt] options must be type Array, found type ${options.type}`, clock_interval);
+                break;
+            }
+
+            if(defaultOption.type != "Number") {
+                token = new ScriptError("TypeError", `[prompt] default option must be type Number, found type ${defaultOption.type}`, clock_interval);
+                break;
             }
 
             token = { ...token, variableType: getVariable(variable).type, variableName: variable, defaultOption: defaultOption, options: options };
@@ -716,14 +743,10 @@ function processSingleLine(input, clock_interval) {
             
         } break;
 
+        case "error": 
         case "out": {
-            let argument = input.replace(/^out\s+/, '').trim();
+            let argument = input.replace(/^(out|error)\s+/, '').trim();
             let typed = typeify(argument, clock_interval);
-
-            if(typed.type == "Array"){
-                typed.type = "String"
-                typed.value = "{{Array}}"
-            }
 
             token = {...token, ...typed };
         } break;
@@ -843,9 +866,7 @@ function processSingleLine(input, clock_interval) {
     }
 
     // type error checkers
-    if(token.type == "FunctionIdentifier") {
-        token = typeErrorCheckers(token, clock_interval);
-    }
+    token = typeErrorCheckers(token, clock_interval);
 
     if(token.methodName){
         token = methodParser(token, clock_interval);
@@ -856,21 +877,6 @@ function processSingleLine(input, clock_interval) {
 
 function typeErrorCheckers(token, clock_interval) {
     switch(token.keyword){
-        case "prompt": {
-            if(token.variableType != "String") token = new ScriptError("TypeError", `[prompt] variable must be type String, found type ${token.variableType}`, clock_interval);
-            else if(token.defaultOption != undefined && token.defaultOption != "") {
-                let defaultOptionType = typeify(token.defaultOption, clock_interval);
-                if(defaultOptionType.type != "Number") token = new ScriptError("TypeError", `[prompt] default option must be type Number`, clock_interval);
-            } else if(token.options == "") {
-                token = new ScriptError("SyntaxError", `[prompt] must have at least one option`, clock_interval);
-            } else if(typeify(token.options).type != "Array"){
-                token = new ScriptError("TypeError", `[prompt] options must be type Array, found type ${typeify(token.options).type}`, clock_interval);
-            } else {
-                token.options = typeify(token.options, clock_interval);
-                token.defaultOption = typeify(token.defaultOption, clock_interval);
-            }
-        } break;
-
         case "if": {
             if(token.type != "Boolean") token = new ScriptError("TypeError", `[if] condition must evaluate to Boolean, found type ${token.type}`, clock_interval);
         } break;
@@ -925,7 +931,9 @@ function methodParser(token, clock_interval){
 
         case "join": {
             if(token.type != "Array") token = new ScriptError("TypeError", `[.join.] expects type Array, found type ${token.type}`, clock_interval);
-            else {
+            else if(token.methodArgs == undefined) {
+                token = new ScriptError("SyntaxError", `[.join.] must have a delimiter passed as an argument`, clock_interval);
+            } else {
                 let values = token.value.map(value => value.value).join(token.methodArgs[0]);
                 token.type = "String";
                 token.value = values;
@@ -1119,6 +1127,7 @@ function interpreter(input, fileArguments) {
                                 e.preventDefault();
                                 document.body.removeEventListener('keyup', promptHandler);
                                 setSetting("showSpinner", "false");
+                                setSetting("currentSpinner", getSetting("defaultSpinner"));
 
                                 let selectedValue = options[selectedIndex].textContent;
                                 
@@ -1133,6 +1142,7 @@ function interpreter(input, fileArguments) {
                         document.body.addEventListener('keyup', promptHandler);
                         terminal.appendChild(terminalLineElement);
                         setSetting("showSpinner", "true");
+                        setSetting("currentSpinner", "prompt-in-progress")
                     }
                 } break;
 
@@ -1180,6 +1190,7 @@ function interpreter(input, fileArguments) {
                     terminal.appendChild(elementToAppend);
                     inputElement.focus();
 
+                    setSetting("currentSpinner", "ask-in-progress")
                     setSetting("showSpinner", "true");
                     inputElement.addEventListener('keydown', function(e){
                         if(e.key == "Enter") e.preventDefault();
@@ -1187,6 +1198,7 @@ function interpreter(input, fileArguments) {
 
                     inputElement.addEventListener('keyup', function(e){
                         if(e.key == "Enter") {
+                            setSetting("currentSpinner", getSetting("defaultSpinner"))
                             setSetting("showSpinner", "false");
                             e.preventDefault();
                             inputElement.setAttribute('contenteditable', 'false');
@@ -1485,8 +1497,14 @@ function interpreter(input, fileArguments) {
                     writeVariable(token.identifier, token.type, token.value, true);
                 } break;
 
+                case "error":
                 case "out": {
-                    output(token);
+                    if(token.type == "Array"){
+                        token.type = "String";
+                        token.value = "{{Array}}";
+                    }
+                    if(token.keyword == "error") singleLineError(token.value);
+                    else output(token);
                 } break;
 
                 case "goto": {
@@ -1554,7 +1572,7 @@ function interpreter(input, fileArguments) {
                     /^KEY (.+?) TYPE Array END$/
                 )
 
-                if(programDataFile[0] != '' && (dataMatchArrayStart == null || dataMatchArrayEnd == null)){
+                if(programDataFile.length != 0 && (dataMatchArrayStart == null || dataMatchArrayEnd == null)){
                     dataError++;
                 }
 
