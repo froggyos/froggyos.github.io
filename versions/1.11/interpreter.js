@@ -105,7 +105,11 @@ function resetVariables() {
 
 // change this to evaluate the token and return the token
 function evaluate(expression) {
-    expression = expression.replace(/^\..+\. /, '');
+    let hashIndex = findFirstHashOutsideQuotes(expression);
+
+    if(hashIndex != -1) {
+        expression = expression.slice(0, hashIndex).trim();
+    }
 
     let variableNames = Object.keys(FroggyscriptMemory.variables);
 
@@ -133,8 +137,6 @@ function typeify(value, clock_interval) {
     };
 
     if(value == undefined) return new ScriptError("TypeifyError", `Cannot typeify [${value}]`, clock_interval);
-    
-    value = value.replace(/^\..+\. /, "");
 
     if(value.match(/^("|').*\1$/g)) {// string
        //  value = value.replace(/^\$/, '');
@@ -259,7 +261,7 @@ function typeify(value, clock_interval) {
             let functionLines = PROGRAM_LINES.slice(functionBody.start + 1, functionBody.end);
 
             typeObj.name = functionName;
-            typeObj.body = functionLines;
+            typeObj.body = functionLines;   
             typeObj.type = "ReturnFunction"   
         }
 
@@ -353,6 +355,61 @@ function writeVariable(identifier, type, value, mut) {
 
 let PROGRAM_LINES = [];
 
+function findFirstHashOutsideQuotes(str) {
+    let inSingleQuote = false;
+    let inDoubleQuote = false;
+
+    for (let i = 0; i < str.length; i++) {
+        const char = str[i];
+
+        // Toggle quote states (ignore escaped quotes)
+        if (char === "'" && !inDoubleQuote) {
+            if (i === 0 || str[i - 1] !== '\\') inSingleQuote = !inSingleQuote;
+        } else if (char === '"' && !inSingleQuote) {
+            if (i === 0 || str[i - 1] !== '\\') inDoubleQuote = !inDoubleQuote;
+        }
+
+        // Match first unquoted #
+        if (char === '#' && !inSingleQuote && !inDoubleQuote) {
+            return i;
+        }
+    }
+
+    return -1; // Not found
+}
+
+function splitByUnquotedCommas(str) {
+    let result = [];
+    let current = '';
+    let inSingleQuote = false;
+    let inDoubleQuote = false;
+
+    for (let i = 0; i < str.length; i++) {
+        const char = str[i];
+
+        // Handle quote state (ignore escaped quotes)
+        if (char === "'" && !inDoubleQuote && str[i - 1] !== '\\') {
+            inSingleQuote = !inSingleQuote;
+            current += char;
+        } else if (char === '"' && !inSingleQuote && str[i - 1] !== '\\') {
+            inDoubleQuote = !inDoubleQuote;
+            current += char;
+        } else if (char === ',' && !inSingleQuote && !inDoubleQuote) {
+        // Found unquoted comma → split here
+            result.push(current.trim());
+            current = '';
+        } else {
+            current += char;
+        }
+    }
+
+    if (current) {
+        result.push(current.trim());
+    }
+
+    return result;
+  }
+
 function processSingleLine(input, clock_interval) {
     input = input.trim();
     
@@ -360,13 +417,49 @@ function processSingleLine(input, clock_interval) {
 
     let keyword = input.split(" ")[0];
 
-    let methodDefinition = input.match(/\.(\w+);?(.+)?\./);
-
     token.keyword = keyword;
 
-    if(methodDefinition != null){
-        token.methodName = methodDefinition[1]
-        token.methodArgs = methodDefinition[2]?.split(";")
+
+    // go through each character index, and count amount of ' and ", and if the count is 0, start getting methods
+    // do the same with parentheses
+
+    if(findFirstHashOutsideQuotes(input) != -1){
+        let methods = [];
+        methodArray = input.slice(findFirstHashOutsideQuotes(input)+1).split("#")
+
+        methodArray.forEach(methodString => {
+            let method = {
+                name: methodString.split("(")[0].trim(),
+                args: [],
+            };
+
+            // get everything between the first ( and last )
+            let argsStart = methodString.indexOf("(") + 1;
+            let argsEnd = methodString.lastIndexOf(")");
+
+            if(argsStart == 0 && argsEnd == -1) {
+                methodString += "()";
+                argsStart = methodString.indexOf("(") + 1;
+            }
+
+            if(argsStart != 0 && argsEnd == -1) {
+                methodString += ")";
+                argsEnd = methodString.lastIndexOf(")");
+            }
+
+            let args = splitByUnquotedCommas(methodString.slice(argsStart, argsEnd).trim())
+
+            args.forEach(arg => {
+                method.args.push(arg)
+            })
+
+            
+            methods.push(method);
+        })
+
+        token.methods = methods;
+
+        input = input.slice(0, findFirstHashOutsideQuotes(input)).trim();
     }
 
     switch (keyword) {
@@ -868,7 +961,7 @@ function processSingleLine(input, clock_interval) {
     // type error checkers
     token = typeErrorCheckers(token, clock_interval);
 
-    if(token.methodName){
+    if(token.methods != undefined ?? Object.keys(token.methods).length != 0){
         token = methodParser(token, clock_interval);
     }
 
@@ -904,50 +997,110 @@ function typeErrorCheckers(token, clock_interval) {
     return token;
 }
 
-function methodParser(token, clock_interval){
-    switch(token.methodName){
-        case "stringify": {
-            if(token.type != "Number") token = new ScriptError("TypeError", `[.stringify.] expects type Number, found type ${token.type}`, clock_interval);
-            else {
-                token.value = token.value.toString();
+function methodParser(startToken, clock_interval){
+    let methods = startToken.methods;
+    let token = startToken;
+    for(let i = 0; i < methods.length; i++){
+
+        let method = methods[i];
+
+        let methodName = method.name;
+        let methodArgs = method.args.map(arg => typeify(arg, clock_interval));
+
+        if(methodArgs[0] == "(") {
+            token = new ScriptError("SyntaxError", `Incorrect syntax for [#${methodName}]`, clock_interval);
+            break;
+        }
+
+        let methodError = false;
+
+        for(let j = 0; i < methodArgs.length - 1; j++){
+            console.log(methodArgs)
+            if(methodArgs[j].type == "Error"){
+                token = methodArgs[j];
+                token.value += ` in method [#${methodName}]`;
+                methodError = true;
+                break;
+            }
+        }
+
+        if(methodError) break;
+
+        switch(methodName){
+            case "join": {
+                let arg1 = methodArgs[0];
+                if(arg1 == undefined) arg1 = typeify("','")
+
+                if(token.type != "Array") {
+                    token = new ScriptError("TypeError", `[#join()] expects type Array, found type ${token.type}`, clock_interval);
+                    break;
+                }
+                if(arg1.type != "String") {
+                    token = new ScriptError("TypeError", `[#join()] expects type String, found type ${arg1.type}`, clock_interval);
+                    break;
+                }
                 token.type = "String";
-            }
-        } break;
+                token.value = token.value.map(x => x.value).join(arg1.value);
+            } break;
 
-        case "replace": {
-            if(token.type != "String") token = new ScriptError("TypeError", `[.replace.] expects type String, found type ${token.type}`, clock_interval);
-            else {
-                let [search, replace] = token.methodArgs;
-                search = typeify(search, clock_interval).value;
-                replace = typeify(replace, clock_interval).value;
-                token.value = token.value.replace(search, replace);
-            }
-        } break;
+            case "replace": {
+                let arg1 = methodArgs[0];
+                let arg2 = methodArgs[1];
 
-        case "type": {
-            token.value = token.type;
-            token.type = "String";
-        } break;
+                if(arg1 == undefined) {
+                    token = new ScriptError("SyntaxError", `[#replace()] must have a search argument (arg 0)`, clock_interval);
+                    break;
+                }
+                if(arg2 == undefined) {
+                    token = new ScriptError("SyntaxError", `[#replace()] must have a replace argument (arg 1)`, clock_interval);
+                    break;
+                }
+                if(token.type != "String") {
+                    token = new ScriptError("TypeError", `[#replace()] expects type String, found type ${token.type}`, clock_interval);
+                    break;
+                }
+                if(arg1.type != "String") {
+                    token = new ScriptError("TypeError", `[#replace()] search expects type String, found type ${arg1.type}`, clock_interval);
+                    break;
+                }
+                if(arg2.type != "String") {
+                    token = new ScriptError("TypeError", `[#replace()] replace expects type String, found type ${arg2.type}`, clock_interval);
+                    break;
+                }
 
-        case "join": {
-            if(token.type != "Array") token = new ScriptError("TypeError", `[.join.] expects type Array, found type ${token.type}`, clock_interval);
-            else if(token.methodArgs == undefined) {
-                token = new ScriptError("SyntaxError", `[.join.] must have a delimiter passed as an argument`, clock_interval);
-            } else {
-                let values = token.value.map(value => value.value).join(token.methodArgs[0]);
+                token.value = token.value.replace(arg1.value, arg2.value);
+            } break;
+
+            case "stringify": {
+                if(token.type == "Array") {
+                    token.value = "{{Array}}";
+                } else if(token.type == "Number") {
+                    token.value = +token.value
+                } else {
+                    token = new ScriptError("TypeError", `[#stringify()] expects type Number or Array, found type ${token.type}`, clock_interval);
+                    break;
+                }	
                 token.type = "String";
-                token.value = values;
+            } break;
+
+            // case "append": {
+            //     console.log(token.methodArgs)
+            // } break;
+
+            case "type": {
+                token.value = token.type;
+                token.type = "String";
+            } break
+
+            // case "length": {
+            //     if(token.type != "String" && token.type != "Array") token = new ScriptError("TypeError", `[.length.] expects type String or Array, found type ${token.type}`, clock_interval);
+            //     token.value = token.value.length;
+            //     token.type = "Number";
+            // } break;
+
+            default: {
+                token = new ScriptError("SyntaxError", `[${methodName}] is not a valid method`, clock_interval);
             }
-        } break;
-
-        case "length": {
-            if(token.type != "String" && token.type != "Array") token = new ScriptError("TypeError", `[.length.] expects type String or Array, found type ${token.type}`, clock_interval);
-            token.value = token.value.length;
-            token.type = "Number";
-        } break;
-
-        default: {
-            token = new ScriptError("SyntaxError", `[${token.methodName}] is not a valid method`, clock_interval);
         }
     }
 

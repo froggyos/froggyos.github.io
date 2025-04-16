@@ -214,7 +214,7 @@ out 'one', 'two', 'three'
 -- outputs one', 'two, 'three
 
 out $'one', 'two', 'three'
--- outputs one;two;three
+-- outputs {{Array}}
 
 str variable = "thirty three million"
 out $'$|variable|', 'two', 'three':0
@@ -244,6 +244,7 @@ free test
 ```
 
 ## Output
+Automatically stringifies inputs.
 ### Basic Output
 ```
 out [argument]
@@ -256,7 +257,7 @@ out 1
 ### Formatted Output
 #### General
 * index `0` is the 1st character.
-* There is less than normal error checking on the formatting objects, so make sure they're correct.
+* There is less than normal error checking on formatting objects, so make sure they're correct.
 ```
 outf [format] [text]
 
@@ -282,7 +283,8 @@ outf {t=c01, tr=4-48 | b=c04, br=57-91} "from the char 4 to char 48, the text wi
     * The value for Italic is `1` to be enabled, and `0` to be disabled
 
 ### Error
-Error does not end the program early; to do that, you can follow with the `endprog` keyword.
+Errors do not end the program early, follow with the `endprog` keyword to do so.
+#### Basic Error
 ```
 error [error_message]
 
@@ -317,7 +319,7 @@ ask name
 ask name "!"
 
 -- default usage
-str name = "";
+str name = ""
 out "What is your name?"
 ask name
 out 'Hello $|name|!'
@@ -330,7 +332,7 @@ C:/Home> st [program_name]
 > Hello Froggy!
 
 -- custom prefix
-str name = "";
+str name = ""
 out "What is your name?"
 ask name "custom"
 out 'Hello $|name|!'
@@ -343,7 +345,7 @@ custom Froggy
 engprog
 
 -- TypeError
-int age = 0;
+num age = 0
 out "How old are you?"
 ask age
 out 'You are $|age| years old.'
@@ -458,7 +460,7 @@ quickloop 100
 endquickloop
 -- outputs "hello" 100 times in a row
 ```
-## Type Manipulation
+## Method Keywords
 ### stringify
 Converts a Number to a String
 ```
@@ -466,50 +468,59 @@ num test = 5
 stringify 5
 -- "5"
 ```
+### append
+Appends the second argument to the first argument. Both must be arrays.
+```
+arr test1 = "a", "b", "c"
+arr test2 = 1, 2, 3
+```
 ## Methods
-Arguments are separated by `;`.
 ### join
-Join the elements of an array into a string, delimited by the provided separator.
+Join the elements of an array into a string, delimited by the provided separator. If no argument is passed, "," will be used instead.
 ```
 arr test = "a", "b", "c", "d", "e"
-str output = .join;", ". test
--- "a, b, c, d, e"
+str output =  test#join(" space ")
+-- "a space b space c space d space e"
 ```
 ### type
 Outputs the type of the input as a string.
 ```
 arr test = "a", "b", "c", "d", "e"
-str output = .type. test
+str output = test#type()
 -- "Array"
 
 num test = 5
-str output = .type. test
+str output = test#type()
 -- "Number"
 ```
 ### length
 Length of the input array or string.
 ```
 arr test = "a", "b", "c", "d", "e"
-num output = .length. test
+num output = test#length()
 -- 5
 
 str test = "hello world!"
-num output = .length. test
+num output = test#length()
 -- 12
 ```
 ### replace
 Replace the first instance of the first argument with the second argument.
 ```
 str test = "hello world!"
-str output = .replace;"hello";"goodbye". test
+str output = test#replace("hello", "goodbye")
 -- "goodbye world!"
 ```
 ### stringify
-Converts a Number to a String
+Converts a Number or Array to a String
 ```
 num test = 5
-str output = .stringify. test
+str output = test#stringify()
 -- "5"
+```
+### append
+```
+output .append;arr2. arr1
 ```
 ## Program Data
 ### Saving Data

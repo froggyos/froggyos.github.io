@@ -323,7 +323,7 @@ function createColorTestBar(){
         
         const yiq = (r * 299 + g * 587 + b * 114) / 1000;
         
-        return yiq >= 128 ? "c00" : "c15";
+        return yiq >= 128 ? "BLACK" : "WHITE";
     }
     let squareContainer = document.getElementById('color-test-bar');
     squareContainer.innerHTML = "";
@@ -1285,10 +1285,12 @@ x
         case "[[BULLFROG]]setspinner": {
             let spinner = args[0];
             // check if spinner is a valid spinner
-            if(config.fileSystem["D:/Spinners"].find(spinner_ => spinner_.name == spinner) == undefined){
+            let validSpinners = config.fileSystem["D:/Spinners"].filter(x => x.properties.hidden == false)
+            if(validSpinners.find(spinner_ => spinner_.name == spinner) == undefined){
                 createTerminalLine("T_spinner_does_not_exist", config.errorText);
                 createTerminalLine(`T_available_spinners`, "");
-                createTerminalLine(config.fileSystem["D:/Spinners"].map(spinner_ => spinner_.name).join(", "), ">", {translate: false});
+
+                createTerminalLine(validSpinners.filter(spinner_ => spinner_.properties.transparent == false).map(spinner_ => spinner_.name).join(", "), ">", {translate: false});
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             } else {

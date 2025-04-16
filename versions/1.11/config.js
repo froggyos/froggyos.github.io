@@ -835,7 +835,7 @@ const config = {
             { name: "lbh", properties: {transparent: true, read: true, write: false, hidden: false}, data: ["{{{LANGNAME_!!!_language build helper}}}"] },
             { name: "eng", properties: {transparent: false, read: true, write: false, hidden: false}, data: ["{{{LANGNAME_!!!_English}}}"] },
             { name: "nmt", properties: {transparent: false, read: true, write: false, hidden: false}, data: ["{{{LANGNAME_!!!_ngimëte}}}"] },
-            { name: "jpn", properties: {transparent: false, read: true, write: false, hidden: false}, data: ["{{{LANGNAME_!!!_Japanese}}}"] }
+            { name: "jpn", properties: {transparent: false, read: true, write: false, hidden: false}, data: ["{{{LANGNAME_!!!_Japanese}}}"] },
         ],             
         "C:": [],   
         "C:/Home": [
@@ -847,7 +847,7 @@ const config = {
             { name: "cli", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["str cli = 'this program is hardcoded into froggyOS'", "endprog"] },
             { name: "lilypad", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["str lilypad = 'this program is hardcoded into froggyOS'", "endprog"] },
             { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
-                "error 'penis'",
+                "out $'meow', 'wo#of'#type()",
                 "endprog"
             ] },
             // { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
@@ -1205,17 +1205,8 @@ const config = {
             { name: "shade", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
                 "·", ":", "!", "+", "x", "%", "#", "%", "x", "+", "!", ":"
             ] },
-            { name: "dancing-line", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
-                "_", "-", "¯", "-"
-            ] },
             { name: "spring", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
                 "-", "=", "Ξ", "="
-            ] },
-            { name: "claw", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
-                "<", "{", "(", ")", "}", ">"
-            ] },
-            { name: "burst", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
-                "·", "•", "*"
             ] },
             { name: "fire", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
                 "s", "§", "¿"
@@ -1224,7 +1215,7 @@ const config = {
                 "Q"
             ] },
             { name: "ask-in-progress", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
-                "?", "§", "¿"
+                "?"
             ] },
             { name: "prompt-in-progress", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
                 "¶"
