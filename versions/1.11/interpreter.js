@@ -26,7 +26,6 @@ const defaultVariables = {
         mutable: false,
     },
 
-
     Time_OSRuntime: {
         type: "Number",
         value: 0,
@@ -45,6 +44,13 @@ const defaultVariables = {
         identifier: "Time_MsEpoch",
         mutable: false,
     },
+
+    OS_ProgramName: {
+        type: "String",
+        value: null,
+        identifier: "OS_ProgramName",
+        mutable: false,
+    }
 }
 
 class ScriptError {
@@ -79,6 +85,10 @@ function outputError(token, interval) {
     createTerminalLine(`At line: ${token.line+1}`, "", {translate: false});
     resetTerminalForUse(interval);
     createEditableTerminalLine(config.currentPath + ">");
+
+    const debugCommand = `[[BULLFROG]]gotoprogramline ${token.currentProgram} ${token.line}`
+
+    config.commandHistory = [debugCommand].concat(config.commandHistory);
 }
 
 function singleLineError(message){
@@ -105,7 +115,7 @@ function resetVariables() {
 
 // change this to evaluate the token and return the token
 function evaluate(expression) {
-    let hashIndex = findFirstHashOutsideQuotes(expression);
+    let hashIndex = findMethodIdentifier(expression);
 
     if(hashIndex != -1) {
         expression = expression.slice(0, hashIndex).trim();
@@ -341,6 +351,7 @@ function typeify(value, clock_interval) {
     } else {
         typeObj = new ScriptError("TypeifyError", `Cannot typeify [${value}]`, clock_interval);
     }
+
     return typeObj;
 }
 
@@ -355,7 +366,7 @@ function writeVariable(identifier, type, value, mut) {
 
 let PROGRAM_LINES = [];
 
-function findFirstHashOutsideQuotes(str) {
+function findMethodIdentifier(str) {
     let inSingleQuote = false;
     let inDoubleQuote = false;
 
@@ -370,7 +381,7 @@ function findFirstHashOutsideQuotes(str) {
         }
 
         // Match first unquoted #
-        if (char === '#' && !inSingleQuote && !inDoubleQuote) {
+        if (char === '>' && !inSingleQuote && !inDoubleQuote) {
             return i;
         }
     }
@@ -419,13 +430,9 @@ function processSingleLine(input, clock_interval) {
 
     token.keyword = keyword;
 
-
-    // go through each character index, and count amount of ' and ", and if the count is 0, start getting methods
-    // do the same with parentheses
-
-    if(findFirstHashOutsideQuotes(input) != -1){
+    if(findMethodIdentifier(input) != -1){
         let methods = [];
-        methodArray = input.slice(findFirstHashOutsideQuotes(input)+1).split("#")
+        methodArray = input.slice(findMethodIdentifier(input)+1).split(">")
 
         methodArray.forEach(methodString => {
             let method = {
@@ -434,24 +441,17 @@ function processSingleLine(input, clock_interval) {
             };
 
             // get everything between the first ( and last )
-            let argsStart = methodString.indexOf("(") + 1;
+            let argsStart = methodString.indexOf("(");
             let argsEnd = methodString.lastIndexOf(")");
 
-            if(argsStart == 0 && argsEnd == -1) {
-                methodString += "()";
-                argsStart = methodString.indexOf("(") + 1;
+            if(argsStart != -1 && argsEnd != -1) {
+
+                let args = splitByUnquotedCommas(methodString.slice(argsStart + 1, argsEnd).trim())
+
+                args.forEach(arg => {
+                    method.args.push(arg)
+                })
             }
-
-            if(argsStart != 0 && argsEnd == -1) {
-                methodString += ")";
-                argsEnd = methodString.lastIndexOf(")");
-            }
-
-            let args = splitByUnquotedCommas(methodString.slice(argsStart, argsEnd).trim())
-
-            args.forEach(arg => {
-                method.args.push(arg)
-            })
 
             
             methods.push(method);
@@ -459,7 +459,7 @@ function processSingleLine(input, clock_interval) {
 
         token.methods = methods;
 
-        input = input.slice(0, findFirstHashOutsideQuotes(input)).trim();
+        input = input.slice(0, findMethodIdentifier(input)).trim();
     }
 
     switch (keyword) {
@@ -540,7 +540,7 @@ function processSingleLine(input, clock_interval) {
 
         case "return": {
             let returnValue = input.replace(/^return\s+/, '').trim();
-            if(returnValue == "") {
+            if(returnValue.trim() == "") {
                 token = new ScriptError("SyntaxError", `[return] must be followed by a value`, clock_interval);
             } else {
                 let typeValue = typeify(returnValue, clock_interval);
@@ -555,6 +555,16 @@ function processSingleLine(input, clock_interval) {
         case "arr": {
             let value = input.replace(/^arr\s+/, '').split('=')[1].trim();
             let name = input.replace(/^arr\s+/, '').split('=')[0].trim();
+
+            if(name.trim() == ""){
+                token = new ScriptError("SyntaxError", `[arr] must be followed by a variable name`, clock_interval);
+                break;
+            }
+
+            if(value.trim() == ""){
+                token = new ScriptError("SyntaxError", `[arr] must be followed by a value`, clock_interval);
+                break;
+            }
 
             let values = [];
             let current = '';
@@ -715,7 +725,7 @@ function processSingleLine(input, clock_interval) {
             let variable = input.split(" ")[1].trim();
             let prefix = input.replace(`ask ${variable}`, "").trim();
 
-            if(prefix == "") prefix = "'?'";
+            if(prefix.trim() == "") prefix = "'?'";
 
             if(variable == undefined) {
                 token = new ScriptError("SyntaxError", `[ask] must be followed by a variable name`, clock_interval);
@@ -838,9 +848,15 @@ function processSingleLine(input, clock_interval) {
 
         case "error": 
         case "out": {
-            let argument = input.replace(/^(out|error)\s+/, '').trim();
-            let typed = typeify(argument, clock_interval);
+            let argument = input.replace(/^(out|error)/, '').trim();
 
+            if(argument.trim() == "") {
+                token = new ScriptError("SyntaxError", `[${keyword}] must be followed by a value`, clock_interval);
+                break;
+            }
+
+            let typed = typeify(argument, clock_interval);
+            
             token = {...token, ...typed };
         } break;
 
@@ -958,18 +974,22 @@ function processSingleLine(input, clock_interval) {
         }
     }
 
-    // type error checkers
-    token = typeErrorCheckers(token, clock_interval);
-
+    
     if(token.methods != undefined ?? Object.keys(token.methods).length != 0){
         token = methodParser(token, clock_interval);
     }
+
+    token = typeErrorCheckers(token, clock_interval);
 
     return token;
 }
 
 function typeErrorCheckers(token, clock_interval) {
     switch(token.keyword){
+        case "arr": {
+            if(token.type != "Array") token = new ScriptError("TypeError", `[arr] declaration can only be assigned type Array, found type ${token.type}`, clock_interval);
+        } break;
+
         case "if": {
             if(token.type != "Boolean") token = new ScriptError("TypeError", `[if] condition must evaluate to Boolean, found type ${token.type}`, clock_interval);
         } break;
@@ -999,44 +1019,56 @@ function typeErrorCheckers(token, clock_interval) {
 
 function methodParser(startToken, clock_interval){
     let methods = startToken.methods;
-    let token = startToken;
-    for(let i = 0; i < methods.length; i++){
 
+    let token = startToken;
+
+    let methodError = false;
+
+    for(let i = 0; i < methods.length; i++){
+        
         let method = methods[i];
 
         let methodName = method.name;
-        let methodArgs = method.args.map(arg => typeify(arg, clock_interval));
 
-        if(methodArgs[0] == "(") {
-            token = new ScriptError("SyntaxError", `Incorrect syntax for [#${methodName}]`, clock_interval);
+        if(method.args[0] == "(") {
+            token = new ScriptError("SyntaxError", `Incorrect syntax for [>${methodName}]`, clock_interval);
+            methodError = true;
             break;
         }
 
-        let methodError = false;
+        let methodArgs = method.args.map(arg => typeify(arg, clock_interval));        
 
-        for(let j = 0; i < methodArgs.length - 1; j++){
-            console.log(methodArgs)
-            if(methodArgs[j].type == "Error"){
-                token = methodArgs[j];
-                token.value += ` in method [#${methodName}]`;
-                methodError = true;
-                break;
-            }
+        if(methodArgs[0] == "(") {
+            token = new ScriptError("SyntaxError", `Incorrect syntax for [>${methodName}]`, clock_interval);
+            methodError = true;
+            break;
         }
 
-        if(methodError) break;
+
+        methodArgs.forEach((arg, i) => {
+            if(arg.type == "Error"){
+                token = arg;
+                token.value += ` in method [>${methodName}]`;
+                methodError = true;
+                return
+            }
+        })
+
+        if(methodError) return token;
 
         switch(methodName){
             case "join": {
                 let arg1 = methodArgs[0];
-                if(arg1 == undefined) arg1 = typeify("','")
+                if(arg1 == undefined || arg1.type == "Error") arg1 = typeify("','")
 
                 if(token.type != "Array") {
-                    token = new ScriptError("TypeError", `[#join()] expects type Array, found type ${token.type}`, clock_interval);
+                    token = new ScriptError("TypeError", `[>join()] expects type Array, found type ${token.type}`, clock_interval);
+                    methodError = true;
                     break;
                 }
                 if(arg1.type != "String") {
-                    token = new ScriptError("TypeError", `[#join()] expects type String, found type ${arg1.type}`, clock_interval);
+                    token = new ScriptError("TypeError", `[>join()] expects type String, found type ${arg1.type}`, clock_interval);
+                    methodError = true;
                     break;
                 }
                 token.type = "String";
@@ -1048,23 +1080,28 @@ function methodParser(startToken, clock_interval){
                 let arg2 = methodArgs[1];
 
                 if(arg1 == undefined) {
-                    token = new ScriptError("SyntaxError", `[#replace()] must have a search argument (arg 0)`, clock_interval);
+                    token = new ScriptError("SyntaxError", `[>replace()] must have a search argument (arg 1)`, clock_interval);
+                    methodError = true;
                     break;
                 }
                 if(arg2 == undefined) {
-                    token = new ScriptError("SyntaxError", `[#replace()] must have a replace argument (arg 1)`, clock_interval);
+                    token = new ScriptError("SyntaxError", `[>replace()] must have a replace argument (arg 2)`, clock_interval);
+                    methodError = true;
                     break;
                 }
                 if(token.type != "String") {
-                    token = new ScriptError("TypeError", `[#replace()] expects type String, found type ${token.type}`, clock_interval);
+                    token = new ScriptError("TypeError", `[>replace()] expects type String, found type ${token.type}`, clock_interval);
+                    methodError = true;
                     break;
                 }
                 if(arg1.type != "String") {
-                    token = new ScriptError("TypeError", `[#replace()] search expects type String, found type ${arg1.type}`, clock_interval);
+                    token = new ScriptError("TypeError", `[>replace()] search expects type String, found type ${arg1.type}`, clock_interval);
+                    methodError = true;
                     break;
                 }
                 if(arg2.type != "String") {
-                    token = new ScriptError("TypeError", `[#replace()] replace expects type String, found type ${arg2.type}`, clock_interval);
+                    token = new ScriptError("TypeError", `[>replace()] replace expects type String, found type ${arg2.type}`, clock_interval);
+                    methodError = true;
                     break;
                 }
 
@@ -1075,9 +1112,10 @@ function methodParser(startToken, clock_interval){
                 if(token.type == "Array") {
                     token.value = "{{Array}}";
                 } else if(token.type == "Number") {
-                    token.value = +token.value
+                    token.value = token.value.toString();
                 } else {
-                    token = new ScriptError("TypeError", `[#stringify()] expects type Number or Array, found type ${token.type}`, clock_interval);
+                    token = new ScriptError("TypeError", `[>stringify()] expects type Number or Array, found type ${token.type}`, clock_interval);
+                    methodError = true;
                     break;
                 }	
                 token.type = "String";
@@ -1092,15 +1130,23 @@ function methodParser(startToken, clock_interval){
                 token.type = "String";
             } break
 
-            // case "length": {
-            //     if(token.type != "String" && token.type != "Array") token = new ScriptError("TypeError", `[.length.] expects type String or Array, found type ${token.type}`, clock_interval);
-            //     token.value = token.value.length;
-            //     token.type = "Number";
-            // } break;
+            case "length": {
+                if(token.type != "String" && token.type != "Array") {
+                    token = new ScriptError("TypeError", `[>length()] expects type String or Array, found type ${token.type}`, clock_interval);
+                    methodError = true;
+                    break;
+                }
+
+
+                token.value = token.value.length;
+                token.type = "Number";
+
+            } break;
 
             default: {
                 token = new ScriptError("SyntaxError", `[${methodName}] is not a valid method`, clock_interval);
-            }
+                methodError = true;
+            } break;
         }
     }
 
@@ -1120,6 +1166,8 @@ function interpreter(input, fileArguments) {
     let fileArgumentCount = 0;
 
     resetVariables()
+
+    writeVariable("OS_ProgramName", "String", structuredClone(config).currentProgram, false);
 
     if(lines[lines.length - 1].trim() !== "endprog") {
         output({value: `PrecheckError -> [endprog] must be the last line of the program <-`});
@@ -1162,12 +1210,10 @@ function interpreter(input, fileArguments) {
             token.value = lastToken.value;
         }
 
-        //if(token.methodName) token = methodParser(token, clock_interval);
-
         token = typeErrorCheckers(token, clock_interval);
 
-
         if(token.type === "Error") {
+            token.currentProgram = config.currentProgram;
             outputError(token, interval);
             return;
         } else {
@@ -1440,6 +1486,7 @@ function interpreter(input, fileArguments) {
                         let line = funcLines[i];
                         let token = processSingleLine(line, clock_interval);
                         if(token.type === "Error") {
+                            token.currentProgram = config.currentProgram;
                             outputError(token);
                             return;
                         } else {
@@ -1458,6 +1505,7 @@ function interpreter(input, fileArguments) {
                             let line = linesToLoop[j];
                             let token = processSingleLine(line, clock_interval);
                             if(token.type === "Error") {
+                                token.currentProgram = config.currentProgram;
                                 outputError(token);
                                 return;
                             } else {
@@ -1600,7 +1648,9 @@ function interpreter(input, fileArguments) {
                     if (endIndex === null) {
                         token = {
                             type: "Error",
-                            value: `SyntaxError -> Missing matching [endif] for [if] <-`,
+                            value: `Missing matching [endif] for [if]`,
+                            error: "SyntaxError",
+                            line: clock_interval
 
                         }
                     } else {
@@ -1680,6 +1730,7 @@ function interpreter(input, fileArguments) {
             }
 
             if(token.type === "Error") {
+                token.currentProgram = config.currentProgram;
                 outputError(token, interval);
                 return;
             }

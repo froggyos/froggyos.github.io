@@ -446,6 +446,11 @@ const presetLanguagesMap = {
         nmt: "sepu ágayuménta. apelelala som '1' ute '0'",
         jpn: "無効な引数です。「1」または「0」を入力してください。"
     },
+    "T_provide_program_name_and_line": {
+        eng: "Please provide a program name and a line number.",
+        nmt: "T_provide_program_name_and_line",
+        jpn: "T_provide_program_name_and_line"
+    },
 
     // lilypad ====================================
     "T_lilypad_save_exit": {
@@ -847,7 +852,8 @@ const config = {
             { name: "cli", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["str cli = 'this program is hardcoded into froggyOS'", "endprog"] },
             { name: "lilypad", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["str lilypad = 'this program is hardcoded into froggyOS'", "endprog"] },
             { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
-                "out $'meow', 'wo#of'#type()",
+                "arr array = 1,2,3,4,5",
+                "out array>join>length>type",
                 "endprog"
             ] },
             // { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [

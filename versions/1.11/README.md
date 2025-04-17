@@ -475,52 +475,57 @@ arr test1 = "a", "b", "c"
 arr test2 = 1, 2, 3
 ```
 ## Methods
+If a method has no arguments, you may omit the parentheses.
 ### join
 Join the elements of an array into a string, delimited by the provided separator. If no argument is passed, "," will be used instead.
 ```
 arr test = "a", "b", "c", "d", "e"
-str output =  test#join(" space ")
+str output =  test>join(" space ")
 -- "a space b space c space d space e"
+
+arr test2 = 1, 2, 3, 4, 5
+str output = test2>join
+-- "1,2,3,4,5"
 ```
 ### type
 Outputs the type of the input as a string.
 ```
 arr test = "a", "b", "c", "d", "e"
-str output = test#type()
+str output = test>type
 -- "Array"
 
 num test = 5
-str output = test#type()
+str output = test>type
 -- "Number"
 ```
 ### length
 Length of the input array or string.
 ```
 arr test = "a", "b", "c", "d", "e"
-num output = test#length()
+num output = test>length
 -- 5
 
 str test = "hello world!"
-num output = test#length()
+num output = test>length
 -- 12
 ```
 ### replace
 Replace the first instance of the first argument with the second argument.
 ```
 str test = "hello world!"
-str output = test#replace("hello", "goodbye")
+str output = test>replace("hello", "goodbye")
 -- "goodbye world!"
 ```
 ### stringify
 Converts a Number or Array to a String
 ```
 num test = 5
-str output = test#stringify()
+str output = test>stringify
 -- "5"
 ```
 ### append
 ```
-output .append;arr2. arr1
+output arr1>append(arr2)
 ```
 ## Program Data
 ### Saving Data
