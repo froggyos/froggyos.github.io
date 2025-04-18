@@ -133,7 +133,7 @@ idk
 # 1.11
 ```
 * new hidden command
-    + gotoprogramline - edits file in argument one and then brings you to the line with the error in argument two
+    + gotoprogramline - edits file in argument one and then brings you to the line in argument two
 ~ changed the way palettes work to allow for more customization
 ~ changed FroggyScript method syntax
 ~ fixed debugging
