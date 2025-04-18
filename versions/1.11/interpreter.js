@@ -1214,7 +1214,7 @@ function interpretSingleLine(interval, single_input, clock_interval) {
                 if(selectedIndex < 0 || selectedIndex >= arrayOptions.length){
                     token = new ScriptError("RangeError", `[${selectedIndex}] is out of range of options`, clock_interval);
                 } else {
-                    cliPromptCount++;
+                    FroggyscriptMemory.cliPromptCount++;
 
                     let terminalLineElement = document.createElement('div');
                     terminalLineElement.classList.add('line-container');
@@ -1226,7 +1226,7 @@ function interpretSingleLine(interval, single_input, clock_interval) {
 
                     for(let i = 0; i < arrayOptions.length; i++){
                         let option = document.createElement('span');
-                        option.setAttribute("data-program", `cli-session-${config.programSession}-${cliPromptCount}`);
+                        option.setAttribute("data-program", `cli-session-${config.programSession}-${FroggyscriptMemory.cliPromptCount}`);
                         option.textContent = arrayOptions[i];
                         if(i == selectedIndex) {
                             option.classList.add('selected');
@@ -1237,7 +1237,7 @@ function interpretSingleLine(interval, single_input, clock_interval) {
                     }
 
                     function promptHandler(e){
-                        let options = document.querySelectorAll(`[data-program='cli-session-${config.programSession}-${cliPromptCount}']`);
+                        let options = document.querySelectorAll(`[data-program='cli-session-${config.programSession}-${FroggyscriptMemory.cliPromptCount}']`);
                         e.preventDefault();
 
                         if(e.key == "ArrowLeft"){
@@ -1350,7 +1350,7 @@ function interpretSingleLine(interval, single_input, clock_interval) {
             case "filearg": {
                 let expectedType = token.variableType;
 
-                let inputValue = fileArguments[fileArgumentCount];
+                let inputValue = FroggyscriptMemory.fileArguments[FroggyscriptMemory.fileArgumentCount];
 
                 if(expectedType === "Number") inputValue = parseFloat(inputValue);
 
@@ -1365,7 +1365,7 @@ function interpretSingleLine(interval, single_input, clock_interval) {
                 } else {
                     writeVariable(token.variableName, token.variableType, inputValue, false);
 
-                    fileArgumentCount++;
+                    FroggyscriptMemory.fileArgumentCount++;
                 }
             } break;
 
@@ -1626,6 +1626,7 @@ function interpreter(input, fileArguments) {
     FroggyscriptMemory.lines = lines;
     FroggyscriptMemory.fileArguments = fileArguments;
     FroggyscriptMemory.fileArgumentCount = fileArgumentCount;
+    FroggyscriptMemory.cliPromptCount = 0;
 
     resetVariables()
 
@@ -1636,8 +1637,6 @@ function interpreter(input, fileArguments) {
         createEditableTerminalLine(config.currentPath + ">");
         return;
     }
-
-    let cliPromptCount = 0;
 
     let CLOCK_PAUSED = false;
 
