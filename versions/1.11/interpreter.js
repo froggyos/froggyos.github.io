@@ -272,7 +272,6 @@ function typeify(value, clock_interval) {
 
     } else if(value.match(/^\d*|\+|\-|\/|\*|\^/g)) {
         let error = false;
-        let errMsg = null;
         try {
             evaluate(value);
         } catch (e) {
@@ -337,7 +336,7 @@ function findMethodIdentifier(str) {
     return -1; // Not found
 }
 
-function splitByUnquotedCommas(str) {
+function splitArguments(str) {
     let result = [];
     let current = '';
     let inSingleQuote = false;
@@ -346,15 +345,13 @@ function splitByUnquotedCommas(str) {
     for (let i = 0; i < str.length; i++) {
         const char = str[i];
 
-        // Handle quote state (ignore escaped quotes)
         if (char === "'" && !inDoubleQuote && str[i - 1] !== '\\') {
             inSingleQuote = !inSingleQuote;
             current += char;
         } else if (char === '"' && !inSingleQuote && str[i - 1] !== '\\') {
             inDoubleQuote = !inDoubleQuote;
             current += char;
-        } else if (char === ',' && !inSingleQuote && !inDoubleQuote) {
-        // Found unquoted comma → split here
+        } else if (char === ';' && !inSingleQuote && !inDoubleQuote) {
             result.push(current.trim());
             current = '';
         } else {
@@ -398,7 +395,7 @@ function processSingleLine(input, clock_interval) {
 
             if(argsStart != -1 && argsEnd != -1) {
 
-                let args = splitByUnquotedCommas(methodString.slice(argsStart + 1, argsEnd).trim())
+                let args = splitArguments(methodString.slice(argsStart + 1, argsEnd).trim())
 
                 args.forEach(arg => {
                     method.args.push(arg)
@@ -694,6 +691,7 @@ function processSingleLine(input, clock_interval) {
                 }
             }
         } break;
+
         case "filearg": {
             let variable = input.split(" ")[1].trim();
             let type = input.split(" ")[2].trim();
@@ -705,28 +703,6 @@ function processSingleLine(input, clock_interval) {
             } else {
                 token = { ...token, variableName: variable, variableType: type };
             }
-        } break;
-
-        case "func": {
-            let funcName = input.replace(/^func\s+/, '').split(' ')[0].trim();
-
-            token = { ...token, name: funcName };
-
-        } break;
-
-        case "endfunc": {
-            let matchingFuncIndex = +input.split(" ")[1]; // remove the keyword to find the func start index
-
-            token = { ...token, match: matchingFuncIndex }
-        } break;
-
-        case "f:": {
-            let functionName = input.replace(/^f:\s+/, '').split(' ')[0].trim();
-
-            if(FroggyscriptMemory.functions[functionName] == undefined) {
-                token = new ScriptError("ReferenceError", `Function [${functionName}] does not exist`, clock_interval);
-            }
-            else token = { ...token, name: functionName };
         } break;
 
         case "endquickloop": {
@@ -927,7 +903,6 @@ function processSingleLine(input, clock_interval) {
     }
 
     if(token.type == "Error") return token;
-
     
     if(token.methods != undefined ?? Object.keys(token.methods).length != 0){
         token = methodParser(token, clock_interval);
@@ -987,7 +962,7 @@ function methodParser(startToken, clock_interval){
             break;
         }
 
-        let methodArgs = method.args.map(arg => typeify(arg, clock_interval));        
+        let methodArgs = method.args.map(arg => typeify(arg, clock_interval));
 
         if(methodArgs[0] == "(") {
             token = new ScriptError("SyntaxError", `Incorrect syntax for [>${methodName}]`, clock_interval);
@@ -1097,18 +1072,32 @@ function methodParser(startToken, clock_interval){
                     break;
                 }
 
-                if(arg1.type != "Array"){
-                    token = new ScriptError("TypeError", `[>append()] argument expects type Array, found type ${arg1.type}`, clock_interval);
+                if(token.type != "String" && token.type != "Array") {
+                    token = new ScriptError("TypeError", `[>append()] expects type String or Array, found type ${token.type}`, clock_interval);
                     break;
                 }
 
-                if(token.type != "Array") {
-                    token = new ScriptError("TypeError", `[>append()] expects type Array, found type ${token.type}`, clock_interval);
+                if(arg1.type != "String" && arg1.type != "Array"){
+                    token = new ScriptError("TypeError", `[>append()] argument expects type String or Array, found type ${arg1.type}`, clock_interval);
                     break;
                 }
 
-                token.value.push(...arg1.value);
+                if(token.type == "String" && arg1.type == "Array"){
+                    token = new ScriptError("TypeError", `[>append()] cannot append type Array to type String`, clock_interval);
+                    break;
+                }
 
+                if(token.type == "Array"){
+                    if(arg1.type == "String"){
+                        token.value.push(arg1);
+                    } else {
+                        token.value.push(...arg1.value);
+                    }
+                } else if(token.type == "String"){
+                    if(arg1.type == "String"){
+                        token.value += arg1.value;
+                    }
+                }
             } break;
 
             case "type": {
@@ -1142,6 +1131,491 @@ setInterval(() => {
     FroggyscriptMemory.variables.Time_OSRuntime.value = Date.now() - OS_RUNTIME_START
 }, 1);
 
+function interpretSingleLine(interval, single_input, clock_interval) {
+    let line = single_input;
+
+    if(line.match(/^@.+$/)){
+        line = line.replace(/^@/, 'f: ');
+    }
+
+    let token = processSingleLine(line, clock_interval);
+
+    token = typeErrorCheckers(token, clock_interval);
+
+    if(token.type === "Error") {
+        token.currentProgram = config.currentProgram;
+        outputError(token, interval);
+        return;
+    } else {
+        // process tokens here =======================================================
+        switch(token.keyword) {
+            case "loaddata": {
+                let key = token.key
+                let variable = token.variableName;
+
+                if(FroggyscriptMemory.savedData[key] == undefined){
+                    token = new ScriptError("ReferenceError", `Key [${key}] does not exist`, clock_interval);
+                } else {
+                    let retrievedData = FroggyscriptMemory.savedData[key];
+                    let valueToSet = retrievedData.value
+                    
+                    if(retrievedData.type == "String") valueToSet = `"${valueToSet}"`;
+
+                    FroggyscriptMemory.lines[clock_interval] = `set ${variable} = ${valueToSet}`;
+                    clock_interval--;
+                }
+            } break;    
+
+            case "savedata": {
+                let key = token.key;
+                let value = token.value;
+                let valueType = value.type;
+
+                let dataArray = [];
+
+                if(valueType == "Array"){
+                    dataArray.push(`KEY ${key} TYPE ${valueType} START`)
+                    for(let i = 0; i < value.value.length; i++){
+                        let index = value.value[i];
+                        dataArray.push(`INDEX TYPE ${index.type} VALUE ${index.value}`)
+                    }
+                    dataArray.push(`KEY ${key} TYPE ${valueType} END`)
+                } else {
+                    dataArray.push(`KEY ${key} TYPE ${valueType} VALUE ${value.value} END`)
+                }
+
+                let fileData = config.fileSystem['D:/Program-Data'].find(x => x.name == config.currentProgram);
+
+                if(valueType == "Array"){
+                    let startIndex = fileData.data.findIndex(x => x.match(new RegExp(`^KEY ${key} TYPE ${valueType} START$`)));
+
+                    let endIndex = fileData.data.findIndex(x => x.match(new RegExp(`^KEY ${key} TYPE ${valueType} END$`)));
+
+                    if((startIndex == -1 && endIndex != -1) || (startIndex != -1 && endIndex == -1)){
+                        token = new ScriptError("ProgramDataError", `The program data in D:/Program-Data is malformed. Cannot save data`, clock_interval);
+                    }
+                } else {
+                    let dataIndex = fileData.data.findIndex(x => x.match(new RegExp(`^KEY ${key} TYPE ${valueType} VALUE (.+?) END`)));
+
+                    if(dataIndex == -1){
+                        fileData.data.push(...dataArray);
+                    } else {
+                        fileData.data[dataIndex] = dataArray[0];
+                    }
+                }
+            } break;
+
+            case "prompt": {
+                CLOCK_PAUSED = true;
+
+                let selectedIndex = token.defaultOption.value;
+                let arrayOptions = token.options.value.map(x => x.value);
+
+                if(selectedIndex < 0 || selectedIndex >= arrayOptions.length){
+                    token = new ScriptError("RangeError", `[${selectedIndex}] is out of range of options`, clock_interval);
+                } else {
+                    cliPromptCount++;
+
+                    let terminalLineElement = document.createElement('div');
+                    terminalLineElement.classList.add('line-container');
+
+                    let spanElement = document.createElement('span');
+                    spanElement.textContent = ">";
+
+                    terminalLineElement.appendChild(spanElement);
+
+                    for(let i = 0; i < arrayOptions.length; i++){
+                        let option = document.createElement('span');
+                        option.setAttribute("data-program", `cli-session-${config.programSession}-${cliPromptCount}`);
+                        option.textContent = arrayOptions[i];
+                        if(i == selectedIndex) {
+                            option.classList.add('selected');
+                        }
+                        option.style.paddingLeft = 0;
+                        terminalLineElement.appendChild(option);
+                        terminalLineElement.appendChild(document.createTextNode(" "));
+                    }
+
+                    function promptHandler(e){
+                        let options = document.querySelectorAll(`[data-program='cli-session-${config.programSession}-${cliPromptCount}']`);
+                        e.preventDefault();
+
+                        if(e.key == "ArrowLeft"){
+                            if(selectedIndex > 0) selectedIndex--;
+                            options.forEach(option => option.classList.remove('selected'));
+                            options[selectedIndex].classList.add('selected');
+                        }
+
+                        if(e.key == "ArrowRight"){
+                            if(selectedIndex < options.length - 1) selectedIndex++;
+                            options.forEach(option => option.classList.remove('selected'));
+                            options[selectedIndex].classList.add('selected');
+                        }
+
+                        if(e.key == "Enter"){
+                            e.preventDefault();
+                            document.body.removeEventListener('keyup', promptHandler);
+                            setSetting("showSpinner", "false");
+                            setSetting("currentSpinner", getSetting("defaultSpinner"));
+
+                            let selectedValue = options[selectedIndex].textContent;
+                            
+                            FroggyscriptMemory.lines[clock_interval-1] = `set ${token.variableName} = "${selectedValue}"`;
+                            CLOCK_PAUSED = false;
+                            clock_interval--;        
+                            
+
+                        }
+                    }
+
+                    document.body.addEventListener('keyup', promptHandler);
+                    terminal.appendChild(terminalLineElement);
+                    setSetting("showSpinner", "true");
+                    setSetting("currentSpinner", "prompt-in-progress")
+                }
+            } break;
+
+            case "arr": {
+                let name = token.identifier;
+                let values = token.value;
+                writeVariable(name, "Array", values, true);
+            } break;
+
+            case "stringify": {
+                if(getVariable(token.variableName).mutable === false) {
+                    token = new ScriptError("PermissionError", `Variable [${token.variableName}] is immutable and cannot be reassigned`, clock_interval);
+                }else if(token.variableType != "Number"){
+                    token = new ScriptError("TypeError", `[${token.variableName}] must be of type Number`, clock_interval);
+                } else {
+                    let variable = getVariable(token.variableName);
+                    writeVariable(variable.identifier, "String", variable.value.toString(), variable.mutable);
+                }
+            } break;
+
+            case "clearterminal": {
+                document.getElementById("terminal").innerHTML = "";
+            } break;
+
+            case "outf": {
+                outputWithFormatting(token);
+            } break;
+
+            case "ask": {
+                CLOCK_PAUSED = true;
+                let span = document.createElement('span');
+                let inputElement = document.createElement('div');
+                let elementToAppend = document.createElement('div');
+        
+                inputElement.setAttribute('contenteditable', 'plaintext-only');
+                inputElement.setAttribute('spellcheck', 'true');
+        
+                span.textContent = token.prefix.value;
+        
+                elementToAppend.appendChild(span);
+                elementToAppend.appendChild(inputElement);
+        
+                elementToAppend.classList.add('line-container');
+        
+                terminal.appendChild(elementToAppend);
+                inputElement.focus();
+
+                setSetting("currentSpinner", "ask-in-progress")
+                setSetting("showSpinner", "true");
+                inputElement.addEventListener('keydown', function(e){
+                    if(e.key == "Enter") e.preventDefault();
+                }); 
+
+                inputElement.addEventListener('keyup', function(e){
+                    if(e.key == "Enter") {
+                        setSetting("currentSpinner", getSetting("defaultSpinner"))
+                        setSetting("showSpinner", "false");
+                        e.preventDefault();
+                        inputElement.setAttribute('contenteditable', 'false');
+
+                        token = { ...token, value: inputElement.textContent };
+
+                        let expectedType = getVariable(token.variableName).type;
+
+                        if(expectedType == "Number" && /^\d+$/.test(token.value)) token.value = parseInt(token.value);
+                        else token.value = `"${token.value}"`;
+                        
+                        FroggyscriptMemory.lines[clock_interval-1] = `set ${token.variableName} = ${token.value}`;                       
+                        CLOCK_PAUSED = false;
+                        clock_interval--;        
+                    }
+                }); 
+
+            } break;
+
+            case "filearg": {
+                let expectedType = token.variableType;
+
+                let inputValue = fileArguments[fileArgumentCount];
+
+                if(expectedType === "Number") inputValue = parseFloat(inputValue);
+
+                if(inputValue == undefined){
+                    token = new ScriptError("TypeError", `Missing file argument [${fileArgumentCount}] (expecting type ${expectedType})`, clock_interval);
+
+                } else if(FroggyscriptMemory.variables[token.variableName] != undefined) {
+                    token = new ScriptError("ReferenceError", `Variable [${token.variableName}] already exists, cannot override`, clock_interval);
+
+                } else if(isNaN(inputValue) && expectedType === "Number") {
+                    token = new ScriptError("TypeError", `File argument [${fileArgumentCount}] must be of type [${expectedType}]`, clock_interval);
+                } else {
+                    writeVariable(token.variableName, token.variableType, inputValue, false);
+
+                    fileArgumentCount++;
+                }
+            } break;
+
+            case "endquickloop": {
+                let loopAmount = typeify(FroggyscriptMemory.lines[token.goto].replace("quickloop", "").trim(), clock_interval).value;
+
+                let linesToLoop = FroggyscriptMemory.lines.slice(token.goto + 1, clock_interval).map(x => x.trim()).filter(x => x.length > 0 && x !== "--");
+
+                for(let i = 0; i < loopAmount - 1; i++) {
+                    for(let j = 0; j < linesToLoop.length; j++) {
+                        let line = linesToLoop[j];
+                        let token = processSingleLine(line, clock_interval);
+                        if(token.type === "Error") {
+                            token.currentProgram = config.currentProgram;
+                            outputError(token);
+                            return;
+                        } else {
+                            interpretSingleLine(interval, line);
+                        }
+                    }
+                }
+            } break; 
+
+            case "quickloop": {
+                let stack = [];
+                let endIndex = null;
+                for (let i = clock_interval + 1; i < FroggyscriptMemory.lines.length; i++) {
+                    let currentKeyword = FroggyscriptMemory.lines[i].trim().split(" ")[0];
+                    
+                    if (currentKeyword === "quickloop") {
+                        stack.push("quickloop");
+                    } else if (currentKeyword === "endquickloop") {
+                        if (stack.length === 0) {
+                            endIndex = i;
+                            break;
+                        } else {
+                            stack.pop();
+                        }
+                    }
+                }
+
+                if(endIndex === null) {
+                    token = new ScriptError("SyntaxError", `Missing matching [endquickloop] for [quickloop]`, clock_interval);
+                } else {
+                    setSetting("showSpinner", ["true"])
+                    setSetting("currentSpinner", ["quickloop-in-progress"])
+
+                    token.endQuickloopIndex = endIndex;
+                    FroggyscriptMemory.lines[token.endQuickloopIndex] += " " + clock_interval;
+                }
+            } break;
+
+            case "wait": {
+                let ms = token.value;
+
+                CLOCK_PAUSED = true;
+
+                setTimeout(() => {
+                    CLOCK_PAUSED = false;
+                }, ms);
+
+            } break;
+
+            case "endprog": {
+                resetVariables()
+                clearInterval(interval);
+                setSetting("showSpinner", ["false"])
+                setSetting("currentSpinner", [getSetting("defaultSpinner")]);
+                createEditableTerminalLine(config.currentPath + ">");
+                return;
+            } break;
+
+            case "endloop": {
+                if(isNaN(token.goto)) {
+                    token = new ScriptError("SyntaxError", `[endloop] cannot be used without a matching [loop]`, clock_interval);
+                }
+
+                let loopCondition = FroggyscriptMemory.lines[token.goto].replace("loop", "").trim();
+                if(evaluate(loopCondition)) {
+                    clock_interval = token.goto;
+                    setSetting("showSpinner", ["true"])
+                } else {
+                    setSetting("showSpinner", ["false"])
+                }
+            } break;
+
+            case "loop": {
+                // find paired endloop index
+                let stack = [];
+                let endIndex = null;
+                for (let i = clock_interval + 1; i < FroggyscriptMemory.lines.length; i++) {
+                    let currentKeyword = FroggyscriptMemory.lines[i].trim().split(" ")[0];
+                    
+                    if (currentKeyword === "loop") {
+                        stack.push("loop");
+                    } else if (currentKeyword === "endloop") {
+                        if (stack.length === 0) {
+                            endIndex = i;
+                            break;
+                        } else {
+                            stack.pop();
+                        }
+                    }
+                }
+                token.endloopIndex = endIndex;
+
+                if (endIndex === null) {
+                    token = new ScriptError("SyntaxError", `Missing matching [endloop] for [loop]`, clock_interval);
+                }
+
+                if(!token.value){
+                    clock_interval = token.endloopIndex;
+                } else {
+                    FroggyscriptMemory.lines[token.endloopIndex] += " " + clock_interval;
+                }
+            } break;
+
+            case "free": {
+                if(getVariable(token.identifier) == undefined) {
+                    token = new ScriptError("ReferenceError", `Variable [${token.identifier}] does not exist`, clock_interval);
+
+                } else if(getVariable(token.identifier).mutable === false) {
+                    token = new ScriptError("PermissionError", `Variable [${token.identifier}] is immutable and cannot be freed`, clock_interval);
+                } else {
+                    delete FroggyscriptMemory.variables[token.identifier];
+                }
+            } break;
+
+            case "if": {
+                let stack = [];
+                let elseIndex = null;
+                let endIndex = null;
+            
+                for (let i = clock_interval + 1; i < FroggyscriptMemory.lines.length; i++) {
+                    let currentKeyword = FroggyscriptMemory.lines[i].trim().split(" ")[0];
+            
+                    if (currentKeyword === "if") {
+                        stack.push("if");
+                    } else if (currentKeyword === "endif") {
+                        if (stack.length === 0) {
+                            endIndex = i;
+                            break;
+                        } else {
+                            stack.pop();
+                        }
+                    } else if (currentKeyword === "else" && stack.length === 0) {
+                        elseIndex = i;
+                    }
+                }
+
+                token.elseKeywordIndex = elseIndex;
+                token.endKeywordIndex = endIndex;
+            
+                if (endIndex === null) {
+                    token = {
+                        type: "Error",
+                        value: `Missing matching [endif] for [if]`,
+                        error: "SyntaxError",
+                        line: clock_interval
+
+                    }
+                } else {
+                    if (token.value === true) {
+                        if (elseIndex !== null) {
+                            FroggyscriptMemory.lines[elseIndex] = `goto ${endIndex}`;
+                        }
+                        // Do nothing if linkedElse is null
+                    } else if (token.value === false) {
+                        if (elseIndex === null) {
+                            clock_interval = endIndex;
+                        } else {
+                            clock_interval = elseIndex;
+                        }
+                    }
+                }
+            } break;
+
+            case "set": {
+                let referencedVar = getVariable(token.identifier);
+
+                if (referencedVar == undefined) {
+                    token = new ScriptError("ReferenceError", `Variable [${token.identifier}] does not exist`, clock_interval);
+                } else if (referencedVar.mutable === false) {
+                    token = new ScriptError("PermissionError", `Variable [${token.identifier}] is immutable and cannot be reassigned`, clock_interval);
+                } else {
+                    // Write the new value to the variable
+                    if (token.type === "Error") {
+                        token = new ScriptError("EvaluationError", `Cannot evaluate [${token.originalInput}]`, clock_interval);
+                    } else if(referencedVar.type !== token.type) {
+                        token = new ScriptError("TypeError", `Cannot assign a value of type [${token.type}] to variable [${token.identifier}], which\nis of type [${referencedVar.type}]`, clock_interval);
+                    } else {
+                        writeVariable(token.identifier, referencedVar.type, token.value, true);
+                    }
+                }
+            } break;
+
+            case "cstr":
+            case "cnum":
+            case "cbln": {
+                writeVariable(token.identifier, token.type, token.value, false);
+            } break;
+            
+            case "num":
+            case "bln":
+            case "str": {
+                writeVariable(token.identifier, token.type, token.value, true);
+            } break;
+
+            case "error":
+            case "out": {
+                if(token.type == "Array"){
+                    token.type = "String";
+                    token.value = "{{Array}}";
+                }
+                if(token.keyword == "error") singleLineError(token.value);
+                else output(token);
+            } break;
+
+            case "goto": {
+                let newI = token.value;
+                if(newI >= 0 && newI < FroggyscriptMemory.lines.length) {
+                    clock_interval = newI - 1;
+                } else {
+                    token = new ScriptError("ReferenceError", `Line ${newI} does not exist`, clock_interval);
+                }
+            } break;
+
+            case "return":
+            case "else":
+            case "endif": { } break;
+
+            default: {
+                token = new ScriptError("InterpreterError", `Unknown keyword [${token.keyword}]`, clock_interval);
+            } break;
+        }
+
+        if(token.type === "Error") {
+            token.currentProgram = config.currentProgram;
+            outputError(token, interval);
+            return;
+        }
+        if(clock_interval >= FroggyscriptMemory.lines.length) {
+            resetTerminalForUse(interval);
+            return;
+        }
+    }
+
+    return token;
+}
+
 function interpreter(input, fileArguments) {
     let lines = input.split('\n').map(x => x.trim()).filter(x => x.length > 0 && x !== "--");
     PROGRAM_LINES = lines;
@@ -1149,11 +1623,15 @@ function interpreter(input, fileArguments) {
 
     let fileArgumentCount = 0;
 
+    FroggyscriptMemory.lines = lines;
+    FroggyscriptMemory.fileArguments = fileArguments;
+    FroggyscriptMemory.fileArgumentCount = fileArgumentCount;
+
     resetVariables()
 
     writeVariable("OS_ProgramName", "String", structuredClone(config).currentProgram, false);
 
-    if(lines[lines.length - 1].trim() !== "endprog") {
+    if(FroggyscriptMemory.lines[FroggyscriptMemory.lines.length - 1].trim() !== "endprog") {
         output({value: `PrecheckError -> [endprog] must be the last line of the program <-`});
         createEditableTerminalLine(config.currentPath + ">");
         return;
@@ -1164,568 +1642,6 @@ function interpreter(input, fileArguments) {
     let CLOCK_PAUSED = false;
 
     const PROGRAM_RUNTIME_START = Date.now();
-
-    function interpretSingleLine(interval, single_input) {
-        let line = single_input;
-
-        if(line.match(/^@.+$/)){
-            line = line.replace(/^@/, 'f: ');
-        }
-
-        let token = processSingleLine(line, clock_interval, lines);
-
-        if(token.type == "ReturnFunction"){
-            let body = token.body;
-            let lastToken = null;
-            let errorInFunction = false
-
-            for(let i = 0; i < body.length; i++) {
-                let line = body[i];
-                lastToken = processSingleLine(line, clock_interval);
-                if(lastToken.type === "Error") {
-                    errorInFunction = true;
-                    token = lastToken;
-                } else {
-                    interpretSingleLine(interval, line);
-                }
-            }
-
-            token.type = lastToken.type;
-            token.value = lastToken.value;
-        }
-
-        token = typeErrorCheckers(token, clock_interval);
-
-        if(token.type === "Error") {
-            token.currentProgram = config.currentProgram;
-            outputError(token, interval);
-            return;
-        } else {
-            // process tokens here =======================================================
-            switch(token.keyword) {
-                case "loaddata": {
-                    let key = token.key
-                    let variable = token.variableName;
-
-                    if(FroggyscriptMemory.savedData[key] == undefined){
-                        token = new ScriptError("ReferenceError", `Key [${key}] does not exist`, clock_interval);
-                    } else {
-                        let retrievedData = FroggyscriptMemory.savedData[key];
-                        let valueToSet = retrievedData.value
-                        
-                        if(retrievedData.type == "String") valueToSet = `"${valueToSet}"`;
-
-                        lines[clock_interval] = `set ${variable} = ${valueToSet}`;
-                        clock_interval--;
-                    }
-                } break;    
-
-                case "savedata": {
-                    let key = token.key;
-                    let value = token.value;
-                    let valueType = value.type;
-
-                    let dataArray = [];
-
-                    if(valueType == "Array"){
-                        dataArray.push(`KEY ${key} TYPE ${valueType} START`)
-                        for(let i = 0; i < value.value.length; i++){
-                            let index = value.value[i];
-                            dataArray.push(`INDEX TYPE ${index.type} VALUE ${index.value}`)
-                        }
-                        dataArray.push(`KEY ${key} TYPE ${valueType} END`)
-                    } else {
-                        dataArray.push(`KEY ${key} TYPE ${valueType} VALUE ${value.value} END`)
-                    }
-
-                    let fileData = config.fileSystem['D:/Program-Data'].find(x => x.name == config.currentProgram);
-
-                    if(valueType == "Array"){
-                        let startIndex = fileData.data.findIndex(x => x.match(new RegExp(`^KEY ${key} TYPE ${valueType} START$`)));
-
-                        let endIndex = fileData.data.findIndex(x => x.match(new RegExp(`^KEY ${key} TYPE ${valueType} END$`)));
-
-                        if((startIndex == -1 && endIndex != -1) || (startIndex != -1 && endIndex == -1)){
-                            token = new ScriptError("ProgramDataError", `The program data in D:/Program-Data is malformed. Cannot save data`, clock_interval);
-                        }
-                    } else {
-                        let dataIndex = fileData.data.findIndex(x => x.match(new RegExp(`^KEY ${key} TYPE ${valueType} VALUE (.+?) END`)));
-
-                        if(dataIndex == -1){
-                            fileData.data.push(...dataArray);
-                        } else {
-                            fileData.data[dataIndex] = dataArray[0];
-                        }
-                    }
-                } break;
-
-                case "prompt": {
-                    CLOCK_PAUSED = true;
-
-                    let selectedIndex = token.defaultOption.value;
-                    let arrayOptions = token.options.value.map(x => x.value);
-
-                    if(selectedIndex < 0 || selectedIndex >= arrayOptions.length){
-                        token = new ScriptError("RangeError", `[${selectedIndex}] is out of range of options`, clock_interval);
-                    } else {
-                        cliPromptCount++;
-
-                        let terminalLineElement = document.createElement('div');
-                        terminalLineElement.classList.add('line-container');
-
-                        let spanElement = document.createElement('span');
-                        spanElement.textContent = ">";
-
-                        terminalLineElement.appendChild(spanElement);
-
-                        for(let i = 0; i < arrayOptions.length; i++){
-                            let option = document.createElement('span');
-                            option.setAttribute("data-program", `cli-session-${config.programSession}-${cliPromptCount}`);
-                            option.textContent = arrayOptions[i];
-                            if(i == selectedIndex) {
-                                option.classList.add('selected');
-                            }
-                            option.style.paddingLeft = 0;
-                            terminalLineElement.appendChild(option);
-                            terminalLineElement.appendChild(document.createTextNode(" "));
-                        }
-
-                        function promptHandler(e){
-                            let options = document.querySelectorAll(`[data-program='cli-session-${config.programSession}-${cliPromptCount}']`);
-                            e.preventDefault();
-
-                            if(e.key == "ArrowLeft"){
-                                if(selectedIndex > 0) selectedIndex--;
-                                options.forEach(option => option.classList.remove('selected'));
-                                options[selectedIndex].classList.add('selected');
-                            }
-
-                            if(e.key == "ArrowRight"){
-                                if(selectedIndex < options.length - 1) selectedIndex++;
-                                options.forEach(option => option.classList.remove('selected'));
-                                options[selectedIndex].classList.add('selected');
-                            }
-
-                            if(e.key == "Enter"){
-                                e.preventDefault();
-                                document.body.removeEventListener('keyup', promptHandler);
-                                setSetting("showSpinner", "false");
-                                setSetting("currentSpinner", getSetting("defaultSpinner"));
-
-                                let selectedValue = options[selectedIndex].textContent;
-                                
-                                lines[clock_interval-1] = `set ${token.variableName} = "${selectedValue}"`;
-                                CLOCK_PAUSED = false;
-                                clock_interval--;        
-                                
-
-                            }
-                        }
-
-                        document.body.addEventListener('keyup', promptHandler);
-                        terminal.appendChild(terminalLineElement);
-                        setSetting("showSpinner", "true");
-                        setSetting("currentSpinner", "prompt-in-progress")
-                    }
-                } break;
-
-                case "arr": {
-                    let name = token.identifier;
-                    let values = token.value;
-                    writeVariable(name, "Array", values, true);
-                } break;
-
-                case "stringify": {
-                    if(getVariable(token.variableName).mutable === false) {
-                        token = new ScriptError("PermissionError", `Variable [${token.variableName}] is immutable and cannot be reassigned`, clock_interval);
-                    }else if(token.variableType != "Number"){
-                        token = new ScriptError("TypeError", `[${token.variableName}] must be of type Number`, clock_interval);
-                    } else {
-                        let variable = getVariable(token.variableName);
-                        writeVariable(variable.identifier, "String", variable.value.toString(), variable.mutable);
-                    }
-                } break;
-
-                case "clearterminal": {
-                    document.getElementById("terminal").innerHTML = "";
-                } break;
-
-                case "outf": {
-                    outputWithFormatting(token);
-                } break;
-
-                case "ask": {
-                    CLOCK_PAUSED = true;
-                    let span = document.createElement('span');
-                    let inputElement = document.createElement('div');
-                    let elementToAppend = document.createElement('div');
-            
-                    inputElement.setAttribute('contenteditable', 'plaintext-only');
-                    inputElement.setAttribute('spellcheck', 'true');
-            
-                    span.textContent = token.prefix.value;
-            
-                    elementToAppend.appendChild(span);
-                    elementToAppend.appendChild(inputElement);
-            
-                    elementToAppend.classList.add('line-container');
-            
-                    terminal.appendChild(elementToAppend);
-                    inputElement.focus();
-
-                    setSetting("currentSpinner", "ask-in-progress")
-                    setSetting("showSpinner", "true");
-                    inputElement.addEventListener('keydown', function(e){
-                        if(e.key == "Enter") e.preventDefault();
-                    }); 
-
-                    inputElement.addEventListener('keyup', function(e){
-                        if(e.key == "Enter") {
-                            setSetting("currentSpinner", getSetting("defaultSpinner"))
-                            setSetting("showSpinner", "false");
-                            e.preventDefault();
-                            inputElement.setAttribute('contenteditable', 'false');
-
-                            token = { ...token, value: inputElement.textContent };
-
-                            let expectedType = getVariable(token.variableName).type;
-
-                            if(expectedType == "Number" && /^\d+$/.test(token.value)) token.value = parseInt(token.value);
-                            else token.value = `"${token.value}"`;
-                            
-                            lines[clock_interval-1] = `set ${token.variableName} = ${token.value}`;                       
-                            CLOCK_PAUSED = false;
-                            clock_interval--;        
-                        }
-                    }); 
-
-                } break;
-
-                case "filearg": {
-                    let expectedType = token.variableType;
-
-                    let inputValue = fileArguments[fileArgumentCount];
-
-                    if(expectedType === "Number") inputValue = parseFloat(inputValue);
-
-                    if(inputValue == undefined){
-                        token = new ScriptError("TypeError", `Missing file argument [${fileArgumentCount}] (expecting type ${expectedType})`, clock_interval);
-
-                    } else if(FroggyscriptMemory.variables[token.variableName] != undefined) {
-                        token = new ScriptError("ReferenceError", `Variable [${token.variableName}] already exists, cannot override`, clock_interval);
-
-                    } else if(isNaN(inputValue) && expectedType === "Number") {
-                        token = new ScriptError("TypeError", `File argument [${fileArgumentCount}] must be of type [${expectedType}]`, clock_interval);
-                    } else {
-                        writeVariable(token.variableName, token.variableType, inputValue, false);
-
-                        fileArgumentCount++;
-                    }
-                    
-                } break;
-
-                case "func": {
-                    // find matching endfunc
-                    let stack = [];
-                    let endIndex = null;
-                    for (let i = clock_interval + 1; i < lines.length; i++) {
-                        let currentKeyword = lines[i].trim().split(" ")[0];
-                        
-                        if (currentKeyword === "func") {
-                            stack.push("func");
-                        } else if (currentKeyword === "endfunc") {
-                            if (stack.length === 0) {
-                                endIndex = i;
-                                break;
-                            } else {
-                                stack.pop();
-                            }
-                        }
-                    }
-                    token.endfuncIndex = endIndex;
-
-                    if (endIndex === null) {
-                        token = new ScriptError("SyntaxError", `Missing matching [endfunc] for [func]`, clock_interval);
-                    }
-
-                    lines[token.endfuncIndex] += " " + clock_interval;
-
-                    FroggyscriptMemory.functions[token.name] = {
-                        start: clock_interval,
-                        end: token.endfuncIndex,
-                        name: token.name,
-                    }
-
-                    clock_interval = token.endfuncIndex;
-                } break;
-
-                case "f:": {
-                    let functionName = token.name;
-                    let func = FroggyscriptMemory.functions[functionName];
-                    let funcStart = func.start;
-                    let funcEnd = func.end;
-                    let funcLines = lines.slice(funcStart + 1, funcEnd).map(x => x.trim()).filter(x => x.length > 0 && x !== "--");
-
-                    for(let i = 0; i < funcLines.length; i++) {
-                        let line = funcLines[i];
-                        let token = processSingleLine(line, clock_interval);
-                        if(token.type === "Error") {
-                            token.currentProgram = config.currentProgram;
-                            outputError(token);
-                            return;
-                        } else {
-                            interpretSingleLine(interval, line);
-                        }
-                    }
-                } break;
-
-                case "endquickloop": {
-                    let loopAmount = typeify(lines[token.goto].replace("quickloop", "").trim(), clock_interval).value;
-
-                    let linesToLoop = lines.slice(token.goto + 1, clock_interval).map(x => x.trim()).filter(x => x.length > 0 && x !== "--");
-
-                    for(let i = 0; i < loopAmount - 1; i++) {
-                        for(let j = 0; j < linesToLoop.length; j++) {
-                            let line = linesToLoop[j];
-                            let token = processSingleLine(line, clock_interval);
-                            if(token.type === "Error") {
-                                token.currentProgram = config.currentProgram;
-                                outputError(token);
-                                return;
-                            } else {
-                                interpretSingleLine(interval, line);
-                            }
-                        }
-                    }
-                } break; 
-
-                case "quickloop": {
-                    let stack = [];
-                    let endIndex = null;
-                    for (let i = clock_interval + 1; i < lines.length; i++) {
-                        let currentKeyword = lines[i].trim().split(" ")[0];
-                        
-                        if (currentKeyword === "quickloop") {
-                            stack.push("quickloop");
-                        } else if (currentKeyword === "endquickloop") {
-                            if (stack.length === 0) {
-                                endIndex = i;
-                                break;
-                            } else {
-                                stack.pop();
-                            }
-                        }
-                    }
-
-                    if(endIndex === null) {
-                        token = new ScriptError("SyntaxError", `Missing matching [endquickloop] for [quickloop]`, clock_interval);
-                    } else {
-                        setSetting("showSpinner", ["true"])
-                        setSetting("currentSpinner", ["quickloop-in-progress"])
-
-                        token.endQuickloopIndex = endIndex;
-                        lines[token.endQuickloopIndex] += " " + clock_interval;
-                    }
-                } break;
-
-                case "wait": {
-                    let ms = token.value;
-
-                    CLOCK_PAUSED = true;
-
-                    setTimeout(() => {
-                        CLOCK_PAUSED = false;
-                    }, ms);
-
-                } break;
-
-                case "endprog": {
-                    resetVariables()
-                    clearInterval(interval);
-                    setSetting("showSpinner", ["false"])
-                    setSetting("currentSpinner", [getSetting("defaultSpinner")]);
-                    createEditableTerminalLine(config.currentPath + ">");
-                    return;
-                } break;
-
-                case "endloop": {
-                    if(isNaN(token.goto)) {
-                        token = new ScriptError("SyntaxError", `[endloop] cannot be used without a matching [loop]`, clock_interval);
-                    }
-
-                    let loopCondition = lines[token.goto].replace("loop", "").trim();
-                    if(evaluate(loopCondition)) {
-                        clock_interval = token.goto;
-                        setSetting("showSpinner", ["true"])
-                    } else {
-                        setSetting("showSpinner", ["false"])
-                    }
-                } break;
-
-                case "loop": {
-                    // find paired endloop index
-                    let stack = [];
-                    let endIndex = null;
-                    for (let i = clock_interval + 1; i < lines.length; i++) {
-                        let currentKeyword = lines[i].trim().split(" ")[0];
-                        
-                        if (currentKeyword === "loop") {
-                            stack.push("loop");
-                        } else if (currentKeyword === "endloop") {
-                            if (stack.length === 0) {
-                                endIndex = i;
-                                break;
-                            } else {
-                                stack.pop();
-                            }
-                        }
-                    }
-                    token.endloopIndex = endIndex;
-
-                    if (endIndex === null) {
-                        token = new ScriptError("SyntaxError", `Missing matching [endloop] for [loop]`, clock_interval);
-                    }
-
-                    if(!token.value){
-                        clock_interval = token.endloopIndex;
-                    } else {
-                        lines[token.endloopIndex] += " " + clock_interval;
-                    }
-                } break;
-
-                case "free": {
-                    if(getVariable(token.identifier) == undefined) {
-                        token = new ScriptError("ReferenceError", `Variable [${token.identifier}] does not exist`, clock_interval);
-
-                    } else if(getVariable(token.identifier).mutable === false) {
-                        token = new ScriptError("PermissionError", `Variable [${token.identifier}] is immutable and cannot be freed`, clock_interval);
-                    } else {
-                        delete FroggyscriptMemory.variables[token.identifier];
-                    }
-                } break;
-
-                case "if": {
-                    let stack = [];
-                    let elseIndex = null;
-                    let endIndex = null;
-                
-                    for (let i = clock_interval + 1; i < lines.length; i++) {
-                        let currentKeyword = lines[i].trim().split(" ")[0];
-                
-                        if (currentKeyword === "if") {
-                            stack.push("if");
-                        } else if (currentKeyword === "endif") {
-                            if (stack.length === 0) {
-                                endIndex = i;
-                                break;
-                            } else {
-                                stack.pop();
-                            }
-                        } else if (currentKeyword === "else" && stack.length === 0) {
-                            elseIndex = i;
-                        }
-                    }
-
-                    token.elseKeywordIndex = elseIndex;
-                    token.endKeywordIndex = endIndex;
-                
-                    if (endIndex === null) {
-                        token = {
-                            type: "Error",
-                            value: `Missing matching [endif] for [if]`,
-                            error: "SyntaxError",
-                            line: clock_interval
-
-                        }
-                    } else {
-                        if (token.value === true) {
-                            if (elseIndex !== null) {
-                                lines[elseIndex] = `goto ${endIndex}`;
-                            }
-                            // Do nothing if linkedElse is null
-                        } else if (token.value === false) {
-                            if (elseIndex === null) {
-                                clock_interval = endIndex;
-                            } else {
-                                clock_interval = elseIndex;
-                            }
-                        }
-                    }
-                } break;
-
-                case "set": {
-                    let referencedVar = getVariable(token.identifier);
-
-                    if (referencedVar == undefined) {
-                        token = new ScriptError("ReferenceError", `Variable [${token.identifier}] does not exist`, clock_interval);
-                    } else if (referencedVar.mutable === false) {
-                        token = new ScriptError("PermissionError", `Variable [${token.identifier}] is immutable and cannot be reassigned`, clock_interval);
-                    } else {
-                        // Write the new value to the variable
-                        if (token.type === "Error") {
-                            token = new ScriptError("EvaluationError", `Cannot evaluate [${token.originalInput}]`, clock_interval);
-                        } else if(referencedVar.type !== token.type) {
-                            token = new ScriptError("TypeError", `Cannot assign a value of type [${token.type}] to variable [${token.identifier}], which\nis of type [${referencedVar.type}]`, clock_interval);
-                        } else {
-                            writeVariable(token.identifier, referencedVar.type, token.value, true);
-                        }
-                    }
-                } break;
-
-                case "cstr":
-                case "cnum":
-                case "cbln": {
-                    writeVariable(token.identifier, token.type, token.value, false);
-                } break;
-                
-                case "num":
-                case "bln":
-                case "str": {
-                    writeVariable(token.identifier, token.type, token.value, true);
-                } break;
-
-                case "error":
-                case "out": {
-                    if(token.type == "Array"){
-                        token.type = "String";
-                        token.value = "{{Array}}";
-                    }
-                    if(token.keyword == "error") singleLineError(token.value);
-                    else output(token);
-                } break;
-
-                case "goto": {
-                    let newI = token.value;
-                    if(newI >= 0 && newI < lines.length) {
-                        clock_interval = newI - 1;
-                    } else {
-                        token = new ScriptError("ReferenceError", `Line ${newI} does not exist`, clock_interval);
-                    }
-                } break;
-
-                case "return":
-                case "else":
-                case "endfunc":
-                case "endif": { } break;
-
-                default: {
-                    token = new ScriptError("InterpreterError", `Unknown keyword [${token.keyword}]`, clock_interval);
-                } break;
-            }
-
-            if(token.type === "Error") {
-                token.currentProgram = config.currentProgram;
-                outputError(token, interval);
-                return;
-            }
-            if(clock_interval >= lines.length) {
-                resetTerminalForUse(interval);
-                return;
-            }
-        }
-
-        return token;
-    }
 
     let dataError = 0;
 
@@ -1796,22 +1712,13 @@ function interpreter(input, fileArguments) {
         }
 
         if(CLOCK_PAUSED == false) {
-            if(clock_interval < lines.length) {
-                let line = lines[clock_interval]
-                let token = interpretSingleLine(clock, line);
+            if(clock_interval < FroggyscriptMemory.lines.length) {
+                let line = FroggyscriptMemory.lines[clock_interval]
+                let token = interpretSingleLine(clock, line, clock_interval);
                 clock_interval++;
             } 
         }
     }, 1);
-
-    // window.pauseInterpreter = () => {
-    //     CLOCK_PAUSED = true;
-    // }
-
-    // window.debugFroggyScript = () => {
-    //     CLOCK_PAUSED = false;
-    //     setTimeout(() => CLOCK_PAUSED = true, 1);
-    // }
 
     document.body.addEventListener("keydown", function(e){
         if(e.key == "Delete"){

@@ -857,10 +857,12 @@ const config = {
             { name: "cli", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["str cli = 'this program is hardcoded into froggyOS'", "endprog"] },
             { name: "lilypad", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["str lilypad = 'this program is hardcoded into froggyOS'", "endprog"] },
             { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
-                "arr array = 1,2,3,4,5",
-                "str meow = 'woof'",
-                "out array>type",
-                "out array>:(2)",
+                "func meow",
+                "out 'meow'",
+                "endfunc",
+                // "arr array = 1,2,3,4,5",
+                // "str meow = 'woof'",
+                // "out array>append($'a','b','c')>join",
                 "endprog"
             ] },
             // { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [

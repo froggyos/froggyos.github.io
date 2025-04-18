@@ -472,7 +472,7 @@ append test1 test2
 -- "a", "b", "c", 1, 2, 3
 ```
 ## Methods
-If a method expects no arguments, you may omit the parentheses.
+If a method expects no arguments, you may omit the parentheses. Arguments are separated by `;`.
 ### index
 Indexing starts at `0`.
 ```
@@ -521,7 +521,7 @@ num output = test>length
 Replace the first instance of the first argument with the second argument.
 ```
 str test = "hello world!"
-str output = test>replace("hello", "goodbye")
+str output = test>replace("hello";"goodbye")
 -- "goodbye world!"
 ```
 ### stringify
@@ -553,17 +553,9 @@ loaddata [variable] [key]
 
 # FroggyScript Technical Info
 ## Data Storage
-## Type Origins
-The Type checking for FroggyScript is done in 6 steps, called "Origins".
-1. String - origin "String"
-2. Array - origin "Array"
-3. Boolean - origin "ComparisonOperator"
-4. ReturnFunction - origin "FunctionIdentifier"
-5. variables - origin "VariableIdentifier"
-6. Number - origin "Number"
 
 ## Types
-There are 5 types in FroggyScript `String`, `Number`, `Boolean`, `Array`, and `ReturnFunction`. Of which, the first 4 can be directly accessed by the user.
+There are 5 types in FroggyScript `String`, `Number`, `Boolean`, `Array`, and `ReturnFunction`.
 ### String
 * A string is a sequence of characters, which can be letters, numbers, or symbols.
 * The Regex for a string is `/^("|').*\1$/g`.
@@ -577,3 +569,15 @@ There are 5 types in FroggyScript `String`, `Number`, `Boolean`, `Array`, and `R
 ### Array
 * An array is a collection of values, which can be of any type.
 * The Regex for an array is `^\$("|'|\d|\w).*("|'|\d|\w)$/`.
+### ReturnFunction
+* A return function is a function that returns a value.
+* The Regex for a return function is `/^@[a-zA-Z_]+$/g`.
+
+## Origins
+**Origins** are the source of a token. Tokens are what is used by the interpreter to interpret the program. There are 6 origins:
+1. String
+2. Array
+3. ComparisonOperator
+4. FunctionIdentifier
+5. VariableIdentifier
+6. Number
