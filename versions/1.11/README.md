@@ -4,6 +4,7 @@
 * programs can *only* be written in designated directories
 * you can press the `DEL` key to escape programs (ex. an infinite loop)
 * press `SHIFT + ESC` to exit lilypad (text editor) without saving
+* if a FroggyScript program exists with an error, the command `[[BULLFROG]]gotoprogramline [program] [line_with_error]` will be put into your command history
 
 ## Palette Conventions
 There are no set colors that you must have, but these are the color conventions.
@@ -206,14 +207,14 @@ arr test3 = "a", 1, true, 2.5, "b"
 * Prefixing strings with `$` will force a type of `Array`.
 ```
 out 'one', 'two', 'three'
--- outputs one', 'two, 'three
+-- one', 'two, 'three
 
 out $'one', 'two', 'three'
--- outputs {{Array}}
+-- {{Array}}
 
 str variable = "thirty three million"
-out $'$|variable|', 'two', 'three':0
--- outputs thirty three million
+out $variable, 'two', 'three'>index(0)
+-- thirty three million
 ```
 
 ### Edit a Variable
@@ -221,7 +222,7 @@ You may only edit a variable if the value is of the same type.
 ```
 set [variable_name] = [value]
 
-num test = 5
+num i = 5
 str test = "text"
 
 set test = "many word"
@@ -264,7 +265,10 @@ outf {t=c01, tr=4-48 | b=c04, br=57-91} "from the char 4 to char 48, the text wi
 ```
 #### Format Object
 * `{}` is a formatting object
-* you can set a subrule using this general format: `{[property]=[value]}`
+* **rules** are delimited by the pipe operator: `{[property]=[value] | [property]=[value], [property]=[value]}`
+* **subrules** are delimited by the comma operator, and occur inside of **rules**: `{[property]=[value],[property]=[value]}`
+    * If a range is not specified, it will apply to the entire string
+    * The value for Italic is `1` to be enabled, and `0` to be disabled
 * valid properties:
     * `t` - text color
     * `b` - background color
@@ -272,12 +276,8 @@ outf {t=c01, tr=4-48 | b=c04, br=57-91} "from the char 4 to char 48, the text wi
     * `tr` - text color range
     * `br` - background color range
     * `ir` - italic range
-* you can set multiple subrules by separating them with commas: `{[property]=[value],[property]=[value]}`
-* to set different ranges, separate subrules with a `|`: `{[property]=[value] | [property]=[value]}`
-    * If a range is not specified, it will apply to the entire string
-    * The value for Italic is `1` to be enabled, and `0` to be disabled
 
-### Error
+### Errors
 Errors do not end the program early, follow with the `endprog` keyword to do so.
 #### Basic Error
 ```
@@ -311,7 +311,7 @@ C:/Home> st about_froggy froggy 7
 ask [variable] [prefix='?']
 
 ask name
-ask name "!"
+ask name "custom"
 
 -- default usage
 str name = ""
