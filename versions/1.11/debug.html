@@ -1,0 +1,1803 @@
+<style>
+    * {
+        font-family: monospace;
+    }
+
+    code {
+        white-space: pre;
+        overflow-x: auto;
+    }
+
+    #config {
+        display: grid;
+        grid-template-columns: 1fr 1px 1fr;
+    }
+
+    #container {
+        display: flex;
+        justify-content: center;
+        overflow: auto;
+        overflow-y: hidden;
+    }
+
+    .border-vertical {
+        background-color: #ccc;
+        width: 1px;
+    }
+
+    .border-horizontal {
+        padding: 10px 0px 10px;
+        background-color: #ccc;
+        height: 1px;
+        background-clip: content-box;
+    }
+
+    .line {
+        display: inline-block;
+        border-left: 2px solid #ccc;
+        border-right: 2px solid #ccc;
+    }
+
+    .header {
+        position: sticky;
+        top: 0;
+        left: 0;
+    }
+</style>
+<body>
+    <div id="config">
+        <div id="container">
+            <code id="user-config"><div class="header">user config:</div><br></code>
+        </div>
+        <div class="border-vertical"></div>
+        <div id="container">
+            <code id="user-immutable-config"><div class="header">immutable user config:</div><br></code>
+        </div>
+    </div>
+    <div class="border-horizontal"></div>
+</body>
+<script>
+    const TEST_CONFIG = {
+  "debugMode": true,
+  "version": "1.11-indev",
+  "colorPalette": "standard",
+  "showSpinner": false,
+  "currentSpinner": "default",
+  "defaultSpinner": "default",
+  "timeFormat": "w. y/mn/d h:m:s",
+  "updateStatBar": true,
+  "allowedProgramDirectories": [
+    "D:/Programs"
+  ],
+  "dissallowSubdirectoriesIn": [
+    "D:/Programs",
+    "D:/Macros",
+    "D:/Program-Data",
+    "D:/Palettes",
+    "D:/Spinners"
+  ],
+  "language": "eng",
+  "validateLanguageOnStartup": true,
+  "currentPath": "C:/Home",
+  "commandHistory": [
+    "[[BULLFROG]]debugmode 1"
+  ],
+  "commandHistoryIndex": -1,
+  "spinnerIndex": 0,
+  "currentProgram": "cli",
+  "programList": [
+    "cli",
+    "lilypad",
+    "test",
+    "loop-test",
+    "fibonacci"
+  ],
+  "programSession": 4,
+  "errorText": "<span class='error'><span class='error-text'>!!ERROR!!</span> -</span>",
+  "translationErrorText": "<span class='error'><span class='t-error-text'>!!TRANSLATION ERROR!!</span> -</span>",
+  "translationWarningText": "<span class='error'><span class='t-warning-text'>!TRANSLATION WARNING!</span> -</span>",
+  "alertText": "<span class='error'><span class='alert-text'>ALERT</span> -</span>",
+  "programErrorText": " -- <span class='error'><span class='program-error-text'>!! -> {{}} <- !!</span></span> --",
+  "fileSystem": {
+    "Config:": [
+      {
+        "name": "language",
+        "properties": {
+          "transparent": false,
+          "read": true,
+          "write": true,
+          "hidden": false
+        },
+        "data": [
+          "eng"
+        ]
+      },
+      {
+        "name": "debugMode",
+        "properties": {
+          "transparent": false,
+          "read": true,
+          "write": true,
+          "hidden": false
+        },
+        "data": [
+          "true"
+        ]
+      },
+      {
+        "name": "colorPalette",
+        "properties": {
+          "transparent": false,
+          "read": true,
+          "write": true,
+          "hidden": false
+        },
+        "data": [
+          "standard"
+        ]
+      },
+      {
+        "name": "version",
+        "properties": {
+          "transparent": false,
+          "read": true,
+          "write": true,
+          "hidden": false
+        },
+        "data": [
+          "1.11-indev"
+        ]
+      },
+      {
+        "name": "showSpinner",
+        "properties": {
+          "transparent": false,
+          "read": true,
+          "write": true,
+          "hidden": false
+        },
+        "data": [
+          "false"
+        ]
+      },
+      {
+        "name": "currentSpinner",
+        "properties": {
+          "transparent": false,
+          "read": true,
+          "write": true,
+          "hidden": false
+        },
+        "data": [
+          "default"
+        ]
+      },
+      {
+        "name": "defaultSpinner",
+        "properties": {
+          "transparent": false,
+          "read": true,
+          "write": true,
+          "hidden": false
+        },
+        "data": [
+          "default"
+        ]
+      },
+      {
+        "name": "timeFormat",
+        "properties": {
+          "transparent": false,
+          "read": true,
+          "write": true,
+          "hidden": false
+        },
+        "data": [
+          "w. y/mn/d h:m:s"
+        ]
+      },
+      {
+        "name": "updateStatBar",
+        "properties": {
+          "transparent": false,
+          "read": true,
+          "write": true,
+          "hidden": false
+        },
+        "data": [
+          "true"
+        ]
+      },
+      {
+        "name": "allowedProgramDirectories",
+        "properties": {
+          "transparent": false,
+          "read": true,
+          "write": true,
+          "hidden": false
+        },
+        "data": [
+          "D:/Programs"
+        ]
+      },
+      {
+        "name": "dissallowSubdirectoriesIn",
+        "properties": {
+          "transparent": false,
+          "read": true,
+          "write": true,
+          "hidden": false
+        },
+        "data": [
+          "D:/Programs",
+          "D:/Macros",
+          "D:/Program-Data",
+          "D:/Palettes",
+          "D:/Spinners"
+        ]
+      },
+      {
+        "name": "validateLanguageOnStartup",
+        "properties": {
+          "transparent": false,
+          "read": true,
+          "write": true,
+          "hidden": false
+        },
+        "data": [
+          "true"
+        ]
+      }
+    ],
+    "Config:/lang_files": [
+      {
+        "name": "lbh",
+        "properties": {
+          "transparent": true,
+          "read": true,
+          "write": false,
+          "hidden": false
+        },
+        "data": [
+          "{{{LANGNAME_!!!_language build helper}}}",
+          "T_froggy_doesnt_like",
+          "T_doesnt_know |||[]|||",
+          "T_hello_froggy",
+          "T_greeting_1",
+          "T_greeting_2 |||[]|||",
+          "T_basic_commands_intro",
+          "T_basic_commands_lang",
+          "T_basic_commands_palette",
+          "T_basic_commands_clear",
+          "T_basic_commands_clone",
+          "T_basic_commands_clearstate",
+          "T_basic_commands_croak",
+          "T_basic_commands_formattime",
+          "T_basic_commands_hatch",
+          "T_basic_commands_hello",
+          "T_basic_commands_help",
+          "T_basic_commands_hop",
+          "T_basic_commands_list",
+          "T_basic_commands_listdrives",
+          "T_basic_commands_loadstate",
+          "T_basic_commands_meta",
+          "T_basic_commands_metaprop",
+          "T_basic_commands_opendoc",
+          "T_basic_commands_rename",
+          "T_basic_commands_ribbit",
+          "T_basic_commands_savestate",
+          "T_basic_commands_spawn",
+          "T_basic_commands_spy",
+          "T_basic_commands_swimto",
+          "T_no_state_found",
+          "T_no_urgent_state_found",
+          "T_state_cleared",
+          "T_state_loaded",
+          "T_state_saved",
+          "T_provide_file_name",
+          "T_provide_file_name_and_new",
+          "T_file_does_not_exist",
+          "T_file_already_exists",
+          "T_file_name_already_exists",
+          "T_file_name_not_3_char",
+          "T_no_permission_to_edit_file",
+          "T_no_permission_to_read_file",
+          "T_no_permission_to_clone",
+          "T_no_permission_to_rename_file",
+          "T_no_permission_to_delete_file",
+          "T_cannot_delete_file",
+          "T_available_properties",
+          "T_file_created",
+          "T_file_cloned |||[]|||",
+          "T_file_renamed",
+          "T_file_deleted",
+          "T_provide_time_format",
+          "T_provide_directory_name",
+          "T_directory_does_not_exist",
+          "T_directory_already_exists",
+          "T_directory_empty",
+          "T_cannot_create_directories_in_here",
+          "T_directory_created",
+          "T_provide_palette_name",
+          "T_color_palette_does_not_exist",
+          "T_palette_error_invalid_hex |||[]|||",
+          "T_could_not_create_palette",
+          "T_available_color_palettes",
+          "T_provide_macro_name",
+          "T_macro_does_not_exist",
+          "T_no_macros_found",
+          "T_available_macros",
+          "T_provide_valid_program",
+          "T_no_permission_to_run_program",
+          "T_available_programs",
+          "T_spinner_does_not_exist",
+          "T_available_spinners",
+          "T_provide_lang_code",
+          "T_lang_does_not_exist |||[]|||",
+          "T_invalid_lang_file |||[]|||",
+          "T_current_lang_invalid",
+          "T_invalid_lang",
+          "T_available_langs",
+          "T_lang_changed",
+          "T_provide_valid_property_type",
+          "T_provide_text_to_display",
+          "T_provide_path",
+          "T_invalid_args_provide_1_0",
+          "T_provide_program_name_and_line",
+          "T_lilypad_save_exit",
+          "T_lilypad_exit",
+          "T_lilypad_exit_without_saving",
+          "T_saving_file",
+          "T_saving_done",
+          "T_properties_updated",
+          "T_documentation_opened",
+          "T_arg_too_long",
+          "T_missing_file_args",
+          "T_UNUSED_invalid_format_object_inter_rule_delimiter",
+          "T_UNUSED_error_data_unavailable",
+          "T_provide_valid_t_desc",
+          "T_bullfrog_commands_intro",
+          "T_bullfrog_commands_changepath",
+          "T_bullfrog_commands_greeting",
+          "T_bullfrog_commands_help",
+          "T_bullfrog_commands_setstatbar",
+          "T_bullfrog_commands_statbarlock",
+          "T_bullfrog_commands_showspinner",
+          "T_bullfrog_commands_debugmode",
+          "T_bullfrog_commands_setspinner",
+          "T_bullfrog_commands_usavestate",
+          "T_bullfrog_commands_uloadstate",
+          "T_bullfrog_commands_uclearstate",
+          "T_bullfrog_commands_autoloadstate",
+          "T_bullfrog_commands_vlang",
+          "T_bullfrog_commands_translations",
+          "T_bullfrog_commands_trigdiag",
+          "T_date_short_sunday",
+          "T_date_short_monday",
+          "T_date_short_tuesday",
+          "T_date_short_wednesday",
+          "T_date_short_thursday",
+          "T_date_short_friday",
+          "T_date_short_saturday",
+          "T_date_long_sunday",
+          "T_date_long_monday",
+          "T_date_long_tuesday",
+          "T_date_long_wednesday",
+          "T_date_long_thursday",
+          "T_date_long_friday",
+          "T_date_long_saturday",
+          "T_date_short_january",
+          "T_date_short_february",
+          "T_date_short_march",
+          "T_date_short_april",
+          "T_date_short_may",
+          "T_date_short_june",
+          "T_date_short_july",
+          "T_date_short_august",
+          "T_date_short_september",
+          "T_date_short_october",
+          "T_date_short_november",
+          "T_date_short_december",
+          "T_date_long_january",
+          "T_date_long_february",
+          "T_date_long_march",
+          "T_date_long_april",
+          "T_date_long_may",
+          "T_date_long_june",
+          "T_date_long_july",
+          "T_date_long_august",
+          "T_date_long_september",
+          "T_date_long_october",
+          "T_date_long_november",
+          "T_date_long_december"
+        ]
+      },
+      {
+        "name": "eng",
+        "properties": {
+          "transparent": false,
+          "read": true,
+          "write": false,
+          "hidden": false
+        },
+        "data": [
+          "{{{LANGNAME_!!!_English}}}",
+          "Froggy doesn't like that. >:(",
+          "Froggy doesn't know \"|||[]|||\", sorry.",
+          "Hello, I'm Froggy! ^v^",
+          "Type ‘help’ to receive support with commands, and possibly navigation.",
+          "* Welcome to froggyOS, version |||[]||| *",
+          "* A few basic froggyOS commands *",
+          "changelanguage [code]. . . . . . . Changes the current language.",
+          "changepalette [palette]. . . . . . Changes the color palette.",
+          "clear. . . . . . . . . . . . . . . Clears the terminal output.",
+          "clone [file] . . . . . . . . . . . Clones a file.",
+          "clearstate . . . . . . . . . . . . Clears froggyOS state.",
+          "croak [file] . . . . . . . . . . . Deletes the file.",
+          "formattime [format]. . . . . . . . Changes the time format.",
+          "hatch [file] . . . . . . . . . . . Creates a file.",
+          "hello. . . . . . . . . . . . . . . Displays a greeting message.",
+          "help . . . . . . . . . . . . . . . Displays this message.",
+          "hop [directory]. . . . . . . . . . Moves to a directory.",
+          "list . . . . . . . . . . . . . . . Lists files and subdirectories in the :sp35:current directory.",
+          "listdrives . . . . . . . . . . . . Lists all drives.",
+          "loadstate. . . . . . . . . . . . . Load froggyOS state.",
+          "meta [file]. . . . . . . . . . . . Edits a file.",
+          "metaprop [file] [property] [0/1] . Edits a file's properties.",
+          "opendocumentation. . . . . . . . . Opens the froggyOS documentation.",
+          "rename [file] [new_name] . . . . . Renames the file.",
+          "ribbit [text]. . . . . . . . . . . Displays the text.",
+          "savestate. . . . . . . . . . . . . Save froggyOS state.",
+          "spawn [directory]. . . . . . . . . Creates a directory.",
+          "spy [file] . . . . . . . . . . . . Reads the file and outputs it to the :sp35:terminal.",
+          "swimto [program] . . . . . . . . . Start a program.",
+          "No state found.",
+          "No urgent state found.",
+          "State cleared.",
+          "State loaded.",
+          "State saved. May need to loadstate for some changes to take effect.",
+          "Please provide a file name.",
+          "Please provide a file name and a new name.",
+          "File does not exist.",
+          "File already exists.",
+          "File with that name already exists in this directory.",
+          "File name must be exactly 3 characters long.",
+          "You do not have permission to edit this file.",
+          "You do not have permission to read this file.",
+          "You do not have permission to clone this file.",
+          "You do not have permission to rename this file.",
+          "You do not have permission to delete this file.",
+          "You cannot delete this file.",
+          "* Available properties *",
+          "File created.",
+          "File \"|||[]|||\" cloned.",
+          "File renamed.",
+          "File deleted.",
+          "Please provide a time format.",
+          "Please provide a directory name.",
+          "Directory does not exist.",
+          "Directory already exists.",
+          "This directory is empty.",
+          "You cannot create directories in this directory.",
+          "Directory created.",
+          "Please provide a color palette name.",
+          "Color palette does not exist.",
+          "PaletteError: |||[]||| is an invalid hex color.",
+          "Could not create palette.",
+          "* Available color palettes *",
+          "Please provide a macro name.",
+          "Macro does not exist.",
+          "No macros found.",
+          "* Available macros *",
+          "Please provide a valid program.",
+          "You do not have permission to run this program.",
+          "* Available programs *",
+          "Spinner does not exist.",
+          "* Available spinners *",
+          "Please provide a language code.",
+          "Language with code \"|||[]|||\" does not exist.",
+          "Invalid language file with code \"|||[]|||\".",
+          "Current language file is INVALID! Switching to \"lbh\".",
+          "INVALID",
+          "* Available languages *",
+          "Language changed.",
+          "Please provide a valid property type.",
+          "Please provide text to display.",
+          "Please provide a path.",
+          "Invalid argument. Please provide '1' or '0'.",
+          "Please provide a program name and a line number.",
+          "* press ESC to save and exit lilypad *",
+          "* press ESC to exit lilypad *",
+          "Exited lilypad without saving.",
+          "Saving file...",
+          "Done! ^v^",
+          "Properties updated.",
+          "Documentation opened in a new window.",
+          "The argument is too long.",
+          "Missing file argument(s).",
+          "Invalid FormatObject (INTER-RULE DELIMITER) syntax.",
+          "Error Data UNAVAILABLE",
+          "Please provide a valid translation descriptor.",
+          "* A few bullfrog commands *",
+          "[[BULLFROG]]changepath [path] - Changes the path of the terminal",
+          "[[BULLFROG]]greeting - Displays the greeting message",
+          "[[BULLFROG]]help - Displays this message",
+          "[[BULLFROG]]setstatbar [text] - Changes the text in the status bar",
+          "[[BULLFROG]]statbarlock [0/1] - Locks the status bar from updating",
+          "[[BULLFROG]]showspinner [0/1] - Toggles the loading spinner",
+          "[[BULLFROG]]debugmode [0/1] - Toggles debug mode",
+          "[[BULLFROG]]setspinner [spinner] - Changes the loading spinner",
+          "[[BULLFROG]]urgentsavestate - saves state for reloading",
+          "[[BULLFROG]]urgentloadstate - loads state for reloading",
+          "[[BULLFROG]]urgentclearstate - clears reload state",
+          "[[BULLFROG]]autoloadstate - loads state",
+          "[[BULLFROG]]validatelanguage - checks if the current language is valid",
+          "[[BULLFROG]]translations - get the completion percent of all languages",
+          "[[BULLFROG]]triggerdialogue - trigger a specific dialogue option",
+          "Sun",
+          "Mon",
+          "Tue",
+          "Wed",
+          "Thu",
+          "Fri",
+          "Sat",
+          "Sunday",
+          "Monday",
+          "Tuesday",
+          "Wednesday",
+          "Thursday",
+          "Friday",
+          "Saturday",
+          "Jan",
+          "Feb",
+          "Mar",
+          "Apr",
+          "May",
+          "Jun",
+          "Jul",
+          "Aug",
+          "Sep",
+          "Oct",
+          "Nov",
+          "Dec",
+          "January",
+          "February",
+          "March",
+          "April",
+          "May",
+          "June",
+          "July",
+          "August",
+          "September",
+          "October",
+          "November",
+          "December"
+        ]
+      },
+      {
+        "name": "nmt",
+        "properties": {
+          "transparent": false,
+          "read": true,
+          "write": false,
+          "hidden": false
+        },
+        "data": [
+          "{{{LANGNAME_!!!_ngimëte}}}",
+          "Froggy gehana ilu >:(",
+          "Froggy gepele \"|||[]|||\", mbayu",
+          "i katálo, mo Froggy! ^v^",
+          "nenta ‘help’ mbo süm fesúāte kole komandda me, nam giwa 'ata",
+          "* wulë froggyOS, kekyene |||[]||| *",
+          "* tine hatsamwa komandda me o-froggyOS *",
+          "changelanguage [koda]. . .. . . . . lohi mëzte",
+          "changepalette [paleta] . .. . . . . lohi pesezte paleta",
+          "clear . . . . . . . . . . . . . . . nggave taminalu tuha",
+          "clone [fiyala]. . . . . . . . . . . mafo fiyala",
+          "clearstate. . . . . . . . . . . . . ngátiwi satéte o-froggyOS",
+          "croak [fiyala]. . . . . . . . . . . nggave fiyala",
+          "formattime [folamata] . . . . . . . lohi lohí folamata",
+          "hatch [fiyala]. . . . . . . . . . . mbeno fiyala",
+          "hello . . . . . . . . . . . . . . . nenta wüle mem",
+          "help. . . . . . . . . . . . . . . . nenta lu mem",
+          "hop [dilekatüli]. . . . . . . . . . tsi wa dilekatüli",
+          "list. . . . . . . . . . . . . . . . seyaya fiyala me nam dilekatülilala ilo :sp36:dilekatüli wa",
+          "listdrives. . . . . . . . . . . . . seyaya ká'ono dalayavu me",
+          "loadstate . . . . . . . . . . . . . nagyu satéte o-froggyOS",
+          "meta [fiyala] . . . . . . . . . . . lohi fiyala kili'ocyá",
+          "metaprop [fiyala] [popatí] [0/1]. . lohi fiyala oəpopatí me",
+          "opendocumentation . . . . . . . . . ndo dokumenndasiyon o-froggyOS",
+          "rename [fiyala] [sana_tama] . . . . som'on tama ma fiyala",
+          "ribbit [meməpelezwisi]. . . . . . . nenta meməpelezwisi",
+          "savestate . . . . . . . . . . . . . esaya satéte o-froggyOS",
+          "spawn [dilekatüli]. . . . . . . . . mbeno dilekatüli",
+          "spy [fiyala]. . . . . . . . . . . . sensa fiyala nam nenta lu taminalu wa",
+          "swimto [program]. . . . . . . . . . igyensa pógám",
+          "satéte gewitsu mana",
+          "satéte apelelala gewitsu mana",
+          "satéte ngátiwi mana",
+          "satéte nagyu mana",
+          "satéte esaya mana. kana \"loadstate\" ma lohiəte me fene",
+          "apelelala som fiyala tama",
+          "apelelala som fiyala tama nam sana tama",
+          "fiyala getsefese",
+          "fiyala tsefese",
+          "tama oəfiyala tsefese dilekatüli wa",
+          "fiyala tama süm'an u'u 3 gina me kekéne",
+          "'a gewitsuyo pamason lohi lu fiyala",
+          "'a gewitsuyo pamason sanwa lu fiyala",
+          "'a getsefese pamason mafu lu fiyala",
+          "'a getsefese pamason som'on tama ma lu fiyala",
+          "na gewitsu pamason nggave ilo fiyala",
+          "'a genggave ilo fiyala",
+          "* popatí me *",
+          "fiyala mbeno mana",
+          "fiyala \"|||[]|||\" mafu mana'a",
+          "fiyala som'on mana'a tama",
+          "fiyala nggave mana'a",
+          "apelelala som lohí folamata",
+          "apelelala som dilekatüli tama",
+          "dilekatüli getsefese",
+          "dilekatüli tsefese",
+          "ilo wa dilekatüli säna",
+          "'a gembeno dilekatüli me kene dilekatüli wa",
+          "dilekatüli mbeno mana",
+          "apelelala som fiyala tama",
+          "pesezte paleta getsefese",
+          "PaletaGogowa: |||[]||| wa sepu hex pesezte",
+          "gembeno paleta",
+          "* pesezte paleta me *",
+          "apelelala som makulo tama",
+          "makulo getsefese",
+          "makulo gewitsu mana",
+          "* makulo me *",
+          "apelelala som apeya pógám",
+          "'a gewitsuyo pamason naya lu pógám",
+          "* pógám me *",
+          "supinär getsefese",
+          "* supinär me *",
+          "apelelala som mëzte koda",
+          "mëzte kole \"|||[]|||\" getsefese",
+          "sepu mëzte fiyala kole koda \"|||[]|||\"",
+          "i mewana mëzte fiyala wa SEPE. lohi \"lbh\"",
+          "SEPU",
+          "* mëzte me *",
+          "mëzte lohi mana",
+          "apelelala som apeya popatí",
+          "apelelala som meməpelezwisi nenta",
+          "apelelala som fiyalātáne",
+          "sepu ágayuménta. apelelala som '1' ute '0'",
+          "T_provide_program_name_and_line",
+          "* tapa ESC esaya mótsi lo lilypad *",
+          "* tapa ESC mótsi lilypad *",
+          "T_lilypad_exit_without_saving",
+          "esaya gya fiyala...",
+          "i sepesu! ^v^",
+          "popatí me som'on mana",
+          "dokumenndasiyon ndo mana sana kyesatsa wa",
+          "ágayuménta na'ë kékene",
+          "ndaní fiyala ágayuménta me",
+          "gogowa FormatObject (LU GAYANA MEMƏPELEWISI) sebesikya",
+          "gogowa data UNAYAVA",
+          "apelelala som apeya mëmëzte dësikipita",
+          "* tine bullfrog komandda me o-froggyOS *",
+          "[[BULLFROG]]changepath [fiyalātáne] - lohi fiyalātáne oətaminalu",
+          "[[BULLFROG]]greeting - nenta náha wulë mem",
+          "[[BULLFROG]]help - nenta lu mem",
+          "[[BULLFROG]]setstatbar [meməpelezwisi] - lohi meməpelezwisi status-bar wa",
+          "[[BULLFROG]]statbarlock [0/1] - bíhu'an status-bar ëpidäti",
+          "[[BULLFROG]]showspinner [0/1] - togela supinär",
+          "[[BULLFROG]]debugmode [0/1] - togela debug módi",
+          "[[BULLFROG]]setspinner [supinär] - lohi supinär",
+          "[[BULLFROG]]urgentsavestate - esaya satéte ma nagyunagyu",
+          "[[BULLFROG]]urgentloadstate - nagyu satéte ma nagyunagyu",
+          "[[BULLFROG]]urgentclearstate - ngátiwi nagyunagyu satéte",
+          "[[BULLFROG]]autoloadstate - nagyu satéte",
+          "[[BULLFROG]]validatelanguage - nehu kansa mweana mëzta wa sepe",
+          "[[BULLFROG]]translations - süm mëmëzte me",
+          "[[BULLFROG]]triggerdialogue - bene náha meməpelezwisi ndisé",
+          "ypg",
+          "ypl",
+          "ypb",
+          "yps",
+          "ypk",
+          "ypm",
+          "ypw",
+          "yepë-gela",
+          "yepë-la",
+          "yepë-bese",
+          "yepë-sála",
+          "yepë-kimi",
+          "yepë-molo",
+          "yepë-wé",
+          "ygl",
+          "yla",
+          "ybs",
+          "ysl",
+          "ykm",
+          "yml",
+          "ywé",
+          "yan",
+          "ymk",
+          "ykó",
+          "ykg",
+          "ykl",
+          "yepëlili-gela",
+          "yepëlili-la",
+          "yepëlili-bese",
+          "yepëlili-sála",
+          "yepëlili-kimi",
+          "yepëlili-molo",
+          "yepëlili-wé",
+          "yepëlili-ana",
+          "yepëlili-miki",
+          "yepëlili-kó",
+          "yepëlili-kó-nam-gela",
+          "yepëlili-kó-nam-la"
+        ]
+      },
+      {
+        "name": "jpn",
+        "properties": {
+          "transparent": false,
+          "read": true,
+          "write": false,
+          "hidden": false
+        },
+        "data": [
+          "{{{LANGNAME_!!!_Japanese}}}",
+          "フロッギーはそれが気に入らないよ >:(",
+          "フロッギーは「|||[]|||」がわかりません、ごめんなさい",
+          "どうも、フロッギーです！^v^",
+          "コマンドやナビゲーションのサポートを受けるには、「help」と入力してください",
+          "* froggyOSへようこそ！バージョン|||[]||| *",
+          "* いくつかの基本的なfroggyOSコマンド *",
+          "changelanguage [code] . . 現在の言語を変更する",
+          "changepalette [palette] . . カラーパレットを変更する",
+          "clear . . 端末の出力をクリアする",
+          "clone [file] . . . . . . . . . ファイルをクローンする",
+          "clearstate . . froggyOSの状態をクリアする",
+          "croak [file] . . ファイルを削除する",
+          "formattime [format] . . 時間形式を変更する",
+          "hatch [file] . . ファイルを作成する",
+          "hello . . 挨拶のメッセージを表示する",
+          "help . . このメッセージを表示する",
+          "hop [directory] . . ディレクトリに移動する",
+          "list . . 現在のディレクトリ内のファイルとサブディレクトリを表示する",
+          "listdrives . . 全てのドライブを表示する",
+          "loadstate . . froggyOSの状態をロードする",
+          "meta [file] . . ファイルを編集する",
+          "metaprop [file] [property] [0/1] . . ファイルのプロパティを変更する",
+          "opendocumentation . . froggyOSのマニュアルを開く",
+          "rename [file] [new_name] . . . ファイル名を変更する",
+          "ribbit [テキスト] . . テキストを表示する",
+          "savestate . . froggyOSの状態をセーブする",
+          "spawn [ディレクトリ] . . ディレクトリを作成する",
+          "spy [ファイル] . . ファイルを読み取る",
+          "swimto [プログラム] . . プログラムを開始する",
+          "状態が見つかりませんでした",
+          "緊急状態が見つかりませんでした",
+          "状態がクリアされました",
+          "状態がロードされました",
+          "状態をセーブしました。いくつかの変更を適用するには、状態をロードする必要があるかもしれません。",
+          "ファイル名を入力してください",
+          "ファイル名と新しいファイル名を入力してください",
+          "ファイルは存在しません",
+          "ファイルは既に存在します",
+          "そのファイル名はこのディレクトリにすでに存在します",
+          "ファイル名はちょうど3文字でなければなりません",
+          "このファイルを変更する権限がありません",
+          "このファイルを読み取る権限がありません",
+          "このファイルをクローンする権限がありません",
+          "このファイル名を変更する権限がありません",
+          "このファイルを削除する権限がありません",
+          "このファイルは削除できません",
+          "* 利用可能なプロパティ *",
+          "ファイルを作成しました",
+          "ファイル「|||[]|||」がクローンされました",
+          "ファイル名を変更しました",
+          "ファイルを削除しました",
+          "時間形式を入力してください",
+          "ディレクトリ名を入力してください",
+          "ディレクトリは存在しません",
+          "ディレクトリは既に存在します",
+          "このディレクトリは空です",
+          "このディレクトリ内ではディレクトリを作成できません",
+          "ディレクトリを作成しました",
+          "カラーパレット名を入力してください",
+          "カラーパレットは存在しません",
+          "パレットエラー: |||[]|||は無効な16進カラーコードです",
+          "パレットを作成できません",
+          "* 使用可能なカラーパレット *",
+          "マクロ名を入力してください",
+          "マクロが存在しません",
+          "マクロが見つかりませんでした",
+          "* 使用可能なマクロ *",
+          "有効なプログラムを入力してください",
+          "このプログラムを実行する権限がありません",
+          "* 使用可能なプログラム *",
+          "スピナーが存在しません",
+          "* 利用可能なスピナー *",
+          "言語のコードを入力してください",
+          "コード「|||[]|||」の言語が存在しません",
+          "コード「|||[]|||」の言語ファイルは無効です",
+          "現在の言語ファイルが無効です！「lbh」に切り替えています",
+          "無効",
+          "* 利用可能な言語 *",
+          "言語が変更されました",
+          "有効なプロパティタイプを入力してください",
+          "表示するテキストを入力してください",
+          "パスを入力してください",
+          "無効な引数です。「1」または「0」を入力してください。",
+          "T_provide_program_name_and_line",
+          "* セーブしてlilypadを終了するにはESCキーを押してください *",
+          "* lilypadを終了するにはESCキーを押してください *",
+          "T_lilypad_exit_without_saving",
+          "ファイルをセーブ中...",
+          "完了！^v^",
+          "プロパティを更新しました",
+          "新しいウインドウでマニュアルが開かれました",
+          "引数が長すぎます",
+          "ファイルの引数が不足しています",
+          "無効なフォーマットオブジェクト（インター・ルール・デリミター）構文です",
+          "エラーデータは利用できません",
+          "有効な翻訳ディスクリプターを入力してください",
+          "* いくつかのbullfrogコマンド *",
+          "[[BULLFROG]]changepath [path] - 端末のパスを変更する",
+          "[[BULLFROG]]greeting - 挨拶のメッセージを表示する",
+          "[[BULLFROG]]help - このメッセージを表示する",
+          "[[BULLFROG]]setstatbar [text] - ステータスバーのテキストを変更する",
+          "[[BULLFROG]]statbarlock [0/1] - ステータスバーの更新をロックする",
+          "[[BULLFROG]]showspinner [0/1] - ローディングスピナーの表示を切り替える",
+          "[[BULLFROG]]debugmode [0/1] - デバッグモードを切り替える",
+          "[[BULLFROG]]setspinner [spinner] - ローディングスピナーを変更する",
+          "[[BULLFROG]]urgentsavestate - リロードするには状態をセーブする",
+          "[[BULLFROG]]urgentloadstate - リロードするには状態をセーブする",
+          "[[BULLFROG]]urgentclearstate - リロードの状態をクリアする",
+          "[[BULLFROG]]autoloadstate - 状態をロードする",
+          "[[BULLFROG]]validatelanguage - 現在の言語は有効か無効か確認する",
+          "[[BULLFROG]]translations - すべての言語の完了率を表示する",
+          "[[[BULLFROG]]triggerdialogue - 特定の対話を開始する",
+          "日",
+          "月",
+          "火",
+          "水",
+          "木",
+          "金",
+          "土",
+          "日曜日",
+          "月曜日",
+          "火曜日",
+          "水曜日",
+          "木曜日",
+          "金曜日",
+          "土曜日",
+          "1月",
+          "2月",
+          "3月",
+          "4月",
+          "5月",
+          "6月",
+          "7月",
+          "8月",
+          "9月",
+          "10月",
+          "11月",
+          "12月",
+          "一月",
+          "二月",
+          "三月",
+          "四月",
+          "五月",
+          "六月",
+          "七月",
+          "八月",
+          "九月",
+          "十月",
+          "十一月",
+          "十二月"
+        ]
+      }
+    ],
+    "C:": [],
+    "C:/Home": [
+      {
+        "name": "welcome!",
+        "properties": {
+          "transparent": false,
+          "read": true,
+          "write": true,
+          "hidden": false
+        },
+        "data": [
+          "Hello!",
+          "Welcome to FroggyOS.",
+          "Type 'help' for a list of commands.",
+          "Have fun! ^v^"
+        ]
+      }
+    ],
+    "C:/Docs": [],
+    "D:": [],
+    "D:/Programs": [
+      {
+        "name": "cli",
+        "properties": {
+          "transparent": false,
+          "read": false,
+          "write": false,
+          "hidden": true
+        },
+        "data": [
+          "str cli = 'this program is hardcoded into froggyOS'",
+          "endprog"
+        ]
+      },
+      {
+        "name": "lilypad",
+        "properties": {
+          "transparent": false,
+          "read": false,
+          "write": false,
+          "hidden": true
+        },
+        "data": [
+          "str lilypad = 'this program is hardcoded into froggyOS'",
+          "endprog"
+        ]
+      },
+      {
+        "name": "test",
+        "properties": {
+          "transparent": true,
+          "read": true,
+          "write": true,
+          "hidden": false
+        },
+        "data": [
+          "arr array = 1,2,3,4,5",
+          "arr appended = 'a','b','c'>append(array)",
+          "out meow",
+          "endprog"
+        ]
+      },
+      {
+        "name": "loop-test",
+        "properties": {
+          "transparent": true,
+          "read": true,
+          "write": true,
+          "hidden": false
+        },
+        "data": [
+          "num loopTest = 0",
+          "num quickloopTest = 0",
+          "num dummy = 0",
+          "num loopStartTime = Time_MsEpoch",
+          "loop loopTest < 1000",
+          "set loopTest = loopTest + 1",
+          "endloop",
+          "out 'normal loop doing an EMPTY loop that counts to 1000: $|Time_MsEpoch - loopStartTime|ms'",
+          "num quickloopStartTime = Time_MsEpoch",
+          "quickloop 3000",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "set dummy = dummy + 1",
+          "endquickloop",
+          "out 'quickloop doing 3000 loops of 100 dummy [set] calls: $|Time_MsEpoch - quickloopStartTime|ms'",
+          "endprog"
+        ]
+      },
+      {
+        "name": "fibonacci",
+        "properties": {
+          "transparent": false,
+          "read": true,
+          "write": true,
+          "hidden": false
+        },
+        "data": [
+          "num i = 0",
+          "num amount = 0",
+          "num nOne = 0",
+          "num nTwo = 1",
+          "num sum = 0",
+          "out 'How many fibonacci numbers do you want to generate?'",
+          "ask amount",
+          "loop i < amount",
+          "set i = i + 1",
+          "set sum = nOne + nTwo",
+          "out sum",
+          "set nTwo = nOne",
+          "set nOne = sum",
+          "endloop",
+          "endprog"
+        ]
+      }
+    ],
+    "D:/Macros": [
+      {
+        "name": "meow",
+        "properties": {
+          "transparent": true,
+          "read": true,
+          "write": true,
+          "hidden": false
+        },
+        "data": [
+          "ribbit Meow! ^v^"
+        ]
+      },
+      {
+        "name": "create-program",
+        "properties": {
+          "transparent": false,
+          "read": true,
+          "write": true,
+          "hidden": false
+        },
+        "data": [
+          "!c",
+          "h D:/Programs",
+          "ch $1",
+          "m $1"
+        ]
+      },
+      {
+        "name": "edit-program",
+        "properties": {
+          "transparent": false,
+          "read": true,
+          "write": true,
+          "hidden": false
+        },
+        "data": [
+          "!e",
+          "h D:/Programs",
+          "m $1"
+        ]
+      },
+      {
+        "name": "reload",
+        "properties": {
+          "transparent": false,
+          "read": true,
+          "write": true,
+          "hidden": false
+        },
+        "data": [
+          "!r",
+          "[[BULLFROG]]urgentsavestate",
+          "[[BULLFROG]]urgentloadstate",
+          "[[BULLFROG]]urgentclearstate",
+          "clear",
+          "ribbit OS state reloaded",
+          "[[BULLFROG]]greeting",
+          "[[BULLFROG]]changepath C:/Home"
+        ]
+      },
+      {
+        "name": "edit-settings",
+        "properties": {
+          "transparent": false,
+          "read": true,
+          "write": true,
+          "hidden": false
+        },
+        "data": [
+          "!es",
+          "h Config:",
+          "m $1"
+        ]
+      },
+      {
+        "name": "edit-palette",
+        "properties": {
+          "transparent": false,
+          "read": true,
+          "write": true,
+          "hidden": false
+        },
+        "data": [
+          "!ep",
+          "h D:/Palettes",
+          "m $1"
+        ]
+      },
+      {
+        "name": "set-US-time-format",
+        "properties": {
+          "transparent": false,
+          "read": true,
+          "write": true,
+          "hidden": false
+        },
+        "data": [
+          "ft w. mn/d/y H:m:s a"
+        ]
+      }
+    ],
+    "D:/Program-Data": [
+      {
+        "name": "test",
+        "properties": {
+          "transparent": false,
+          "read": true,
+          "write": true,
+          "hidden": false
+        },
+        "data": []
+      },
+      {
+        "name": "cli",
+        "properties": {
+          "read": false,
+          "write": false,
+          "hidden": false
+        },
+        "data": []
+      },
+      {
+        "name": "lilypad",
+        "properties": {
+          "read": false,
+          "write": false,
+          "hidden": false
+        },
+        "data": []
+      },
+      {
+        "name": "loop-test",
+        "properties": {
+          "read": false,
+          "write": false,
+          "hidden": false
+        },
+        "data": []
+      },
+      {
+        "name": "fibonacci",
+        "properties": {
+          "read": false,
+          "write": false,
+          "hidden": false
+        },
+        "data": []
+      }
+    ],
+    "D:/Palettes": [
+      {
+        "name": "standard",
+        "properties": {
+          "transparent": false,
+          "read": true,
+          "write": true,
+          "hidden": false
+        },
+        "data": [
+          "000000",
+          "0000AA",
+          "00AA00",
+          "00AAAA",
+          "AA0000",
+          "AA00AA",
+          "AA5500",
+          "AAAAAA",
+          "555555",
+          "5555FF",
+          "55FF55",
+          "55FFFF",
+          "FF5555",
+          "FF55FF",
+          "FFFF55",
+          "FFFFFF",
+          "void-space 00",
+          "bar-background 01",
+          "bar-text 15",
+          "terminal-background 15",
+          "terminal-line-background 15",
+          "terminal-line-highlighted-background 14",
+          "terminal-line-text 02",
+          "terminal-line-selection-background 02",
+          "terminal-line-selection-text 15",
+          "error-background 12",
+          "translation-error-backgroud 05",
+          "translation-warning-backgroud 06",
+          "program-error-background 04",
+          "alert-background 03",
+          "error-text 15",
+          "prompt-selected-background 02",
+          "prompt-selected-text 15"
+        ]
+      },
+      {
+        "name": "revised",
+        "properties": {
+          "transparent": false,
+          "read": true,
+          "write": true,
+          "hidden": false
+        },
+        "data": [
+          "000000",
+          "0000C4",
+          "00C400",
+          "00C4C4",
+          "C40000",
+          "C400C4",
+          "C47E00",
+          "C4C4C4",
+          "4E4E4E",
+          "4E4EDC",
+          "4EDC4E",
+          "4EF3F3",
+          "DC4E4E",
+          "F34EF3",
+          "F3F34E",
+          "FFFFFF",
+          "void-space 00",
+          "bar-background 01",
+          "bar-text 15",
+          "terminal-background 15",
+          "terminal-line-background 15",
+          "terminal-line-highlighted-background 14",
+          "terminal-line-text 02",
+          "terminal-line-selection-background 02",
+          "terminal-line-selection-text 15",
+          "error-background 12",
+          "translation-error-backgroud 05",
+          "translation-warning-backgroud 06",
+          "program-error-background 04",
+          "alert-background 03",
+          "error-text 15",
+          "prompt-selected-background 02",
+          "prompt-selected-text 15"
+        ]
+      },
+      {
+        "name": "standard-dark",
+        "properties": {
+          "transparent": false,
+          "read": true,
+          "write": true,
+          "hidden": false
+        },
+        "data": [
+          "000000",
+          "000066",
+          "006600",
+          "006666",
+          "660000",
+          "660066",
+          "664400",
+          "666666",
+          "222222",
+          "222288",
+          "228822",
+          "228888",
+          "882222",
+          "882288",
+          "888822",
+          "AAAAAA",
+          "void-space 00",
+          "bar-background 01",
+          "bar-text 15",
+          "terminal-background 15",
+          "terminal-line-background 15",
+          "terminal-line-highlighted-background 14",
+          "terminal-line-text 02",
+          "terminal-line-selection-background 02",
+          "terminal-line-selection-text 15",
+          "error-background 12",
+          "translation-error-backgroud 05",
+          "translation-warning-backgroud 06",
+          "program-error-background 04",
+          "alert-background 03",
+          "error-text 15",
+          "prompt-selected-background 02",
+          "prompt-selected-text 15"
+        ]
+      },
+      {
+        "name": "cherry",
+        "properties": {
+          "transparent": false,
+          "read": true,
+          "write": true,
+          "hidden": false
+        },
+        "data": [
+          "000000",
+          "1C219F",
+          "289E42",
+          "17ABAE",
+          "831326",
+          "980C6C",
+          "BC3517",
+          "C2C5C6",
+          "464C50",
+          "5790E4",
+          "B7EA8A",
+          "68DCCD",
+          "E48579",
+          "D97BC7",
+          "FF9F58",
+          "FFFFFF",
+          "void-space 00",
+          "bar-background 01",
+          "bar-text 15",
+          "terminal-background 15",
+          "terminal-line-background 15",
+          "terminal-line-highlighted-background 10",
+          "terminal-line-text 02",
+          "terminal-line-selection-background 02",
+          "terminal-line-selection-text 15",
+          "error-background 12",
+          "translation-error-backgroud 05",
+          "translation-warning-backgroud 06",
+          "program-error-background 04",
+          "alert-background 03",
+          "error-text 15",
+          "prompt-selected-background 02",
+          "prompt-selected-text 15"
+        ]
+      },
+      {
+        "name": "swamp",
+        "properties": {
+          "transparent": false,
+          "read": true,
+          "write": true,
+          "hidden": false
+        },
+        "data": [
+          "000000",
+          "4B71AF",
+          "3F9A44",
+          "3B9994",
+          "984547",
+          "9A3F95",
+          "C27E4B",
+          "B2B2B2",
+          "6C6C6C",
+          "96A2CF",
+          "93C495",
+          "AECFCD",
+          "DEA4A5",
+          "D7ABD4",
+          "D6B87B",
+          "FFFFFF",
+          "void-space 00",
+          "bar-background 01",
+          "bar-text 15",
+          "terminal-background 15",
+          "terminal-line-background 15",
+          "terminal-line-highlighted-background 10",
+          "terminal-line-text 02",
+          "terminal-line-selection-background 02",
+          "terminal-line-selection-text 15",
+          "error-background 12",
+          "translation-error-backgroud 05",
+          "translation-warning-backgroud 06",
+          "program-error-background 04",
+          "alert-background 03",
+          "error-text 15",
+          "prompt-selected-background 02",
+          "prompt-selected-text 15"
+        ]
+      },
+      {
+        "name": "swamp-revised",
+        "properties": {
+          "transparent": false,
+          "read": true,
+          "write": true,
+          "hidden": false
+        },
+        "data": [
+          "000000",
+          "31618D",
+          "298B27",
+          "268B67",
+          "753B29",
+          "773669",
+          "BF833A",
+          "97A791",
+          "465C3F",
+          "8DBDD5",
+          "81CB7D",
+          "91C9B9",
+          "D3977F",
+          "CBA9DB",
+          "D7D357",
+          "FFFFFF",
+          "void-space 00",
+          "bar-background 01",
+          "bar-text 15",
+          "terminal-background 15",
+          "terminal-line-background 15",
+          "terminal-line-highlighted-background 14",
+          "terminal-line-text 02",
+          "terminal-line-selection-background 02",
+          "terminal-line-selection-text 15",
+          "error-background 12",
+          "translation-error-backgroud 05",
+          "translation-warning-backgroud 06",
+          "program-error-background 04",
+          "alert-background 09",
+          "error-text 15",
+          "prompt-selected-background 02",
+          "prompt-selected-text 15"
+        ]
+      },
+      {
+        "name": "neon",
+        "properties": {
+          "transparent": false,
+          "read": true,
+          "write": true,
+          "hidden": false
+        },
+        "data": [
+          "000000",
+          "0000FF",
+          "00FF00",
+          "00FFFF",
+          "FF0000",
+          "FF00FF",
+          "FFA500",
+          "ABABAB",
+          "757575",
+          "5555FF",
+          "55FF55",
+          "55FFFF",
+          "FF5555",
+          "FF55FF",
+          "FFFF55",
+          "FFFFFF",
+          "void-space 00",
+          "bar-background 01",
+          "bar-text 15",
+          "terminal-background 15",
+          "terminal-line-background 15",
+          "terminal-line-highlighted-background 14",
+          "terminal-line-text 02",
+          "terminal-line-selection-background 02",
+          "terminal-line-selection-text 15",
+          "error-background 12",
+          "translation-error-backgroud 05",
+          "translation-warning-backgroud 06",
+          "program-error-background 04",
+          "alert-background 03",
+          "error-text 15",
+          "prompt-selected-background 02",
+          "prompt-selected-text 15"
+        ]
+      }
+    ],
+    "D:/Spinners": [
+      {
+        "name": "default",
+        "properties": {
+          "transparent": false,
+          "read": true,
+          "write": true,
+          "hidden": false
+        },
+        "data": [
+          "-",
+          "\\",
+          "|",
+          "/"
+        ]
+      },
+      {
+        "name": "dots",
+        "properties": {
+          "transparent": false,
+          "read": true,
+          "write": true,
+          "hidden": false
+        },
+        "data": [
+          ".",
+          ":",
+          "¨",
+          ":"
+        ]
+      },
+      {
+        "name": "circles",
+        "properties": {
+          "transparent": false,
+          "read": true,
+          "write": true,
+          "hidden": false
+        },
+        "data": [
+          ".",
+          "o",
+          "O",
+          "°",
+          "O",
+          "o"
+        ]
+      },
+      {
+        "name": "cross",
+        "properties": {
+          "transparent": false,
+          "read": true,
+          "write": true,
+          "hidden": false
+        },
+        "data": [
+          "×",
+          "+"
+        ]
+      },
+      {
+        "name": "wave",
+        "properties": {
+          "transparent": false,
+          "read": true,
+          "write": true,
+          "hidden": false
+        },
+        "data": [
+          "~",
+          "–"
+        ]
+      },
+      {
+        "name": "arrows",
+        "properties": {
+          "transparent": false,
+          "read": true,
+          "write": true,
+          "hidden": false
+        },
+        "data": [
+          "<",
+          "^",
+          ">",
+          "v"
+        ]
+      },
+      {
+        "name": "shade",
+        "properties": {
+          "transparent": false,
+          "read": true,
+          "write": true,
+          "hidden": false
+        },
+        "data": [
+          "·",
+          ":",
+          "!",
+          "+",
+          "x",
+          "%",
+          "#",
+          "%",
+          "x",
+          "+",
+          "!",
+          ":"
+        ]
+      },
+      {
+        "name": "spring",
+        "properties": {
+          "transparent": false,
+          "read": true,
+          "write": true,
+          "hidden": false
+        },
+        "data": [
+          "-",
+          "=",
+          "Ξ",
+          "="
+        ]
+      },
+      {
+        "name": "fire",
+        "properties": {
+          "transparent": false,
+          "read": true,
+          "write": true,
+          "hidden": false
+        },
+        "data": [
+          "s",
+          "§",
+          "¿"
+        ]
+      },
+      {
+        "name": "quickloop-in-progress",
+        "properties": {
+          "transparent": true,
+          "read": true,
+          "write": true,
+          "hidden": false
+        },
+        "data": [
+          "Q"
+        ]
+      },
+      {
+        "name": "ask-in-progress",
+        "properties": {
+          "transparent": true,
+          "read": true,
+          "write": true,
+          "hidden": false
+        },
+        "data": [
+          "?"
+        ]
+      },
+      {
+        "name": "prompt-in-progress",
+        "properties": {
+          "transparent": true,
+          "read": true,
+          "write": true,
+          "hidden": false
+        },
+        "data": [
+          "¶"
+        ]
+      }
+    ]
+  }
+}
+
+    const configElement = document.getElementById('config');
+    const memElement = document.getElementById('program-mem');
+
+    const userConfigElement = document.getElementById('user-config');
+    const userImmutableConfigElement = document.getElementById('user-immutable-config');
+    
+    // window.addEventListener('message', (event) => {
+    //     let config = event.data.config;
+    //     configElement.value = JSON.stringify(config, null, 2);
+    // });
+
+    console.log(TEST_CONFIG)
+
+    function escapeHTML(str) {
+        return str.toString()
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    let userChangableSettings = ["debugMode", "version", "colorPalette", "showSpinner", "currentSpinner", "defaultSpinner", "timeFormat", "updateStatBar", "allowedProgramDirectories", "dissallowSubdirectoriesIn", "language", "validateLanguageOnStartup"]
+
+    let userImmutableSettings = ["currentPath", "commandHistory", "commandHistoryIndex", "spinnerIndex", "currentProgram", "programList", "programSession", "errorText", "translationErrorText","translationWarningText", "alertText", "programErrorText"]
+
+    let longestSettingLength = userChangableSettings.reduce((max, setting) => {
+        return Math.max(max, setting.length);
+    }, 0);
+
+    let longestImmutableSettingLength = userImmutableSettings.reduce((max, setting) => {
+        return Math.max(max, setting.length);
+    }, 0);
+
+    userChangableSettings.forEach((setting) => {
+        let value = TEST_CONFIG[setting]
+        if(Array.isArray(value)) value = value.join(", ")
+        
+        userConfigElement.innerHTML += `${" ".repeat(longestSettingLength-setting.length)}${setting} = ${value}<br>`
+    });
+
+    userImmutableSettings.forEach((setting) => {
+        let value = TEST_CONFIG[setting]
+        if(Array.isArray(value)) value = value.join(", ")
+        
+        userImmutableConfigElement.innerHTML += `${" ".repeat(longestImmutableSettingLength-setting.length)}${setting} = ${escapeHTML(value)}<br>`
+    });
+</script>

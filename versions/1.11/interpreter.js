@@ -143,7 +143,7 @@ function typeify(value, clock_interval) {
     let typeObj = {
         type: null,
         value: null,
-        originalInput: value,
+        originalInput: ORIGINAL_INPUT,
     };
 
     if(value == undefined) return new ScriptError("TypeifyError", `Cannot typeify [${value}]`, clock_interval);
@@ -169,7 +169,7 @@ function typeify(value, clock_interval) {
         }
 
         typeObj.origin = "String";
-    } else if(value.match(/^\$("|')?.*\1?$/)){ // /^\$("|').*("|')(:\w+)?$/
+    } else if(value.match(/^\$("|'|\d|\w).*("|'|\d|\w)$/)){
 
         value = value.replace(/^\$/, '');
 
@@ -195,42 +195,20 @@ function typeify(value, clock_interval) {
             values.push(current.trim());
         }
 
-        let index = value.match(/:\w+$/g);
-
-        // for the last index of values, remove :\w+$
-        values[values.length-1] = values[values.length-1].replace(/:\w+$/, '');
-
         let typedValues = [];
         values.forEach(v => typedValues.push(typeify(v, clock_interval)));
 
-        if(index == null){
-            typeObj.value = typedValues;
-            typeObj.type = "Array";
+        typeObj.originalInput = typeObj.originalInput.replace(/ \$/, " [FORCE_ARRAY]")
+
+        if(typedValues.some(value => value.type == "Error")){
+            typeObj = typedValues[typedValues.findIndex(value => value.type == "Error")]
         } else {
-            typeObj.originalInput = typeObj.originalInput.replace(/^\$/g, "[FORCE_ARRAY]");
-            typeObj.originalInput = typeObj.originalInput.replace(/:(\w+)$/g, "[INDEX]$1");
-
-            index = evaluate(index[0].replace(/:/g, ''));
-
             typeObj.type = "Array";
             typeObj.value = typedValues;
-
-            if(index == undefined){
-                typeObj = new ScriptError("SyntaxError", `Malformed index syntax`, clock_interval);
-            } else {
-                let indexValue = typeObj.value[index];
-
-                if(indexValue == undefined){
-                    typeObj = new ScriptError("ReferenceError", `Index [${index}] is out of bounds for unnamed array`, clock_interval);
-                } else {
-                    typeObj.value = indexValue.value;
-                    typeObj.type = indexValue.type;
-                }
-            }
         }
 
         typeObj.origin = "Array";
-    } else if(/(==|!=|>=|<=|>|<)/.test(value)) { // comparison operators
+    } else if(/==|!=|>=|<=|>|</.test(value)) { // comparison operators
         typeObj.type = "Boolean";
         let error = false;
         try {
@@ -277,52 +255,22 @@ function typeify(value, clock_interval) {
 
         typeObj.origin = "FunctionIdentifier";
 
-    } else if(value.match(/^[a-zA-Z_]+(:.+)?$/g)) { // identifier (variable name)
-        typeObj.type = "VariableIdentifier";
-
-        let name = value.split(":")[0];
+    } else if(value.match(/^[a-zA-Z_]+$/g)) { // identifier (variable name)
+        let name = value;
 
         let variableValue = getVariable(name);
 
         if (variableValue != undefined) {
             typeObj.originalInput = "[VARIABLE_IDENTIFIER]"+value;
-            if(variableValue.type == "String"){
-                typeObj.value = variableValue.value;
-                typeObj.type = variableValue.type;
-            } else if(variableValue.type == "Array" || variableValue.type == "Number"){
-                if(value.split(":")[1] == undefined && variableValue.type == "Array"){
-                    typeObj.value = variableValue.value;
-                    typeObj.type = variableValue.type;
-                } else {
-                    if(variableValue.type == "Array"){
-                        let index = evaluate(value.split(":")[1]);
-
-                        if(index == undefined){
-                            typeObj = new ScriptError("SyntaxError", `Bad index`, clock_interval);
-                        } else {
-                            let indexValue = variableValue.value[index];
-    
-                            if(indexValue == undefined){
-                                typeObj = new ScriptError("ReferenceError", `Index [${index}] is out of bounds for array [${name}]`, clock_interval);
-                            } else {
-                                typeObj.value = indexValue.value;
-                                typeObj.type = indexValue.type;
-                                typeObj.originalInput = typeObj.originalInput.replace(":", "[INDEX]")
-                            }
-                        }
-                    } else {
-                        typeObj.value = variableValue.value;
-                        typeObj.type = variableValue.type;
-                    }
-                }
-            }
+            typeObj.value = variableValue.value;
+            typeObj.type = variableValue.type;
         } else {
             typeObj = new ScriptError("ReferenceError", `Variable [${value}] is not defined`, clock_interval);
         }
 
         typeObj.origin = "VariableIdentifier";
 
-    } else if(value.match(/^\d*|\+|\-|\\|\*|\^/g)) {
+    } else if(value.match(/^\d*|\+|\-|\/|\*|\^/g)) {
         let error = false;
         let errMsg = null;
         try {
@@ -419,7 +367,9 @@ function splitByUnquotedCommas(str) {
     }
 
     return result;
-  }
+}
+
+let ORIGINAL_INPUT = null;
 
 function processSingleLine(input, clock_interval) {
     input = input.trim();
@@ -429,6 +379,8 @@ function processSingleLine(input, clock_interval) {
     let keyword = input.split(" ")[0];
 
     token.keyword = keyword;
+
+    ORIGINAL_INPUT = input;
 
     if(findMethodIdentifier(input) != -1){
         let methods = [];
@@ -491,7 +443,7 @@ function processSingleLine(input, clock_interval) {
                 token = typed;
             } else {
                 let value = typed.value;
-                token = { ...token, key: key, value: typed };
+                token = { ...token, key: key, value: value };
             }
 
 
@@ -974,6 +926,8 @@ function processSingleLine(input, clock_interval) {
         }
     }
 
+    if(token.type == "Error") return token;
+
     
     if(token.methods != undefined ?? Object.keys(token.methods).length != 0){
         token = methodParser(token, clock_interval);
@@ -1022,8 +976,6 @@ function methodParser(startToken, clock_interval){
 
     let token = startToken;
 
-    let methodError = false;
-
     for(let i = 0; i < methods.length; i++){
         
         let method = methods[i];
@@ -1032,7 +984,6 @@ function methodParser(startToken, clock_interval){
 
         if(method.args[0] == "(") {
             token = new ScriptError("SyntaxError", `Incorrect syntax for [>${methodName}]`, clock_interval);
-            methodError = true;
             break;
         }
 
@@ -1040,35 +991,58 @@ function methodParser(startToken, clock_interval){
 
         if(methodArgs[0] == "(") {
             token = new ScriptError("SyntaxError", `Incorrect syntax for [>${methodName}]`, clock_interval);
-            methodError = true;
             break;
         }
 
+        if(token.type == "Error"){
+            token.value += ` (acted on by [>${methodName}])`;
+            break;
+        }
 
-        methodArgs.forEach((arg, i) => {
-            if(arg.type == "Error"){
-                token = arg;
-                token.value += ` in method [>${methodName}]`;
-                methodError = true;
-                return
-            }
-        })
-
-        if(methodError) return token;
+        if(methodArgs.some(arg => arg.type == "Error")){
+            let errorIndex = methodArgs.findIndex(arg => arg.type == "Error");
+            token = methodArgs[errorIndex];
+            token.value += ` (Argument ${errorIndex+1} of [>${methodName}])`;
+            break;
+        }
 
         switch(methodName){
+            case ":":
+            case "index": {
+                let index = methodArgs[0];
+                if(index == undefined) {
+                    token = new ScriptError("SyntaxError", `[>${methodName}()] must have an index argument`, clock_interval);
+                    break;
+                }
+                if(token.type != "Array") {
+                    token = new ScriptError("TypeError", `[>${methodName}()] expects type Array, found type ${token.type}`, clock_interval);
+                    break;
+                }
+                if(index.type != "Number") {
+                    token = new ScriptError("TypeError", `[>${methodName}()] expects type Number, found type ${index.type}`, clock_interval);
+                    break;
+                }
+                if(index.value < 0 || index.value >= token.value.length) {
+                    token = new ScriptError("RangeError", `[>${methodName}()] index out of range`, clock_interval);
+                    break;
+                }
+
+                let indexValue = structuredClone(token.value[index.value])
+
+                token.value = indexValue.value;
+                token.type = indexValue.type;
+            } break;
+
             case "join": {
                 let arg1 = methodArgs[0];
                 if(arg1 == undefined || arg1.type == "Error") arg1 = typeify("','")
 
                 if(token.type != "Array") {
                     token = new ScriptError("TypeError", `[>join()] expects type Array, found type ${token.type}`, clock_interval);
-                    methodError = true;
                     break;
                 }
                 if(arg1.type != "String") {
                     token = new ScriptError("TypeError", `[>join()] expects type String, found type ${arg1.type}`, clock_interval);
-                    methodError = true;
                     break;
                 }
                 token.type = "String";
@@ -1081,27 +1055,22 @@ function methodParser(startToken, clock_interval){
 
                 if(arg1 == undefined) {
                     token = new ScriptError("SyntaxError", `[>replace()] must have a search argument (arg 1)`, clock_interval);
-                    methodError = true;
                     break;
                 }
                 if(arg2 == undefined) {
                     token = new ScriptError("SyntaxError", `[>replace()] must have a replace argument (arg 2)`, clock_interval);
-                    methodError = true;
                     break;
                 }
                 if(token.type != "String") {
                     token = new ScriptError("TypeError", `[>replace()] expects type String, found type ${token.type}`, clock_interval);
-                    methodError = true;
                     break;
                 }
                 if(arg1.type != "String") {
                     token = new ScriptError("TypeError", `[>replace()] search expects type String, found type ${arg1.type}`, clock_interval);
-                    methodError = true;
                     break;
                 }
                 if(arg2.type != "String") {
                     token = new ScriptError("TypeError", `[>replace()] replace expects type String, found type ${arg2.type}`, clock_interval);
-                    methodError = true;
                     break;
                 }
 
@@ -1115,15 +1084,32 @@ function methodParser(startToken, clock_interval){
                     token.value = token.value.toString();
                 } else {
                     token = new ScriptError("TypeError", `[>stringify()] expects type Number or Array, found type ${token.type}`, clock_interval);
-                    methodError = true;
                     break;
                 }	
                 token.type = "String";
             } break;
 
-            // case "append": {
-            //     console.log(token.methodArgs)
-            // } break;
+            case "append": {
+                let arg1 = methodArgs[0]
+
+                if(arg1 == undefined) {
+                    token = new ScriptError("SyntaxError", `[>append()] must have an argument`, clock_interval);
+                    break;
+                }
+
+                if(arg1.type != "Array"){
+                    token = new ScriptError("TypeError", `[>append()] argument expects type Array, found type ${arg1.type}`, clock_interval);
+                    break;
+                }
+
+                if(token.type != "Array") {
+                    token = new ScriptError("TypeError", `[>append()] expects type Array, found type ${token.type}`, clock_interval);
+                    break;
+                }
+
+                token.value.push(...arg1.value);
+
+            } break;
 
             case "type": {
                 token.value = token.type;
@@ -1133,7 +1119,6 @@ function methodParser(startToken, clock_interval){
             case "length": {
                 if(token.type != "String" && token.type != "Array") {
                     token = new ScriptError("TypeError", `[>length()] expects type String or Array, found type ${token.type}`, clock_interval);
-                    methodError = true;
                     break;
                 }
 
@@ -1145,7 +1130,6 @@ function methodParser(startToken, clock_interval){
 
             default: {
                 token = new ScriptError("SyntaxError", `[${methodName}] is not a valid method`, clock_interval);
-                methodError = true;
             } break;
         }
     }

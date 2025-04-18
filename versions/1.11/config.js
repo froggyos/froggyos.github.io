@@ -463,6 +463,11 @@ const presetLanguagesMap = {
         nmt: "* tapa ESC mótsi lilypad *",
         jpn: "* lilypadを終了するにはESCキーを押してください *"
     },
+    "T_lilypad_exit_without_saving": {
+        eng: "Exited lilypad without saving.",
+        nmt: "T_lilypad_exit_without_saving",
+        jpn: "T_lilypad_exit_without_saving"
+    },
     "T_saving_file": {
         eng: "Saving file...",
         nmt: "esaya gya fiyala...",
@@ -853,7 +858,9 @@ const config = {
             { name: "lilypad", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["str lilypad = 'this program is hardcoded into froggyOS'", "endprog"] },
             { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
                 "arr array = 1,2,3,4,5",
-                "out array>join>length>type",
+                "str meow = 'woof'",
+                "out array>type",
+                "out array>:(2)",
                 "endprog"
             ] },
             // { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [

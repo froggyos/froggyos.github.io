@@ -145,6 +145,10 @@
         font-size: 8px;
     }
 
+    .highlighted-line {
+        background-color: var(--terminal-line-highlighted-background);
+    }
+
     ::selection {
         background-color: var(--terminal-line-selection-background);
         color: var(--terminal-line-selection-text);
@@ -231,9 +235,6 @@
 </head>
 <body>
     <div id="color-test-bar"></div>
-    <div id="froggyscript-debug-button">step</div>
-    <textarea id="debug-program-memory" readonly>program memory</textarea>
-    <textarea id="debug-os" readonly>os memory</textarea>
     <div id="screen">
         <div id="bar">
             <div id="bar-text"></div>

@@ -103,20 +103,6 @@ function programList(){
             });
         }
     }
-
-    if(config.debugMode) {
-        document.body.style.cursor = "pointer";
-        document.getElementById('froggyscript-debug-button').style.display = 'block';
-        document.getElementById('debug-program-memory').style.display = 'block';
-        document.getElementById('debug-os').style.display = 'block';
-
-        document.getElementById('debug-os').textContent = "os memory:\n"+JSON.stringify(config, null, 1);
-    } else {
-        document.body.style.cursor = "false";
-        document.getElementById('froggyscript-debug-button').style.display = 'none';
-        document.getElementById('debug-program-memory').style.display = 'none';
-        document.getElementById('debug-os').style.display = 'none';
-    }
 }
 
 function parseTimeFormat(text){
@@ -397,6 +383,37 @@ function moveCaretToEnd(element) {
     }
 }
 
+function moveCaretToPosition(element, pos) {
+    const textNode = element.firstChild;
+    if (!textNode) return;
+
+    const range = document.createRange();
+    const selection = window.getSelection();
+    const maxPos = textNode.length;
+
+    range.setStart(textNode, Math.min(pos, maxPos));
+    range.collapse(true);
+
+    selection.removeAllRanges();
+    selection.addRange(range);
+
+    const rect = element.getBoundingClientRect();
+    if (rect.bottom > window.innerHeight) element.scrollIntoView(false);
+    if (rect.top < 0) element.scrollIntoView(true);
+}
+
+function getCaretPosition(element) {
+    const selection = window.getSelection();
+    if (!selection.rangeCount) return 0;
+  
+    const range = selection.getRangeAt(0);
+    const preCaretRange = range.cloneRange();
+    preCaretRange.selectNodeContents(element);
+    preCaretRange.setEnd(range.startContainer, range.startOffset);
+  
+    return preCaretRange.toString().length;
+  }
+
 function createTerminalLine(text, path, other){
     let lineContainer = document.createElement('div');
     let terminalPath = document.createElement('span');
@@ -502,9 +519,9 @@ function updateLineHighlighting() {
     let lines = document.querySelectorAll(`[data-program='lilypad-session-${config.programSession}']`);
     lines.forEach(line => {
         if (document.activeElement === line) {
-            line.style.background = "var(--terminal-line-highlighted-background)";
+            line.classList.add("highlighted-line");
         } else {
-            line.style.background = "var(--terminal-line-background)";
+            line.classList.remove("highlighted-line");
         }
     });
 }
@@ -1293,6 +1310,7 @@ x
                     let targetLineNumber = parseInt(args[1]);
 
                     lines[targetLineNumber].focus();
+                    moveCaretToEnd(lines[targetLineNumber]);
                 }
             }
         } break;
@@ -1370,6 +1388,16 @@ x
                 createTerminalLine("T_invalid_args_provide_1_0", config.errorText);
                 hadError = true;
             }
+
+
+            let debugWindow = window.open("debug.html", "debugWindow", "width=800,height=600,scrollbars=yes,resizable=yes");
+
+            debugWindow.onload = () => {
+                setInterval(() => {
+                    debugWindow.postMessage({ type: 'data', config }, '*');
+                }, 1)
+            };
+
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         } break;
 
@@ -1538,7 +1566,7 @@ function createEditableTerminalLine(path){
     terminalLine.textContent = "";
 
     terminalLine.addEventListener('keydown', function(e){
-        if(e.key == "Enter"){
+        if(e.key == "Enter" || e.key == "ArrowUp" || e.key == "ArrowDown"){
             e.preventDefault();
         }
     });
@@ -1570,9 +1598,7 @@ function createEditableTerminalLine(path){
             let command = args[0].trim();
             args = args.slice(1);
 
-            config.commandHistory.reverse();
-            config.commandHistory.push(userInput);
-            config.commandHistory.reverse();
+            if(config.commandHistory[0] != userInput) config.commandHistory = [userInput].concat(config.commandHistory)
             config.commandHistoryIndex = -1;
 
             sendCommand(command, args);
@@ -1580,22 +1606,16 @@ function createEditableTerminalLine(path){
 
         if(e.key == "ArrowUp"){
             e.preventDefault();
-            if(config.commandHistoryIndex <= config.commandHistory.length - 2) config.commandHistoryIndex++;
-            if(config.commandHistoryIndex != -1){
-                terminalLine.textContent = config.commandHistory[config.commandHistoryIndex];
-                moveCaretToEnd(terminalLine);
-            }
+            if(config.commandHistoryIndex < config.commandHistory.length - 1) config.commandHistoryIndex++;
+            terminalLine.textContent = config.commandHistory[config.commandHistoryIndex];
+            moveCaretToEnd(terminalLine);
         }
 
         if(e.key == "ArrowDown"){
             e.preventDefault();
             if(config.commandHistoryIndex > 0) config.commandHistoryIndex--;
-            if(config.commandHistoryIndex == -1){
-                terminalLine.textContent = "";
-            } else {
-                terminalLine.textContent = config.commandHistory[config.commandHistoryIndex];
-                moveCaretToEnd(terminalLine);
-            }
+            terminalLine.textContent = config.commandHistory[config.commandHistoryIndex];
+            moveCaretToEnd(terminalLine);
         }
     });
 
@@ -1680,13 +1700,17 @@ function createLilypadLine(path, linetype, filename){
             let focusedLineIndex = Array.from(lines).indexOf(focusedLine);
             if(focusedLineIndex > 0){
                 let newLine = lines[focusedLineIndex - 1]
-                moveCaretToEnd(newLine);
+
+                let caretPosition = getCaretPosition(focusedLine);
+                moveCaretToPosition(newLine, caretPosition);
+
 
                 if(newLine.getBoundingClientRect().y < terminal.getBoundingClientRect().y){
                     terminal.scrollTop = terminal.scrollTop - (terminal.getBoundingClientRect().y - newLine.getBoundingClientRect().y);
                 }
             };
         };
+
         if(e.key == "ArrowDown"){
             e.preventDefault();
             let lines = document.querySelectorAll(`[data-program='lilypad-session-${config.programSession}']`);
@@ -1695,7 +1719,9 @@ function createLilypadLine(path, linetype, filename){
             let focusedLineIndex = Array.from(lines).indexOf(focusedLine);
             if(focusedLineIndex < lines.length - 1){
                 let newLine = lines[focusedLineIndex + 1];
-                moveCaretToEnd(newLine);
+                
+                let caretPosition = getCaretPosition(focusedLine);
+                moveCaretToPosition(newLine, caretPosition);
 
                 if(newLine.getBoundingClientRect().bottom > terminal.getBoundingClientRect().bottom) {
                     terminal.scrollTop += newLine.getBoundingClientRect().bottom - terminal.getBoundingClientRect().bottom;
@@ -1704,6 +1730,7 @@ function createLilypadLine(path, linetype, filename){
         };
 
         if(e.key == "Escape"){
+            e.preventDefault();
             config.currentProgram = "cli";
             clearInterval(highlightedLineUpdater);
             let file = {
@@ -1719,33 +1746,39 @@ function createLilypadLine(path, linetype, filename){
             for(let i = 0; i < lines.length; i++){
                 file.data.push(lines[i].textContent);
                 lines[i].setAttribute('contenteditable', 'false');
-                // change their background color ba
+                lines[i].classList.remove("highlighted-line");
+                lines[i].removeEventListener('keydown', terminalLineKeydownHandler);
             };
 
             if(filename == undefined){
                 createEditableTerminalLine(`${config.currentPath}>`);
             } else {
-                createTerminalLine(`T_saving_file`, ">");
+                terminalLine.removeEventListener('keydown', terminalLineKeydownHandler);
+                if(e.shiftKey == false){
+                    createTerminalLine(`T_saving_file`, ">");
 
-                let dataLength = 0;
-
-                file.data.forEach(line => {
-                    dataLength += line.length;
-                });
-                
-                setSetting("showSpinner", "true")
-                setTimeout(function(){
-
-                    file.name = filename;
-                    let fileIndex = config.fileSystem[config.currentPath].findIndex(file => file.name == filename);
-                    config.fileSystem[config.currentPath][fileIndex].data = file.data;
-
-                    setSetting("showSpinner", "false")
-                    createTerminalLine(`T_saving_done`, ">");
-                    terminalLine.removeEventListener('keydown', terminalLineKeydownHandler);
+                    let dataLength = 0;
+    
+                    file.data.forEach(line => {
+                        dataLength += line.length;
+                    });
+                    
+                    setSetting("showSpinner", "true")
+                    setTimeout(function(){
+    
+                        file.name = filename;
+                        let fileIndex = config.fileSystem[config.currentPath].findIndex(file => file.name == filename);
+                        config.fileSystem[config.currentPath][fileIndex].data = file.data;
+    
+                        setSetting("showSpinner", "false")
+                        createTerminalLine(`T_saving_done`, ">");
+                        
+                        createEditableTerminalLine(`${config.currentPath}>`);
+                    }, dataLength);
+                } else {
+                    createTerminalLine(`T_lilypad_exit_without_saving`, ">");
                     createEditableTerminalLine(`${config.currentPath}>`);
-                }, dataLength);
-                
+                }
             }
         }
     };

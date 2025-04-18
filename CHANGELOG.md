@@ -26,7 +26,7 @@ literally everything is new
     - pulse
 + new hidden command
 + added lilypad (text editor)
-    - filesystem does not exist yet
+    ! filesystem does not exist yet
 ~ changed hidden command prefix
 ```
 
@@ -51,7 +51,7 @@ literally everything is new
     + savestate - saves froggyOS state to localStorage
     + spy       - outputs contents of a file to terminal
 + added command aliases
-+ added FroggyScript (custom programming language)
+* added FroggyScript (custom programming language)
     + ask
     + prompt
     + filearg
@@ -86,12 +86,12 @@ literally everything is new
     + listdrives
 + new hidden command
 + separated config to its own file
-+ new FroggyScript keywords
+* new FroggyScript keywords
     + func/endfunc
     + f:
     + savedata
     + loaddata
-+ added different color palettes
++ added different color palettes to customize the theme
 ```
 
 ## 1.5-lbc2
@@ -125,14 +125,16 @@ idk
 
 # 1.10
 ```
-~ revamped FroggyScript
-    - check documentation for keyword list
+~ recoded FroggyScript
+    ! check documentation for keyword list
+    ! broke debugging
 ```
 
 # 1.11
 ```
-+ new hidden command
+* new hidden command
     + gotoprogramline - edits file in argument one and then brings you to the line with the error in argument two
 ~ changed the way palettes work to allow for more customization
 ~ changed FroggyScript method syntax
+~ fixed debugging
 ```

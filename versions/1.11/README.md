@@ -3,6 +3,7 @@
 * in paths, `.` will be replaced with the current directory
 * programs can *only* be written in designated directories
 * you can press the `DEL` key to escape programs (ex. an infinite loop)
+* press `SHIFT + ESC` to exit lilypad (text editor) without saving
 
 ## Palette Conventions
 There are no set colors that you must have, but these are the color conventions.
@@ -22,6 +23,7 @@ There are no set colors that you must have, but these are the color conventions.
 * `13` - light magenta
 * `14` - light orange/yellow
 * `15` - white
+
 ### Current Color Palettes
 * standard
 * revised
@@ -199,13 +201,6 @@ arr [variable_name] = [value], [value], ...
 arr test1 = 1, 2, 3, 4, 5
 arr test2 = "a", "b", "c", "d", "e"
 arr test3 = "a", 1, true, 2.5, "b"
-
--- get indexes
-out test1:0
-out test2:1
-
-num index = 4
-out test3:index
 ```
 ##### Unnamed
 * Prefixing strings with `$` will force a type of `Array`.
@@ -473,15 +468,28 @@ Appends the second argument to the first argument. Both must be arrays.
 ```
 arr test1 = "a", "b", "c"
 arr test2 = 1, 2, 3
+append test1 test2
+-- "a", "b", "c", 1, 2, 3
 ```
 ## Methods
-If a method has no arguments, you may omit the parentheses.
+If a method expects no arguments, you may omit the parentheses.
+### index
+Indexing starts at `0`.
+```
+arr test = "a", "b", "c", "d", "e"
+str output = test>index(0)
+-- "a"
+
+arr test2 = 1, 2, 3, 4, 5
+str output = test2>:(1)
+-- "2"
+```
 ### join
 Join the elements of an array into a string, delimited by the provided separator. If no argument is passed, "," will be used instead.
 ```
 arr test = "a", "b", "c", "d", "e"
-str output =  test>join(" space ")
--- "a space b space c space d space e"
+str output =  test>join(" and ")
+-- "a and b and c and d and e"
 
 arr test2 = 1, 2, 3, 4, 5
 str output = test2>join
@@ -525,7 +533,10 @@ str output = test>stringify
 ```
 ### append
 ```
-output arr1>append(arr2)
+arr letters = "a", "b", "c"
+arr numbers = 1, 2, 3
+out letters>append(numbers)
+-- "a", "b", "c", 1, 2, 3
 ```
 ## Program Data
 ### Saving Data
@@ -539,3 +550,30 @@ From the corresponding `D:/Program-Data` file, loads the contents of entry of `[
 ```
 loaddata [variable] [key]
 ```
+
+# FroggyScript Technical Info
+## Data Storage
+## Type Origins
+The Type checking for FroggyScript is done in 6 steps, called "Origins".
+1. String - origin "String"
+2. Array - origin "Array"
+3. Boolean - origin "ComparisonOperator"
+4. ReturnFunction - origin "FunctionIdentifier"
+5. variables - origin "VariableIdentifier"
+6. Number - origin "Number"
+
+## Types
+There are 5 types in FroggyScript `String`, `Number`, `Boolean`, `Array`, and `ReturnFunction`. Of which, the first 4 can be directly accessed by the user.
+### String
+* A string is a sequence of characters, which can be letters, numbers, or symbols.
+* The Regex for a string is `/^("|').*\1$/g`.
+### Number
+* A number is a numeric value, which can be an integer or a floating-point number.
+* The Regex for a number is `/^\d*|\+|\-|\/|\*|\^/g`.
+### Boolean
+* A boolean is a value that can be either `true` or `false`.
+* The Regex for a boolean is `/==|!=|>=|<=|>|</`.
+    * `true` and `false` are not explicitly checked because those are variables with the values of `true` and `false`.
+### Array
+* An array is a collection of values, which can be of any type.
+* The Regex for an array is `^\$("|'|\d|\w).*("|'|\d|\w)$/`.
