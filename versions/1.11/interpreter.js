@@ -1,7 +1,8 @@
 const FroggyscriptMemory = {
     variables: {},
     functions: {},
-    savedData: {}
+    savedData: {},
+    CLOCK_INTERVAL: 0,
 };
 
 let OS_RUNTIME_START = Date.now();
@@ -54,11 +55,11 @@ const defaultVariables = {
 }
 
 class ScriptError {
-    constructor(type, message, line) {
+    constructor(type, message) {
         this.type = "Error"
         this.error = type
         this.value = message
-        this.line = line
+        this.line = FroggyscriptMemory.CLOCK_INTERVAL
     }
 }
 
@@ -139,14 +140,14 @@ function getVariable(variableName) {
     return FroggyscriptMemory.variables[variableName];
 }
 
-function typeify(value, clock_interval) {
+function typeify(value) {
     let typeObj = {
         type: null,
         value: null,
         originalInput: ORIGINAL_INPUT,
     };
 
-    if(value == undefined) return new ScriptError("TypeifyError", `Cannot typeify [${value}]`, clock_interval);
+    if(value == undefined) return new ScriptError("TypeifyError", `Cannot typeify [${value}]`);
 
     if(value.match(/^("|').*\1$/g)) {// string
        //  value = value.replace(/^\$/, '');
@@ -163,7 +164,7 @@ function typeify(value, clock_interval) {
                 try {
                     typeObj.value = typeObj.value.replace(match, evaluate(expression));
                 } catch (e) {
-                    typeObj = new ScriptError("EvaluationError", `Cannot evaluate [${expression}] in [${typeObj.originalInput}]`, clock_interval);
+                    typeObj = new ScriptError("EvaluationError", `Cannot evaluate [${expression}] in [${typeObj.originalInput}]`);
                 }
             })
         }
@@ -196,7 +197,7 @@ function typeify(value, clock_interval) {
         }
 
         let typedValues = [];
-        values.forEach(v => typedValues.push(typeify(v, clock_interval)));
+        values.forEach(v => typedValues.push(typeify(v)));
 
         typeObj.originalInput = typeObj.originalInput.replace(/ \$/, " [FORCE_ARRAY]")
 
@@ -218,7 +219,7 @@ function typeify(value, clock_interval) {
         }
 
         if (error) {
-            typeObj = new ScriptError("EvaluationError", `Cannot evaluate [${value}]`, clock_interval);
+            typeObj = new ScriptError("EvaluationError", `Cannot evaluate [${value}]`);
         } else {
             typeObj.value = evaluate(value);
 
@@ -239,21 +240,21 @@ function typeify(value, clock_interval) {
 
         typeObj.origin = "ComparisonOperator";
 
-    } else if(value.match(/^@[a-zA-Z_]+$/g)){ // function
-        let functionName = value.replace(/^@/, '');
-        let functionBody = FroggyscriptMemory.functions[functionName];
+    } else if(value.match(/^@.+$/g)){ // function
+        // let functionName = value.replace(/^@/, '');
+        // let functionBody = FroggyscriptMemory.functions[functionName];
 
-        if(functionBody == undefined) {
-            typeObj = new ScriptError("ReferenceError", `Function [${functionName}] does not exist`, clock_interval);
-        } else {
-            let functionLines = PROGRAM_LINES.slice(functionBody.start + 1, functionBody.end);
+        // if(functionBody == undefined) {
+        //     typeObj = new ScriptError("ReferenceError", `Function [${functionName}] does not exist`);
+        // } else {
+        //     let functionLines = FroggyscriptMemory.lines.slice(functionBody.start + 1, functionBody.end);
 
-            typeObj.name = functionName;
-            typeObj.body = functionLines;   
-            typeObj.type = "ReturnFunction"   
-        }
+        //     typeObj.name = functionName;
+        //     typeObj.body = functionLines;   
+        //     typeObj.type = "ReturnFunction"   
+        // }
 
-        typeObj.origin = "FunctionIdentifier";
+        // typeObj.origin = "FunctionIdentifier";
 
     } else if(value.match(/^[a-zA-Z_]+$/g)) { // identifier (variable name)
         let name = value;
@@ -265,7 +266,7 @@ function typeify(value, clock_interval) {
             typeObj.value = variableValue.value;
             typeObj.type = variableValue.type;
         } else {
-            typeObj = new ScriptError("ReferenceError", `Variable [${value}] is not defined`, clock_interval);
+            typeObj = new ScriptError("ReferenceError", `Variable [${value}] is not defined`);
         }
 
         typeObj.origin = "VariableIdentifier";
@@ -280,7 +281,7 @@ function typeify(value, clock_interval) {
         }
 
         if (error) {
-            typeObj = new ScriptError("EvaluationError", `Cannot evaluate [${value}]`, clock_interval);
+            typeObj = new ScriptError("EvaluationError", `Cannot evaluate [${value}]`);
         } else {
             typeObj.type = "Number";
             typeObj.value = evaluate(value);
@@ -296,7 +297,7 @@ function typeify(value, clock_interval) {
 
         typeObj.origin = "Number";
     } else {
-        typeObj = new ScriptError("TypeifyError", `Cannot typeify [${value}]`, clock_interval);
+        typeObj = new ScriptError("TypeifyError", `Cannot typeify [${value}]`);
     }
 
     return typeObj;
@@ -310,8 +311,6 @@ function writeVariable(identifier, type, value, mut) {
         mutable: mut
     };
 }
-
-let PROGRAM_LINES = [];
 
 function findMethodIdentifier(str) {
     let inSingleQuote = false;
@@ -368,7 +367,7 @@ function splitArguments(str) {
 
 let ORIGINAL_INPUT = null;
 
-function processSingleLine(input, clock_interval) {
+function processSingleLine(input) {
     input = input.trim();
     
     let token = {};
@@ -412,14 +411,78 @@ function processSingleLine(input, clock_interval) {
     }
 
     switch (keyword) {
+        case "f:": {
+
+        } break;
+        
+        case "func": {
+            let functionName = input.split(" ")[1].trim();
+            let functionArguments = input.split(" ").slice(2)
+
+            let func = {
+                name: functionName,
+                args: [],
+                body: []
+            };
+
+            functionArguments.forEach(arg => {
+                let argument = {
+                    name: arg.replace(/^!/, '').replace(/:[SNBA\*]{1}$/g, '').trim(),
+                    type: null,
+                    required: arg.startsWith("!"),
+                }
+
+                if(arg.slice(-2, -1) == ":") {
+                    let type = arg.slice(-1)
+
+                    if(type == "S") argument.type = "String"
+                    else if(type == "N") argument.type = "Number"
+                    else if(type == "B") argument.type = "Boolean"
+                    else if(type == "A") argument.type = "Array"
+                    else if(type == "*") argument.type = "Any"
+                    else argument.type = "Any"
+                } else {
+                    argument.type = "Any"
+                }
+
+                func.args.push(argument)
+            })
+
+            let stack = [];
+            let endIndex = null;
+
+            for (let i = FroggyscriptMemory.CLOCK_INTERVAL + 1; i < FroggyscriptMemory.lines.length; i++) {
+                let currentKeyword = FroggyscriptMemory.lines[i].trim().split(" ")[0];
+                
+                if (currentKeyword === "func") {
+                    stack.push("func");
+                } else if (currentKeyword === "endfunc") {
+                    if (stack.length === 0) {
+                        endIndex = i;
+                        break;
+                    } else {
+                        stack.pop();
+                    }
+                }
+            }
+
+            if(endIndex == null) {
+                token = new ScriptError("SyntaxError", `[func] must have a matching [endfunc]`);
+            } else {
+                func.body = FroggyscriptMemory.lines.slice(FroggyscriptMemory.CLOCK_INTERVAL + 1, endIndex);
+                FroggyscriptMemory.CLOCK_INTERVAL = endIndex;
+                FroggyscriptMemory.functions[functionName] = func;
+            }
+        } break;
+
         case "loaddata": {
             let variable = input.split(" ")[1].trim();
             let key = input.split(" ").slice(2).join(" ").trim();
 
             if(getVariable(variable) == undefined) {
-                token = new ScriptError("ReferenceError", `Variable [${variable}] does not exist`, clock_interval);
+                token = new ScriptError("ReferenceError", `Variable [${variable}] does not exist`);
             } else if(getVariable(variable).mutable === false) {
-                token = new ScriptError("PermissionError", `Variable [${variable}] is immutable and cannot be reassigned`, clock_interval);
+                token = new ScriptError("PermissionError", `Variable [${variable}] is immutable and cannot be reassigned`);
             }
 
             token = { ...token, variableName: variable, key: key };
@@ -430,22 +493,20 @@ function processSingleLine(input, clock_interval) {
             let value = input.split(" ").slice(2).join(" ").trim();
 
             if(key == ''){
-                token = new ScriptError("SyntaxError", `[savedata] must be followed by a key`, clock_interval);
+                token = new ScriptError("SyntaxError", `[savedata] must be followed by a key`);
             } else if(value == ''){
-                token = new ScriptError("SyntaxError", `[savedata] must be followed by a value`, clock_interval);
+                token = new ScriptError("SyntaxError", `[savedata] must be followed by a value`);
             }
 
-            let typed = typeify(value, clock_interval);
+            let typed = typeify(value);
             if(typed.type == "Error"){
                 token = typed;
             } else {
                 let value = typed.value;
                 token = { ...token, key: key, value: value };
             }
-
-
-
         } break;
+
         case "prompt": {
             // prompt [variable] [default highlighted option] [...options]
             let variable = input.split(" ")[1].trim();
@@ -453,15 +514,15 @@ function processSingleLine(input, clock_interval) {
             let options = input.replace(/^prompt\s+\w+\s+\w+\s+/, '');
 
             if(variable == undefined) {
-                token = new ScriptError("SyntaxError", `[prompt] must be followed by a variable name`, clock_interval);
+                token = new ScriptError("SyntaxError", `[prompt] must be followed by a variable name`);
             } else if(getVariable(variable) == undefined) {
-                token = new ScriptError("ReferenceError", `Variable [${variable}] does not exist`, clock_interval);
+                token = new ScriptError("ReferenceError", `Variable [${variable}] does not exist`);
             } else if(getVariable(variable).mutable === false) {
-                token = new ScriptError("PermissionError", `Variable [${variable}] is immutable and cannot be reassigned`, clock_interval);
+                token = new ScriptError("PermissionError", `Variable [${variable}] is immutable and cannot be reassigned`);
             }
 
-            options = typeify(options, clock_interval);
-            defaultOption = typeify(defaultOption, clock_interval);
+            options = typeify(options);
+            defaultOption = typeify(defaultOption);
 
             if(options.type == "Error") {
                 token = options;
@@ -474,12 +535,12 @@ function processSingleLine(input, clock_interval) {
             }
 
             if(options.type != "Array") {
-                token = new ScriptError("TypeError", `[prompt] options must be type Array, found type ${options.type}`, clock_interval);
+                token = new ScriptError("TypeError", `[prompt] options must be type Array, found type ${options.type}`);
                 break;
             }
 
             if(defaultOption.type != "Number") {
-                token = new ScriptError("TypeError", `[prompt] default option must be type Number, found type ${defaultOption.type}`, clock_interval);
+                token = new ScriptError("TypeError", `[prompt] default option must be type Number, found type ${defaultOption.type}`);
                 break;
             }
 
@@ -490,9 +551,9 @@ function processSingleLine(input, clock_interval) {
         case "return": {
             let returnValue = input.replace(/^return\s+/, '').trim();
             if(returnValue.trim() == "") {
-                token = new ScriptError("SyntaxError", `[return] must be followed by a value`, clock_interval);
+                token = new ScriptError("SyntaxError", `[return] must be followed by a value`);
             } else {
-                let typeValue = typeify(returnValue, clock_interval);
+                let typeValue = typeify(returnValue);
                 if(typeValue.type == "Error"){
                     token = typeValue;
                 } else {
@@ -506,12 +567,12 @@ function processSingleLine(input, clock_interval) {
             let name = input.replace(/^arr\s+/, '').split('=')[0].trim();
 
             if(name.trim() == ""){
-                token = new ScriptError("SyntaxError", `[arr] must be followed by a variable name`, clock_interval);
+                token = new ScriptError("SyntaxError", `[arr] must be followed by a variable name`);
                 break;
             }
 
             if(value.trim() == ""){
-                token = new ScriptError("SyntaxError", `[arr] must be followed by a value`, clock_interval);
+                token = new ScriptError("SyntaxError", `[arr] must be followed by a value`);
                 break;
             }
 
@@ -540,13 +601,13 @@ function processSingleLine(input, clock_interval) {
             values = values.map(value => value.replace(/^\$/, ""));
 
             if(getVariable(name) != undefined) {
-                token = new ScriptError("ReferenceError", `Variable [${name}] already exists, cannot override`, clock_interval);
+                token = new ScriptError("ReferenceError", `Variable [${name}] already exists, cannot override`);
             } else if(values.length == 0){
-                token = new ScriptError("SyntaxError", `[arr] must be followed by a value`, clock_interval);
+                token = new ScriptError("SyntaxError", `[arr] must be followed by a value`);
             } else {
                 let typedValues = [];
 
-                values.forEach(value => typedValues.push(typeify(value, clock_interval)));
+                values.forEach(value => typedValues.push(typeify(value)));
 
                 // if any index has a type of Error
                 if(typedValues.some(value => value.type == "Error")){
@@ -564,8 +625,8 @@ function processSingleLine(input, clock_interval) {
 
         case "stringify": {
             let variable = input.split(" ")[1].trim();
-            if(typeify(variable, clock_interval).type == "Error") {
-                token = typeify(variable, clock_interval);
+            if(typeify(variable).type == "Error") {
+                token = typeify(variable);
             } else {
                 token = { ...token, variableName: variable, variableType: getVariable(variable).type };
             }
@@ -576,7 +637,7 @@ function processSingleLine(input, clock_interval) {
             let formatting = input.match(/\{.*?\}/)
 
             if(formatting == null){
-                token = new ScriptError("SyntaxError", `[outf] must be followed by a formatting string`, clock_interval);
+                token = new ScriptError("SyntaxError", `[outf] must be followed by a formatting string`);
             } else {
                 formatting = formatting[0].replace(/[\{\}]/g, "").trim().split("|");
                 let formatArray = [];
@@ -596,7 +657,7 @@ function processSingleLine(input, clock_interval) {
                             formattingObject[key] = value;
                             // if key is i and value isnt 1 or 0
                             if(key == "i" && value != "1" && value != "0") {
-                                token = new ScriptError("TypeError", `[${key}] must be followed by a 1 or 0, found ${value}`, clock_interval);
+                                token = new ScriptError("TypeError", `[${key}] must be followed by a 1 or 0, found ${value}`);
                             }
                         } else if (key == "tr" || key == "br" || key == "ir") {
                             let [start, end] = value.split("-").map(value => value.trim());
@@ -604,23 +665,23 @@ function processSingleLine(input, clock_interval) {
                             let rangeError = false;
 
                             try {
-                                typeify(start, clock_interval);
-                                typeify(end, clock_interval);
+                                typeify(start);
+                                typeify(end);
                             } catch (e){
                                 rangeError = true;
                             }
 
                             if(rangeError){
-                                token = new ScriptError("RangeError", `[${key}] in:\n${formatting[i].trim()}\nmust be followed by a range (start-end)`, clock_interval);
+                                token = new ScriptError("RangeError", `[${key}] in:\n${formatting[i].trim()}\nmust be followed by a range (start-end)`);
                             } else {
 
-                                let typedStart = typeify(start, clock_interval);
-                                let typedEnd = typeify(end, clock_interval);
+                                let typedStart = typeify(start);
+                                let typedEnd = typeify(end);
 
                                 if(typedStart.type != "Number") {
-                                    token = new ScriptError("TypeError", `[${key}] range start in:\n${formatting[i].trim()}\nmust be followed by a Number, found type ${typedStart.type} ${typedStart.type == "Error" ? `\n${typedStart.error} -> ${typedStart.value}`:""}`, clock_interval);
+                                    token = new ScriptError("TypeError", `[${key}] range start in:\n${formatting[i].trim()}\nmust be followed by a Number, found type ${typedStart.type} ${typedStart.type == "Error" ? `\n${typedStart.error} -> ${typedStart.value}`:""}`);
                                 } else if(typedEnd.type != "Number") {
-                                    token = new ScriptError("TypeError", `[${key}] range end in:\n${formatting[i].trim()}\nmust be followed by a Number, found type ${typedEnd.type} ${typedEnd.type == "Error" ? `\n${typedEnd.error} -> ${typedEnd.value}`:""}`, clock_interval);
+                                    token = new ScriptError("TypeError", `[${key}] range end in:\n${formatting[i].trim()}\nmust be followed by a Number, found type ${typedEnd.type} ${typedEnd.type == "Error" ? `\n${typedEnd.error} -> ${typedEnd.value}`:""}`);
                                 } else {
 
                                     if(typedStart.type == "Error") formatError = typedStart;
@@ -641,11 +702,11 @@ function processSingleLine(input, clock_interval) {
                     token = {...token, ...formatError }
                 } else {
                     let output = input.replace(/outf/g, "").replace(/\{.*?\}/, "").trim()
-                    let typedOutput = typeify(input.replace(/outf/g, "").replace(/\{.*?\}/, "").trim(), clock_interval);
+                    let typedOutput = typeify(input.replace(/outf/g, "").replace(/\{.*?\}/, "").trim());
 
                     
                     if(output == "") {
-                        token = new ScriptError("SyntaxError", `[outf] must be followed by a value`, clock_interval);
+                        token = new ScriptError("SyntaxError", `[outf] must be followed by a value`);
                     } else if(typedOutput.type == "Error"){
                         token = new ScriptError(typedOutput.error, typedOutput.value, typedOutput.line)
                     } else {
@@ -663,7 +724,7 @@ function processSingleLine(input, clock_interval) {
                         })
 
                         if(error != false){
-                            token = new ScriptError("SyntaxError", `[${error}] in:\n${formatting[errorIndex].trim()}\nmust be followed by a color code (cXX)`, clock_interval);
+                            token = new ScriptError("SyntaxError", `[${error}] in:\n${formatting[errorIndex].trim()}\nmust be followed by a color code (cXX)`);
                         } else token = { ...token, format: formatArray, value: typedOutput.value };
                     }
                 }
@@ -677,15 +738,15 @@ function processSingleLine(input, clock_interval) {
             if(prefix.trim() == "") prefix = "'?'";
 
             if(variable == undefined) {
-                token = new ScriptError("SyntaxError", `[ask] must be followed by a variable name`, clock_interval);
+                token = new ScriptError("SyntaxError", `[ask] must be followed by a variable name`);
             } else if(getVariable(variable) == undefined) {
-                token = new ScriptError("ReferenceError", `Variable [${variable}] does not exist`, clock_interval);
+                token = new ScriptError("ReferenceError", `Variable [${variable}] does not exist`);
             } else {
-                let typedPrefix = typeify(prefix, clock_interval);
+                let typedPrefix = typeify(prefix);
                 if(typedPrefix.type == "Error") {
                     token = typedPrefix;
                 } else if(typedPrefix.type != "String") {
-                    token = new ScriptError("TypeError", `[ask] prefix must be type String, found type ${typedPrefix.type}`, clock_interval);
+                    token = new ScriptError("TypeError", `[ask] prefix must be type String, found type ${typedPrefix.type}`);
                 } else {
                     token = { ...token, variableName: variable, variableType: getVariable(variable).type, prefix: typedPrefix };
                 }
@@ -697,9 +758,9 @@ function processSingleLine(input, clock_interval) {
             let type = input.split(" ")[2].trim();
 
             if(type !== "String" && type !== "Number") {
-                token = new ScriptError("TypeError", `[filearg] must be followed by a type (String, Number), found [${type}]`, clock_interval);
+                token = new ScriptError("TypeError", `[filearg] must be followed by a type (String, Number), found [${type}]`);
             } else if(variable == undefined) {
-                token = new ScriptError("SyntaxError", `[filearg] must be followed by a variable name`, clock_interval);
+                token = new ScriptError("SyntaxError", `[filearg] must be followed by a variable name`);
             } else {
                 token = { ...token, variableName: variable, variableType: type };
             }
@@ -713,12 +774,12 @@ function processSingleLine(input, clock_interval) {
         case "quickloop": {
             let times = input.replace(/^quickloop\s+/, '').trim();
             if(!times) {
-                token = new ScriptError("SyntaxError", `[quickloop] must have a loop count`, clock_interval);
+                token = new ScriptError("SyntaxError", `[quickloop] must have a loop count`);
                 break;
             }
-            let timesType = typeify(times, clock_interval);
+            let timesType = typeify(times);
             if(timesType.type !== "Number" && timesType.type !== "Error") {
-                token = new ScriptError("TypeError", `[quickloop] must evaluate to Number, found type ${timesType.type}`, clock_interval);
+                token = new ScriptError("TypeError", `[quickloop] must evaluate to Number, found type ${timesType.type}`);
             } else {
                 token = {...token, ...timesType, originalInput: times };
             }
@@ -727,12 +788,12 @@ function processSingleLine(input, clock_interval) {
         case "wait": {
             let waitTime = input.replace(/^wait\s+/, '').trim();
             if(!waitTime) {
-                token = new ScriptError("SyntaxError", `[wait] cannot be empty`, clock_interval);
+                token = new ScriptError("SyntaxError", `[wait] cannot be empty`);
                 break;
             }
-            let waitTimeType = typeify(waitTime, clock_interval);
+            let waitTimeType = typeify(waitTime);
             if(waitTimeType.type !== "Number" && waitTimeType.type !== "Error") {
-                token = new ScriptError("TypeError", `[wait] must evaluate to Number, found type ${waitTimeType.type}`, clock_interval);
+                token = new ScriptError("TypeError", `[wait] must evaluate to Number, found type ${waitTimeType.type}`);
                 
             } else {
                 token = {...token, ...waitTimeType, originalInput: waitTime };
@@ -752,12 +813,12 @@ function processSingleLine(input, clock_interval) {
         case "loop": {
             let condition = input.replace(/^loop\s+/, '').trim();
             if(!condition) {
-                token = new ScriptError("SyntaxError", `[loop] condition cannot be empty`, clock_interval);
+                token = new ScriptError("SyntaxError", `[loop] condition cannot be empty`);
                 break;
             }
-            let conditionType = typeify(condition, clock_interval);
+            let conditionType = typeify(condition);
             if(conditionType.type !== "Boolean" && conditionType.type !== "Error") {
-                token = new ScriptError("TypeError", `[loop] condition must evaluate to Boolean, found type ${conditionType.type}`, clock_interval);
+                token = new ScriptError("TypeError", `[loop] condition must evaluate to Boolean, found type ${conditionType.type}`);
             } else {
                 token = {...token, ...conditionType, originalInput: condition, endloopIndex: null };
             }
@@ -766,10 +827,10 @@ function processSingleLine(input, clock_interval) {
         case "if": {
             let condition = input.replace(/^if\s+/, '').split('then')[0].trim();
             if(!condition) {
-                token = new ScriptError("SyntaxError", `[if] condition cannot be empty`, clock_interval);
+                token = new ScriptError("SyntaxError", `[if] condition cannot be empty`);
                 break;
             }
-            let conditionType = typeify(condition, clock_interval);
+            let conditionType = typeify(condition);
             token = {...token, ...conditionType, endKeywordIndex: null, elseKeywordIndex: null };
             
         } break;
@@ -779,11 +840,11 @@ function processSingleLine(input, clock_interval) {
             let argument = input.replace(/^(out|error)/, '').trim();
 
             if(argument.trim() == "") {
-                token = new ScriptError("SyntaxError", `[${keyword}] must be followed by a value`, clock_interval);
+                token = new ScriptError("SyntaxError", `[${keyword}] must be followed by a value`);
                 break;
             }
 
-            let typed = typeify(argument, clock_interval);
+            let typed = typeify(argument);
             
             token = {...token, ...typed };
         } break;
@@ -792,16 +853,16 @@ function processSingleLine(input, clock_interval) {
         case "str": {
             // str(any # whitespace)<variable_name>(any # whitespace)=(any # whitespace)
             if(!input.match(/^(c?)str\s+\w+\s+\=\s+/g)) {
-                token = new ScriptError("SyntaxError", `[${keyword}] declaration must be followed by a variable assignment`, clock_interval);
+                token = new ScriptError("SyntaxError", `[${keyword}] declaration must be followed by a variable assignment`);
             } else {
                 let assignedValue = input.replace(/^(c?)str\s+/, '').split('=')[1].trim();
 
                 let identifier = input.replace(/^(c?)str\s+/, '').split('=')[0].trim();
 
                 if(getVariable(identifier) != undefined){
-                    token = new ScriptError("ReferenceError", `Variable [${identifier}] already exists, cannot override`, clock_interval);
+                    token = new ScriptError("ReferenceError", `Variable [${identifier}] already exists, cannot override`);
                 } else {
-                    token = {...token, ...typeify(assignedValue, clock_interval), identifier: identifier }; 
+                    token = {...token, ...typeify(assignedValue), identifier: identifier }; 
                     if(keyword == "str") token = { ...token, mutable: true }
                     else token = { ...token, mutable: false };
                 }
@@ -812,23 +873,23 @@ function processSingleLine(input, clock_interval) {
         case "num": {
             // num(any # whitespace)<variable_name>(any # whitespace)=(any # whitespace)
             if(!input.match(/^(c?)num\s+\w+\s+\=\s+/g)) {
-                token = new ScriptError("SyntaxError", `[${keyword}] declaration must be followed by a variable assignment`, clock_interval);
+                token = new ScriptError("SyntaxError", `[${keyword}] declaration must be followed by a variable assignment`);
             } else {
                 let assignedValue = input.replace(/^(c?)num\s+/, '').split('=')[1].trim();
 
                 let identifier = input.replace(/^(c?)num\s+/, '').split('=')[0].trim();
 
                 if(getVariable(identifier) != undefined){
-                    token = new ScriptError("ReferenceError", `Variable [${identifier}] already exists, cannot override`, clock_interval);
+                    token = new ScriptError("ReferenceError", `Variable [${identifier}] already exists, cannot override`);
                 } else {
-                    let typed = typeify(assignedValue, clock_interval)
+                    let typed = typeify(assignedValue)
                     token = {...token, ...typed, identifier: identifier };
 
                     if(typed.type == "Error") {
                         token = typed;
                     } else {
                         if(/\bpi\b/g.test(token.originalInput)) {
-                            token = new ScriptError("EvaluationError", `[pi] is unreliable, use [Pi] instead`, clock_interval);
+                            token = new ScriptError("EvaluationError", `[pi] is unreliable, use [Pi] instead`);
                         } else {
                             if(keyword == "num") token = { ...token, mutable: true }
                             else token = { ...token, mutable: false };
@@ -842,16 +903,16 @@ function processSingleLine(input, clock_interval) {
         case "bln": {
             // bln(any # whitespace)<variable_name>(any # whitespace)=(any # whitespace)
             if(!input.match(/^(c?)bln\s+\w+\s+\=\s+/g)) {
-                token = new ScriptError("SyntaxError", `[${keyword}] declaration must be followed by a variable assignment`, clock_interval);
+                token = new ScriptError("SyntaxError", `[${keyword}] declaration must be followed by a variable assignment`);
             } else {
                 let assignedValue = input.replace(/^(c?)bln\s+/, '').split('=')[1].trim();
 
                 let identifier = input.replace(/^(c?)bln\s+/, '').split('=')[0].trim();
 
                 if(getVariable(identifier) != undefined){
-                    token = new ScriptError("ReferenceError", `Variable [${identifier}] already exists, cannot override`, clock_interval);
+                    token = new ScriptError("ReferenceError", `Variable [${identifier}] already exists, cannot override`);
                 } else {
-                    token = {...token, ...typeify(assignedValue, clock_interval), identifier: identifier };
+                    token = {...token, ...typeify(assignedValue), identifier: identifier };
                     if(keyword == "bln") token = { ...token, mutable: true }
                     else token = { ...token, mutable: false };
                 }
@@ -863,19 +924,19 @@ function processSingleLine(input, clock_interval) {
         case "set": {
             // set(any # whitespace)<variable_name>(any # whitespace)=(any # whitespace)
             if(!input.match(/^set\s+\w+\s+\=\s+/g)) {
-                token = new ScriptError("SyntaxError", `[set] declaration must be followed by a variable assignment`, clock_interval);
+                token = new ScriptError("SyntaxError", `[set] declaration must be followed by a variable assignment`);
             } else {
                 let assignedValue = input.replace(/^set\s+/, '').split('=')[1].trim();
                 let identifier = input.replace(/^set\s+/, '').split('=')[0].trim();
 
-                token = {...token, ...typeify(assignedValue, clock_interval), identifier: identifier };
+                token = {...token, ...typeify(assignedValue), identifier: identifier };
             }
         } break;
 
         case "free": {
             // free(any # whitespace)<variable_name>(any # whitespace)=(any # whitespace)
             if(!input.match(/^free\s+\w+/g)) {
-                token = new ScriptError("SyntaxError", `[free] declaration must be followed by a variable name`, clock_interval);
+                token = new ScriptError("SyntaxError", `[free] declaration must be followed by a variable name`);
             } else {
                 let identifier = input.replace(/^free\s+/, '').split(' ')[0].trim();
                 token = { ...token, identifier: identifier };
@@ -893,10 +954,10 @@ function processSingleLine(input, clock_interval) {
         case "goto": { 
             // goto(any # whitespace)<variable_name>(any # whitespace)=(any # whitespace)
             if(!input.match(/^goto\s+/g)) {
-                token = new ScriptError("SyntaxError", `[goto] declaration must be followed by a variable name`, clock_interval);
+                token = new ScriptError("SyntaxError", `[goto] declaration must be followed by a variable name`);
             } else {
                 let identifier = input.replace(/^goto\s+/, '').split(' ')[0].trim();
-                let typeifyValue = typeify(identifier, clock_interval);
+                let typeifyValue = typeify(identifier);
                 token = {...token, ...typeifyValue};
             }
         }
@@ -905,48 +966,50 @@ function processSingleLine(input, clock_interval) {
     if(token.type == "Error") return token;
     
     if(token.methods != undefined ?? Object.keys(token.methods).length != 0){
-        token = methodParser(token, clock_interval);
+        token = methodParser(token);
     }
 
-    token = typeErrorCheckers(token, clock_interval);
+    token = typeErrorCheckers(token);
+
+    // console.log(token)
 
     return token;
 }
 
-function typeErrorCheckers(token, clock_interval) {
+function typeErrorCheckers(token) {
     switch(token.keyword){
         case "arr": {
-            if(token.type != "Array") token = new ScriptError("TypeError", `[arr] declaration can only be assigned type Array, found type ${token.type}`, clock_interval);
+            if(token.type != "Array") token = new ScriptError("TypeError", `[arr] declaration can only be assigned type Array, found type ${token.type}`);
         } break;
 
         case "if": {
-            if(token.type != "Boolean") token = new ScriptError("TypeError", `[if] condition must evaluate to Boolean, found type ${token.type}`, clock_interval);
+            if(token.type != "Boolean") token = new ScriptError("TypeError", `[if] condition must evaluate to Boolean, found type ${token.type}`);
         } break;
 
         case "goto": {
-            if(token.type != "Number") token = new ScriptError("TypeError", `[goto] declaration can only be assigned type Number, found type ${token.type}`, clock_interval);
+            if(token.type != "Number") token = new ScriptError("TypeError", `[goto] declaration can only be assigned type Number, found type ${token.type}`);
         } break;
 
         case "cnum":
         case "num": {
-            if(token.type != "Number") token = new ScriptError("TypeError", `[${token.keyword}] declaration can only be assigned type Number, found type ${token.type}`, clock_interval);
+            if(token.type != "Number") token = new ScriptError("TypeError", `[${token.keyword}] declaration can only be assigned type Number, found type ${token.type}`);
         } break;
 
         case "cstr":
         case "str": {
-            if(token.type != "String") token = new ScriptError("TypeError", `[${token.keyword}] declaration can only be assigned type String, found type ${token.type}`, clock_interval);
+            if(token.type != "String") token = new ScriptError("TypeError", `[${token.keyword}] declaration can only be assigned type String, found type ${token.type}`);
         } break;
 
         case "cbln":
         case "bln": {
-            if(token.type != "Boolean") token = new ScriptError("TypeError", `[${token.keyword}] declaration can only be assigned type Boolean, found type ${token.type}`, clock_interval);
+            if(token.type != "Boolean") token = new ScriptError("TypeError", `[${token.keyword}] declaration can only be assigned type Boolean, found type ${token.type}`);
         } break;
     }
 
     return token;
 }
 
-function methodParser(startToken, clock_interval){
+function methodParser(startToken){
     let methods = startToken.methods;
 
     let token = startToken;
@@ -958,14 +1021,14 @@ function methodParser(startToken, clock_interval){
         let methodName = method.name;
 
         if(method.args[0] == "(") {
-            token = new ScriptError("SyntaxError", `Incorrect syntax for [>${methodName}]`, clock_interval);
+            token = new ScriptError("SyntaxError", `Incorrect syntax for [>${methodName}]`);
             break;
         }
 
-        let methodArgs = method.args.map(arg => typeify(arg, clock_interval));
+        let methodArgs = method.args.map(arg => typeify(arg));
 
         if(methodArgs[0] == "(") {
-            token = new ScriptError("SyntaxError", `Incorrect syntax for [>${methodName}]`, clock_interval);
+            token = new ScriptError("SyntaxError", `Incorrect syntax for [>${methodName}]`);
             break;
         }
 
@@ -986,19 +1049,19 @@ function methodParser(startToken, clock_interval){
             case "index": {
                 let index = methodArgs[0];
                 if(index == undefined) {
-                    token = new ScriptError("SyntaxError", `[>${methodName}()] must have an index argument`, clock_interval);
+                    token = new ScriptError("SyntaxError", `[>${methodName}()] must have an index argument`);
                     break;
                 }
                 if(token.type != "Array") {
-                    token = new ScriptError("TypeError", `[>${methodName}()] expects type Array, found type ${token.type}`, clock_interval);
+                    token = new ScriptError("TypeError", `[>${methodName}()] expects type Array, found type ${token.type}`);
                     break;
                 }
                 if(index.type != "Number") {
-                    token = new ScriptError("TypeError", `[>${methodName}()] expects type Number, found type ${index.type}`, clock_interval);
+                    token = new ScriptError("TypeError", `[>${methodName}()] expects type Number, found type ${index.type}`);
                     break;
                 }
                 if(index.value < 0 || index.value >= token.value.length) {
-                    token = new ScriptError("RangeError", `[>${methodName}()] index out of range`, clock_interval);
+                    token = new ScriptError("RangeError", `[>${methodName}()] index out of range`);
                     break;
                 }
 
@@ -1013,11 +1076,11 @@ function methodParser(startToken, clock_interval){
                 if(arg1 == undefined || arg1.type == "Error") arg1 = typeify("','")
 
                 if(token.type != "Array") {
-                    token = new ScriptError("TypeError", `[>join()] expects type Array, found type ${token.type}`, clock_interval);
+                    token = new ScriptError("TypeError", `[>join()] expects type Array, found type ${token.type}`);
                     break;
                 }
                 if(arg1.type != "String") {
-                    token = new ScriptError("TypeError", `[>join()] expects type String, found type ${arg1.type}`, clock_interval);
+                    token = new ScriptError("TypeError", `[>join()] expects type String, found type ${arg1.type}`);
                     break;
                 }
                 token.type = "String";
@@ -1029,23 +1092,23 @@ function methodParser(startToken, clock_interval){
                 let arg2 = methodArgs[1];
 
                 if(arg1 == undefined) {
-                    token = new ScriptError("SyntaxError", `[>replace()] must have a search argument (arg 1)`, clock_interval);
+                    token = new ScriptError("SyntaxError", `[>replace()] must have a search argument (arg 1)`);
                     break;
                 }
                 if(arg2 == undefined) {
-                    token = new ScriptError("SyntaxError", `[>replace()] must have a replace argument (arg 2)`, clock_interval);
+                    token = new ScriptError("SyntaxError", `[>replace()] must have a replace argument (arg 2)`);
                     break;
                 }
                 if(token.type != "String") {
-                    token = new ScriptError("TypeError", `[>replace()] expects type String, found type ${token.type}`, clock_interval);
+                    token = new ScriptError("TypeError", `[>replace()] expects type String, found type ${token.type}`);
                     break;
                 }
                 if(arg1.type != "String") {
-                    token = new ScriptError("TypeError", `[>replace()] search expects type String, found type ${arg1.type}`, clock_interval);
+                    token = new ScriptError("TypeError", `[>replace()] search expects type String, found type ${arg1.type}`);
                     break;
                 }
                 if(arg2.type != "String") {
-                    token = new ScriptError("TypeError", `[>replace()] replace expects type String, found type ${arg2.type}`, clock_interval);
+                    token = new ScriptError("TypeError", `[>replace()] replace expects type String, found type ${arg2.type}`);
                     break;
                 }
 
@@ -1058,7 +1121,7 @@ function methodParser(startToken, clock_interval){
                 } else if(token.type == "Number") {
                     token.value = token.value.toString();
                 } else {
-                    token = new ScriptError("TypeError", `[>stringify()] expects type Number or Array, found type ${token.type}`, clock_interval);
+                    token = new ScriptError("TypeError", `[>stringify()] expects type Number or Array, found type ${token.type}`);
                     break;
                 }	
                 token.type = "String";
@@ -1068,22 +1131,22 @@ function methodParser(startToken, clock_interval){
                 let arg1 = methodArgs[0]
 
                 if(arg1 == undefined) {
-                    token = new ScriptError("SyntaxError", `[>append()] must have an argument`, clock_interval);
+                    token = new ScriptError("SyntaxError", `[>append()] must have an argument`);
                     break;
                 }
 
                 if(token.type != "String" && token.type != "Array") {
-                    token = new ScriptError("TypeError", `[>append()] expects type String or Array, found type ${token.type}`, clock_interval);
+                    token = new ScriptError("TypeError", `[>append()] expects type String or Array, found type ${token.type}`);
                     break;
                 }
 
                 if(arg1.type != "String" && arg1.type != "Array"){
-                    token = new ScriptError("TypeError", `[>append()] argument expects type String or Array, found type ${arg1.type}`, clock_interval);
+                    token = new ScriptError("TypeError", `[>append()] argument expects type String or Array, found type ${arg1.type}`);
                     break;
                 }
 
                 if(token.type == "String" && arg1.type == "Array"){
-                    token = new ScriptError("TypeError", `[>append()] cannot append type Array to type String`, clock_interval);
+                    token = new ScriptError("TypeError", `[>append()] cannot append type Array to type String`);
                     break;
                 }
 
@@ -1107,7 +1170,7 @@ function methodParser(startToken, clock_interval){
 
             case "length": {
                 if(token.type != "String" && token.type != "Array") {
-                    token = new ScriptError("TypeError", `[>length()] expects type String or Array, found type ${token.type}`, clock_interval);
+                    token = new ScriptError("TypeError", `[>length()] expects type String or Array, found type ${token.type}`);
                     break;
                 }
 
@@ -1118,7 +1181,7 @@ function methodParser(startToken, clock_interval){
             } break;
 
             default: {
-                token = new ScriptError("SyntaxError", `[${methodName}] is not a valid method`, clock_interval);
+                token = new ScriptError("SyntaxError", `[${methodName}] is not a valid method`);
             } break;
         }
     }
@@ -1131,16 +1194,16 @@ setInterval(() => {
     FroggyscriptMemory.variables.Time_OSRuntime.value = Date.now() - OS_RUNTIME_START
 }, 1);
 
-function interpretSingleLine(interval, single_input, clock_interval) {
+function interpretSingleLine(interval, single_input) {
     let line = single_input;
 
     if(line.match(/^@.+$/)){
         line = line.replace(/^@/, 'f: ');
     }
 
-    let token = processSingleLine(line, clock_interval);
+    let token = processSingleLine(line);
 
-    token = typeErrorCheckers(token, clock_interval);
+    token = typeErrorCheckers(token);
 
     if(token.type === "Error") {
         token.currentProgram = config.currentProgram;
@@ -1149,20 +1212,26 @@ function interpretSingleLine(interval, single_input, clock_interval) {
     } else {
         // process tokens here =======================================================
         switch(token.keyword) {
+            case "func": {
+
+            } break;
+            case "endfunc": {
+
+            } break;
             case "loaddata": {
                 let key = token.key
                 let variable = token.variableName;
 
                 if(FroggyscriptMemory.savedData[key] == undefined){
-                    token = new ScriptError("ReferenceError", `Key [${key}] does not exist`, clock_interval);
+                    token = new ScriptError("ReferenceError", `Key [${key}] does not exist`);
                 } else {
                     let retrievedData = FroggyscriptMemory.savedData[key];
                     let valueToSet = retrievedData.value
                     
                     if(retrievedData.type == "String") valueToSet = `"${valueToSet}"`;
 
-                    FroggyscriptMemory.lines[clock_interval] = `set ${variable} = ${valueToSet}`;
-                    clock_interval--;
+                    FroggyscriptMemory.lines[FroggyscriptMemory.CLOCK_INTERVAL] = `set ${variable} = ${valueToSet}`;
+                    FroggyscriptMemory.CLOCK_INTERVAL--;
                 }
             } break;    
 
@@ -1192,7 +1261,7 @@ function interpretSingleLine(interval, single_input, clock_interval) {
                     let endIndex = fileData.data.findIndex(x => x.match(new RegExp(`^KEY ${key} TYPE ${valueType} END$`)));
 
                     if((startIndex == -1 && endIndex != -1) || (startIndex != -1 && endIndex == -1)){
-                        token = new ScriptError("ProgramDataError", `The program data in D:/Program-Data is malformed. Cannot save data`, clock_interval);
+                        token = new ScriptError("ProgramDataError", `The program data in D:/Program-Data is malformed. Cannot save data`);
                     }
                 } else {
                     let dataIndex = fileData.data.findIndex(x => x.match(new RegExp(`^KEY ${key} TYPE ${valueType} VALUE (.+?) END`)));
@@ -1212,7 +1281,7 @@ function interpretSingleLine(interval, single_input, clock_interval) {
                 let arrayOptions = token.options.value.map(x => x.value);
 
                 if(selectedIndex < 0 || selectedIndex >= arrayOptions.length){
-                    token = new ScriptError("RangeError", `[${selectedIndex}] is out of range of options`, clock_interval);
+                    token = new ScriptError("RangeError", `[${selectedIndex}] is out of range of options`);
                 } else {
                     FroggyscriptMemory.cliPromptCount++;
 
@@ -1260,9 +1329,9 @@ function interpretSingleLine(interval, single_input, clock_interval) {
 
                             let selectedValue = options[selectedIndex].textContent;
                             
-                            FroggyscriptMemory.lines[clock_interval-1] = `set ${token.variableName} = "${selectedValue}"`;
+                            FroggyscriptMemory.lines[FroggyscriptMemory.CLOCK_INTERVAL-1] = `set ${token.variableName} = "${selectedValue}"`;
                             CLOCK_PAUSED = false;
-                            clock_interval--;        
+                            FroggyscriptMemory.CLOCK_INTERVAL--;        
                             
 
                         }
@@ -1283,9 +1352,9 @@ function interpretSingleLine(interval, single_input, clock_interval) {
 
             case "stringify": {
                 if(getVariable(token.variableName).mutable === false) {
-                    token = new ScriptError("PermissionError", `Variable [${token.variableName}] is immutable and cannot be reassigned`, clock_interval);
+                    token = new ScriptError("PermissionError", `Variable [${token.variableName}] is immutable and cannot be reassigned`);
                 }else if(token.variableType != "Number"){
-                    token = new ScriptError("TypeError", `[${token.variableName}] must be of type Number`, clock_interval);
+                    token = new ScriptError("TypeError", `[${token.variableName}] must be of type Number`);
                 } else {
                     let variable = getVariable(token.variableName);
                     writeVariable(variable.identifier, "String", variable.value.toString(), variable.mutable);
@@ -1339,9 +1408,9 @@ function interpretSingleLine(interval, single_input, clock_interval) {
                         if(expectedType == "Number" && /^\d+$/.test(token.value)) token.value = parseInt(token.value);
                         else token.value = `"${token.value}"`;
                         
-                        FroggyscriptMemory.lines[clock_interval-1] = `set ${token.variableName} = ${token.value}`;                       
+                        FroggyscriptMemory.lines[FroggyscriptMemory.CLOCK_INTERVAL-1] = `set ${token.variableName} = ${token.value}`;                       
                         CLOCK_PAUSED = false;
-                        clock_interval--;        
+                        FroggyscriptMemory.CLOCK_INTERVAL--;        
                     }
                 }); 
 
@@ -1355,13 +1424,13 @@ function interpretSingleLine(interval, single_input, clock_interval) {
                 if(expectedType === "Number") inputValue = parseFloat(inputValue);
 
                 if(inputValue == undefined){
-                    token = new ScriptError("TypeError", `Missing file argument [${fileArgumentCount}] (expecting type ${expectedType})`, clock_interval);
+                    token = new ScriptError("TypeError", `Missing file argument [${fileArgumentCount}] (expecting type ${expectedType})`);
 
                 } else if(FroggyscriptMemory.variables[token.variableName] != undefined) {
-                    token = new ScriptError("ReferenceError", `Variable [${token.variableName}] already exists, cannot override`, clock_interval);
+                    token = new ScriptError("ReferenceError", `Variable [${token.variableName}] already exists, cannot override`);
 
                 } else if(isNaN(inputValue) && expectedType === "Number") {
-                    token = new ScriptError("TypeError", `File argument [${fileArgumentCount}] must be of type [${expectedType}]`, clock_interval);
+                    token = new ScriptError("TypeError", `File argument [${fileArgumentCount}] must be of type [${expectedType}]`);
                 } else {
                     writeVariable(token.variableName, token.variableType, inputValue, false);
 
@@ -1370,14 +1439,14 @@ function interpretSingleLine(interval, single_input, clock_interval) {
             } break;
 
             case "endquickloop": {
-                let loopAmount = typeify(FroggyscriptMemory.lines[token.goto].replace("quickloop", "").trim(), clock_interval).value;
+                let loopAmount = typeify(FroggyscriptMemory.lines[token.goto].replace("quickloop", "").trim()).value;
 
-                let linesToLoop = FroggyscriptMemory.lines.slice(token.goto + 1, clock_interval).map(x => x.trim()).filter(x => x.length > 0 && x !== "--");
+                let linesToLoop = FroggyscriptMemory.lines.slice(token.goto + 1).map(x => x.trim()).filter(x => x.length > 0 && x !== "--");
 
                 for(let i = 0; i < loopAmount - 1; i++) {
                     for(let j = 0; j < linesToLoop.length; j++) {
                         let line = linesToLoop[j];
-                        let token = processSingleLine(line, clock_interval);
+                        let token = processSingleLine(line);
                         if(token.type === "Error") {
                             token.currentProgram = config.currentProgram;
                             outputError(token);
@@ -1392,7 +1461,7 @@ function interpretSingleLine(interval, single_input, clock_interval) {
             case "quickloop": {
                 let stack = [];
                 let endIndex = null;
-                for (let i = clock_interval + 1; i < FroggyscriptMemory.lines.length; i++) {
+                for (let i = FroggyscriptMemory.CLOCK_INTERVAL + 1; i < FroggyscriptMemory.lines.length; i++) {
                     let currentKeyword = FroggyscriptMemory.lines[i].trim().split(" ")[0];
                     
                     if (currentKeyword === "quickloop") {
@@ -1408,13 +1477,13 @@ function interpretSingleLine(interval, single_input, clock_interval) {
                 }
 
                 if(endIndex === null) {
-                    token = new ScriptError("SyntaxError", `Missing matching [endquickloop] for [quickloop]`, clock_interval);
+                    token = new ScriptError("SyntaxError", `Missing matching [endquickloop] for [quickloop]`);
                 } else {
                     setSetting("showSpinner", ["true"])
                     setSetting("currentSpinner", ["quickloop-in-progress"])
 
                     token.endQuickloopIndex = endIndex;
-                    FroggyscriptMemory.lines[token.endQuickloopIndex] += " " + clock_interval;
+                    FroggyscriptMemory.lines[token.endQuickloopIndex] += " " + FroggyscriptMemory.CLOCK_INTERVAL;
                 }
             } break;
 
@@ -1440,12 +1509,12 @@ function interpretSingleLine(interval, single_input, clock_interval) {
 
             case "endloop": {
                 if(isNaN(token.goto)) {
-                    token = new ScriptError("SyntaxError", `[endloop] cannot be used without a matching [loop]`, clock_interval);
+                    token = new ScriptError("SyntaxError", `[endloop] cannot be used without a matching [loop]`);
                 }
 
                 let loopCondition = FroggyscriptMemory.lines[token.goto].replace("loop", "").trim();
                 if(evaluate(loopCondition)) {
-                    clock_interval = token.goto;
+                    FroggyscriptMemory.CLOCK_INTERVAL = token.goto;
                     setSetting("showSpinner", ["true"])
                 } else {
                     setSetting("showSpinner", ["false"])
@@ -1456,7 +1525,7 @@ function interpretSingleLine(interval, single_input, clock_interval) {
                 // find paired endloop index
                 let stack = [];
                 let endIndex = null;
-                for (let i = clock_interval + 1; i < FroggyscriptMemory.lines.length; i++) {
+                for (let i = FroggyscriptMemory.CLOCK_INTERVAL + 1; i < FroggyscriptMemory.lines.length; i++) {
                     let currentKeyword = FroggyscriptMemory.lines[i].trim().split(" ")[0];
                     
                     if (currentKeyword === "loop") {
@@ -1473,22 +1542,22 @@ function interpretSingleLine(interval, single_input, clock_interval) {
                 token.endloopIndex = endIndex;
 
                 if (endIndex === null) {
-                    token = new ScriptError("SyntaxError", `Missing matching [endloop] for [loop]`, clock_interval);
+                    token = new ScriptError("SyntaxError", `Missing matching [endloop] for [loop]`);
                 }
 
                 if(!token.value){
-                    clock_interval = token.endloopIndex;
+                    FroggyscriptMemory.CLOCK_INTERVAL = token.endloopIndex;
                 } else {
-                    FroggyscriptMemory.lines[token.endloopIndex] += " " + clock_interval;
+                    FroggyscriptMemory.lines[token.endloopIndex] += " " + FroggyscriptMemory.CLOCK_INTERVAL;
                 }
             } break;
 
             case "free": {
                 if(getVariable(token.identifier) == undefined) {
-                    token = new ScriptError("ReferenceError", `Variable [${token.identifier}] does not exist`, clock_interval);
+                    token = new ScriptError("ReferenceError", `Variable [${token.identifier}] does not exist`);
 
                 } else if(getVariable(token.identifier).mutable === false) {
-                    token = new ScriptError("PermissionError", `Variable [${token.identifier}] is immutable and cannot be freed`, clock_interval);
+                    token = new ScriptError("PermissionError", `Variable [${token.identifier}] is immutable and cannot be freed`);
                 } else {
                     delete FroggyscriptMemory.variables[token.identifier];
                 }
@@ -1499,7 +1568,7 @@ function interpretSingleLine(interval, single_input, clock_interval) {
                 let elseIndex = null;
                 let endIndex = null;
             
-                for (let i = clock_interval + 1; i < FroggyscriptMemory.lines.length; i++) {
+                for (let i = FroggyscriptMemory.CLOCK_INTERVAL + 1; i < FroggyscriptMemory.lines.length; i++) {
                     let currentKeyword = FroggyscriptMemory.lines[i].trim().split(" ")[0];
             
                     if (currentKeyword === "if") {
@@ -1520,13 +1589,7 @@ function interpretSingleLine(interval, single_input, clock_interval) {
                 token.endKeywordIndex = endIndex;
             
                 if (endIndex === null) {
-                    token = {
-                        type: "Error",
-                        value: `Missing matching [endif] for [if]`,
-                        error: "SyntaxError",
-                        line: clock_interval
-
-                    }
+                    token = new ScriptError("SyntaxError", `Missing matching [endif] for [if]`);
                 } else {
                     if (token.value === true) {
                         if (elseIndex !== null) {
@@ -1535,9 +1598,9 @@ function interpretSingleLine(interval, single_input, clock_interval) {
                         // Do nothing if linkedElse is null
                     } else if (token.value === false) {
                         if (elseIndex === null) {
-                            clock_interval = endIndex;
+                            FroggyscriptMemory.CLOCK_INTERVAL = endIndex;
                         } else {
-                            clock_interval = elseIndex;
+                            FroggyscriptMemory.CLOCK_INTERVAL = elseIndex;
                         }
                     }
                 }
@@ -1547,15 +1610,15 @@ function interpretSingleLine(interval, single_input, clock_interval) {
                 let referencedVar = getVariable(token.identifier);
 
                 if (referencedVar == undefined) {
-                    token = new ScriptError("ReferenceError", `Variable [${token.identifier}] does not exist`, clock_interval);
+                    token = new ScriptError("ReferenceError", `Variable [${token.identifier}] does not exist`);
                 } else if (referencedVar.mutable === false) {
-                    token = new ScriptError("PermissionError", `Variable [${token.identifier}] is immutable and cannot be reassigned`, clock_interval);
+                    token = new ScriptError("PermissionError", `Variable [${token.identifier}] is immutable and cannot be reassigned`);
                 } else {
                     // Write the new value to the variable
                     if (token.type === "Error") {
-                        token = new ScriptError("EvaluationError", `Cannot evaluate [${token.originalInput}]`, clock_interval);
+                        token = new ScriptError("EvaluationError", `Cannot evaluate [${token.originalInput}]`);
                     } else if(referencedVar.type !== token.type) {
-                        token = new ScriptError("TypeError", `Cannot assign a value of type [${token.type}] to variable [${token.identifier}], which\nis of type [${referencedVar.type}]`, clock_interval);
+                        token = new ScriptError("TypeError", `Cannot assign a value of type [${token.type}] to variable [${token.identifier}], which\nis of type [${referencedVar.type}]`);
                     } else {
                         writeVariable(token.identifier, referencedVar.type, token.value, true);
                     }
@@ -1587,9 +1650,9 @@ function interpretSingleLine(interval, single_input, clock_interval) {
             case "goto": {
                 let newI = token.value;
                 if(newI >= 0 && newI < FroggyscriptMemory.lines.length) {
-                    clock_interval = newI - 1;
+                    FroggyscriptMemory.CLOCK_INTERVAL = newI - 1;
                 } else {
-                    token = new ScriptError("ReferenceError", `Line ${newI} does not exist`, clock_interval);
+                    token = new ScriptError("ReferenceError", `Line ${newI} does not exist`);
                 }
             } break;
 
@@ -1598,7 +1661,7 @@ function interpretSingleLine(interval, single_input, clock_interval) {
             case "endif": { } break;
 
             default: {
-                token = new ScriptError("InterpreterError", `Unknown keyword [${token.keyword}]`, clock_interval);
+                token = new ScriptError("InterpreterError", `Unknown keyword [${token.keyword}]`);
             } break;
         }
 
@@ -1607,7 +1670,7 @@ function interpretSingleLine(interval, single_input, clock_interval) {
             outputError(token, interval);
             return;
         }
-        if(clock_interval >= FroggyscriptMemory.lines.length) {
+        if(FroggyscriptMemory.CLOCK_INTERVAL >= FroggyscriptMemory.lines.length) {
             resetTerminalForUse(interval);
             return;
         }
@@ -1618,8 +1681,6 @@ function interpretSingleLine(interval, single_input, clock_interval) {
 
 function interpreter(input, fileArguments) {
     let lines = input.split('\n').map(x => x.trim()).filter(x => x.length > 0 && x !== "--");
-    PROGRAM_LINES = lines;
-    let clock_interval = 0;
 
     let fileArgumentCount = 0;
 
@@ -1711,10 +1772,10 @@ function interpreter(input, fileArguments) {
         }
 
         if(CLOCK_PAUSED == false) {
-            if(clock_interval < FroggyscriptMemory.lines.length) {
-                let line = FroggyscriptMemory.lines[clock_interval]
-                let token = interpretSingleLine(clock, line, clock_interval);
-                clock_interval++;
+            if(FroggyscriptMemory.CLOCK_INTERVAL < FroggyscriptMemory.lines.length) {
+                let line = FroggyscriptMemory.lines[FroggyscriptMemory.CLOCK_INTERVAL]
+                let token = interpretSingleLine(clock, line);
+                FroggyscriptMemory.CLOCK_INTERVAL++;
             } 
         }
     }, 1);
