@@ -79,15 +79,22 @@ function resetTerminalForUse(interval){
     config.currentProgram = "cli";
 }
 
-function outputError(token, interval) {
+function outputError(token, interval, error_trace) {
     createTerminalLine("", config.programErrorText.replace("{{}}", token.error), {translate: false});
     createTerminalLine(" ", "", {translate: false});
-    createTerminalLine(token.value, "", {translate: false});
-    createTerminalLine(`At line: ${token.line+1}`, "", {translate: false});
+    let debugCommand;
+    if(error_trace == undefined){
+        createTerminalLine(token.value, "", {translate: false});
+        createTerminalLine(`  line: ${token.line+1}`, "", {translate: false});
+        debugCommand = `[[BULLFROG]]gotoprogramline ${token.currentProgram} ${token.line}`
+    } else {
+        createTerminalLine("Error trace:", "", {translate: false});
+        createTerminalLine(`  Function [${error_trace.name}]\n    line: ${token.line+1}`, "", {translate: false});
+        createTerminalLine(`  ${token.value}\n    line: ${error_trace.line+1}`, "", {translate: false});
+        debugCommand = `[[BULLFROG]]gotoprogramline ${token.currentProgram} ${error_trace.line}`
+    }
     resetTerminalForUse(interval);
     createEditableTerminalLine(config.currentPath + ">");
-
-    const debugCommand = `[[BULLFROG]]gotoprogramline ${token.currentProgram} ${token.line}`
 
     config.commandHistory = [debugCommand].concat(config.commandHistory);
 }
@@ -241,20 +248,20 @@ function typeify(value) {
         typeObj.origin = "ComparisonOperator";
 
     } else if(value.match(/^@.+$/g)){ // function
-        // let functionName = value.replace(/^@/, '');
-        // let functionBody = FroggyscriptMemory.functions[functionName];
+        let functionName = value.replace(/^@/, '');
+        let functionBody = FroggyscriptMemory.functions[functionName];
 
-        // if(functionBody == undefined) {
-        //     typeObj = new ScriptError("ReferenceError", `Function [${functionName}] does not exist`);
-        // } else {
-        //     let functionLines = FroggyscriptMemory.lines.slice(functionBody.start + 1, functionBody.end);
+        if(functionBody == undefined) {
+            typeObj = new ScriptError("ReferenceError", `Function [${functionName}] does not exist`);
+        } else {
+            let functionLines = FroggyscriptMemory.lines.slice(functionBody.start + 1, functionBody.end);
 
-        //     typeObj.name = functionName;
-        //     typeObj.body = functionLines;   
-        //     typeObj.type = "ReturnFunction"   
-        // }
+            typeObj.name = functionName;
+            typeObj.body = functionLines;   
+            typeObj.type = "ReturnFunction"   
+        }
 
-        // typeObj.origin = "FunctionIdentifier";
+        typeObj.origin = "FunctionIdentifier";
 
     } else if(value.match(/^[a-zA-Z_]+$/g)) { // identifier (variable name)
         let name = value;
@@ -411,8 +418,17 @@ function processSingleLine(input) {
     }
 
     switch (keyword) {
-        case "f:": {
+        case "call": {
+            let functionName = input.split(" ")[1].trim();
+            let functionArguments = input.split(" ").slice(2)
 
+            if(functionName == undefined) {
+                token = new ScriptError("SyntaxError", `[call] must be followed by a function name`);
+            } else if(FroggyscriptMemory.functions[functionName] == undefined) {
+                token = new ScriptError("ReferenceError", `Function [${functionName}] does not exist`);
+            } else {
+                token = { ...token, functionName: functionName, functionArguments: functionArguments };
+            }
         } break;
         
         case "func": {
@@ -971,8 +987,6 @@ function processSingleLine(input) {
 
     token = typeErrorCheckers(token);
 
-    // console.log(token)
-
     return token;
 }
 
@@ -1194,7 +1208,7 @@ setInterval(() => {
     FroggyscriptMemory.variables.Time_OSRuntime.value = Date.now() - OS_RUNTIME_START
 }, 1);
 
-function interpretSingleLine(interval, single_input) {
+function interpretSingleLine(interval, single_input, error_trace) {
     let line = single_input;
 
     if(line.match(/^@.+$/)){
@@ -1207,17 +1221,37 @@ function interpretSingleLine(interval, single_input) {
 
     if(token.type === "Error") {
         token.currentProgram = config.currentProgram;
-        outputError(token, interval);
+        outputError(token, interval, error_trace);
         return;
     } else {
         // process tokens here =======================================================
         switch(token.keyword) {
-            case "func": {
+            case "call": {
+                let func = FroggyscriptMemory.functions[token.functionName];
+
+                if(func == undefined) {
+                    token = new ScriptError("ReferenceError", `Function [${token.functionName}] does not exist`);
+                }
+                
+                let functionLines = func.body;
+                let subclock_interval = 0;
+                FroggyscriptMemory.CLOCK_PAUSED = true;
+                let functionInterval = setInterval(() => {
+                    if (subclock_interval < functionLines.length) {
+                        let functionLine = functionLines[subclock_interval];
+                        subclock_interval++;
+                        interpretSingleLine(functionInterval, functionLine, {
+                            name: token.functionName,
+                            line: subclock_interval,
+                        });
+                    } else {
+                        FroggyscriptMemory.CLOCK_PAUSED = false;
+                        clearInterval(functionInterval);
+                    }
+                }, 1);
 
             } break;
-            case "endfunc": {
 
-            } break;
             case "loaddata": {
                 let key = token.key
                 let variable = token.variableName;
@@ -1275,7 +1309,7 @@ function interpretSingleLine(interval, single_input) {
             } break;
 
             case "prompt": {
-                CLOCK_PAUSED = true;
+                FroggyscriptMemory.CLOCK_PAUSED = true;
 
                 let selectedIndex = token.defaultOption.value;
                 let arrayOptions = token.options.value.map(x => x.value);
@@ -1330,7 +1364,7 @@ function interpretSingleLine(interval, single_input) {
                             let selectedValue = options[selectedIndex].textContent;
                             
                             FroggyscriptMemory.lines[FroggyscriptMemory.CLOCK_INTERVAL-1] = `set ${token.variableName} = "${selectedValue}"`;
-                            CLOCK_PAUSED = false;
+                            FroggyscriptMemory.CLOCK_PAUSED = false;
                             FroggyscriptMemory.CLOCK_INTERVAL--;        
                             
 
@@ -1370,7 +1404,7 @@ function interpretSingleLine(interval, single_input) {
             } break;
 
             case "ask": {
-                CLOCK_PAUSED = true;
+                FroggyscriptMemory.CLOCK_PAUSED = true;
                 let span = document.createElement('span');
                 let inputElement = document.createElement('div');
                 let elementToAppend = document.createElement('div');
@@ -1409,7 +1443,7 @@ function interpretSingleLine(interval, single_input) {
                         else token.value = `"${token.value}"`;
                         
                         FroggyscriptMemory.lines[FroggyscriptMemory.CLOCK_INTERVAL-1] = `set ${token.variableName} = ${token.value}`;                       
-                        CLOCK_PAUSED = false;
+                        FroggyscriptMemory.CLOCK_PAUSED = false;
                         FroggyscriptMemory.CLOCK_INTERVAL--;        
                     }
                 }); 
@@ -1490,10 +1524,10 @@ function interpretSingleLine(interval, single_input) {
             case "wait": {
                 let ms = token.value;
 
-                CLOCK_PAUSED = true;
+                FroggyscriptMemory.CLOCK_PAUSED = true;
 
                 setTimeout(() => {
-                    CLOCK_PAUSED = false;
+                    FroggyscriptMemory.CLOCK_PAUSED = false;
                 }, ms);
 
             } break;
@@ -1656,6 +1690,8 @@ function interpretSingleLine(interval, single_input) {
                 }
             } break;
 
+            case "func":
+            case "endfunc":
             case "return":
             case "else":
             case "endif": { } break;
@@ -1688,6 +1724,7 @@ function interpreter(input, fileArguments) {
     FroggyscriptMemory.fileArguments = fileArguments;
     FroggyscriptMemory.fileArgumentCount = fileArgumentCount;
     FroggyscriptMemory.cliPromptCount = 0;
+    FroggyscriptMemory.CLOCK_PAUSED = false;
 
     resetVariables()
 
@@ -1699,14 +1736,12 @@ function interpreter(input, fileArguments) {
         return;
     }
 
-    let CLOCK_PAUSED = false;
-
     const PROGRAM_RUNTIME_START = Date.now();
 
     let dataError = 0;
 
     let clock = setInterval(() => {
-        if(CLOCK_PAUSED) return;
+        if(FroggyscriptMemory.CLOCK_PAUSED) return;
         FroggyscriptMemory.variables.Time_ProgramRuntime.value = Date.now() - PROGRAM_RUNTIME_START;
         FroggyscriptMemory.variables.Time_MsEpoch.value = Date.now();
 
@@ -1771,7 +1806,7 @@ function interpreter(input, fileArguments) {
             createTerminalLine(`Program data is malformed. Some data cannot be loaded`, config.alertText, {translate: false});
         }
 
-        if(CLOCK_PAUSED == false) {
+        if(FroggyscriptMemory.CLOCK_PAUSED == false) {
             if(FroggyscriptMemory.CLOCK_INTERVAL < FroggyscriptMemory.lines.length) {
                 let line = FroggyscriptMemory.lines[FroggyscriptMemory.CLOCK_INTERVAL]
                 let token = interpretSingleLine(clock, line);
