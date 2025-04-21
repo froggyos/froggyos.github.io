@@ -374,13 +374,11 @@ endfunc
 ```
 ### Call a Function
 ```
-f: [func_name]
-@[name]
+call [func_name]
 
-f: name
-@name
+call name
 ```
-#### Return Values
+<!-- #### Return Values
 If the function ends in the keyword `return`, the value of whatever passed will be the return value.
 ```
 func name
@@ -391,7 +389,7 @@ num i = @name
 
 -- does not work:
 num i = f: name
-```
+``` -->
 
 ## Control Flow
 ### If Statement

@@ -3,6 +3,8 @@ const FroggyscriptMemory = {
     functions: {},
     savedData: {},
     CLOCK_INTERVAL: 0,
+    CLOCK_PAUSED: false,
+    lines: [],
 };
 
 let OS_RUNTIME_START = Date.now();
@@ -72,7 +74,7 @@ function outputWithFormatting(token) {
 }
 
 function resetTerminalForUse(interval){
-    resetVariables()
+    resetMemState()
     clearInterval(interval);
     setSetting("showSpinner", "false")
     setSetting("currentSpinner", getSetting("defaultSpinner"));
@@ -103,10 +105,13 @@ function singleLineError(message){
     createTerminalLine(message, config.errorText, {translate: false});
 }
 
-function resetVariables() {
+function resetMemState() {
     delete FroggyscriptMemory.variables;
     delete FroggyscriptMemory.functions;
     delete FroggyscriptMemory.savedData;
+    delete FroggyscriptMemory.CLOCK_INTERVAL;
+    delete FroggyscriptMemory.CLOCK_PAUSED;
+    delete FroggyscriptMemory.lines;
 
     FroggyscriptMemory.variables = {};
     // initialize default variables
@@ -119,6 +124,9 @@ function resetVariables() {
 
     FroggyscriptMemory.functions = {};
     FroggyscriptMemory.savedData = {};
+    FroggyscriptMemory.CLOCK_INTERVAL = 0;
+    FroggyscriptMemory.CLOCK_PAUSED = false;
+    FroggyscriptMemory.lines = [];
 }
 
 // change this to evaluate the token and return the token
@@ -248,7 +256,6 @@ function typeify(value) {
         typeObj.origin = "ComparisonOperator";
 
     } else if(value.match(/^@.+$/g)){ // function
-        let functionName = value.replace(/^@/, '');
         let functionBody = FroggyscriptMemory.functions[functionName];
 
         if(functionBody == undefined) {
@@ -370,6 +377,37 @@ function splitArguments(str) {
     }
 
     return result;
+}
+
+// requires function definition
+function getFunctionArguments(str) {
+    const parenMatch = str.match(/\(([^)]*)\)/);
+    if (!parenMatch) return [];
+  
+    const inner = parenMatch[1];
+    const regex = /(['"])((?:\\.|(?!\1).)*?)\1|([^;()\s]+)/g;
+    let results = [];
+    let match;
+  
+    while ((match = regex.exec(inner)) !== null) {
+        const value = match[2] ?? match[3];
+        results.push(isNaN(value) ? value : Number(value));
+    }
+  
+    return results;
+}
+
+function parseArguments(str) {
+    const regex = /(['"])((?:\\.|(?!\1).)*?)\1|([^;\s]+)/g;
+    let results = [];
+    let match;
+
+    while ((match = regex.exec(str)) !== null) {
+        const value = match[2] ?? match[3];
+        results.push(isNaN(value) ? value : Number(value));
+    }
+
+    return results;
 }
 
 let ORIGINAL_INPUT = null;
@@ -1203,7 +1241,8 @@ function methodParser(startToken){
     return token;
 }
 
-resetVariables();
+resetMemState();
+
 setInterval(() => {
     FroggyscriptMemory.variables.Time_OSRuntime.value = Date.now() - OS_RUNTIME_START
 }, 1);
@@ -1533,7 +1572,7 @@ function interpretSingleLine(interval, single_input, error_trace) {
             } break;
 
             case "endprog": {
-                resetVariables()
+                resetMemState()
                 clearInterval(interval);
                 setSetting("showSpinner", ["false"])
                 setSetting("currentSpinner", [getSetting("defaultSpinner")]);
@@ -1720,13 +1759,13 @@ function interpreter(input, fileArguments) {
 
     let fileArgumentCount = 0;
 
+    resetMemState();
+
     FroggyscriptMemory.lines = lines;
     FroggyscriptMemory.fileArguments = fileArguments;
     FroggyscriptMemory.fileArgumentCount = fileArgumentCount;
     FroggyscriptMemory.cliPromptCount = 0;
     FroggyscriptMemory.CLOCK_PAUSED = false;
-
-    resetVariables()
 
     writeVariable("OS_ProgramName", "String", structuredClone(config).currentProgram, false);
 
@@ -1810,8 +1849,9 @@ function interpreter(input, fileArguments) {
             if(FroggyscriptMemory.CLOCK_INTERVAL < FroggyscriptMemory.lines.length) {
                 let line = FroggyscriptMemory.lines[FroggyscriptMemory.CLOCK_INTERVAL]
                 let token = interpretSingleLine(clock, line);
+                console.log(token)
                 FroggyscriptMemory.CLOCK_INTERVAL++;
-            } 
+            }
         }
     }, 1);
 
