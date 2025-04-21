@@ -56,6 +56,8 @@ const defaultVariables = {
     }
 }
 
+let frozenMemory = () => structuredClone(FroggyscriptMemory);
+
 class ScriptError {
     constructor(type, message) {
         this.type = "Error"
@@ -153,6 +155,35 @@ function evaluate(expression) {
 
 function getVariable(variableName) {
     return FroggyscriptMemory.variables[variableName];
+}
+
+function parseArrayWithout$(str){
+    let values = [];
+    let current = '';
+    let inQuotes = false;
+
+    for (let i = 0; i < str.length; i++) {
+        const char = str[i];
+
+        if (char === `'`) {
+            inQuotes = !inQuotes;
+            current += char;
+        } else if (char === ',' && !inQuotes) {
+            values.push(current.trim());
+            current = '';
+        } else {
+            current += char;
+        }
+    }
+
+    if (current.length > 0) {
+        values.push(current.trim());
+    }
+
+    let typedValues = [];
+    values.forEach(v => typedValues.push(typeify(v)));
+
+    return typedValues;
 }
 
 function typeify(value) {
@@ -427,6 +458,8 @@ function processSingleLine(input) {
         let methods = [];
         methodArray = input.slice(findMethodIdentifier(input)+1).split(">")
 
+        console.log(input.slice(findMethodIdentifier(input)+1).split(/\b/))
+
         methodArray.forEach(methodString => {
             let method = {
                 name: methodString.split("(")[0].trim(),
@@ -458,14 +491,14 @@ function processSingleLine(input) {
     switch (keyword) {
         case "call": {
             let functionName = input.split(" ")[1].trim();
-            let functionArguments = input.split(" ").slice(2)
+            let functionArguments = input.split(" ").slice(2).join(" ")
 
             if(functionName == undefined) {
                 token = new ScriptError("SyntaxError", `[call] must be followed by a function name`);
             } else if(FroggyscriptMemory.functions[functionName] == undefined) {
                 token = new ScriptError("ReferenceError", `Function [${functionName}] does not exist`);
             } else {
-                token = { ...token, functionName: functionName, functionArguments: functionArguments };
+                token = { ...token, functionName: functionName, functionArguments: parseArrayWithout$(functionArguments) };
             }
         } break;
         
@@ -483,7 +516,6 @@ function processSingleLine(input) {
                 let argument = {
                     name: arg.replace(/^!/, '').replace(/:[SNBA\*]{1}$/g, '').trim(),
                     type: null,
-                    required: arg.startsWith("!"),
                 }
 
                 if(arg.slice(-2, -1) == ":") {
@@ -1271,23 +1303,25 @@ function interpretSingleLine(interval, single_input, error_trace) {
                 if(func == undefined) {
                     token = new ScriptError("ReferenceError", `Function [${token.functionName}] does not exist`);
                 }
+
+                console.log(func, token);
                 
-                let functionLines = func.body;
-                let subclock_interval = 0;
-                FroggyscriptMemory.CLOCK_PAUSED = true;
-                let functionInterval = setInterval(() => {
-                    if (subclock_interval < functionLines.length) {
-                        let functionLine = functionLines[subclock_interval];
-                        subclock_interval++;
-                        interpretSingleLine(functionInterval, functionLine, {
-                            name: token.functionName,
-                            line: subclock_interval,
-                        });
-                    } else {
-                        FroggyscriptMemory.CLOCK_PAUSED = false;
-                        clearInterval(functionInterval);
-                    }
-                }, 1);
+                // let functionLines = func.body;
+                // let subclock_interval = 0;
+                // FroggyscriptMemory.CLOCK_PAUSED = true;
+                // let functionInterval = setInterval(() => {
+                //     if (subclock_interval < functionLines.length) {
+                //         let functionLine = functionLines[subclock_interval];
+                //         subclock_interval++;
+                //         interpretSingleLine(functionInterval, functionLine, {
+                //             name: token.functionName,
+                //             line: subclock_interval,
+                //         });
+                //     } else {
+                //         FroggyscriptMemory.CLOCK_PAUSED = false;
+                //         clearInterval(functionInterval);
+                //     }
+                // }, 1);
 
             } break;
 
@@ -1849,7 +1883,6 @@ function interpreter(input, fileArguments) {
             if(FroggyscriptMemory.CLOCK_INTERVAL < FroggyscriptMemory.lines.length) {
                 let line = FroggyscriptMemory.lines[FroggyscriptMemory.CLOCK_INTERVAL]
                 let token = interpretSingleLine(clock, line);
-                console.log(token)
                 FroggyscriptMemory.CLOCK_INTERVAL++;
             }
         }

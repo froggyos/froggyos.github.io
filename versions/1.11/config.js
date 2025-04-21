@@ -858,9 +858,11 @@ const config = {
             { name: "lilypad", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["str lilypad = 'this program is hardcoded into froggyOS'", "endprog"] },
             { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
                 "func meow str:S num:N",
-                "return 'two'",
+                "out str",
+                "out num>type",
                 "endfunc",
-                "out 'outside!'",
+                // "out $'outside','be!e','meow'>join('SPACE')",
+                "call meow 'woof!'>type, 7",
                 // "arr array = 1,2,3,4,5",
                 // "str meow = 'woof'",
                 // "out array>append($'a','b','c')>join",
