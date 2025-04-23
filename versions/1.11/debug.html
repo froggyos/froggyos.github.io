@@ -67,7 +67,7 @@
     <div class="border-horizontal"></div>
     <div id="config">
         <div id="container" style="height: calc(100vh - 280px)">
-            <div style="padding-bottom: 10px;">program memory: <button>[STEP]</button></div>
+            <div style="padding-bottom: 10px;">program memory: <button id="step-button">[STEP]</button></div>
             <textarea id="program-memory" readonly></textarea>
         </div>
         <div class="border-vertical"></div>
@@ -92,10 +92,16 @@
 
     const filesystemElement = document.getElementById('filesystem');
     const programMemoryElement = document.getElementById('program-memory');
+
+    const stepButton = document.getElementById('step-button');
+
+    stepButton.addEventListener('click', () => {
+        window.opener.postMessage({ step: true }, '*');
+    });
     
     window.addEventListener('message', (event) => {
-        CONFIG = event.data.config;
-        PROGRAM_MEM = event.data.FroggyscriptMemory;
+        if(event.data.FroggyscriptMemory) PROGRAM_MEM = event.data.FroggyscriptMemory;
+        if(event.data.config) CONFIG = event.data.config;
         updateDebugPanel()
     });
 
@@ -110,7 +116,7 @@
 
     let userChangableSettings = ["debugMode", "version", "colorPalette", "showSpinner", "currentSpinner", "defaultSpinner", "timeFormat", "updateStatBar", "allowedProgramDirectories", "dissallowSubdirectoriesIn", "language", "validateLanguageOnStartup"]
 
-    let userImmutableSettings = ["currentPath", "commandHistory", "commandHistoryIndex", "spinnerIndex", "currentProgram", "programList", "programSession", "errorText", "translationErrorText","translationWarningText", "alertText", "programErrorText"]
+    let userImmutableSettings = ["currentPath", "commandHistory", "commandHistoryIndex", "spinnerIndex", "currentProgram", "programList", "programSession", "errorText", "translationErrorText","translationWarningText", "alertText", "programErrorText", "stepThroughProgram"]
 
     let longestSettingLength = userChangableSettings.reduce((max, setting) => {
         return Math.max(max, setting.length);
@@ -121,8 +127,6 @@
     }, 0);
 
     function updateDebugPanel(){
-        if(config == undefined) return
-
         userConfigElement.innerHTML = ``
         userImmutableConfigElement.innerHTML = ``
 

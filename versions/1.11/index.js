@@ -1380,9 +1380,11 @@ x
             let bool = args[0];
             if(bool == "1") {
                 setSetting("debugMode", "true");
+                config.stepThroughProgram = true;
             }
             else if(bool == "0") {
                 setSetting("debugMode", "false");
+                config.stepThroughProgram = false;
             }
             else {
                 createTerminalLine("T_invalid_args_provide_1_0", config.errorText);

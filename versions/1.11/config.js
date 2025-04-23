@@ -812,6 +812,7 @@ const config = {
     validateLanguageOnStartup: null,
 
     // immutable settings
+    stepThroughProgram: false,
     currentPath: 'C:/Home',
     commandHistory: [],
     commandHistoryIndex: -1,
@@ -857,13 +858,20 @@ const config = {
             { name: "cli", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["str cli = 'this program is hardcoded into froggyOS'", "endprog"] },
             { name: "lilypad", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["str lilypad = 'this program is hardcoded into froggyOS'", "endprog"] },
             { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
-                "arr meow = 'meow'",
-                "func meow any_type:A number_type:N",
-                "out any_type",
-                "out number_type",
-                "out 'mywa'",
-                "endfunc",
-                "@meow($'woof!', 'meow with space'$;'baaaa'>length)",
+                // "arr meow = 'meow'",
+                // "func meow any_type:A number_type:N",
+                // "out any_type",
+                // "out number_type",
+                // "out 'mywa'",
+                // "endfunc",
+                // "@meow($'woof!', 'meow with space'$;'baaaa'>length)",
+                "out 'meow!'",
+                "out 'meow!'",
+                "out 'meow!'",
+                "out 'meow!'",
+                "out 'meow!'",
+                "out 'meow!'",
+                "out 'meow!'",
                 "endprog"
             ] },
             // { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [

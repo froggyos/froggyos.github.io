@@ -1958,10 +1958,13 @@ function interpreter(input, fileArguments) {
 
     let dataError = 0;
 
+    window.addEventListener('message', (event) => {
+        if(event.data.step == true) FroggyscriptMemory.CLOCK_PAUSED = false;
+    })
+
     let clock = setInterval(() => {
         if(window.debugWindow){
-            FroggyscriptMemory.CLOCK_PAUSED = true;
-            window.debugWindow.postMessage({ type: 'data', FroggyscriptMemory }, '*');
+            window.debugWindow.postMessage({ FroggyscriptMemory }, '*');
         }
     
         if(FroggyscriptMemory.CLOCK_PAUSED) return;
@@ -2034,6 +2037,7 @@ function interpreter(input, fileArguments) {
                 let line = FroggyscriptMemory.lines[FroggyscriptMemory.CLOCK_INTERVAL]
                 let token = interpretSingleLine(clock, line);
                 FroggyscriptMemory.CLOCK_INTERVAL++;
+                if(config.stepThroughProgram) FroggyscriptMemory.CLOCK_PAUSED = true;
             } else {
                 resetTerminalForUse(clock);
             }
