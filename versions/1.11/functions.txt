@@ -91,3 +91,34 @@ interpret single line:
                         }
                     }
                 } break;
+
+
+
+
+        // let functionArguments = extractFunctionArguments(functionToken.value).map(x => {
+        //     let t = typeify(x);
+        //     t.methods = getMethods(x);
+        //     return t;
+        // })
+
+        // functionArguments = functionArguments.map(arg => methodParser(arg));
+        // let func = FroggyscriptMemory.functions[functionToken.functionName]
+
+        // let funcArgs = func.args
+
+        // for(let i = 0; i < func.args.length; i++){
+        //     let arg = functionArguments[i];
+        //     let expected = funcArgs[i];
+
+        //     if(arg == undefined){
+        //         token = new ScriptError("ArgumentError", `Function [${functionToken.functionName}] expected ${funcArgs.length} argument${expectedArguments.args.length != 1 ? "s" : ""}, found ${functionArguments.length}`);
+        //         break;
+        //     }
+
+        //     if(arg.type != expected.type && expected.type != "Any"){
+        //         token = new ScriptError("TypeError", `Function [${functionToken.functionName}] argument [${expected.name}] expected type ${expected.type}, found type ${arg.type}`);
+        //         break;
+        //     }
+        // }
+
+        //console.log(token, functionArguments, expectedArguments)

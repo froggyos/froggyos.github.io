@@ -5,11 +5,19 @@ const FroggyscriptMemory = {
     CLOCK_INTERVAL: 0,
     CLOCK_PAUSED: false,
     lines: [],
+    customArguments: {},
+    CLOCK_CYCLE_LENGTH: 1,
 };
 
 let OS_RUNTIME_START = Date.now();
 
 const defaultVariables = {
+    undefined: {
+        type: "Undefined",
+        value: undefined,
+        identifier: "undefined",
+        mutable: false,
+    },
     Pi: {
         type: "Number",
         value: Math.PI,
@@ -47,7 +55,6 @@ const defaultVariables = {
         identifier: "Time_MsEpoch",
         mutable: false,
     },
-
     OS_ProgramName: {
         type: "String",
         value: null,
@@ -57,6 +64,8 @@ const defaultVariables = {
 }
 
 let frozenMemory = () => structuredClone(FroggyscriptMemory);
+
+let freeze = (obj) => structuredClone(obj);
 
 class ScriptError {
     constructor(type, message) {
@@ -83,6 +92,7 @@ function resetTerminalForUse(interval){
     config.currentProgram = "cli";
 }
 
+// error trace is the token of the function that called the error
 function outputError(token, interval, error_trace) {
     createTerminalLine("", config.programErrorText.replace("{{}}", token.error), {translate: false});
     createTerminalLine(" ", "", {translate: false});
@@ -114,6 +124,7 @@ function resetMemState() {
     delete FroggyscriptMemory.CLOCK_INTERVAL;
     delete FroggyscriptMemory.CLOCK_PAUSED;
     delete FroggyscriptMemory.lines;
+    delete FroggyscriptMemory.customArguments;
 
     FroggyscriptMemory.variables = {};
     // initialize default variables
@@ -129,14 +140,15 @@ function resetMemState() {
     FroggyscriptMemory.CLOCK_INTERVAL = 0;
     FroggyscriptMemory.CLOCK_PAUSED = false;
     FroggyscriptMemory.lines = [];
+    FroggyscriptMemory.customArguments = {};
 }
 
 // change this to evaluate the token and return the token
 function evaluate(expression) {
-    let hashIndex = findMethodIdentifier(expression);
+    let methodIndex = findMethodIdentifier(expression);
 
-    if(hashIndex != -1) {
-        expression = expression.slice(0, hashIndex).trim();
+    if(methodIndex != -1) {
+        expression = expression.slice(0, methodIndex).trim();
     }
 
     let variableNames = Object.keys(FroggyscriptMemory.variables);
@@ -150,11 +162,25 @@ function evaluate(expression) {
         }
     })
 
-    return math.evaluate(expression, scope);
+    let result = null;
+    let error = false;
+
+    try {
+        result = math.evaluate(expression, scope);
+    } catch (e) {
+        error = true;
+    }
+
+    if (error) {
+        return new ScriptError("EvaluationError", `Cannot evaluate [${expression}]`);
+    } else {
+        return result;
+    }
 }
 
 function getVariable(variableName) {
-    return FroggyscriptMemory.variables[variableName];
+    if (FroggyscriptMemory.customArguments[variableName]) return FroggyscriptMemory.customArguments[variableName];
+    else return FroggyscriptMemory.variables[variableName];
 }
 
 function parseArrayWithout$(str){
@@ -186,39 +212,197 @@ function parseArrayWithout$(str){
     return typedValues;
 }
 
+function getMethods(v){
+    let methods = [];
+    if(findMethodIdentifier(v) != -1){
+        let methodArray = v.slice(findMethodIdentifier(v)+1).split(">")
+
+        methodArray.forEach(methodString => {
+            let method = {
+                name: methodString.split("(")[0].trim(),
+                args: [],
+            };
+
+            // get everything between the first ( and last )
+            let argsStart = methodString.indexOf("(");
+            let argsEnd = methodString.lastIndexOf(")");
+
+            if(argsStart != -1 && argsEnd != -1) {
+
+                let args = splitArguments(methodString.slice(argsStart + 1, argsEnd).trim())
+
+                args.forEach(arg => {
+                    method.args.push(arg)
+                })
+            }
+
+            
+            methods.push(method);
+        })
+
+        v = v.slice(0, findMethodIdentifier(v)).trim();
+    }
+
+    return methods;
+}
+
+async function runFunctionBody(funcBody, typeObj) {
+    return new Promise(resolve => {
+        let lastToken;
+        let subclock_interval = 0;
+
+        FroggyscriptMemory.CLOCK_PAUSED = true;
+
+        const subclock = setInterval(() => {
+            if (subclock_interval >= funcBody.length) {
+                clearInterval(subclock);
+                FroggyscriptMemory.CLOCK_PAUSED = false;
+                FroggyscriptMemory.customArguments = {};
+                return resolve(lastToken);
+            }
+
+            let line = funcBody[subclock_interval].trim();
+            lastToken = interpretSingleLine(subclock, line, undefined, true);
+
+            if (lastToken.type === "Error") {
+                lastToken.line--;
+                let errorTrace = {
+                    name: typeObj.functionName,
+                    line: subclock_interval + funcBody.indexOf(line) + 1
+                };
+                outputError(lastToken, subclock, errorTrace);
+
+                clearInterval(subclock);
+                return resolve(lastToken); // still resolve so the caller can catch
+            }
+
+            subclock_interval++;
+        }, FroggyscriptMemory.CLOCK_CYCLE_LENGTH);
+    });
+}
+
 function typeify(value) {
     let typeObj = {
         type: null,
         value: null,
-        originalInput: ORIGINAL_INPUT,
+        originalInput: value,
     };
 
-    if(value == undefined) return new ScriptError("TypeifyError", `Cannot typeify [${value}]`);
+    let methods = getMethods(value);
 
-    if(value.match(/^("|').*\1$/g)) {// string
-       //  value = value.replace(/^\$/, '');
+    if(!/^@.*$/g.test(value) && methods.length != 0) {
+        let rawValue = value.slice(0, findMethodIdentifier(value)).trim();
+
+        let methodToken = typeify(rawValue);
+        methodToken.methods = methods;
+
+        typeObj = methodParser(methodToken)
+    }
+
+    if(value == undefined) return new ScriptError("TypeAssignmentError", `Cannot assign type to [${value}]`);
+
+    if(/^@.*$/g.test(value)) {
+        const match = value.match(/^@([a-zA-Z_][a-zA-Z0-9_]*)\((.*)\)$/);
+        if (!match) {
+            return new ScriptError("SyntaxError", `Invalid function syntax: ${value}`);
+        }
+    
+
+        let matchedValue = match[2].trim();
+
+        typeObj.functionName = match[1];
+        typeObj.value = 'undefined';
+        typeObj.type = "Undefined";
+        typeObj.origin = "Function";
+
+        let functionArguments = extractFunctionArguments(matchedValue).map(x => typeify(x))
+
+        let func = FroggyscriptMemory.functions[typeObj.functionName];
+
+        if(func == undefined) {
+            typeObj = new ScriptError("ReferenceError", `Function [${typeObj.functionName}] does not exist`);
+            return typeObj;
+        }
+
+        let expectedArguments = func.args;
+
+        for(let i = 0; i < expectedArguments.length; i++) {
+            let funcArg = functionArguments[i];
+            let expectedArg = expectedArguments[i];
+
+            if(funcArg == undefined){
+                let expectedLen = expectedArguments.length;
+                let foundLen = functionArguments.length;
+                typeObj = new ScriptError("ArgumentError", `Function [${typeObj.functionName}] expected ${expectedLen} argument${expectedLen != 1 ? "s" : ""}, found ${foundLen}`);
+                break;
+            }
+
+            if(funcArg.type == "Error"){
+                typeObj = funcArg;
+                break;
+            }
+
+            if(expectedArg.type == "Any") continue;
+
+            if(funcArg.type != expectedArg.type) {
+                typeObj = new ScriptError("TypeError", `Function [${typeObj.functionName}] argument [${i+1}] expected type ${expectedArg.type}, found type ${funcArg.type}`);
+                break;
+            }
+        }    
+
+        if(typeObj.type == "Error") return typeObj;
+
+        let funcBody = func.body;
+
+        for(let i = 0; i < functionArguments.length; i++){
+            let variableName = expectedArguments[i].name;
+
+            FroggyscriptMemory.customArguments[variableName] = {
+                identifier: variableName,
+                type: functionArguments[i].type,
+                value: functionArguments[i].value,
+                mutable: true,
+            }
+        }
+
+        FroggyscriptMemory.CLOCK_PAUSED = true;
+
+        // runFunctionBody(funcBody, typeObj).then((result) => {
+        //     typeObj.value = result.value;
+        // });
+
+        typeObj.body = funcBody,
+        typeObj.origin = "Function";
+
+    } else if(value.match(/^("|').*\1$/g)) {// string
         typeObj.type = "String";
         typeObj.value = value.replace(/^("|')|("|')$/g, '');
 
-        // match every instance of \$\[\w+\]
-        let regex = /\$\|[^\|]+\|/g;
-        let matches = value.match(regex);
+        let literals = []
 
-        if(matches) {
-            matches.forEach(match => {
-                let expression = match.replace(/\$\||\|/g, '');
-                try {
-                    typeObj.value = typeObj.value.replace(match, evaluate(expression));
-                } catch (e) {
-                    typeObj = new ScriptError("EvaluationError", `Cannot evaluate [${expression}] in [${typeObj.originalInput}]`);
-                }
-            })
-        }
+        const regex = /\$\|(.+?)\|/g;
+        const matches = [...value.matchAll(regex)];
+    
+        literals = matches.map(match => ({
+            literal: match[0],       //  "$|name|"
+            symbol: match[1].trim()  //  "name"
+        }));
+
+        literals.forEach((literal, i) => {
+            let evaluated = evaluate(literal.symbol);
+            if(evaluated.type == "Error"){
+                typeObj = evaluated;
+                typeObj.value = `String literal [${i}]: ${typeObj.value}`
+            } else {
+                typeObj.value = typeObj.value.replaceAll(literal.literal, evaluated)
+            }
+        })
 
         typeObj.origin = "String";
-    } else if(value.match(/^\$("|'|\d|\w).*("|'|\d|\w)$/)){
+    } else if(value.match(/^\$("|'|\d|\w).*("|'|\d|\w)\$$/)){
 
         value = value.replace(/^\$/, '');
+        value = value.replace(/\$$/, '');
 
         let values = [];
         let current = '';
@@ -245,7 +429,7 @@ function typeify(value) {
         let typedValues = [];
         values.forEach(v => typedValues.push(typeify(v)));
 
-        typeObj.originalInput = typeObj.originalInput.replace(/ \$/, " [FORCE_ARRAY]")
+        typeObj.originalInput = typeObj.originalInput.replace(/ \$/, " [FORCE_ARRAY]").replace(/\$$/, "[FORCE_ARRAY]");
 
         if(typedValues.some(value => value.type == "Error")){
             typeObj = typedValues[typedValues.findIndex(value => value.type == "Error")]
@@ -255,7 +439,7 @@ function typeify(value) {
         }
 
         typeObj.origin = "Array";
-    } else if(/==|!=|>=|<=|>|</.test(value)) { // comparison operators
+    } else if(evaluate(value) === true || evaluate(value) === false) {
         typeObj.type = "Boolean";
         let error = false;
         try {
@@ -267,41 +451,31 @@ function typeify(value) {
         if (error) {
             typeObj = new ScriptError("EvaluationError", `Cannot evaluate [${value}]`);
         } else {
-            typeObj.value = evaluate(value);
+            if(findMethodIdentifier(value) != -1){
+                typeObj = new ScriptError("TypeifyError", `Cannot use methods in a Boolean`);
+            } else {
+                typeObj.value = evaluate(value);
 
-            let variableNames = Object.keys(FroggyscriptMemory.variables).join('|');
-            let regex = new RegExp(`(${variableNames})`, 'g');
-            if(variableNames && variableNames.length > 0) {
-                // replace the variable names in the expression with their values for evaluation
-                typeObj.originalInput = typeObj.originalInput.replace(regex, (match) => {
-                    let variableValue = getVariable(match);
-                    if(variableValue) {
-                        return variableValue.value;
-                    } else {
-                        return match; // fallback to original if not found
-                    }
-                });
+                let variableNames = Object.keys(FroggyscriptMemory.variables).join('|');
+                let regex = new RegExp(`(${variableNames})`, 'g');
+                if(variableNames && variableNames.length > 0) {
+                    // replace the variable names in the expression with their values for evaluation
+                    typeObj.originalInput = typeObj.originalInput.replace(regex, (match) => {
+                        let variableValue = getVariable(match);
+                        if(variableValue) {
+                            return variableValue.value;
+                        } else {
+                            return match; // fallback to original if not found
+                        }
+                    });
+                }
             }
+
         }
 
-        typeObj.origin = "ComparisonOperator";
+        typeObj.origin = "Boolean";
 
-    } else if(value.match(/^@.+$/g)){ // function
-        let functionBody = FroggyscriptMemory.functions[functionName];
-
-        if(functionBody == undefined) {
-            typeObj = new ScriptError("ReferenceError", `Function [${functionName}] does not exist`);
-        } else {
-            let functionLines = FroggyscriptMemory.lines.slice(functionBody.start + 1, functionBody.end);
-
-            typeObj.name = functionName;
-            typeObj.body = functionLines;   
-            typeObj.type = "ReturnFunction"   
-        }
-
-        typeObj.origin = "FunctionIdentifier";
-
-    } else if(value.match(/^[a-zA-Z_]+$/g)) { // identifier (variable name)
+    } else if(value.match(/^[a-zA-Z_]+$/g)) {
         let name = value;
 
         let variableValue = getVariable(name);
@@ -316,7 +490,7 @@ function typeify(value) {
 
         typeObj.origin = "VariableIdentifier";
 
-    } else if(value.match(/^\d*|\+|\-|\/|\*|\^/g)) {
+    } else if(typeof evaluate(value) === 'number') {
         let error = false;
         try {
             evaluate(value);
@@ -342,7 +516,9 @@ function typeify(value) {
 
         typeObj.origin = "Number";
     } else {
-        typeObj = new ScriptError("TypeifyError", `Cannot typeify [${value}]`);
+        if(methods.length != 0 && typeObj.type != "Function") {
+            typeObj.methods = methods;
+        } else typeObj = new ScriptError("TypeifyError", `Cannot assign type to [${value}]`);
     }
 
     return typeObj;
@@ -364,20 +540,25 @@ function findMethodIdentifier(str) {
     for (let i = 0; i < str.length; i++) {
         const char = str[i];
 
-        // Toggle quote states (ignore escaped quotes)
+        // Toggle quote states (ignoring escaping)
         if (char === "'" && !inDoubleQuote) {
-            if (i === 0 || str[i - 1] !== '\\') inSingleQuote = !inSingleQuote;
+            inSingleQuote = !inSingleQuote;
         } else if (char === '"' && !inSingleQuote) {
-            if (i === 0 || str[i - 1] !== '\\') inDoubleQuote = !inDoubleQuote;
+            inDoubleQuote = !inDoubleQuote;
         }
 
-        // Match first unquoted #
+        // Check for unquoted, unspaced '>'
         if (char === '>' && !inSingleQuote && !inDoubleQuote) {
-            return i;
+            const left = str[i - 1];
+            const right = str[i + 1];
+
+            if (left !== ' ' && right !== ' ') {
+                return i;
+            }
         }
     }
 
-    return -1; // Not found
+    return -1;
 }
 
 function splitArguments(str) {
@@ -410,38 +591,41 @@ function splitArguments(str) {
     return result;
 }
 
-// requires function definition
-function getFunctionArguments(str) {
-    const parenMatch = str.match(/\(([^)]*)\)/);
-    if (!parenMatch) return [];
-  
-    const inner = parenMatch[1];
-    const regex = /(['"])((?:\\.|(?!\1).)*?)\1|([^;()\s]+)/g;
-    let results = [];
-    let match;
-  
-    while ((match = regex.exec(inner)) !== null) {
-        const value = match[2] ?? match[3];
-        results.push(isNaN(value) ? value : Number(value));
+function extractFunctionArguments(input) {
+    let result = [];
+    let current = '';
+    let inSingleQuote = false;
+    let inDoubleQuote = false;
+    let inDollar = false;
+
+    for (let i = 0; i < input.length; i++) {
+        const char = input[i];
+
+        if (char === "'" && !inDoubleQuote && input[i - 1] !== '\\') {
+            inSingleQuote = !inSingleQuote;
+            current += char;
+        } else if (char === '"' && !inSingleQuote && input[i - 1] !== '\\') {
+            inDoubleQuote = !inDoubleQuote;
+            current += char;
+        } else if (char === '$' && !inSingleQuote && !inDoubleQuote) {
+            inDollar = !inDollar;
+            current += char;
+        } else if (char === ';' && !inSingleQuote && !inDoubleQuote && !inDollar) {
+            if (current.trim().length > 0) {
+                result.push(current.trim());
+                current = '';
+            }
+        } else {
+            current += char;
+        }
     }
-  
-    return results;
-}
 
-function parseArguments(str) {
-    const regex = /(['"])((?:\\.|(?!\1).)*?)\1|([^;\s]+)/g;
-    let results = [];
-    let match;
-
-    while ((match = regex.exec(str)) !== null) {
-        const value = match[2] ?? match[3];
-        results.push(isNaN(value) ? value : Number(value));
+    if (current.trim().length > 0) {
+        result.push(current.trim());
     }
 
-    return results;
+    return result;
 }
-
-let ORIGINAL_INPUT = null;
 
 function processSingleLine(input) {
     input = input.trim();
@@ -452,55 +636,30 @@ function processSingleLine(input) {
 
     token.keyword = keyword;
 
-    ORIGINAL_INPUT = input;
+    if(token.keyword.startsWith("@")) {
+        let functionToken = typeify(input);
 
-    if(findMethodIdentifier(input) != -1){
-        let methods = [];
-        methodArray = input.slice(findMethodIdentifier(input)+1).split(">")
-
-        console.log(input.slice(findMethodIdentifier(input)+1).split(/\b/))
-
-        methodArray.forEach(methodString => {
-            let method = {
-                name: methodString.split("(")[0].trim(),
-                args: [],
-            };
-
-            // get everything between the first ( and last )
-            let argsStart = methodString.indexOf("(");
-            let argsEnd = methodString.lastIndexOf(")");
-
-            if(argsStart != -1 && argsEnd != -1) {
-
-                let args = splitArguments(methodString.slice(argsStart + 1, argsEnd).trim())
-
-                args.forEach(arg => {
-                    method.args.push(arg)
-                })
-            }
-
-            
-            methods.push(method);
-        })
-
-        token.methods = methods;
-
-        input = input.slice(0, findMethodIdentifier(input)).trim();
+        if(functionToken.type == "Error") return functionToken
+        else {
+            runFunctionBody(functionToken.body, functionToken);
+            token.keyword = "SKIP_LINE";
+            return token;
+        }
     }
 
     switch (keyword) {
-        case "call": {
-            let functionName = input.split(" ")[1].trim();
-            let functionArguments = input.split(" ").slice(2).join(" ")
+        // case "call": {
+        //     let functionName = input.split(" ")[1].trim();
+        //     let functionArguments = input.split(" ").slice(2).join(" ")
 
-            if(functionName == undefined) {
-                token = new ScriptError("SyntaxError", `[call] must be followed by a function name`);
-            } else if(FroggyscriptMemory.functions[functionName] == undefined) {
-                token = new ScriptError("ReferenceError", `Function [${functionName}] does not exist`);
-            } else {
-                token = { ...token, functionName: functionName, functionArguments: parseArrayWithout$(functionArguments) };
-            }
-        } break;
+        //     if(functionName == undefined) {
+        //         token = new ScriptError("SyntaxError", `[call] must be followed by a function name`);
+        //     } else if(FroggyscriptMemory.functions[functionName] == undefined) {
+        //         token = new ScriptError("ReferenceError", `Function [${functionName}] does not exist`);
+        //     } else {
+        //         token = { ...token, functionName: functionName, functionArguments: parseArrayWithout$(functionArguments) };
+        //     }
+        // } break;
         
         case "func": {
             let functionName = input.split(" ")[1].trim();
@@ -684,11 +843,18 @@ function processSingleLine(input) {
                 values.push(current.trim());
             }
 
-            values = values.map(value => value.replace(/^\$/, ""));
+            values = values.map(value => value.replace(/^\$/, "").replace(/\$$/, ""));
+
+            // if(token.type != "Array"){
+            //     token = new ScriptError("TypeError", `[arr] declaration can only be assigned type Array, found type ${token.type}`);
+            //     break;
+            // }
 
             if(getVariable(name) != undefined) {
                 token = new ScriptError("ReferenceError", `Variable [${name}] already exists, cannot override`);
-            } else if(values.length == 0){
+                break;
+            }
+            if(values.length == 0){
                 token = new ScriptError("SyntaxError", `[arr] must be followed by a value`);
             } else {
                 let typedValues = [];
@@ -1050,25 +1216,18 @@ function processSingleLine(input) {
     }
 
     if(token.type == "Error") return token;
-    
-    if(token.methods != undefined ?? Object.keys(token.methods).length != 0){
-        token = methodParser(token);
-    }
 
     token = typeErrorCheckers(token);
 
     return token;
 }
 
+// remove this function eventually
 function typeErrorCheckers(token) {
     switch(token.keyword){
-        case "arr": {
-            if(token.type != "Array") token = new ScriptError("TypeError", `[arr] declaration can only be assigned type Array, found type ${token.type}`);
-        } break;
-
-        case "if": {
-            if(token.type != "Boolean") token = new ScriptError("TypeError", `[if] condition must evaluate to Boolean, found type ${token.type}`);
-        } break;
+        // case "if": {
+        //     if(token.type != "Boolean") token = new ScriptError("TypeError", `[if] condition must evaluate to Boolean, found type ${token.type}`);
+        // } break;
 
         case "goto": {
             if(token.type != "Number") token = new ScriptError("TypeError", `[goto] declaration can only be assigned type Number, found type ${token.type}`);
@@ -1279,51 +1438,57 @@ setInterval(() => {
     FroggyscriptMemory.variables.Time_OSRuntime.value = Date.now() - OS_RUNTIME_START
 }, 1);
 
-function interpretSingleLine(interval, single_input, error_trace) {
+async function interpretSingleLine(interval, single_input, error_trace, block_error) {
     let line = single_input;
-
-    if(line.match(/^@.+$/)){
-        line = line.replace(/^@/, 'f: ');
-    }
 
     let token = processSingleLine(line);
 
-    token = typeErrorCheckers(token);
+    //token = typeErrorCheckers(token);
 
     if(token.type === "Error") {
         token.currentProgram = config.currentProgram;
-        outputError(token, interval, error_trace);
-        return;
+
+        if(!block_error) outputError(token, interval, error_trace);
+        clearInterval(interval);
+        return token;
     } else {
+        if(token.origin == "Function"){
+            let lastToken = await runFunctionBody(token.body, token);
+
+            if(lastToken.keyword == "return"){
+                token.value = lastToken.value;
+                token.type = lastToken.type;
+            }
+        }
         // process tokens here =======================================================
         switch(token.keyword) {
-            case "call": {
-                let func = FroggyscriptMemory.functions[token.functionName];
+            // case "call": {
+            //     let func = FroggyscriptMemory.functions[token.functionName];
 
-                if(func == undefined) {
-                    token = new ScriptError("ReferenceError", `Function [${token.functionName}] does not exist`);
-                }
+            //     if(func == undefined) {
+            //         token = new ScriptError("ReferenceError", `Function [${token.functionName}] does not exist`);
+            //     }
 
-                console.log(func, token);
+            //     console.log(func, token);
                 
-                // let functionLines = func.body;
-                // let subclock_interval = 0;
-                // FroggyscriptMemory.CLOCK_PAUSED = true;
-                // let functionInterval = setInterval(() => {
-                //     if (subclock_interval < functionLines.length) {
-                //         let functionLine = functionLines[subclock_interval];
-                //         subclock_interval++;
-                //         interpretSingleLine(functionInterval, functionLine, {
-                //             name: token.functionName,
-                //             line: subclock_interval,
-                //         });
-                //     } else {
-                //         FroggyscriptMemory.CLOCK_PAUSED = false;
-                //         clearInterval(functionInterval);
-                //     }
-                // }, 1);
+            //     let functionLines = func.body;
+            //     let subclock_interval = 0;
+            //     FroggyscriptMemory.CLOCK_PAUSED = true;
+            //     let functionInterval = setInterval(() => {
+            //         if (subclock_interval < functionLines.length) {
+            //             let functionLine = functionLines[subclock_interval];
+            //             subclock_interval++;
+            //             interpretSingleLine(functionInterval, functionLine, {
+            //                 name: token.functionName,
+            //                 line: subclock_interval,
+            //             });
+            //         } else {
+            //             FroggyscriptMemory.CLOCK_PAUSED = false;
+            //             clearInterval(functionInterval);
+            //         }
+            //     }, 1);
 
-            } break;
+            // } break;
 
             case "loaddata": {
                 let key = token.key
@@ -1692,25 +1857,32 @@ function interpretSingleLine(interval, single_input, error_trace) {
                     }
                 }
 
+                if(token.type != "Boolean"){
+                    token = new ScriptError("TypeError", `[if] condition must evaluate to Boolean, found type ${token.type}`);
+                    break;
+                }
+
                 token.elseKeywordIndex = elseIndex;
                 token.endKeywordIndex = endIndex;
             
                 if (endIndex === null) {
                     token = new ScriptError("SyntaxError", `Missing matching [endif] for [if]`);
-                } else {
-                    if (token.value === true) {
-                        if (elseIndex !== null) {
-                            FroggyscriptMemory.lines[elseIndex] = `goto ${endIndex}`;
-                        }
-                        // Do nothing if linkedElse is null
-                    } else if (token.value === false) {
-                        if (elseIndex === null) {
-                            FroggyscriptMemory.CLOCK_INTERVAL = endIndex;
-                        } else {
-                            FroggyscriptMemory.CLOCK_INTERVAL = elseIndex;
-                        }
+                    break;
+                }
+
+                if (token.value === true) {
+                    if (elseIndex !== null) {
+                        FroggyscriptMemory.lines[elseIndex] = `goto ${endIndex}`;
+                    }
+                    // Do nothing if linkedElse is null
+                } else if (token.value === false) {
+                    if (elseIndex === null) {
+                        FroggyscriptMemory.CLOCK_INTERVAL = endIndex;
+                    } else {
+                        FroggyscriptMemory.CLOCK_INTERVAL = elseIndex;
                     }
                 }
+                
             } break;
 
             case "set": {
@@ -1763,6 +1935,7 @@ function interpretSingleLine(interval, single_input, error_trace) {
                 }
             } break;
 
+            case "SKIP_LINE":
             case "func":
             case "endfunc":
             case "return":
@@ -1886,7 +2059,7 @@ function interpreter(input, fileArguments) {
                 FroggyscriptMemory.CLOCK_INTERVAL++;
             }
         }
-    }, 1);
+    }, FroggyscriptMemory.CLOCK_CYCLE_LENGTH);
 
     document.body.addEventListener("keydown", function(e){
         if(e.key == "Delete"){

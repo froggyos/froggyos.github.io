@@ -1,4 +1,4 @@
-# Things to Know
+# froggyOS Documentation
 
 * in paths, `.` will be replaced with the current directory
 * programs can *only* be written in designated directories
@@ -124,9 +124,19 @@ If you edit the `Settings:` drive directly, some settings won't apply until you 
 ## Bugs
 * you cannot set values to array indexes
 * since the addition of methods, i think most types will not coalesce properly.
+* In boolean expressions, cannot use methods on the left side of an operator
 
 # FroggyScript Documentation
-`[argument="default_value"]` denotes a default argument value
+* `[argument="default_value"]` denotes a default argument value
+* `:[character]` denotes a specific type input
+    * `T` - placeholder; used in documentation **only** to show that the type should be specified
+    * `*` - any type
+    * `S` - String
+    * `N` - Number
+    * `B` - Boolean
+    * `A` - Array
+    * `U` - Undefined
+
 ## General Utilities
 
 ### End the Program
@@ -152,12 +162,13 @@ clearterminal
 ### Preset Variables
 These variables are immutable.
 ```
-true - true
-false - false
-Pi - 3.141592653589793
-Time_MsEpoch - time since epoch (January 1, 1970) in milliseconds
-Time_OSRuntime - OS uptime in milliseconds
-Time_ProgramRuntime - program uptime in milliseconds
+true:B - true
+false:B - false
+Pi:N - 3.141592653589793
+Time_MsEpoch:N - time since epoch (January 1, 1970) in milliseconds
+Time_OSRuntime:N - OS uptime in milliseconds
+Time_ProgramRuntime:N - program uptime in milliseconds
+Undefined:U - undefined
 ```
 ## Variables
 ### Types
@@ -172,13 +183,6 @@ str test = "multiple words"
 -- string literals
 int age = 20
 str output = "i am $|age| years old"
-```
-To append strings to one another:
-```
-str test = "hello"
-set test = "$|test|, world!"
-out test
--- outputs "hello, world!"
 ```
 #### Number
 ```
@@ -204,16 +208,16 @@ arr test2 = "a", "b", "c", "d", "e"
 arr test3 = "a", 1, true, 2.5, "b"
 ```
 ##### Unnamed
-* Prefixing strings with `$` will force a type of `Array`.
+* surrounding strings with `$` will force a type of `Array`.
 ```
 out 'one', 'two', 'three'
 -- one', 'two, 'three
 
-out $'one', 'two', 'three'
+out $'one', 'two', 'three'$
 -- {{Array}}
 
 str variable = "thirty three million"
-out $variable, 'two', 'three'>index(0)
+out $variable, 'two', 'three'$>index(0)
 -- thirty three million
 ```
 
@@ -355,14 +359,15 @@ C:/Home> st [program_name]
 
 ### Input with Navigable Options
 ```
-prompt [variable] [default highlighted option] [options<Array>]
+prompt [variable:*] [default highlighted option:N] [options:A]
 
 str output = ''
-prompt output 0 $'hello', "world!", "I am froggy!"
+prompt output 0 $'hello', "world!", "I am froggy!"$
 ```
 
 ## Functions
 ### Create a Function
+#### No Arguments
 ```
 func [func_name]
     [code]
@@ -372,13 +377,17 @@ func name
     out "hello"
 endfunc
 ```
-### Call a Function
+#### Arguments
 ```
-call [func_name]
+func [func_name] [arg1:T] [arg2:T] ... [argN:T]
+    [code]
+endfunc
 
-call name
+func name str:S
+    out "hello $|str|!"
+endfunc
 ```
-<!-- #### Return Values
+#### Return Values
 If the function ends in the keyword `return`, the value of whatever passed will be the return value.
 ```
 func name
@@ -386,10 +395,20 @@ func name
 endfunc
 
 num i = @name
+```
+### Call a Function
+#### No Arguments
+```
+@[func_name]
 
--- does not work:
-num i = f: name
-``` -->
+@name
+```
+#### Arguments
+```
+@[func_name]([arg1];[arg2];...;[argN])
+
+@name("hello";"world!")
+```
 
 ## Control Flow
 ### If Statement
@@ -470,7 +489,7 @@ append test1 test2
 -- "a", "b", "c", 1, 2, 3
 ```
 ## Methods
-If a method expects no arguments, you may omit the parentheses. Arguments are separated by `;`.
+If no arguments are passed, you may omit the parentheses. Arguments are separated by `;`.
 ### index
 Indexing starts at `0`.
 ```
@@ -550,8 +569,11 @@ loaddata [variable] [key]
 ```
 
 # FroggyScript Technical Info
-## Data Storage
+## Types
+There are a total of 5 types in FroggyScript: `String`, `Number`, `Boolean`, `Array`, and `Undefined`.
+    * The `Undefined` type can only be access through the `undefined` variable, or when a function has no return value
 
+<!-- 
 ## Types
 There are 5 types in FroggyScript `String`, `Number`, `Boolean`, `Array`, and `ReturnFunction`.
 ### String
@@ -578,4 +600,4 @@ There are 5 types in FroggyScript `String`, `Number`, `Boolean`, `Array`, and `R
 3. ComparisonOperator
 4. FunctionIdentifier
 5. VariableIdentifier
-6. Number
+6. Number -->
