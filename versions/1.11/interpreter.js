@@ -5,7 +5,7 @@ const FroggyscriptMemory = {
     CLOCK_INTERVAL: 0,
     CLOCK_PAUSED: false,
     lines: [],
-    customArguments: {},
+    temporaryVariables: {},
     CLOCK_CYCLE_LENGTH: 1,
 };
 
@@ -124,7 +124,7 @@ function resetMemState() {
     delete FroggyscriptMemory.CLOCK_INTERVAL;
     delete FroggyscriptMemory.CLOCK_PAUSED;
     delete FroggyscriptMemory.lines;
-    delete FroggyscriptMemory.customArguments;
+    delete FroggyscriptMemory.temporaryVariables;
 
     FroggyscriptMemory.variables = {};
     // initialize default variables
@@ -140,7 +140,9 @@ function resetMemState() {
     FroggyscriptMemory.CLOCK_INTERVAL = 0;
     FroggyscriptMemory.CLOCK_PAUSED = false;
     FroggyscriptMemory.lines = [];
-    FroggyscriptMemory.customArguments = {};
+    FroggyscriptMemory.temporaryVariables = {};
+
+    config.currentProgram = "cli";
 }
 
 // change this to evaluate the token and return the token
@@ -179,7 +181,7 @@ function evaluate(expression) {
 }
 
 function getVariable(variableName) {
-    if (FroggyscriptMemory.customArguments[variableName]) return FroggyscriptMemory.customArguments[variableName];
+    if (FroggyscriptMemory.temporaryVariables[variableName]) return FroggyscriptMemory.temporaryVariables[variableName];
     else return FroggyscriptMemory.variables[variableName];
 }
 
@@ -257,7 +259,7 @@ async function runFunctionBody(funcBody, typeObj) {
             if (subclock_interval >= funcBody.length) {
                 clearInterval(subclock);
                 FroggyscriptMemory.CLOCK_PAUSED = false;
-                FroggyscriptMemory.customArguments = {};
+                FroggyscriptMemory.temporaryVariables = {};
                 return resolve(lastToken);
             }
 
@@ -357,7 +359,7 @@ function typeify(value) {
         for(let i = 0; i < functionArguments.length; i++){
             let variableName = expectedArguments[i].name;
 
-            FroggyscriptMemory.customArguments[variableName] = {
+            FroggyscriptMemory.temporaryVariables[variableName] = {
                 identifier: variableName,
                 type: functionArguments[i].type,
                 value: functionArguments[i].value,
@@ -647,20 +649,7 @@ function processSingleLine(input) {
         }
     }
 
-    switch (keyword) {
-        // case "call": {
-        //     let functionName = input.split(" ")[1].trim();
-        //     let functionArguments = input.split(" ").slice(2).join(" ")
-
-        //     if(functionName == undefined) {
-        //         token = new ScriptError("SyntaxError", `[call] must be followed by a function name`);
-        //     } else if(FroggyscriptMemory.functions[functionName] == undefined) {
-        //         token = new ScriptError("ReferenceError", `Function [${functionName}] does not exist`);
-        //     } else {
-        //         token = { ...token, functionName: functionName, functionArguments: parseArrayWithout$(functionArguments) };
-        //     }
-        // } break;
-        
+    switch (keyword) {        
         case "func": {
             let functionName = input.split(" ")[1].trim();
             let functionArguments = input.split(" ").slice(2)
@@ -1113,11 +1102,18 @@ function processSingleLine(input) {
 
                 if(getVariable(identifier) != undefined){
                     token = new ScriptError("ReferenceError", `Variable [${identifier}] already exists, cannot override`);
-                } else {
-                    token = {...token, ...typeify(assignedValue), identifier: identifier }; 
-                    if(keyword == "str") token = { ...token, mutable: true }
-                    else token = { ...token, mutable: false };
+                    break;
+                } 
+                token = {...token, ...typeify(assignedValue), identifier: identifier }; 
+
+                if(token.type != "String"){
+                    token = new ScriptError("TypeError", `[${keyword}] declaration can only be assigned type String, found type ${token.type}`);
+                    break;
                 }
+                
+                if(keyword == "str") token = { ...token, mutable: true }
+                else token = { ...token, mutable: false };
+                
             }
         } break;
 
@@ -1133,21 +1129,30 @@ function processSingleLine(input) {
 
                 if(getVariable(identifier) != undefined){
                     token = new ScriptError("ReferenceError", `Variable [${identifier}] already exists, cannot override`);
-                } else {
-                    let typed = typeify(assignedValue)
-                    token = {...token, ...typed, identifier: identifier };
-
-                    if(typed.type == "Error") {
-                        token = typed;
-                    } else {
-                        if(/\bpi\b/g.test(token.originalInput)) {
-                            token = new ScriptError("EvaluationError", `[pi] is unreliable, use [Pi] instead`);
-                        } else {
-                            if(keyword == "num") token = { ...token, mutable: true }
-                            else token = { ...token, mutable: false };
-                        }
-                    }
+                    break;
                 }
+
+                let typed = typeify(assignedValue)
+                token = {...token, ...typed, identifier: identifier };
+
+                if(typed.type == "Error"){
+                    token = typed;
+                    break;
+                }
+
+                if(typed.type != "Number"){
+                    token = new ScriptError("TypeError", `[${keyword}] declaration can only be assigned type Number, found type ${typed.type}`);
+                    break;
+                }
+
+                if(/\bpi\b/g.test(token.originalInput)) {
+                    token = new ScriptError("EvaluationError", `[pi] is unreliable, use [Pi] instead`);
+                } else {
+                    if(keyword == "num") token = { ...token, mutable: true }
+                    else token = { ...token, mutable: false };
+                }
+                
+                
             }
         } break;
 
@@ -1163,11 +1168,18 @@ function processSingleLine(input) {
 
                 if(getVariable(identifier) != undefined){
                     token = new ScriptError("ReferenceError", `Variable [${identifier}] already exists, cannot override`);
-                } else {
-                    token = {...token, ...typeify(assignedValue), identifier: identifier };
-                    if(keyword == "bln") token = { ...token, mutable: true }
-                    else token = { ...token, mutable: false };
+                    break;
                 }
+                token = {...token, ...typeify(assignedValue), identifier: identifier };
+
+                if(token.type != "Boolean"){
+                    token = new ScriptError("TypeError", `[${keyword}] declaration can only be assigned type Boolean, found type ${token.type}`);
+                    break;
+                }
+
+                if(keyword == "bln") token = { ...token, mutable: true }
+                else token = { ...token, mutable: false };
+                
                 
             }
         } break;
@@ -1210,6 +1222,11 @@ function processSingleLine(input) {
             } else {
                 let identifier = input.replace(/^goto\s+/, '').split(' ')[0].trim();
                 let typeifyValue = typeify(identifier);
+                if(typeifyValue.type != "Number") {
+                    token = new ScriptError("TypeError", `[goto] declaration can only be assigned type Number, found type ${typeifyValue.type}`);
+                    break;
+                }
+
                 token = {...token, ...typeifyValue};
             }
         }
@@ -1217,32 +1234,12 @@ function processSingleLine(input) {
 
     if(token.type == "Error") return token;
 
-    token = typeErrorCheckers(token);
-
     return token;
 }
 
 // remove this function eventually
 function typeErrorCheckers(token) {
     switch(token.keyword){
-        // case "if": {
-        //     if(token.type != "Boolean") token = new ScriptError("TypeError", `[if] condition must evaluate to Boolean, found type ${token.type}`);
-        // } break;
-
-        case "goto": {
-            if(token.type != "Number") token = new ScriptError("TypeError", `[goto] declaration can only be assigned type Number, found type ${token.type}`);
-        } break;
-
-        case "cnum":
-        case "num": {
-            if(token.type != "Number") token = new ScriptError("TypeError", `[${token.keyword}] declaration can only be assigned type Number, found type ${token.type}`);
-        } break;
-
-        case "cstr":
-        case "str": {
-            if(token.type != "String") token = new ScriptError("TypeError", `[${token.keyword}] declaration can only be assigned type String, found type ${token.type}`);
-        } break;
-
         case "cbln":
         case "bln": {
             if(token.type != "Boolean") token = new ScriptError("TypeError", `[${token.keyword}] declaration can only be assigned type Boolean, found type ${token.type}`);
@@ -1443,10 +1440,8 @@ async function interpretSingleLine(interval, single_input, error_trace, block_er
 
     let token = processSingleLine(line);
 
-    //token = typeErrorCheckers(token);
-
     if(token.type === "Error") {
-        token.currentProgram = config.currentProgram;
+        token.currentProgram = structuredClone(config.currentProgram);
 
         if(!block_error) outputError(token, interval, error_trace);
         clearInterval(interval);
@@ -1462,34 +1457,6 @@ async function interpretSingleLine(interval, single_input, error_trace, block_er
         }
         // process tokens here =======================================================
         switch(token.keyword) {
-            // case "call": {
-            //     let func = FroggyscriptMemory.functions[token.functionName];
-
-            //     if(func == undefined) {
-            //         token = new ScriptError("ReferenceError", `Function [${token.functionName}] does not exist`);
-            //     }
-
-            //     console.log(func, token);
-                
-            //     let functionLines = func.body;
-            //     let subclock_interval = 0;
-            //     FroggyscriptMemory.CLOCK_PAUSED = true;
-            //     let functionInterval = setInterval(() => {
-            //         if (subclock_interval < functionLines.length) {
-            //             let functionLine = functionLines[subclock_interval];
-            //             subclock_interval++;
-            //             interpretSingleLine(functionInterval, functionLine, {
-            //                 name: token.functionName,
-            //                 line: subclock_interval,
-            //             });
-            //         } else {
-            //             FroggyscriptMemory.CLOCK_PAUSED = false;
-            //             clearInterval(functionInterval);
-            //         }
-            //     }, 1);
-
-            // } break;
-
             case "loaddata": {
                 let key = token.key
                 let variable = token.variableName;
@@ -1958,6 +1925,11 @@ async function interpretSingleLine(interval, single_input, error_trace, block_er
         }
     }
 
+    // keywords that reset the temp variables
+    // endfunc already does this bc its in the runFunctionBody() function
+    switch(token.keyword) {
+    }
+
     return token;
 }
 
@@ -1987,6 +1959,11 @@ function interpreter(input, fileArguments) {
     let dataError = 0;
 
     let clock = setInterval(() => {
+        if(window.debugWindow){
+            FroggyscriptMemory.CLOCK_PAUSED = true;
+            window.debugWindow.postMessage({ type: 'data', FroggyscriptMemory }, '*');
+        }
+    
         if(FroggyscriptMemory.CLOCK_PAUSED) return;
         FroggyscriptMemory.variables.Time_ProgramRuntime.value = Date.now() - PROGRAM_RUNTIME_START;
         FroggyscriptMemory.variables.Time_MsEpoch.value = Date.now();
@@ -2057,6 +2034,8 @@ function interpreter(input, fileArguments) {
                 let line = FroggyscriptMemory.lines[FroggyscriptMemory.CLOCK_INTERVAL]
                 let token = interpretSingleLine(clock, line);
                 FroggyscriptMemory.CLOCK_INTERVAL++;
+            } else {
+                resetTerminalForUse(clock);
             }
         }
     }, FroggyscriptMemory.CLOCK_CYCLE_LENGTH);

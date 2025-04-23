@@ -567,37 +567,3 @@ From the corresponding `D:/Program-Data` file, loads the contents of entry of `[
 ```
 loaddata [variable] [key]
 ```
-
-# FroggyScript Technical Info
-## Types
-There are a total of 5 types in FroggyScript: `String`, `Number`, `Boolean`, `Array`, and `Undefined`.
-    * The `Undefined` type can only be access through the `undefined` variable, or when a function has no return value
-
-<!-- 
-## Types
-There are 5 types in FroggyScript `String`, `Number`, `Boolean`, `Array`, and `ReturnFunction`.
-### String
-* A string is a sequence of characters, which can be letters, numbers, or symbols.
-* The Regex for a string is `/^("|').*\1$/g`.
-### Number
-* A number is a numeric value, which can be an integer or a floating-point number.
-* The Regex for a number is `/^\d*|\+|\-|\/|\*|\^/g`.
-### Boolean
-* A boolean is a value that can be either `true` or `false`.
-* The Regex for a boolean is `/==|!=|>=|<=|>|</`.
-    * `true` and `false` are not explicitly checked because those are variables with the values of `true` and `false`.
-### Array
-* An array is a collection of values, which can be of any type.
-* The Regex for an array is `^\$("|'|\d|\w).*("|'|\d|\w)$/`.
-### ReturnFunction
-* A return function is a function that returns a value.
-* The Regex for a return function is `/^@[a-zA-Z_]+$/g`.
-
-## Origins
-**Origins** are the source of a token. Tokens are what is used by the interpreter to interpret the program. There are 6 origins:
-1. String
-2. Array
-3. ComparisonOperator
-4. FunctionIdentifier
-5. VariableIdentifier
-6. Number -->

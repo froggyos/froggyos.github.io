@@ -864,12 +864,6 @@ const config = {
                 "out 'mywa'",
                 "endfunc",
                 "@meow($'woof!', 'meow with space'$;'baaaa'>length)",
-                "out 'woof'",
-                //"out '$|2| + $|2| = $|2 + 2|'",
-                // "arr array = 1,2,3,4,5",
-                // "str meow = 'woof'",
-                // "out array>append($'a','b','c')>join",
-                // "out 'meow'>type()",
                 "endprog"
             ] },
             // { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
@@ -949,6 +943,10 @@ const config = {
                 "!ep",
                 "h D:/Palettes",
                 "m $1",
+            ] },
+            { name: "debug", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
+                "!d",
+                "[[BULLFROG]]debugmode 1",
             ] },
             { name: "set-US-time-format", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
                 "ft w. mn/d/y H:m:s a",

@@ -1389,14 +1389,16 @@ x
                 hadError = true;
             }
 
-
-            let debugWindow = window.open("debug.html", "debugWindow", "width=800,height=600,scrollbars=yes,resizable=yes");
+            let debugWindow = window.open("debug.html", "debugWindow", "width=1920,height=1080,scrollbars=yes,resizable=yes");
+            // let debugWindow = window.open("debug.html")
 
             debugWindow.onload = () => {
                 setInterval(() => {
-                    debugWindow.postMessage({ type: 'data', config }, '*');
+                    debugWindow.postMessage({ config }, '*');
                 }, 1)
             };
+
+            window.debugWindow = debugWindow;
 
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         } break;
@@ -1598,7 +1600,7 @@ function createEditableTerminalLine(path){
             let command = args[0].trim();
             args = args.slice(1);
 
-            if(config.commandHistory[0] != userInput) config.commandHistory = [userInput].concat(config.commandHistory)
+            if(config.commandHistory[0] != userInput && userInput.trim() != "") config.commandHistory = [userInput].concat(config.commandHistory)
             config.commandHistoryIndex = -1;
 
             sendCommand(command, args);
