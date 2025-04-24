@@ -63,11 +63,12 @@
     }
 </style>
 <head>
-    <script src="https://rus1130.github.io/projects/Global/jsonTreeViewer.js"></script>
+    <script src="https://rus1130.github.io/projects/Global/sniffer.js"></script>
+    <script src="./jsonTreeViewer.js"></script>
 </head>
 <body>
     <div id="config">
-        <div id="container"style="padding-left: 20px; margin-top: -25.33px;">
+        <div id="container"style="padding-left: 20px; margin-top: -30.33px;">
             <div style="padding-bottom: 10px;">user config:</div>
             <code id="user-config"></code>
         </div>
@@ -85,12 +86,13 @@
         </div>
         <div class="border-vertical"></div>
         <div id="container" style="height: calc(100vh - 297px); margin-left: -8px;">
-            <div style="padding-bottom: 8px; padding-top: 7.8px;">filesystem:</div>
+            <div style="padding-bottom: 10px;">filesystem: <button id="collapse-button">[OPEN ALL]</button></div>
             <div class="json-visualizer" id="filesystem"></div>
         </div>
     </div>
 </body>
 <script>
+    // new AllSniffer({});
     const pingInterval = setInterval(() => {
         try {
             // Use `opener` for popup, `parent` for iframe
@@ -98,11 +100,11 @@
 
             if (!isConnected) {
                 clearInterval(pingInterval);
-                document.body.innerHTML = `<div style="color: red; font-size: 20px;">Lost connection to froggyOS.</div>`;
+                document.write(`<div style="color: red; font-size: 20px; font-family: monospace">Lost connection to froggyOS.</div>`);
             }
         } catch (e) {
             clearInterval(pingInterval);
-            document.body.innerHTML = `<div style="color: red; font-size: 20px;">Lost connection to froggyOS.</div>`;
+            document.write(`<div style="color: red; font-size: 20px; font-family: monospace">Lost connection to froggyOS.</div>`);
         }
     }, 1000);
 
@@ -110,6 +112,8 @@
         config: {},
         memory: {}
     }
+
+    let toggleCollapse = false;
 
     JsonTreeViewer.injectCSS();
 
@@ -124,6 +128,18 @@
 
     const stepButton = document.getElementById('step-button');
 
+    const collapseButton = document.getElementById('collapse-button');
+    collapseButton.onclick = () => {
+        if (toggleCollapse) {
+            filesystemViewer.collapseAll();
+            collapseButton.innerText = "[OPEN ALL]"
+        } else {
+            filesystemViewer.uncollapseAll();
+            collapseButton.innerText = "[COLLAPSE ALL]"
+        }
+        toggleCollapse = !toggleCollapse;
+    }
+
     stepButton.addEventListener('click', () => {
         window.opener.postMessage({ step: true }, '*');
     });
@@ -131,6 +147,10 @@
     window.addEventListener('message', (event) => {
         if(event.data.FroggyscriptMemory) recievedData.memory = event.data.FroggyscriptMemory;
         if(event.data.config) recievedData.config = event.data.config;
+        if(event.data.loseConnection){
+            clearInterval(pingInterval);
+            document.write(`<div style="color: red; font-size: 20px; font-family: monospace">Lost connection to froggyOS.</div>`);
+        }
 
         updateDebugPanel()
     });
@@ -178,9 +198,12 @@
         programMemoryElement.innerHTML = ``
 
         filesystemViewer.setData(recievedData.config.fileSystem)
+        programMemoryViewer.setData(recievedData.memory)
+        programMemoryViewer.uncollapseAll()
     }
 
     let filesystemViewer = new JsonTreeViewer(filesystemElement, recievedData.config.fileSystem)
+    let programMemoryViewer = new JsonTreeViewer(programMemoryElement, recievedData.memory)
     updateDebugPanel()
 
 </script>

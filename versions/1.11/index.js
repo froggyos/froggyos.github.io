@@ -1401,6 +1401,10 @@ x
                 }, 750)
             };
 
+            window.onbeforeunload = () => {
+                debugWindow.postMessage({ loseConnection: true }, '*');
+            }
+
             window.debugWindow = debugWindow;
 
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
