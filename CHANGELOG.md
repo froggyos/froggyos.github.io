@@ -137,4 +137,5 @@ idk
 ~ changed the way palettes work to allow for more customization
 ~ changed FroggyScript method syntax
 ~ fixed debugging
+~ fixed lang `jpn`'s messed up font
 ```
