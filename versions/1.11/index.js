@@ -1395,9 +1395,10 @@ x
             // let debugWindow = window.open("debug.html")
 
             debugWindow.onload = () => {
+                debugWindow.postMessage({ config }, '*');
                 setInterval(() => {
                     debugWindow.postMessage({ config }, '*');
-                }, 1)
+                }, 750)
             };
 
             window.debugWindow = debugWindow;

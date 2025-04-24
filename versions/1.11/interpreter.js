@@ -4,6 +4,7 @@ const FroggyscriptMemory = {
     savedData: {},
     CLOCK_INTERVAL: 0,
     CLOCK_PAUSED: false,
+    CLOCK_STEP: false,
     lines: [],
     temporaryVariables: {},
     CLOCK_CYCLE_LENGTH: 1,
@@ -1959,7 +1960,7 @@ function interpreter(input, fileArguments) {
     let dataError = 0;
 
     window.addEventListener('message', (event) => {
-        if(event.data.step == true) FroggyscriptMemory.CLOCK_PAUSED = false;
+        if(event.data.step == true) FroggyscriptMemory.CLOCK_STEP = false;
     })
 
     let clock = setInterval(() => {
@@ -2032,12 +2033,12 @@ function interpreter(input, fileArguments) {
             createTerminalLine(`Program data is malformed. Some data cannot be loaded`, config.alertText, {translate: false});
         }
 
-        if(FroggyscriptMemory.CLOCK_PAUSED == false) {
+        if(FroggyscriptMemory.CLOCK_PAUSED == false && FroggyscriptMemory.CLOCK_STEP == false) {
             if(FroggyscriptMemory.CLOCK_INTERVAL < FroggyscriptMemory.lines.length) {
                 let line = FroggyscriptMemory.lines[FroggyscriptMemory.CLOCK_INTERVAL]
                 let token = interpretSingleLine(clock, line);
                 FroggyscriptMemory.CLOCK_INTERVAL++;
-                if(config.stepThroughProgram) FroggyscriptMemory.CLOCK_PAUSED = true;
+                if(config.stepThroughProgram) FroggyscriptMemory.CLOCK_STEP = true;
             } else {
                 resetTerminalForUse(clock);
             }

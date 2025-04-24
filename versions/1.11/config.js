@@ -939,7 +939,6 @@ const config = {
                 "[[BULLFROG]]urgentclearstate",
                 "clear",
                 "ribbit OS state reloaded",
-                "[[BULLFROG]]greeting",
                 "[[BULLFROG]]changepath C:/Home"
             ] },
             { name: "edit-settings", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
