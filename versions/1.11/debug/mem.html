@@ -1,0 +1,10 @@
+<head>
+    <script src="https://rus1130.github.io/projects/Global/jsonTreeViewer.js"></script>
+</head>
+<div id="tree"></div>
+<script>
+    let viewer = new JsonTreeViewer(document.getElementById('tree'), {});
+    window.addEventListener('message', (event) => {
+        viewer.setData(event.data.mem);
+    })
+</script>

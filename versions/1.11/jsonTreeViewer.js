@@ -20,12 +20,51 @@ li { margin: 3px 0; }
         this.container = container;
         this.data = data;
         this.openPaths = new Set();
+        this._isRendering = false;
         this.initClickHandler();
+        JsonTreeViewer.injectCSS();
         this.render();
     }
 
     pathToString(path) {
         return path.join('.');
+    }
+
+    getDataByPath(data, pathArray) {
+        let current = data;
+        for (const key of pathArray) {
+            current = current?.[key];
+            if (current === undefined) break;
+        }
+        return current;
+    }
+    
+    recursivelyOpenPath(path = [], obj) {
+        const recurse = (currentObj, currentPath) => {
+            if (typeof currentObj === 'object' && currentObj !== null) {
+                const pathStr = this.pathToString(currentPath);
+                this.openPaths.add(pathStr);
+    
+                for (const key in currentObj) {
+                    recurse(currentObj[key], [...currentPath, key]);
+                }
+            }
+        };
+        recurse(obj, path);
+    }
+
+    recursivelyClosePath(path = [], obj) {
+        const recurse = (currentObj, currentPath) => {
+            if (typeof currentObj === 'object' && currentObj !== null) {
+                const pathStr = this.pathToString(currentPath);
+                this.openPaths.delete(pathStr);
+    
+                for (const key in currentObj) {
+                    recurse(currentObj[key], [...currentPath, key]);
+                }
+            }
+        };
+        recurse(obj, path);
     }
 
     formatValue(value) {
@@ -79,14 +118,17 @@ li { margin: 3px 0; }
         return ul;
     }
 
-    render() {
+    async render() {
+        if (this._isRendering) return;
+        this._isRendering = true;
+    
         this.container.innerHTML = '';
         this.container.appendChild(this.createTree(this.data));
+    
+        this._isRendering = false;
     }
 
     setData(newData) {
-        // const same = JSON.stringify(newData) === JSON.stringify(this.data);
-        // if (same) return;
         this.data = newData;
         this.render();
     }
@@ -117,6 +159,23 @@ li { margin: 3px 0; }
                         affix.classList.add('opened');
                     }
                 }
+            }
+        });
+
+        document.addEventListener('contextmenu', (e) => {
+            if (e.target.classList.contains('collapsible')) {
+                e.preventDefault();
+                const path = e.target.getAttribute('data-path');
+                const pathArray = path.split('.');
+                const targetData = this.getDataByPath(this.data, pathArray);
+        
+                if (this.openPaths.has(path)) {
+                    this.recursivelyClosePath(pathArray, targetData);
+                } else {
+                    this.recursivelyOpenPath(pathArray, targetData);
+                }
+        
+                this.render();
             }
         });
     }

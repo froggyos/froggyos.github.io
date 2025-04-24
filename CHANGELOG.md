@@ -138,6 +138,5 @@ idk
 ~ changed FroggyScript method syntax
 ~ fixed debugging
     - whole new debug window
-    - hard to un/collapse in the froggyscript memory side
 ~ fixed lang `jpn`'s messed up font
 ```

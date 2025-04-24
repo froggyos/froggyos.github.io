@@ -1960,15 +1960,20 @@ function interpreter(input, fileArguments) {
     let dataError = 0;
 
     window.addEventListener('message', (event) => {
-        if(event.data.step == true) FroggyscriptMemory.CLOCK_STEP = false;
+        if(event.data.step == true) {
+            FroggyscriptMemory.CLOCK_STEP = false;
+        }
     })
 
-    let clock = setInterval(() => {
+    setInterval(() => {
         if(window.debugWindow){
             window.debugWindow.postMessage({ FroggyscriptMemory }, '*');
         }
-    
+    }, 300)
+
+    let clock = setInterval(() => {
         if(FroggyscriptMemory.CLOCK_PAUSED) return;
+
         FroggyscriptMemory.variables.Time_ProgramRuntime.value = Date.now() - PROGRAM_RUNTIME_START;
         FroggyscriptMemory.variables.Time_MsEpoch.value = Date.now();
 
@@ -2038,7 +2043,12 @@ function interpreter(input, fileArguments) {
                 let line = FroggyscriptMemory.lines[FroggyscriptMemory.CLOCK_INTERVAL]
                 let token = interpretSingleLine(clock, line);
                 FroggyscriptMemory.CLOCK_INTERVAL++;
-                if(config.stepThroughProgram) FroggyscriptMemory.CLOCK_STEP = true;
+                if(config.stepThroughProgram) {
+                    if(window.debugWindow){
+                        window.debugWindow.postMessage({ FroggyscriptMemory }, '*');
+                    }
+                    FroggyscriptMemory.CLOCK_STEP = true;
+                }
             } else {
                 resetTerminalForUse(clock);
             }

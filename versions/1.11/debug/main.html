@@ -3,20 +3,6 @@
         font-family: monospace;
     }
 
-    ul { list-style-type: none; padding-left: 1em; }
-    li { margin: 2px 0; }
-    .key { font-weight: bold; }
-    .collapsible {
-      cursor: pointer;
-      user-select: none;
-    }
-    .collapsed > ul {
-      display: none;
-    }
-    .hidden {
-      display: none;
-    }
-
     code {
         white-space: pre;
         overflow-x: auto;
@@ -29,10 +15,11 @@
 
     #container {
         display: flex;
-        justify-content: center;
+        justify-content: flex-start;
         overflow: auto;
         overflow-y: hidden;
         flex-direction: column;
+        align-items: flex-start;
     }
 
     .border-vertical {
@@ -58,17 +45,14 @@
 
     .json-visualizer {
         height: 100%;
+        width: calc(100% - 2px);
         border: 1px solid #ccc;
         overflow-y: auto;
     }
 </style>
-<head>
-    <script src="https://rus1130.github.io/projects/Global/sniffer.js"></script>
-    <script src="./jsonTreeViewer.js"></script>
-</head>
 <body>
     <div id="config">
-        <div id="container"style="padding-left: 20px; margin-top: -30.33px;">
+        <div id="container"style="padding-left: 20px;">
             <div style="padding-bottom: 10px;">user config:</div>
             <code id="user-config"></code>
         </div>
@@ -82,17 +66,16 @@
     <div id="config">
         <div id="container" style="height: calc(100vh - 297px)">
             <div style="padding-bottom: 10px;">program memory: <button id="step-button">[STEP]</button></div>
-            <div class="json-visualizer" id="program-memory"></div>
+            <iframe class="json-visualizer" id="program-memory" src="./mem.html"></iframe>
         </div>
         <div class="border-vertical"></div>
         <div id="container" style="height: calc(100vh - 297px); margin-left: -8px;">
-            <div style="padding-bottom: 10px;">filesystem: <button id="collapse-button">[OPEN ALL]</button></div>
-            <div class="json-visualizer" id="filesystem"></div>
+            <div style="padding-bottom: 10px;">filesystem:</div>
+            <iframe class="json-visualizer" id="filesystem" src="./fs.html"></iframe>
         </div>
     </div>
 </body>
 <script>
-    // new AllSniffer({});
     const pingInterval = setInterval(() => {
         try {
             // Use `opener` for popup, `parent` for iframe
@@ -113,10 +96,6 @@
         memory: {}
     }
 
-    let toggleCollapse = false;
-
-    JsonTreeViewer.injectCSS();
-
     const configElement = document.getElementById('config');
     const memElement = document.getElementById('program-mem');
 
@@ -128,25 +107,19 @@
 
     const stepButton = document.getElementById('step-button');
 
-    const collapseButton = document.getElementById('collapse-button');
-    collapseButton.onclick = () => {
-        if (toggleCollapse) {
-            filesystemViewer.collapseAll();
-            collapseButton.innerText = "[OPEN ALL]"
-        } else {
-            filesystemViewer.uncollapseAll();
-            collapseButton.innerText = "[COLLAPSE ALL]"
-        }
-        toggleCollapse = !toggleCollapse;
-    }
-
     stepButton.addEventListener('click', () => {
         window.opener.postMessage({ step: true }, '*');
     });
     
     window.addEventListener('message', (event) => {
-        if(event.data.FroggyscriptMemory) recievedData.memory = event.data.FroggyscriptMemory;
-        if(event.data.config) recievedData.config = event.data.config;
+        if(event.data.FroggyscriptMemory) {
+            recievedData.memory = event.data.FroggyscriptMemory;
+            programMemoryElement.contentWindow.postMessage({mem: recievedData.memory}, '*')
+        }
+        if(event.data.config) {
+            recievedData.config = event.data.config;
+            filesystemElement.contentWindow.postMessage({fs: recievedData.config.fileSystem}, '*')
+        }
         if(event.data.loseConnection){
             clearInterval(pingInterval);
             document.write(`<div style="color: red; font-size: 20px; font-family: monospace">Lost connection to froggyOS.</div>`);
@@ -193,17 +166,7 @@
             
             userImmutableConfigElement.innerHTML += `${" ".repeat(longestImmutableSettingLength-setting.length)}${setting} = <div class='line-border'>|</div>${escapeHTML(value)}<div class='line-border'>|</div><br>`
         });
-
-        filesystemElement.innerHTML = ``
-        programMemoryElement.innerHTML = ``
-
-        filesystemViewer.setData(recievedData.config.fileSystem)
-        programMemoryViewer.setData(recievedData.memory)
-        programMemoryViewer.uncollapseAll()
     }
-
-    let filesystemViewer = new JsonTreeViewer(filesystemElement, recievedData.config.fileSystem)
-    let programMemoryViewer = new JsonTreeViewer(programMemoryElement, recievedData.memory)
     updateDebugPanel()
 
 </script>
