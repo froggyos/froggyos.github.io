@@ -70,7 +70,7 @@
         </div>
         <div class="border-vertical"></div>
         <div id="container" style="height: calc(100vh - 297px); margin-left: -8px;">
-            <div style="padding-bottom: 10px;">filesystem:</div>
+            <div style="padding-bottom: 16px;">filesystem:</div>
             <iframe class="json-visualizer" id="filesystem" src="./fs.html"></iframe>
         </div>
     </div>
@@ -93,7 +93,8 @@
 
     let recievedData = {
         config: {},
-        memory: {}
+        memory: {},
+        fs: {},
     }
 
     const configElement = document.getElementById('config');
@@ -118,7 +119,10 @@
         }
         if(event.data.config) {
             recievedData.config = event.data.config;
-            filesystemElement.contentWindow.postMessage({fs: recievedData.config.fileSystem}, '*')
+        }
+        if(event.data.fs) {
+            recievedData.fs = event.data.fs;
+            filesystemElement.contentWindow.postMessage({fs: recievedData.fs}, '*')
         }
         if(event.data.loseConnection){
             clearInterval(pingInterval);

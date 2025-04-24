@@ -1396,8 +1396,13 @@ x
 
             debugWindow.onload = () => {
                 debugWindow.postMessage({ config }, '*');
+                debugWindow.postMessage({ fs: config.fileSystem }, '*');
                 setInterval(() => {
                     debugWindow.postMessage({ config }, '*');
+                }, 1)
+                
+                setInterval(() => {
+                    debugWindow.postMessage({ fs: config.fileSystem }, '*');
                 }, 400)
             };
 
