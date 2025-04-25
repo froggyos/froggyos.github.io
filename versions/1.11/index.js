@@ -1272,7 +1272,7 @@ x
                 // get all file arguments besides the first one
 
                 config.currentProgram = args[0];
-                interpreter(file.data.join("\n"), args.slice(1));
+                interpreter(file.data.join("\n"), args.slice(1), args[0]);
             }
         break;
 

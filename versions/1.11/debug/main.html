@@ -65,7 +65,7 @@
     <div class="border-horizontal"></div>
     <div id="config">
         <div id="container" style="height: calc(100vh - 297px)">
-            <div style="padding-bottom: 10px;">program memory: <button id="step-button">[STEP]</button></div>
+            <div style="padding-bottom: 10px;">program memory: <button id="step-button">[STEP]</button> <button id="rea;time-button" title="Enable and click [STEP] to access real time">REALTIME: OFF</button></div>
             <iframe class="json-visualizer" id="program-memory" src="./mem.html"></iframe>
         </div>
         <div class="border-vertical"></div>
@@ -107,10 +107,19 @@
     const programMemoryElement = document.getElementById('program-memory');
 
     const stepButton = document.getElementById('step-button');
+    const realtimeButton = document.getElementById('rea;time-button');
 
     stepButton.addEventListener('click', () => {
         window.opener.postMessage({ step: true }, '*');
     });
+
+    let realtimeToggle = false;
+    realtimeButton.addEventListener('click', () => {
+        realtimeToggle = !realtimeToggle;
+        window.opener.postMessage({ realtime: realtimeToggle }, '*');
+        realtimeButton.innerText = `REALTIME: ${realtimeToggle ? 'ON' : 'OFF'}`;
+    });
+    
     
     window.addEventListener('message', (event) => {
         if(event.data.FroggyscriptMemory) {

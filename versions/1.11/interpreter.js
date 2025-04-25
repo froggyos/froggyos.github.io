@@ -6,6 +6,7 @@ const FroggyscriptMemory = {
     CLOCK_PAUSED: false,
     CLOCK_STEP: false,
     lines: [],
+    tokens: [],
     temporaryVariables: {},
     CLOCK_CYCLE_LENGTH: 1,
 };
@@ -126,6 +127,7 @@ function resetMemState() {
     delete FroggyscriptMemory.CLOCK_PAUSED;
     delete FroggyscriptMemory.lines;
     delete FroggyscriptMemory.temporaryVariables;
+    delete FroggyscriptMemory.tokens;
 
     FroggyscriptMemory.variables = {};
     // initialize default variables
@@ -142,6 +144,7 @@ function resetMemState() {
     FroggyscriptMemory.CLOCK_PAUSED = false;
     FroggyscriptMemory.lines = [];
     FroggyscriptMemory.temporaryVariables = {};
+    FroggyscriptMemory.tokens = [];
 
     config.currentProgram = "cli";
 }
@@ -1934,7 +1937,7 @@ async function interpretSingleLine(interval, single_input, error_trace, block_er
     return token;
 }
 
-function interpreter(input, fileArguments) {
+function interpreter(input, fileArguments, programName) {
     let lines = input.split('\n').map(x => x.trim()).filter(x => x.length > 0 && x !== "--");
 
     let fileArgumentCount = 0;
@@ -1947,7 +1950,7 @@ function interpreter(input, fileArguments) {
     FroggyscriptMemory.cliPromptCount = 0;
     FroggyscriptMemory.CLOCK_PAUSED = false;
 
-    writeVariable("OS_ProgramName", "String", structuredClone(config).currentProgram, false);
+    writeVariable("OS_ProgramName", "String", programName, false);
 
     if(FroggyscriptMemory.lines[FroggyscriptMemory.lines.length - 1].trim() !== "endprog") {
         output({value: `PrecheckError -> [endprog] must be the last line of the program <-`});
@@ -1959,7 +1962,12 @@ function interpreter(input, fileArguments) {
 
     let dataError = 0;
 
+    let realtime = false;
+
     window.addEventListener('message', (event) => {
+        if(event.data.realtime == true || event.data.realtime == false) {
+            realtime = event.data.realtime;
+        }
         if(event.data.step == true) {
             FroggyscriptMemory.CLOCK_STEP = false;
         }
@@ -2038,10 +2046,26 @@ function interpreter(input, fileArguments) {
             createTerminalLine(`Program data is malformed. Some data cannot be loaded`, config.alertText, {translate: false});
         }
 
-        if(FroggyscriptMemory.CLOCK_PAUSED == false && FroggyscriptMemory.CLOCK_STEP == false) {
+        if(realtime) {
             if(FroggyscriptMemory.CLOCK_INTERVAL < FroggyscriptMemory.lines.length) {
                 let line = FroggyscriptMemory.lines[FroggyscriptMemory.CLOCK_INTERVAL]
-                let token = interpretSingleLine(clock, line);
+                let token = interpretSingleLine(clock, line).then((t) => {
+                    FroggyscriptMemory.tokens.push(t);
+                })
+                FroggyscriptMemory.CLOCK_INTERVAL++;
+                if(window.debugWindow){
+                    window.debugWindow.postMessage({ FroggyscriptMemory }, '*');
+                }
+            } else {
+                resetTerminalForUse(clock);
+            }
+
+        } else if(FroggyscriptMemory.CLOCK_PAUSED == false && FroggyscriptMemory.CLOCK_STEP == false) {
+            if(FroggyscriptMemory.CLOCK_INTERVAL < FroggyscriptMemory.lines.length) {
+                let line = FroggyscriptMemory.lines[FroggyscriptMemory.CLOCK_INTERVAL]
+                interpretSingleLine(clock, line).then((t) => {
+                    FroggyscriptMemory.tokens.push(t);
+                })
                 FroggyscriptMemory.CLOCK_INTERVAL++;
                 if(config.stepThroughProgram) {
                     if(window.debugWindow){
