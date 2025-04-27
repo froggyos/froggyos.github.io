@@ -737,11 +737,12 @@ function processSingleLine(input) {
             }
 
             let typed = typeify(value);
+
             if(typed.type == "Error"){
                 token = typed;
             } else {
                 let value = typed.value;
-                token = { ...token, key: key, value: value };
+                token = { ...token, key: key, value: typed };
             }
         } break;
 
@@ -1444,9 +1445,9 @@ async function interpretSingleLine(interval, single_input, error_trace, block_er
 
     let token = processSingleLine(line);
 
-    if(token.type === "Error") {
-        token.currentProgram = structuredClone(config.currentProgram);
+    token.currentProgram = structuredClone(config.currentProgram);
 
+    if(token.type === "Error") {
         if(!block_error) outputError(token, interval, error_trace);
         clearInterval(interval);
         return token;
@@ -1480,23 +1481,25 @@ async function interpretSingleLine(interval, single_input, error_trace, block_er
 
             case "savedata": {
                 let key = token.key;
-                let value = token.value;
-                let valueType = value.type;
+                let value = token.value.value;
+                let valueType = token.value.type;
 
                 let dataArray = [];
 
                 if(valueType == "Array"){
                     dataArray.push(`KEY ${key} TYPE ${valueType} START`)
-                    for(let i = 0; i < value.value.length; i++){
-                        let index = value.value[i];
+                    for(let i = 0; i < value.length; i++){
+                        let index = value[i];
                         dataArray.push(`INDEX TYPE ${index.type} VALUE ${index.value}`)
                     }
                     dataArray.push(`KEY ${key} TYPE ${valueType} END`)
                 } else {
-                    dataArray.push(`KEY ${key} TYPE ${valueType} VALUE ${value.value} END`)
+                    dataArray.push(`KEY ${key} TYPE ${valueType} VALUE ${value} END`)
                 }
 
                 let fileData = config.fileSystem['D:/Program-Data'].find(x => x.name == config.currentProgram);
+
+                console.log(fileData)
 
                 if(valueType == "Array"){
                     let startIndex = fileData.data.findIndex(x => x.match(new RegExp(`^KEY ${key} TYPE ${valueType} START$`)));
@@ -1505,6 +1508,17 @@ async function interpretSingleLine(interval, single_input, error_trace, block_er
 
                     if((startIndex == -1 && endIndex != -1) || (startIndex != -1 && endIndex == -1)){
                         token = new ScriptError("ProgramDataError", `The program data in D:/Program-Data is malformed. Cannot save data`);
+                    }
+
+                    console.log(startIndex, endIndex)
+
+                    if(startIndex == -1 && endIndex == -1){
+                        fileData.data.push(...dataArray);
+                    }
+                    else if(startIndex != -1 && endIndex != -1){
+                        fileData.data.splice(startIndex, endIndex - startIndex + 1, ...dataArray);
+                    } else {
+                        fileData.data.push(...dataArray);
                     }
                 } else {
                     let dataIndex = fileData.data.findIndex(x => x.match(new RegExp(`^KEY ${key} TYPE ${valueType} VALUE (.+?) END`)));
@@ -1951,6 +1965,7 @@ function interpreter(input, fileArguments, programName) {
     FroggyscriptMemory.CLOCK_PAUSED = false;
 
     writeVariable("OS_ProgramName", "String", programName, false);
+    config.currentProgram = programName;
 
     if(FroggyscriptMemory.lines[FroggyscriptMemory.lines.length - 1].trim() !== "endprog") {
         output({value: `PrecheckError -> [endprog] must be the last line of the program <-`});

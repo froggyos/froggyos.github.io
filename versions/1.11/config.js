@@ -858,20 +858,11 @@ const config = {
             { name: "cli", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["str cli = 'this program is hardcoded into froggyOS'", "endprog"] },
             { name: "lilypad", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["str lilypad = 'this program is hardcoded into froggyOS'", "endprog"] },
             { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
-                // "arr meow = 'meow'",
-                // "func meow any_type:A number_type:N",
-                // "out any_type",
-                // "out number_type",
-                // "out 'mywa'",
-                // "endfunc",
-                // "@meow($'woof!', 'meow with space'$;'baaaa'>length)",
-                "out 'meow!'",
-                "out 'meow!'",
-                "out 'meow!'",
-                "out 'meow!'",
-                "out 'meow!'",
-                "out 'meow!'",
-                "out 'meow!'",
+                "arr meow = 4,48,32,77,1",
+                "arr meowTwo = 4,22228,332,77,1",
+                //"str meow = 'waaa'",
+                "savedata meow!! meow",
+                "savedata meow2!! meowTwo",
                 "endprog"
             ] },
             // { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
@@ -960,7 +951,7 @@ const config = {
             ] },
         ],
         "D:/Program-Data": [
-            { name: "test", properties: {transparent: false, read: true, write: true, hidden: false}, data: [] },
+            // { name: "test", properties: {transparent: false, read: true, write: true, hidden: false}, data: [] },
         ],
         "D:/Palettes": [
             // standard and revised palettes:  https://int10h.org/blog/2022/06/ibm-5153-color-true-cga-palette/
