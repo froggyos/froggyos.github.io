@@ -50,6 +50,7 @@
         overflow-y: auto;
     }
 </style>
+<script src="https://rus1130.github.io/projects/Global/jsonTreeViewer2.js"></script>
 <body>
     <div id="config">
         <div id="container"style="padding-left: 20px;">
@@ -66,12 +67,12 @@
     <div id="config">
         <div id="container" style="height: calc(100vh - 297px)">
             <div style="padding-bottom: 10px;">program memory: <button id="step-button">[STEP]</button> <button id="rea;time-button" title="Enable and click [STEP] to access real time">REALTIME: OFF</button></div>
-            <iframe class="json-visualizer" id="program-memory" src="./mem.html"></iframe>
+            <div class="json-visualizer" id="program-memory"></div>
         </div>
         <div class="border-vertical"></div>
         <div id="container" style="height: calc(100vh - 297px); margin-left: -8px;">
             <div style="padding-bottom: 16px;">filesystem:</div>
-            <iframe class="json-visualizer" id="filesystem" src="./fs.html"></iframe>
+            <div class="json-visualizer" id="filesystem"></div>
         </div>
     </div>
 </body>
@@ -119,19 +120,24 @@
         window.opener.postMessage({ realtime: realtimeToggle }, '*');
         realtimeButton.innerText = `REALTIME: ${realtimeToggle ? 'ON' : 'OFF'}`;
     });
-    
+
+    let fsViewer = new JsonTreeViewer2(filesystemElement, {});
+    let memViewer = new JsonTreeViewer2(programMemoryElement, {});
+
+    fsViewer.container.style.border = "none";
+    memViewer.container.style.border = "none";
     
     window.addEventListener('message', (event) => {
         if(event.data.FroggyscriptMemory) {
             recievedData.memory = event.data.FroggyscriptMemory;
-            programMemoryElement.contentWindow.postMessage({mem: recievedData.memory}, '*')
+            memViewer.dynamicUpdate(event.data.FroggyscriptMemory);
         }
         if(event.data.config) {
             recievedData.config = event.data.config;
         }
         if(event.data.fs) {
             recievedData.fs = event.data.fs;
-            filesystemElement.contentWindow.postMessage({fs: recievedData.fs}, '*')
+            fsViewer.dynamicUpdate(event.data.fs);
         }
         if(event.data.loseConnection){
             clearInterval(pingInterval);

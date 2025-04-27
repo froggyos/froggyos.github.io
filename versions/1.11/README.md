@@ -123,8 +123,7 @@ If you edit the `Settings:` drive directly, some settings won't apply until you 
 
 ## Bugs
 * you cannot set values to array indexes
-* since the addition of methods, i think most types will not coalesce properly.
-* In boolean expressions, cannot use methods on the left side of an operator
+* major memory leak with the new debug window
 
 # FroggyScript Documentation
 * `[argument="default_value"]` denotes a default argument value

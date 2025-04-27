@@ -1391,7 +1391,7 @@ x
                 hadError = true;
             }
 
-            let debugWindow = window.open("debug/main.html", "debugWindow", "width=1920,height=1080,scrollbars=yes,resizable=yes");
+            let debugWindow = window.open("debug.html", "debugWindow", "width=1920,height=1080,scrollbars=yes,resizable=yes");
             // let debugWindow = window.open("debug.html")
 
             debugWindow.onload = () => {
