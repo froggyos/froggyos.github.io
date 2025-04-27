@@ -123,7 +123,7 @@ If you edit the `Settings:` drive directly, some settings won't apply until you 
 
 ## Bugs
 * you cannot set values to array indexes
-* major memory leak with the new debug window
+* debug window json dropdowns slow ?
 
 # FroggyScript Documentation
 * `[argument="default_value"]` denotes a default argument value
