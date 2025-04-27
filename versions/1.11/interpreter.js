@@ -3,6 +3,7 @@ const FroggyscriptMemory = {
     functions: {},
     savedData: {},
     CLOCK_INTERVAL: 0,
+    CLOCK_ITERATIONS: 0,
     CLOCK_PAUSED: false,
     CLOCK_STEP: false,
     lines: [],
@@ -124,6 +125,7 @@ function resetMemState() {
     delete FroggyscriptMemory.functions;
     delete FroggyscriptMemory.savedData;
     delete FroggyscriptMemory.CLOCK_INTERVAL;
+    delete FroggyscriptMemory.CLOCK_ITERATIONS;
     delete FroggyscriptMemory.CLOCK_PAUSED;
     delete FroggyscriptMemory.lines;
     delete FroggyscriptMemory.temporaryVariables;
@@ -141,6 +143,7 @@ function resetMemState() {
     FroggyscriptMemory.functions = {};
     FroggyscriptMemory.savedData = {};
     FroggyscriptMemory.CLOCK_INTERVAL = 0;
+    FroggyscriptMemory.CLOCK_ITERATIONS = 0;
     FroggyscriptMemory.CLOCK_PAUSED = false;
     FroggyscriptMemory.lines = [];
     FroggyscriptMemory.temporaryVariables = {};
@@ -1499,8 +1502,6 @@ async function interpretSingleLine(interval, single_input, error_trace, block_er
 
                 let fileData = config.fileSystem['D:/Program-Data'].find(x => x.name == config.currentProgram);
 
-                console.log(fileData)
-
                 if(valueType == "Array"){
                     let startIndex = fileData.data.findIndex(x => x.match(new RegExp(`^KEY ${key} TYPE ${valueType} START$`)));
 
@@ -1509,8 +1510,6 @@ async function interpretSingleLine(interval, single_input, error_trace, block_er
                     if((startIndex == -1 && endIndex != -1) || (startIndex != -1 && endIndex == -1)){
                         token = new ScriptError("ProgramDataError", `The program data in D:/Program-Data is malformed. Cannot save data`);
                     }
-
-                    console.log(startIndex, endIndex)
 
                     if(startIndex == -1 && endIndex == -1){
                         fileData.data.push(...dataArray);
@@ -2064,10 +2063,12 @@ function interpreter(input, fileArguments, programName) {
         if(realtime) {
             if(FroggyscriptMemory.CLOCK_INTERVAL < FroggyscriptMemory.lines.length) {
                 let line = FroggyscriptMemory.lines[FroggyscriptMemory.CLOCK_INTERVAL]
-                let token = interpretSingleLine(clock, line).then((t) => {
+                interpretSingleLine(clock, line).then((t) => {
                     FroggyscriptMemory.tokens.push(t);
                 })
                 FroggyscriptMemory.CLOCK_INTERVAL++;
+                FroggyscriptMemory.CLOCK_ITERATIONS++;
+                
                 if(window.debugWindow){
                     window.debugWindow.postMessage({ FroggyscriptMemory }, '*');
                 }
@@ -2082,6 +2083,7 @@ function interpreter(input, fileArguments, programName) {
                     FroggyscriptMemory.tokens.push(t);
                 })
                 FroggyscriptMemory.CLOCK_INTERVAL++;
+                FroggyscriptMemory.CLOCK_ITERATIONS++;
                 if(config.stepThroughProgram) {
                     if(window.debugWindow){
                         window.debugWindow.postMessage({ FroggyscriptMemory }, '*');

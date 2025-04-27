@@ -50,6 +50,7 @@
         overflow-y: auto;
     }
 </style>
+<!-- <script src="test.js"></script> -->
 <script src="https://rus1130.github.io/projects/Global/jsonTreeViewer2.js"></script>
 <body>
     <div id="config">
@@ -124,20 +125,23 @@
     let fsViewer = new JsonTreeViewer2(filesystemElement, {});
     let memViewer = new JsonTreeViewer2(programMemoryElement, {});
 
+    let fsProxy = fsViewer.dynamicUpdate({});
+    let memProxy = memViewer.dynamicUpdate({});
+
     fsViewer.container.style.border = "none";
     memViewer.container.style.border = "none";
     
     window.addEventListener('message', (event) => {
         if(event.data.FroggyscriptMemory) {
             recievedData.memory = event.data.FroggyscriptMemory;
-            memViewer.dynamicUpdate(event.data.FroggyscriptMemory);
+            memProxy.data = event.data.FroggyscriptMemory;
         }
         if(event.data.config) {
             recievedData.config = event.data.config;
         }
         if(event.data.fs) {
             recievedData.fs = event.data.fs;
-            fsViewer.dynamicUpdate(event.data.fs);
+            fsProxy.data = event.data.fs;
         }
         if(event.data.loseConnection){
             clearInterval(pingInterval);

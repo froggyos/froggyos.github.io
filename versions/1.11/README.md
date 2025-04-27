@@ -123,7 +123,7 @@ If you edit the `Settings:` drive directly, some settings won't apply until you 
 
 ## Bugs
 * you cannot set values to array indexes
-* debug window json dropdowns slow ?
+* realtime mode is not real time
 
 # FroggyScript Documentation
 * `[argument="default_value"]` denotes a default argument value
