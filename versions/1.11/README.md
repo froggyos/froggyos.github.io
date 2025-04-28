@@ -60,10 +60,10 @@ There are no set colors that you must have, but these are the color conventions.
 * To add a new language, clone the `lbh`, or `language build helper` file, which contains **translation descriptors** (prefixed with `T_`), which give you an idea of what the intended meaning of the text.
 * Set the language to `lbh` to see which translation descriptors are used where in froggyOS. If there are missing translation descriptors at the end of a file, the English translation will be used.
     * If a language file does not meet requirements (valid name declaration, correct file length), it will be invalid and unable to be used.
-* The **name declaration** must be the first line of the file, and must be in the format `{{{LANGNAME_!!!_[language name]}}}`. For example, the name declaration for the `eng` file is `{{{LANGNAME_!!!_English}}}`.
+* The **name declaration** must be the first line of the file, and must be in the format `!LANGNAME: [language name]`. For example, the name declaration for the `eng` file is `!LANGNAME: English`.
 * If the default language is invalid, froggyOS will automatically revert to the `lbh` language file.
 * If a text results in `Index Missing! -> [translation descriptor]`, this means that the translation descriptor is missing from the language file.
-* Some translation descriptors include `|||[]|||` in it. This must be included in order to reference the descriptor. This is because between the `[]` a string can be placed that will show in the final translation. For example, if you used `T_greeting_2 |||[3 million]|||`, it would return in the `eng` translation as `* Welcome to froggyOS, version 3 million *`.
+* Some translation descriptors include `|||[]|||` in it. This must be included in order to reference the descriptor. This is because between the `[]` a string can be placed that will show in the final translation. For example, if you used `T_greeting_2 |||[3 million]|||`, it would return in the `eng` translation as `* Welcome to froggyOS, version 3 million *`. You can use only one of these per descriptor.
 
 ## Command Help
 ### formattime

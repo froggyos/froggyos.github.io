@@ -384,8 +384,12 @@ function moveCaretToEnd(element) {
 }
 
 function moveCaretToPosition(element, pos) {
-    const textNode = element.firstChild;
-    if (!textNode) return;
+    let textNode = element.firstChild;
+    
+    if (!textNode) {
+        textNode = document.createTextNode("");
+        element.appendChild(textNode);
+    }
 
     const range = document.createRange();
     const selection = window.getSelection();
@@ -412,7 +416,7 @@ function getCaretPosition(element) {
     preCaretRange.setEnd(range.startContainer, range.startOffset);
   
     return preCaretRange.toString().length;
-  }
+}
 
 function createTerminalLine(text, path, other){
     let lineContainer = document.createElement('div');
@@ -528,15 +532,16 @@ function updateLineHighlighting() {
 
 function validateLanguageFile(code){
     let langFile = config.fileSystem["Config:/lang_files"].find(file => file.name == code)
+    if(langFile == undefined) return false;
+
     let langData = langFile.data;
     let translation_map = config.fileSystem["Config:/lang_files"].find(file => file.name == "lbh").data;
     
     if(langData.length != translation_map.length) return false;
     if(langFile.properties.hidden == true) return false;
-    
 
     let identifierLine = langData[0];
-    return /\{\{\{LANGNAME_!!!_.*?\}\}\}/g.test(identifierLine);
+    return /^!LANGNAME: (.*?)$/g.test(identifierLine);
 }
 
 function sendCommand(command, args, createEditableLineAfter){
@@ -572,8 +577,7 @@ function sendCommand(command, args, createEditableLineAfter){
                 
                 for(let i = 0; i < displayCodes.length; i++){
                     let code = displayCodes[i];
-                    let langName = config.fileSystem["Config:/lang_files"].find(file => file.name == displayCodes[i]).data[0].replace("}}}", "").split("_")[2];
-
+                    let langName = config.fileSystem["Config:/lang_files"].find(file => file.name == displayCodes[i]).data[0].match(/^!LANGNAME: (.*?)$/)[1];
                     arr.push(`${displayCodes[i]} (${validateLanguageFile(code) ? langName : localize("T_invalid_lang")})`);
                 }
                 return arr.join(", ");
@@ -1680,34 +1684,44 @@ function createLilypadLine(path, linetype, filename){
     function terminalLineKeydownHandler(e){
         if(e.key == "Enter"){
             e.preventDefault();
+            let line = document.activeElement;
 
-            if(linetype == "code") createLilypadLine("", linetype, filename);
-            else if(linetype == "palette") createLilypadLine("", linetype, filename);
-            else createLilypadLine("", linetype, filename);
+            let cursorPosition = getCaretPosition(line);
+            let textAfterCursor = line.textContent.slice(cursorPosition);
+
+            line.textContent = line.textContent.slice(0, cursorPosition);
+
+            createLilypadLine("", linetype, filename);
+            let newFocus = document.activeElement;
+            newFocus.textContent = textAfterCursor;
             updateLinePrefixes(linetype);
         }
-        if(e.key == "Backspace"){
-            if(terminalLine.textContent.length == 0) {
-                let lines = document.querySelectorAll(`[data-program='lilypad-session-${config.programSession}']`);
-                let currentLineIndex = Array.from(lines).indexOf(document.activeElement);
-                if(lines.length > 1 && currentLineIndex != 0){
-                    if(currentLineIndex == 0){
-                        let nextLine = lines[currentLineIndex + 1];
-                        moveCaretToEnd(nextLine);
-                    }
 
-                    let parent = document.activeElement.parentElement;
-                    let previousLine = parent.previousElementSibling.children[1];
-                    previousLine.textContent = previousLine.textContent + "​";
-                    moveCaretToEnd(previousLine);
-                    parent.remove();
-                    updateLinePrefixes(linetype);
-                }
+        // not worky properly
+        if(e.key == "Backspace"){
+            let lines = document.querySelectorAll(`[data-program='lilypad-session-${config.programSession}']`);
+            let currentLineIndex = Array.from(lines).indexOf(document.activeElement);
+            let cursorPosition = getCaretPosition(document.activeElement);
+            
+            if(currentLineIndex > 0 && cursorPosition == 0){
+                e.preventDefault();
+
+                let currentLine = lines[currentLineIndex];
+                let previousLine = lines[currentLineIndex - 1];
+                let parent = lines[currentLineIndex].parentElement;
+
+                let previousLineLength = previousLine.textContent.length;
+                let textToAdd = currentLine.textContent;
+                previousLine.textContent += textToAdd;
+
+                moveCaretToPosition(previousLine, previousLineLength);
+                parent.remove();
+                clearInterval(highlightedLineUpdater);
+                updateLinePrefixes(linetype);
             }
         };
         if(e.key == "ArrowUp"){
             e.preventDefault();
-            // get the lines by the data-program attribute
             let lines = document.querySelectorAll(`[data-program='lilypad-session-${config.programSession}']`);
             let focusedLine = document.activeElement;
 
@@ -1715,9 +1729,11 @@ function createLilypadLine(path, linetype, filename){
             if(focusedLineIndex > 0){
                 let newLine = lines[focusedLineIndex - 1]
 
-                let caretPosition = getCaretPosition(focusedLine);
-                moveCaretToPosition(newLine, caretPosition);
+                let caretPosition = (focusedLine.textContent.trim().length === 0)
+                ? newLine.textContent.length
+                : getCaretPosition(focusedLine);
 
+                moveCaretToPosition(newLine, caretPosition);
 
                 if(newLine.getBoundingClientRect().y < terminal.getBoundingClientRect().y){
                     terminal.scrollTop = terminal.scrollTop - (terminal.getBoundingClientRect().y - newLine.getBoundingClientRect().y);
@@ -1734,7 +1750,10 @@ function createLilypadLine(path, linetype, filename){
             if(focusedLineIndex < lines.length - 1){
                 let newLine = lines[focusedLineIndex + 1];
                 
-                let caretPosition = getCaretPosition(focusedLine);
+                let caretPosition = (focusedLine.textContent.trim().length === 0)
+                    ? newLine.textContent.length
+                    : getCaretPosition(focusedLine);
+
                 moveCaretToPosition(newLine, caretPosition);
 
                 if(newLine.getBoundingClientRect().bottom > terminal.getBoundingClientRect().bottom) {
@@ -1752,7 +1771,8 @@ function createLilypadLine(path, linetype, filename){
                 properties: {
                     read: true,
                     write: true,
-                    hidden: false
+                    hidden: false,
+                    transparent: false,
                 },
                 data: []
             };
@@ -1817,6 +1837,7 @@ createColorTestBar();
 sendCommand('[[BULLFROG]]autoloadstate', [], false);
 sendCommand('[[BULLFROG]]validatelanguage', [], false);
 
+// literally all of this is just for the animation
 let randomNumbers = [
     Math.floor(Math.random() * 60) + 20,
     Math.floor(Math.random() * 60) + 20,
@@ -1855,14 +1876,10 @@ if(!SKIP_ANIMATION) {
             innerBar.animate(...getTimings(2)).onfinish = () => {
                 innerBar.animate(...getTimings(3)).onfinish = () => {
                     innerBar.animate(...getTimings(4)).onfinish = () => {
-                        let loadForever = Math.random() < 0.001;//0.001;
-                        if(loadForever == true) {
-                            console.error("whoa..... this is rare lol! uhhh email froggyos.royal.screw.up@gmail.com if u get this")
-                        }
-                        if(!animSkipped) setTimeout(() => {
+                        setTimeout(() => {
                             document.getElementById("blackout").remove()
                             sendCommand('[[BULLFROG]]greeting', []);
-                        }, loadForever ? 1000000000000000 : 100)
+                        }, 100)
                     }
                 }
             }

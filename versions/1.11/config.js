@@ -843,10 +843,10 @@ const config = {
             { name: "validateLanguageOnStartup", properties: {transparent: false, read: true, write: true, hidden: false}, data: ["true"] }
         ],
         "Config:/lang_files": [
-            { name: "lbh", properties: {transparent: true, read: true, write: false, hidden: false}, data: ["{{{LANGNAME_!!!_language build helper}}}"] },
-            { name: "eng", properties: {transparent: false, read: true, write: false, hidden: false}, data: ["{{{LANGNAME_!!!_English}}}"] },
-            { name: "nmt", properties: {transparent: false, read: true, write: false, hidden: false}, data: ["{{{LANGNAME_!!!_ngimëte}}}"] },
-            { name: "jpn", properties: {transparent: false, read: true, write: false, hidden: false}, data: ["{{{LANGNAME_!!!_Japanese}}}"] },
+            { name: "lbh", properties: {transparent: true, read: true, write: false, hidden: false}, data: ["!LANGNAME: language build helper"] },
+            { name: "eng", properties: {transparent: false, read: true, write: true, hidden: false}, data: ["!LANGNAME: English"] },
+            { name: "nmt", properties: {transparent: false, read: true, write: true, hidden: false}, data: ["!LANGNAME: ngimëte"] },
+            { name: "jpn", properties: {transparent: false, read: true, write: true, hidden: false}, data: ["!LANGNAME: Japanese"] },
         ],             
         "C:": [],   
         "C:/Home": [

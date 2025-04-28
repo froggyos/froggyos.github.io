@@ -1192,7 +1192,6 @@ function processSingleLine(input) {
             }
         } break;
 
-        // change so you can set variable indexes !!!!!!!!!!!!!!!!!!!!!!!!!!!
         case "set": {
             // set(any # whitespace)<variable_name>(any # whitespace)=(any # whitespace)
             if(!input.match(/^set\s+\w+\s+\=\s+/g)) {
