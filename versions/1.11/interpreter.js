@@ -2068,21 +2068,24 @@ function interpreter(input, fileArguments, programName) {
         if(dataError == 1){
             createTerminalLine(`Program data is malformed. Some data cannot be loaded`, config.alertText, {translate: false});
         }
-
+        
+        realtime = true;
         if(realtime) {
-            if(FroggyscriptMemory.CLOCK_INTERVAL < FroggyscriptMemory.lines.length) {
-                let line = FroggyscriptMemory.lines[FroggyscriptMemory.CLOCK_INTERVAL]
-                interpretSingleLine(clock, line).then((t) => {
-                    FroggyscriptMemory.tokens.push(t);
-                })
-                FroggyscriptMemory.CLOCK_INTERVAL++;
-                FroggyscriptMemory.CLOCK_ITERATIONS++;
-                
-                if(window.debugWindow){
-                    window.debugWindow.postMessage({ FroggyscriptMemory }, '*');
+            if(FroggyscriptMemory.CLOCK_PAUSED == false){
+                if(FroggyscriptMemory.CLOCK_INTERVAL < FroggyscriptMemory.lines.length) {
+                    let line = FroggyscriptMemory.lines[FroggyscriptMemory.CLOCK_INTERVAL]
+                    interpretSingleLine(clock, line).then((t) => {
+                        FroggyscriptMemory.tokens.push(t);
+                    })
+                    FroggyscriptMemory.CLOCK_INTERVAL++;
+                    FroggyscriptMemory.CLOCK_ITERATIONS++;
+                    
+                    if(window.debugWindow){
+                        window.debugWindow.postMessage({ FroggyscriptMemory }, '*');
+                    }
+                } else {
+                    resetTerminalForUse(clock);
                 }
-            } else {
-                resetTerminalForUse(clock);
             }
 
         } else if(FroggyscriptMemory.CLOCK_PAUSED == false && FroggyscriptMemory.CLOCK_STEP == false) {
