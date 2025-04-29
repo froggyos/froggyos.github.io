@@ -403,7 +403,12 @@ function typeify(value) {
                 typeObj = evaluated;
                 typeObj.value = `String literal [${i}]: ${typeObj.value}`
             } else {
-                typeObj.value = typeObj.value.replaceAll(literal.literal, evaluated)
+                let replacer = typeify(literal.symbol);
+                if(replacer.type == "Array") {
+                    replacer.type = "String";
+                    replacer.value = "{{Array}}"
+                }
+                typeObj.value = typeObj.value.replaceAll(literal.literal, replacer.value)
             }
         })
 
@@ -744,7 +749,6 @@ function processSingleLine(input) {
             if(typed.type == "Error"){
                 token = typed;
             } else {
-                let value = typed.value;
                 token = { ...token, key: key, value: typed };
             }
         } break;
@@ -853,23 +857,28 @@ function processSingleLine(input) {
             }
             if(values.length == 0){
                 token = new ScriptError("SyntaxError", `[arr] must be followed by a value`);
-            } else {
-                let typedValues = [];
-
-                values.forEach(value => typedValues.push(typeify(value)));
-
-                // if any index has a type of Error
-                if(typedValues.some(value => value.type == "Error")){
-                    // find the index of the last Error
-                    let index = typedValues.lastIndexOf(typedValues.find(value => value.type == "Error"));
-                    token = typedValues[index]
-
-                    token.value = `Index [${index}]: ${token.value}`
-
-                } else {
-                    token = { ...token, identifier: name, type: "Array", value: typedValues };
-                }
+                break;
             }
+            if(values.length == 1 && values[0] == "_"){
+                token = { ...token, identifier: name, type: "Array", value: [] };
+                break;
+            }
+            let typedValues = [];
+
+            values.forEach(value => typedValues.push(typeify(value)));
+
+            // if any index has a type of Error
+            if(typedValues.some(value => value.type == "Error")){
+                // find the index of the last Error
+                let index = typedValues.lastIndexOf(typedValues.find(value => value.type == "Error"));
+                token = typedValues[index]
+
+                token.value = `Index [${index}]: ${token.value}`
+
+            } else {
+                token = { ...token, identifier: name, type: "Array", value: typedValues };
+            }
+            
         } break;
 
         case "stringify": {
@@ -1428,7 +1437,8 @@ function methodParser(startToken){
             } break;
 
             default: {
-                token = new ScriptError("SyntaxError", `[${methodName}] is not a valid method`);
+                if(methodName.trim() == "") token = new ScriptError("SyntaxError", `Missing method name`);
+                else token = new ScriptError("SyntaxError", `[${methodName}] is not a valid method`);
             } break;
         }
     }
@@ -1492,7 +1502,7 @@ async function interpretSingleLine(interval, single_input, error_trace, block_er
                     dataArray.push(`KEY ${key} TYPE ${valueType} START`)
                     for(let i = 0; i < value.length; i++){
                         let index = value[i];
-                        dataArray.push(`INDEX TYPE ${index.type} VALUE ${index.value}`)
+                        dataArray.push(`TYPE ${index.type} VALUE ${index.value}`)
                     }
                     dataArray.push(`KEY ${key} TYPE ${valueType} END`)
                 } else {
@@ -1679,15 +1689,15 @@ async function interpretSingleLine(interval, single_input, error_trace, block_er
                 if(expectedType === "Number") inputValue = parseFloat(inputValue);
 
                 if(inputValue == undefined){
-                    token = new ScriptError("TypeError", `Missing file argument [${fileArgumentCount}] (expecting type ${expectedType})`);
+                    token = new ScriptError("TypeError", `Missing file argument [${FroggyscriptMemory.fileArgumentCount}] (expecting type ${expectedType})`);
 
                 } else if(FroggyscriptMemory.variables[token.variableName] != undefined) {
                     token = new ScriptError("ReferenceError", `Variable [${token.variableName}] already exists, cannot override`);
 
                 } else if(isNaN(inputValue) && expectedType === "Number") {
-                    token = new ScriptError("TypeError", `File argument [${fileArgumentCount}] must be of type [${expectedType}]`);
+                    token = new ScriptError("TypeError", `File argument [${FroggyscriptMemory.fileArgumentCount}] must be of type [${expectedType}]`);
                 } else {
-                    writeVariable(token.variableName, token.variableType, inputValue, false);
+                    writeVariable(`Filearg_${token.variableName}`, token.variableType, inputValue, false);
 
                     FroggyscriptMemory.fileArgumentCount++;
                 }
@@ -2049,7 +2059,7 @@ function interpreter(input, fileArguments, programName) {
                         }
                     }
 
-                    value = "$"+value.join(",")
+                    value = "$"+value.join(",")+"$"
                     FroggyscriptMemory.savedData[key] = {type, value}
                 }
             }

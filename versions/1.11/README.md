@@ -4,7 +4,7 @@
 * programs can *only* be written in designated directories
 * you can press the `DEL` key to escape programs (ex. an infinite loop)
 * press `SHIFT + ESC` to exit lilypad (text editor) without saving
-* if a FroggyScript program exists with an error, the command `[[BULLFROG]]gotoprogramline [program] [line_with_error]` will be put into your command history
+* if a FroggyScript program exists with an error, the command `[[BULLFROG]]gotoprogramline [program] [line nwith error]` will be put into your command history
 
 ## Palette Conventions
 There are no set colors that you must have, but these are the color conventions.
@@ -126,7 +126,7 @@ If you edit the `Settings:` drive directly, some settings won't apply until you 
 * realtime mode is not real time
 
 # FroggyScript Documentation
-* `[argument="default_value"]` denotes a default argument value
+* `[argument=default_value]` denotes a default argument value
 * `:[character]` denotes a specific type input
     * `T` - placeholder; used in documentation **only** to show that the type should be specified
     * `*` - any type
@@ -173,7 +173,7 @@ Undefined:U - undefined
 ### Types
 #### String
 ```
-str [variable_name] = [value]
+str [variable name] = [value]
 
 str test = 'single'
 str test = "double"
@@ -185,26 +185,28 @@ str output = "i am $|age| years old"
 ```
 #### Number
 ```
-num [variable_name] = [value]
+num [variable name] = [value]
 
 num i = 9
 ```
 #### Boolean
 ```
 -- boolean
-bln [variable_name] = [value]
+bln [variable name] = [value]
 
 bln test = true
 ```
 #### Array
 * Indexing starts at `0`.
+* To create an empty array, do `arr [variable_name] = _`.
 ##### Named
 ```
-arr [variable_name] = [value], [value], ...
+arr [variable name] = [value], [value], ...
 
 arr test1 = 1, 2, 3, 4, 5
 arr test2 = "a", "b", "c", "d", "e"
 arr test3 = "a", 1, true, 2.5, "b"
+-- surrounding with $ is optional when using the arr keyword
 ```
 ##### Unnamed
 * surrounding strings with `$` will force a type of `Array`.
@@ -223,7 +225,7 @@ out $variable, 'two', 'three'$>index(0)
 ### Edit a Variable
 You may only edit a variable if the value is of the same type.
 ```
-set [variable_name] = [value]
+set [variable name] = [value]
 
 num i = 5
 str test = "text"
@@ -237,7 +239,7 @@ set i = test
 
 ### Delete a Variable
 ```
-free [variable_name]
+free [variable name]
 
 free test
 ```
@@ -284,28 +286,36 @@ outf {t=c01, tr=4-48 | b=c04, br=57-91} "from the char 4 to char 48, the text wi
 Errors do not end the program early, follow with the `endprog` keyword to do so.
 #### Basic Error
 ```
-error [error_message]
+error [error message]
 
 error "this is an error message"
 
+-- test program
+error "this is an error message"
+str test = "hello world!"
+out test
+endprog
+
 -- when ran
-C:/Home> st [program_name]
+C:/Home> st [program name]
 !!ERROR!! - this is an error message
+hello world!
+C:/Home>
 ```
 ## Input
 ### Define a File Argument
-File arguments are passed in the terminal when running the program. The `filearg` keyword will create an **immutable** variable with the provided keyword and cannot override other variable values, even if that variable is mutable.
+File arguments are passed in the terminal when running the program. The `filearg` keyword will create an **immutable** variable in the format of `filearg_[variable name]` and cannot override other variable values, even if that variable is mutable. The order they are defined will determine the order that they are passed in the terminal.
 ```
-filearg [variable_name] [type]
+filearg [variable name] [type]
 
 -- default usage
 filearg name String
 filearg age Number
-out "hello I am $|name| and I am $|age| years old"
+out "hello I am $|Filearg_name| and I am $|Filearg_age| years old"
 endprog
 
 -- when running the program
-C:/Home> st [program_name] [arg1] [arg2]
+C:/Home> st [program name] [arg1] [arg2]
 C:/Home> st about_froggy froggy 7
 > hello I am froggy and I am 7 years old
 ```
@@ -324,7 +334,7 @@ out 'Hello $|name|!'
 endprog
 
 -- in the terminal
-C:/Home> st [program_name]
+C:/Home> st [program name]
 > What is your name?
 ? Froggy
 > Hello Froggy!
@@ -332,13 +342,13 @@ C:/Home> st [program_name]
 -- custom prefix
 str name = ""
 out "What is your name?"
-ask name "custom"
+ask name "custom prefix"
 out 'Hello $|name|!'
 
 -- in the terminal
-C:/Home> st [program_name]
+C:/Home> st [program name]
 > What is your name?
-custom Froggy
+custom prefix Froggy
 > Hello Froggy!
 engprog
 
@@ -350,7 +360,7 @@ out 'You are $|age| years old.'
 engprog
 
 -- in the terminal
-C:/Home> st [program_name]
+C:/Home> st [program name]
 > How old are you?
 ? Froggy
 -- Throws a TypeError because [age] is type Number while the input for [ask] was type String
@@ -368,7 +378,7 @@ prompt output 0 $'hello', "world!", "I am froggy!"$
 ### Create a Function
 #### No Arguments
 ```
-func [func_name]
+func [func name]
     [code]
 endfunc
 
@@ -378,7 +388,7 @@ endfunc
 ```
 #### Arguments
 ```
-func [func_name] [arg1:T] [arg2:T] ... [argN:T]
+func [func name] [arg1:T] [arg2:T] ... [argN:T]
     [code]
 endfunc
 
@@ -398,13 +408,13 @@ num i = @name
 ### Call a Function
 #### No Arguments
 ```
-@[func_name]
+@[func name]
 
 @name
 ```
 #### Arguments
 ```
-@[func_name]([arg1];[arg2];...;[argN])
+@[func name]([arg1];[arg2];...;[argN])
 
 @name("hello";"world!")
 ```
@@ -462,7 +472,7 @@ endloop
 Quickloops are different from standard loops in that the entire loop is executed *almost instantly*, while standard loops are executed one line at a time.
 
 ```
-quickloop [loop_iterations]
+quickloop [loop iterations]
     [code]
 endquickloop
 

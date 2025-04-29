@@ -858,11 +858,16 @@ const config = {
             { name: "cli", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["str cli = 'this program is hardcoded into froggyOS'", "endprog"] },
             { name: "lilypad", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["str lilypad = 'this program is hardcoded into froggyOS'", "endprog"] },
             { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
-                "arr meow = 4,48,32,77,1",
-                "arr meowTwo = 4,22228,332,77,1",
-                //"str meow = 'waaa'",
-                "savedata meow!! meow",
-                "savedata meow2!! meowTwo",
+                'filearg name String',
+                'filearg age Number',
+                'out "hello I am $|Filearg_name| and I am $|Filearg_age| years old"',
+                // "arr meow = _",
+                // "loaddata meow meow!",
+                // "out '$|meow>join| meow'",
+                // "arr meowTwo = 4,22228,332,77,1",
+                // //"str meow = 'waaa'",
+                // "savedata meow!! meow",
+                // "savedata meow2!! meowTwo",
                 "endprog"
             ] },
             // { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
@@ -951,7 +956,14 @@ const config = {
             ] },
         ],
         "D:/Program-Data": [
-            // { name: "test", properties: {transparent: false, read: true, write: true, hidden: false}, data: [] },
+            { name: "test", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
+                "KEY meow! TYPE Array START",
+                "TYPE Number VALUE 1",
+                "TYPE Number VALUE 2",
+                "TYPE Number VALUE 3",
+                "TYPE Number VALUE 4",
+                "KEY meow! TYPE Array END",
+            ] },
         ],
         "D:/Palettes": [
             // standard and revised palettes:  https://int10h.org/blog/2022/06/ibm-5153-color-true-cga-palette/
