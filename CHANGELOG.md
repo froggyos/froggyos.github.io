@@ -140,3 +140,8 @@ idk
     - whole new debug window
 ~ fixed lang `jpn`'s messed up font
 ```
+
+# 1.12
+```
++ added imports to FroggyScript
+```
