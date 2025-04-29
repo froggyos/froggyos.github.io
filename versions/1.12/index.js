@@ -1697,13 +1697,18 @@ function createLilypadLine(path, linetype, filename){
             updateLinePrefixes(linetype);
         }
 
-        // not worky properly
         if(e.key == "Backspace"){
             let lines = document.querySelectorAll(`[data-program='lilypad-session-${config.programSession}']`);
             let currentLineIndex = Array.from(lines).indexOf(document.activeElement);
             let cursorPosition = getCaretPosition(document.activeElement);
-            
-            if(currentLineIndex > 0 && cursorPosition == 0){
+
+            let selection = window.getSelection();
+
+            if(selection.rangeCount > 0 && selection.getRangeAt(0).startOffset != selection.getRangeAt(0).endOffset){
+                e.preventDefault();
+                let range = selection.getRangeAt(0);
+                range.deleteContents();
+            } else if(currentLineIndex > 0 && cursorPosition == 0){
                 e.preventDefault();
 
                 let currentLine = lines[currentLineIndex];
