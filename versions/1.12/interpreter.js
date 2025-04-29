@@ -8,6 +8,12 @@ const FroggyscriptMemory = {
     CLOCK_STEP: false,
     lines: [],
     tokens: [],
+    imports: [],
+    importData: {
+        graphics: {
+            renderStack: [],
+        }
+    },
     temporaryVariables: {},
     CLOCK_CYCLE_LENGTH: 1,
 };
@@ -65,6 +71,8 @@ const defaultVariables = {
         mutable: false,
     }
 }
+
+const validImports = ["graphics"]
 
 let frozenMemory = () => structuredClone(FroggyscriptMemory);
 
@@ -376,9 +384,10 @@ function typeify(value) {
 
         FroggyscriptMemory.CLOCK_PAUSED = true;
 
-        // runFunctionBody(funcBody, typeObj).then((result) => {
-        //     typeObj.value = result.value;
-        // });
+        runFunctionBody(funcBody, typeObj).then((result) => {
+            typeObj.type = result.type;
+            typeObj.value = result.value;
+        });
 
         typeObj.body = funcBody,
         typeObj.origin = "Function";
@@ -404,10 +413,7 @@ function typeify(value) {
                 typeObj.value = `String literal [${i}]: ${typeObj.value}`
             } else {
                 let replacer = typeify(literal.symbol);
-                if(replacer.type == "Array") {
-                    replacer.type = "String";
-                    replacer.value = "{{Array}}"
-                }
+                replacer = stringify(replacer);
                 typeObj.value = typeObj.value.replaceAll(literal.literal, replacer.value)
             }
         })
@@ -489,7 +495,7 @@ function typeify(value) {
 
         typeObj.origin = "Boolean";
 
-    } else if(value.match(/^[a-zA-Z_]+$/g)) {
+    } else if(value.match(/^[a-zA-Z][a-zA-Z0-9]*$/)) {
         let name = value;
 
         let variableValue = getVariable(name);
@@ -661,7 +667,71 @@ function processSingleLine(input) {
         }
     }
 
-    switch (keyword) {        
+    if(token.keyword.startsWith("#")) {
+        // get rid of the #
+        let oneLiner = typeify(input.replace(/^#/, "").trim());
+        if(oneLiner.type == "Error") return oneLiner;
+        else {
+            oneLiner.keyword = "SKIP_LINE";
+            return oneLiner;
+        }
+    }
+
+    switch (keyword) {
+        case "rect": {
+            let varName = input.split(" ")[1].trim();
+            let value = typeify(input.split(" ").slice(3).join(" "));
+
+            if(varName == undefined) {
+                token = new ScriptError("SyntaxError", `[rect] must be followed by a variable name`);
+                break;
+            }
+            if(getVariable(varName) != undefined) {
+                token = new ScriptError("ReferenceError", `Variable [${varName}] already exists, cannot override`);
+                break;
+            }
+            if(value.type == "Error") {
+                token = value;
+                break;
+            } else if(value.type != "Array") {
+                token = new ScriptError("TypeError", `[rect] must be followed by a value of type Array, found type ${value.type}`);
+                break;
+            } else if(value.value.length != 4) {
+                token = new ScriptError("SyntaxError", `[rect] must be followed by 4 values`);
+                break;
+            } else if(value.value.some(v => v.type != "Number")) {
+                token = new ScriptError("TypeError", `[rect] all values must be of type Number`);
+                break;
+            } else {
+                let x = value.value[0].value;
+                let y = value.value[1].value;
+                let width = value.value[2].value;
+                let height = value.value[3].value;
+                token = { ...token, identifier: varName, type: "Rect", struct: {
+                    x, y, width, height, fill: "c15", outline: "c00", identifier: varName
+                } };
+            }
+        } break;
+
+        case "import": {
+            let moduleToken = typeify(input.split(" ")[1].trim());
+            let moduleName = moduleToken.value;
+            if(moduleToken.type == "Error") {   
+                token = moduleToken;
+                break;
+            }
+            if(moduleToken.type != "String") {
+                token = new ScriptError("TypeError", `[import] module name must be type String, found type ${moduleToken.type}`);
+                break;
+            }
+            if(!validImports.includes(moduleName)) {
+                token = new ScriptError("ImportError", `Module [${moduleName}] is not a valid import`);
+                break;
+            }
+
+            token = { ...token, moduleName: moduleName };
+        } break;
+
         case "func": {
             let functionName = input.split(" ")[1].trim();
             let functionArguments = input.split(" ").slice(2)
@@ -1248,19 +1318,12 @@ function processSingleLine(input) {
         }
     }
 
-    if(token.type == "Error") return token;
-
-    return token;
-}
-
-// remove this function eventually
-function typeErrorCheckers(token) {
-    switch(token.keyword){
-        case "cbln":
-        case "bln": {
-            if(token.type != "Boolean") token = new ScriptError("TypeError", `[${token.keyword}] declaration can only be assigned type Boolean, found type ${token.type}`);
-        } break;
+    if(FroggyscriptMemory.imports.includes("graphics")){
+        switch(keyword) {
+        }
     }
+
+    if(token.type == "Error") return token;
 
     return token;
 }
@@ -1372,15 +1435,7 @@ function methodParser(startToken){
             } break;
 
             case "stringify": {
-                if(token.type == "Array") {
-                    token.value = "{{Array}}";
-                } else if(token.type == "Number") {
-                    token.value = token.value.toString();
-                } else {
-                    token = new ScriptError("TypeError", `[>stringify()] expects type Number or Array, found type ${token.type}`);
-                    break;
-                }	
-                token.type = "String";
+                token = stringify(token)
             } break;
 
             case "append": {
@@ -1437,7 +1492,22 @@ function methodParser(startToken){
             } break;
 
             default: {
-                if(methodName.trim() == "") token = new ScriptError("SyntaxError", `Missing method name`);
+                if(FroggyscriptMemory.imports.includes("graphics")){
+                    switch(methodName){
+                        case "stack": {
+                            let identifier = token.value.identifier
+                            if(FroggyscriptMemory.importData.graphics.renderStack.includes(identifier)){
+                                token = new ScriptError("ReferenceError", `Graphics [${identifier}] already on stack`);
+                                break;
+                            }
+                            FroggyscriptMemory.importData.graphics.renderStack.push(token.value.identifier);
+                        } break;
+
+                        default: {
+                            token = new ScriptError("SyntaxError", `[>${methodName}] is not a valid method`);
+                        }
+                    }
+                } else if(methodName.trim() == "") token = new ScriptError("SyntaxError", `Missing method name`);
                 else token = new ScriptError("SyntaxError", `[${methodName}] is not a valid method`);
             } break;
         }
@@ -1446,11 +1516,21 @@ function methodParser(startToken){
     return token;
 }
 
+function stringify(token){
+    if(token.type == "Array") token.value = "{{Array}"
+    else if(token.type == "Rect") token.value = `{{Rect}}`;
+    else if(token.type == "Number") token.value = token.value.toString();
+    token.type = "String";
+    return token;
+}
+
 resetMemState();
 
 setInterval(() => {
     FroggyscriptMemory.variables.Time_OSRuntime.value = Date.now() - OS_RUNTIME_START
 }, 1);
+
+let hasImport = (x) => FroggyscriptMemory.imports.includes(x);
 
 async function interpretSingleLine(interval, single_input, error_trace, block_error) {
     let line = single_input;
@@ -1474,6 +1554,10 @@ async function interpretSingleLine(interval, single_input, error_trace, block_er
         }
         // process tokens here =======================================================
         switch(token.keyword) {
+            case "import": {
+                if(!FroggyscriptMemory.imports.includes(token.moduleName)) FroggyscriptMemory.imports.push(token.moduleName);
+            } break;
+
             case "loaddata": {
                 let key = token.key
                 let variable = token.variableName;
@@ -1911,10 +1995,7 @@ async function interpretSingleLine(interval, single_input, error_trace, block_er
 
             case "error":
             case "out": {
-                if(token.type == "Array"){
-                    token.type = "String";
-                    token.value = "{{Array}}";
-                }
+                token = stringify(token);
                 if(token.keyword == "error") singleLineError(token.value);
                 else output(token);
             } break;
@@ -1935,8 +2016,66 @@ async function interpretSingleLine(interval, single_input, error_trace, block_er
             case "else":
             case "endif": { } break;
 
-            default: {
-                token = new ScriptError("InterpreterError", `Unknown keyword [${token.keyword}]`);
+            default: { 
+                if(hasImport("graphics")){
+                    switch(token.keyword) {
+                        case "rect": {
+                            writeVariable(token.identifier, "Rect", token.struct, true);
+                        } break
+                        
+                        case "framerender": {
+                            let renderer = Array.from({ length: 57 }, () => new Array(78).fill("c15"));
+
+                            for (let i = 0; i < FroggyscriptMemory.importData.graphics.renderStack.length; i++) {
+                                let rectData = getVariable(FroggyscriptMemory.importData.graphics.renderStack[i]).value;
+
+                                let x = rectData.x;
+                                let y = rectData.y;
+                                let w = rectData.width;
+                                let h = rectData.height;
+                                let fill = rectData.fill;
+                                let outline = rectData.outline;
+
+                                for (let row = y; row < y + h; row++) {
+                                    for (let col = x; col < x + w; col++) {
+                                        if (row >= 0 && row < 57 && col >= 0 && col < 78) {
+                                            let isOutline =
+                                                row === y || row === y + h - 1 ||
+                                                col === x || col === x + w - 1;
+                                            renderer[row][col] = isOutline ? outline : fill;
+                                        }
+                                    }
+                                }
+                            }
+
+                            terminal.innerHTML = ""; // clear the terminal
+                            for(let i = 0; i < renderer.length; i++){
+                                let rowHtml = '';
+                                for(let j = 0; j < renderer[i].length; j++){
+                                    let color = renderer[i][j];
+                                    rowHtml += `<span id="program-${config.programSession}-${i}-${j}" class="terminal-char" style="background-color: var(--${color}); color: var(--${color})">#</span>`;
+                                }
+                                let lineContainer = document.createElement('div');
+                                let terminalPath = document.createElement('span');
+                                let terminalLine = document.createElement('div');
+                            
+                                lineContainer.classList.add('line-container');
+                            
+                                terminalPath.innerHTML = "";
+                                terminalLine.innerHTML = rowHtml;
+                                
+                                lineContainer.appendChild(terminalPath);
+                                lineContainer.appendChild(terminalLine);
+                                terminal.appendChild(lineContainer);
+                                terminal.scrollTop = terminal.scrollHeight;
+                            }
+                        } break;
+
+                        default: {
+                            token = new ScriptError("InterpreterError", `Unknown keyword [${token.keyword}]`);
+                        }
+                    }
+                } else token = new ScriptError("InterpreterError", `Unknown keyword [${token.keyword}]`);
             } break;
         }
 

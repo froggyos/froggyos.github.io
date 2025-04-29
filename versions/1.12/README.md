@@ -124,6 +124,7 @@ If you edit the `Settings:` drive directly, some settings won't apply until you 
 ## Bugs
 * you cannot set values to array indexes
 * realtime mode is not real time
+* `>append` mutates the original variable when it shouldnt
 
 # FroggyScript Documentation
 * `[argument=default_value]` denotes a default argument value
@@ -407,6 +408,7 @@ num i = @name
 ```
 ### Call a Function
 #### No Arguments
+Currently they do require the parenthesis but i wanna make it not
 ```
 @[func name]
 
@@ -564,6 +566,13 @@ arr numbers = 1, 2, 3
 out letters>append(numbers)
 -- "a", "b", "c", 1, 2, 3
 ```
+## Oneliners
+To use a method without having to be in an argument or variable, prefix the line with `#`.
+```
+arr test = "a", "b", "c"
+#test>append("d", "e")
+-- "a", "b", "c", "d", "e"
+```
 ## Program Data
 ### Saving Data
 Saves the contents of `[variable]` to the corresponding file in the `D:/Program-Data` file. The key cannot contain spaces.
@@ -576,3 +585,14 @@ From the corresponding `D:/Program-Data` file, loads the contents of entry of `[
 ```
 loaddata [variable] [key]
 ```
+## Imports
+Imports are a way to extend the functionality of FroggyScript. They are not required, but they are recommended for more complex programs.
+
+### Import a module
+```
+import [module name:S]
+
+import "graphics"
+```
+### Module list
+* [graphics](./graphics-docs.md)
