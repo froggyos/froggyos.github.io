@@ -138,7 +138,7 @@ idk
 ~ changed FroggyScript method syntax
 ~ fixed debugging
     - whole new debug window
-~ fixed lang `jpn`'s messed up font
+~ fixed japanese language messed up font
 ```
 
 # 1.12
