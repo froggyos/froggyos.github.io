@@ -138,6 +138,5 @@ idk
 ~ changed FroggyScript method syntax
 ~ fixed debugging
     - whole new debug window
-    - bug: MAJOR memory leaks
 ~ fixed lang `jpn`'s messed up font
 ```
