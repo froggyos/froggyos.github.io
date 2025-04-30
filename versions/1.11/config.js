@@ -955,16 +955,7 @@ const config = {
                 "ft w. mn/d/y H:m:s a",
             ] },
         ],
-        "D:/Program-Data": [
-            { name: "test", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
-                "KEY meow! TYPE Array START",
-                "TYPE Number VALUE 1",
-                "TYPE Number VALUE 2",
-                "TYPE Number VALUE 3",
-                "TYPE Number VALUE 4",
-                "KEY meow! TYPE Array END",
-            ] },
-        ],
+        "D:/Program-Data": [],
         "D:/Palettes": [
             // standard and revised palettes:  https://int10h.org/blog/2022/06/ibm-5153-color-true-cga-palette/
             { name: "standard", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
