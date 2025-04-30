@@ -2069,7 +2069,6 @@ function interpreter(input, fileArguments, programName) {
             createTerminalLine(`Program data is malformed. Some data cannot be loaded`, config.alertText, {translate: false});
         }
         
-        realtime = true;
         if(realtime) {
             if(FroggyscriptMemory.CLOCK_PAUSED == false){
                 if(FroggyscriptMemory.CLOCK_INTERVAL < FroggyscriptMemory.lines.length) {
