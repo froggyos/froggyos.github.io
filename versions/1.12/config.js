@@ -862,11 +862,15 @@ const config = {
                 // 'filearg age Number',
                 // 'out "hello I am $|Filearg_name| and I am $|Filearg_age| years old"',
                 "import 'graphics'",
-                "rect rectangle1 = $0, 0, 40, 40$",
-                "rect rectangle2 = $20, 0, 40, 40$",
-                "#rectangle1>stack",
-                "#rectangle2>stack",
-                "framerender",
+                "rect rectangle1 = $0, 0, 10, 10$",
+                "rect rectangle2 = $5, 5, 10, 10$",
+                "rect rectangle3 = $7, 8, 10, 10$",
+                "createscreen",
+                "#$0, 0, 10, 10$>toRect>render",
+                "#rectangle2>render",
+                "#rectangle1>clear",
+                "#rectangle3>render",
+                "#rectangle2>clear",
                 // "arr meow = _",
                 // "loaddata meow meow!",
                 // "out '$|meow>join| meow'",
@@ -874,6 +878,7 @@ const config = {
                 // //"str meow = 'waaa'",
                 // "savedata meow!! meow",
                 // "savedata meow2!! meowTwo",
+                "wait 10000000000000",
                 "endprog"
             ] },
             // { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
@@ -961,16 +966,7 @@ const config = {
                 "ft w. mn/d/y H:m:s a",
             ] },
         ],
-        "D:/Program-Data": [
-            { name: "test", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
-                "KEY meow! TYPE Array START",
-                "TYPE Number VALUE 1",
-                "TYPE Number VALUE 2",
-                "TYPE Number VALUE 3",
-                "TYPE Number VALUE 4",
-                "KEY meow! TYPE Array END",
-            ] },
-        ],
+        "D:/Program-Data": [],
         "D:/Palettes": [
             // standard and revised palettes:  https://int10h.org/blog/2022/06/ibm-5153-color-true-cga-palette/
             { name: "standard", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
