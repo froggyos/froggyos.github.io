@@ -16,6 +16,11 @@ Creates a variable of type Pixel.
 ```
 pxl [name] = $[x], [y]$
 ```
+## text
+Creates a variable of type Text. `x` and `y` is where the first character of the text will be drawn.
+```
+text [name] = $[x], [y], [text]$
+```
 # Rect
 ## methods
 ### render
@@ -65,6 +70,4 @@ pxl pixel = $0, 0$
 ## setter
 * `>color` - color of the pixel
 
-```
-to implement:
-```
+# Text

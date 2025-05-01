@@ -687,6 +687,63 @@ function processSingleLine(input) {
     }
 
     switch (keyword) {
+        // this shit is s ofucking bad
+        // add >x, >y, >color, >width methods
+        // ^ & corresponding getters
+        // would have to make it rerender for each method
+        // use ABSTRACTION!!! dont copy paste the code thats dumb
+        case "text": {
+            let varName = input.split(" ")[1].trim();
+            let value = typeify(input.split(" ").slice(3).join(" "));
+
+            if(varName == undefined) {
+                token = new ScriptError("SyntaxError", `[text] must be followed by a variable name`);
+                break;
+            }
+            if(getVariable(varName) != undefined) {
+                token = new ScriptError("ReferenceError", `Variable [${varName}] already exists, cannot override`);
+                break;
+            }
+            if(value.type == "Error") {
+                token = value;
+                break;
+            }
+            if(value.type != "Array") {
+                token = new ScriptError("TypeError", `[text] must be followed by a value of type Array, found type ${value.type}`);
+                break;
+            }
+            if(value.value.length != 3) {
+                token = new ScriptError("SyntaxError", `[text] must be followed by 3 values`);
+                break;
+            }
+            if(value.value[0].type != "Number"){
+                token = new ScriptError("TypeError", `[text] value 1 must be of type Number, found type ${value.value[0].type}`);
+                break;
+            }
+            if(value.value[1].type != "Number"){
+                token = new ScriptError("TypeError", `[text] value 2 must be of type Number, found type ${value.value[1].type}`);
+                break;
+            }
+            if(value.value[2].type != "String"){
+                token = new ScriptError("TypeError", `[text] value 3 must be of type String, found type ${value.value[2].type}`);
+                break;
+            }
+
+            let x = value.value[0].value;
+            let y = value.value[1].value;
+            let text = value.value[2].value;
+            
+            token = { ...token, type: "Text", identifier: varName, value: {
+                x, y, text,
+                color: "c00",
+                identifier: varName,
+                width: FroggyscriptMemory.importsData.graphics.screenData.width - 1,
+                rendered: false,
+                wordWrap: true,
+            } };
+            
+        } break;
+
         case "createscreen": {
             if(input.split(" ").length != 3) {
                 token = new ScriptError("SyntaxError", `[createscreen] must be followed by x and y length`);
@@ -1432,48 +1489,53 @@ function processSingleLine(input) {
 
 function setPixelColor(pixel, color) {
     pixel.style.backgroundColor = `var(--${color})`;
+}
+
+function setPixelTextColor(pixel, color) {
     pixel.style.color = `var(--${color})`;
 }
 
-function clearAllSquares() {
+function clearScreen() {
     FroggyscriptMemory.importsData.graphics.renderOrder.forEach(identifier => {
-        let rect = FroggyscriptMemory.variables[identifier].value;
-        if(rect == undefined) return;
-        let i_x = rect.x;
-        let i_y = rect.y;
-        let i_width = rect.width;
-        let i_height = rect.height;
-        let i_fill = rect.fill;
-        let i_stroke = rect.stroke;
-        for(let i = i_y; i <= i_y + i_height; i++){
-            for(let j = i_x; j <= i_x + i_width; j++){
-                let pixel = document.getElementById(`screen-${config.programSession}-${i}-${j}`);
-                if(pixel == null) continue;
-                setPixelColor(pixel, "c15");
+        let variable = FroggyscriptMemory.variables[identifier].value;
+        if(variable == undefined) return;
+        if(variable.type == "Rect"){
+            let i_x = variable.x;
+            let i_y = variable.y;
+            let i_width = variable.width;
+            let i_height = variable.height;
+            for(let i = i_y; i <= i_y + i_height; i++){
+                for(let j = i_x; j <= i_x + i_width; j++){
+                    let pixel = document.getElementById(`screen-${config.programSession}-${i}-${j}`);
+                    if(pixel == null) continue;
+                    setPixelColor(pixel, "c15");
+                }
             }
         }
     })
 }
 
-function renderAllSquares() {
+function renderScreen() {
     FroggyscriptMemory.importsData.graphics.renderOrder.forEach(identifier => {
-        let rect = FroggyscriptMemory.variables[identifier].value;
+        let variable = FroggyscriptMemory.variables[identifier].value;
         if(rect == undefined) return;
-        let i_x = rect.x;
-        let i_y = rect.y;
-        let i_width = rect.width;
-        let i_height = rect.height;
-        let i_fill = rect.fill;
-        let i_stroke = rect.stroke;
-        for(let i = i_y; i <= i_y + i_height; i++){
-            for(let j = i_x; j <= i_x + i_width; j++){
-                let pixel = document.getElementById(`screen-${config.programSession}-${i}-${j}`);
-                if(pixel == null) continue;
-                let color = i_fill;
-                if(i == i_y || i == i_y + i_height || j == i_x || j == i_x + i_width) color = i_stroke;
-                setPixelColor(pixel, color);
+        if(rect.type == "Rect") {
+            let i_x = variable.x;
+            let i_y = variable.y;
+            let i_width = variable.width;
+            let i_height = variable.height;
+            let i_fill = variable.fill;
+            let i_stroke = variable.stroke;
+            for(let i = i_y; i <= i_y + i_height; i++){
+                for(let j = i_x; j <= i_x + i_width; j++){
+                    let pixel = document.getElementById(`screen-${config.programSession}-${i}-${j}`);
+                    if(pixel == null) continue;
+                    let color = i_fill;
+                    if(i == i_y || i == i_y + i_height || j == i_x || j == i_x + i_width) color = i_stroke;
+                    setPixelColor(pixel, color);
+                }
             }
-        }
+        };
     })
 }
 
@@ -1661,10 +1723,10 @@ function methodParser(startToken){
                                 break;
                             }
 
-                            clearAllSquares();
+                            clearScreen();
                             token.value[methodName] = methodArgs[0].value;
                             FroggyscriptMemory.variables[token.value.identifier].value[methodName] = methodArgs[0].value;
-                            renderAllSquares();
+                            renderScreen();
                         } break;
 
                         case "is": {
@@ -1727,10 +1789,10 @@ function methodParser(startToken){
                                 break;
                             }
 
-                            clearAllSquares();
+                            clearScreen();
                             token.value[methodName] = methodArgs[0].value;
                             FroggyscriptMemory.variables[token.value.identifier].value[methodName] = methodArgs[0].value;
-                            renderAllSquares();
+                            renderScreen();
                         } break;
 
                         // getters
@@ -1817,7 +1879,7 @@ function methodParser(startToken){
                             FroggyscriptMemory.variables[token.value.identifier].value.x = newX;
                             FroggyscriptMemory.variables[token.value.identifier].value.y = newY;
 
-                            renderAllSquares();
+                            renderScreen();
                         } break;
 
                         case "toRect": {
@@ -1847,73 +1909,123 @@ function methodParser(startToken){
                         } break;
 
                         case "render": {
-                            if(token.type != "Rect"){
-                                token = new ScriptError("TypeError", `[>render()] expects type Rect, found type ${token.type}`);
-                                break;
-                            }
-
                             if(FroggyscriptMemory.importsData.graphics.screenData.rendered == false){
                                 token = new ScriptError("RenderError", `Screen has not yet been rendered`);
                                 break;
                             }
+                            if(token.type == "Rect"){
+                                let x = token.value.x;
+                                let y = token.value.y;
+                                let width = token.value.width;
+                                let height = token.value.height;
+                                let fill = token.value.fill;
+                                let stroke = token.value.stroke;
 
-                            let x = token.value.x;
-                            let y = token.value.y;
-                            let width = token.value.width;
-                            let height = token.value.height;
-                            let fill = token.value.fill;
-                            let stroke = token.value.stroke;
+                                // bugs with unnamed arrays
+                                let target = FroggyscriptMemory.variables[token.value.identifier]
+                                if(target.type != "Undefined") target.value.rendered = true;
 
-                            // bugs with unnamed arrays
-                            let target = FroggyscriptMemory.variables[token.value.identifier]
-                            if(target.type != "Undefined") target.value.rendered = true;
+                                for(let i = y; i <= y + height; i++){
+                                    for(let j = x; j <= x + width; j++){
+                                        let pixel = document.getElementById(`screen-${config.programSession}-${i}-${j}`);
+                                        if(pixel == null) continue;
 
-                            for(let i = y; i <= y + height; i++){
-                                for(let j = x; j <= x + width; j++){
-                                    let pixel = document.getElementById(`screen-${config.programSession}-${i}-${j}`);
-                                    if(pixel == null) continue;
+                                        let color = fill;
+                                        
+                                        if(i == y || i == y + height || j == x || j == x + width) color = stroke;
 
-                                    let color = fill;
-                                    
-                                    if(i == y || i == y + height || j == x || j == x + width) color = stroke;
-
-                                    setPixelColor(pixel, color);
+                                        setPixelColor(pixel, color);
+                                    }
                                 }
-                            }
 
-                            FroggyscriptMemory.importsData.graphics.renderOrder.push(token.value.identifier);
+                                FroggyscriptMemory.importsData.graphics.renderOrder.push(token.value.identifier);
+                            } else if(token.type == "Text"){
+                                let x = token.value.x - 1;
+                                let y = token.value.y;
+                                let text = token.value.text;
+                                let width = token.value.width;
+                                let wordWrap = token.value.wordWrap;
+
+                                let xLevel = x;
+                                let yLevel = y;
+
+                                for(let i = 0; i < text.length; i++){
+                                    if(wordWrap){
+                                        if(xLevel >= Math.min(x + width, FroggyscriptMemory.importsData.graphics.screenData.width)){
+                                            yLevel++;
+                                            xLevel = x;
+                                        }
+                                    }
+                                    xLevel += 1;
+
+                                    let pixel = document.getElementById(`screen-${config.programSession}-${yLevel}-${xLevel}`);
+
+                                    if(pixel == null) continue;
+                                    pixel.textContent = text[i];
+                                    setPixelTextColor(pixel, token.value.color);
+                                }
+
+                                if(token.type != "Undefined") token.value.rendered = true;
+                            } else {
+                                token = new ScriptError("TypeError", `[>render()] expects type Rect or Text, found type ${token.type}`);
+                                break;
+                            }
                         } break;
 
                         case "clear": {
-                            if(token.type != "Rect"){
-                                token = new ScriptError("TypeError", `[>clear()] expects type Rect, found type ${token.type}`);
+                            if(token.type == "Rect"){
+                                clearScreen();
+                                let x = token.value.x;
+                                let y = token.value.y;
+                                let width = token.value.width;
+                                let height = token.value.height;
+                                let identifier = token.value.identifier;
+    
+                                FroggyscriptMemory.variables[token.value.identifier].value.rendered = false;
+    
+    
+                                let index = FroggyscriptMemory.importsData.graphics.renderOrder.findIndex(x => x == identifier);
+                                if(index != -1) FroggyscriptMemory.importsData.graphics.renderOrder.splice(index, 1);
+    
+                                for(let i = y; i <= y + height; i++){
+                                    for(let j = x; j <= x + width; j++){
+                                        let pixel = document.getElementById(`screen-${config.programSession}-${i}-${j}`);
+                                        if(pixel == null) continue;
+    
+                                        setPixelColor(pixel, "c15");
+                                    }
+                                }
+                                renderScreen();
+                            } else if(token.type == "Text"){
+                                let x = token.value.x - 1;
+                                let y = token.value.y;
+                                let text = token.value.text;
+                                let wordWrap = token.value.wordWrap;
+
+                                let xLevel = x;
+                                let yLevel = y;
+
+                                for(let i = 0; i < text.length; i++){
+                                    if(wordWrap){
+                                        // Math.max(x + width, [...]screenData.width)
+                                        if(xLevel >= FroggyscriptMemory.importsData.graphics.screenData.width){
+                                            yLevel++;
+                                            xLevel = x;
+                                        }
+                                    }
+                                    xLevel += 1;
+
+                                    let pixel = document.getElementById(`screen-${config.programSession}-${yLevel}-${xLevel}`);
+
+                                    if(pixel == null) continue;
+                                    pixel.textContent = "\u00A0",
+                                    setPixelTextColor(pixel, "c15");
+                                }
+                                FroggyscriptMemory.variables[token.value.identifier].value.rendered = false;
+                            } else {
+                                token = new ScriptError("TypeError", `[>clear()] expects type Rect or Text, found type ${token.type}`);
                                 break;
                             }
-
-                            clearAllSquares();
-
-                            let x = token.value.x;
-                            let y = token.value.y;
-                            let width = token.value.width;
-                            let height = token.value.height;
-                            let identifier = token.value.identifier;
-
-                            FroggyscriptMemory.variables[token.value.identifier].value.rendered = false;
-
-
-                            let index = FroggyscriptMemory.importsData.graphics.renderOrder.findIndex(x => x == identifier);
-                            if(index != -1) FroggyscriptMemory.importsData.graphics.renderOrder.splice(index, 1);
-
-                            for(let i = y; i <= y + height; i++){
-                                for(let j = x; j <= x + width; j++){
-                                    let pixel = document.getElementById(`screen-${config.programSession}-${i}-${j}`);
-                                    if(pixel == null) continue;
-
-                                    setPixelColor(pixel, "c15");
-                                }
-                            }
-
-                            renderAllSquares();
                         } break;
 
                         default: {
@@ -1930,10 +2042,8 @@ function methodParser(startToken){
 }
 
 function stringify(token){
-    if(token.type == "Array") token.value = "{{Array}"
-    else if(token.type == "Rect") token.value = `{{Rect}}`;
-    else if(token.type == "Number") token.value = token.value.toString();
-    token.type = "String";
+    if(token.type != "String" && token.type != "Number") token.value = `{{${token.type}}}`
+    if(token.type != "Number") token.type = "String";
     return token;
 }
 
@@ -2440,17 +2550,21 @@ async function interpretSingleLine(interval, single_input, error_trace, block_er
                             writeVariable(token.identifier, "Rect", token.value, true);
                         } break
 
+                        case "text": {
+                            writeVariable(token.identifier, "Text", token.value, true);
+                        } break;
+
                         case "createscreen": {
                             FroggyscriptMemory.importsData.graphics.screenData.width = token.width.value;
                             FroggyscriptMemory.importsData.graphics.screenData.height = token.height.value;
                             FroggyscriptMemory.importsData.graphics.screenData.rendered = true;
 
                             terminal.innerHTML = ""; // clear the terminal
-                            for(let i = 0; i <= token.width.value; i++){
+                            for(let i = 0; i <= token.height.value; i++){
                                 let rowHtml = '';
-                                for(let j = 0; j <= token.height.value; j++){
+                                for(let j = 0; j <= token.width.value; j++){
                                     let style = `"background-color: var(--c15); color: var(--c15)"`;
-                                    rowHtml += `<span id="screen-${config.programSession}-${i}-${j}" style=${style}>#</span>`;
+                                    rowHtml += `<span id="screen-${config.programSession}-${i}-${j}" style=${style}>\u00A0</span>`;
                                 }
                                 let lineContainer = document.createElement('div');
                                 let terminalLine = document.createElement('div');

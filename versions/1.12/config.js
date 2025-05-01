@@ -862,12 +862,13 @@ const config = {
                 // 'filearg age Number',
                 // 'out "hello I am $|Filearg_name| and I am $|Filearg_age| years old"',
                 "import 'graphics'",
-                "createscreen 57 78",
+                "createscreen 78 57",
                 "rect rectangle1 = $0, 0, 10, 10$",
                 "#rectangle1>render",
-                "pxl meow = $0, 10$",
-                "#meow>color('c04')",
-
+                "text meow = $75, 0, 'hello, world!'$",
+                "#meow>render",
+                //"#meow>clear",
+                "#rectangle1>clear",
                 "wait 10000000000000",
                 "endprog"
             ] },
