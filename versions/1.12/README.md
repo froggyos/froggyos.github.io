@@ -586,13 +586,13 @@ From the corresponding `D:/Program-Data` file, loads the contents of entry of `[
 loaddata [variable] [key]
 ```
 ## Imports
-Imports are a way to extend the functionality of FroggyScript. They are not required, but they are recommended for more complex programs.
+Imports are a way to extend the functionality of FroggyScript.
 
 ### Import a module
 ```
-import [module name:S]
+import [import name:S]
 
 import "graphics"
 ```
-### Module list
+### Imports list
 * [graphics](./graphics-docs.md)
