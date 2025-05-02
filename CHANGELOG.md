@@ -144,4 +144,5 @@ idk
 # 1.12
 ```
 + added imports to FroggyScript
+    * graphics
 ```

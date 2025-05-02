@@ -54,14 +54,22 @@ Moves the rectangle to a new position on the screen. Alias of `>x()>y()`.
 rect rectangle = $0, 0, 50, 50$
 #rectangle>move(10;10)
 ```
-## getters
-* `>_x` - x position of the rectangle
-* `>_y` - y position of the rectangle
-* `>_width` - width of the rectangle
-* `>_height` - height of the rectangle
-* `>_fill` - fill color of the rectangle
-* `>_stroke` - stroke color of the rectangle
-## setters
+### clone
+Creates a clone of the rectangle object. The clone will have the same properties as the original rectangle object, but will not be linked to it. This means that changes made to the clone will not affect the original rectangle object, and vice versa.
+```
+rect rectangle = $0, 0, 50, 50$
+rect clone = rectangle>clone
+#clone>render>move(10;10)
+-- does not affect the original rectangle object
+```
+### intersects
+Checks if the rectangle intersects with another rectangle. Returns Boolean.
+```
+rect rectangle1 = $0, 0, 50, 50$
+rect rectangle2 = $10, 10, 50, 50$
+#rectangle1>intersects(rectangle2)
+```
+## getters and setters
 * `>x` - x position of the rectangle
 * `>y` - y position of the rectangle
 * `>width` - width of the rectangle
@@ -70,6 +78,7 @@ rect rectangle = $0, 0, 50, 50$
 * `>stroke` - stroke color of the rectangle
 
 # Pixel
+Manipulate individual pixels on the screen.
 ## methods
 ### is
 Checks if the pixel is the provided color. Returns Boolean.
@@ -78,9 +87,7 @@ pxl pixel = $0, 0$
 #pixel>is('c00')
 ```
 
-## getter
-* `>_color` - color of the pixel
-## setter
+## getters and setters
 * `>color` - color of the pixel
 
 # Text
@@ -97,15 +104,40 @@ Clears the text from the screen.
 text text = $0, 0, 'Hello World'$
 #text>clear
 ```
+### move
+Moves the text to a new position on the screen. Alias of `>x()>y()`.
+```
+text text = $0, 0, 'Hello World'$
+#text>move(10;10) 
+```
+### clone
+Creates a clone of the text object. The clone will have the same properties as the original text object, but will not be linked to it. This means that changes made to the clone will not affect the original text object, and vice versa.
+```
+text text = $0, 0, 'Hello World'$
+
+text clone = text>clone
+#clone>render>move(10;10) 
+-- does not affect the original text object
+```
+## getters and setters
+* `>x` - x position of the text
+* `>y` - y position of the text
+* `>width` - width of the text (only if wordwrap is true)
+* `>wrap` - whether the text should be wrapped or not (default: false)
+* `>color` - color of the text
+* `>text` - text to be displayed
 
 ```
-to do:
-width only takes affect if wordwrap is true
-text -> wrap (internally wordWrap), width, color (use format objects? < if so, would have to replace the default color stuff with arrays or wtv), text, x, y, move
+to add:
+Line = $[x1], [y1], [x2], [y2]$
+methods:
+>cross(Line) -> returns boolean
+>intersecton(Line) -> returns point of intersection
 
-merge getters and setters:
-if there is an argument, treat as setter
-if there is no argument, treat as getter
-
->clone for rect and text
+getter/setters:
+>stroke
+>x1
+>y1
+>x2
+>y2
 ```
