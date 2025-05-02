@@ -567,7 +567,7 @@ out letters>append(numbers)
 -- "a", "b", "c", 1, 2, 3
 ```
 ## Oneliners
-To use a method without having to be in an argument or variable, prefix the line with `#`.
+To use methods without having to be in an argument or variable, prefix the line with `#`.
 ```
 arr test = "a", "b", "c"
 #test>append("d", "e")
@@ -588,11 +588,11 @@ loaddata [variable] [key]
 ## Imports
 Imports are a way to extend the functionality of FroggyScript.
 
-### Import a module
+### Import a Module
 ```
 import [import name:S]
 
 import "graphics"
 ```
-### Imports list
+### Imports List & Documentation
 * [graphics](https://rus1130.github.io/projects/mdparser.html?url=https://froggyos.github.io/versions/1.12/graphics-docs.md)
