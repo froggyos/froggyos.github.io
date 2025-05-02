@@ -1738,6 +1738,9 @@ function methodParser(startToken){
                     if(token.type == "Rect"){
                         let rectRenderOrder = FroggyscriptMemory.importsData.graphics.rectRenderOrder;
                         switch(methodName){
+                            // merge getters and setters:
+                            // if there is an argument, treat as setter
+                            // if there is no argument, treat as getter
                             case "x": 
                             case "y": 
                             case "width": 
