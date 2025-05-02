@@ -15,8 +15,9 @@ const FroggyscriptMemory = {
                 rendered: false,
                 width: 0,
                 height: 0,
+                defaultBackgroundColor: "c15",
             },
-            renderOrder: [],
+            rectRenderOrder: [],
         }
     },
     temporaryVariables: {},
@@ -687,11 +688,6 @@ function processSingleLine(input) {
     }
 
     switch (keyword) {
-        // this shit is s ofucking bad
-        // add >x, >y, >color, >width methods
-        // ^ & corresponding getters
-        // would have to make it rerender for each method
-        // use ABSTRACTION!!! dont copy paste the code thats dumb
         case "text": {
             let varName = input.split(" ")[1].trim();
             let value = typeify(input.split(" ").slice(3).join(" "));
@@ -737,7 +733,7 @@ function processSingleLine(input) {
                 x, y, text,
                 color: "c00",
                 identifier: varName,
-                width: FroggyscriptMemory.importsData.graphics.screenData.width - 1,
+                width: Infinity,
                 rendered: false,
                 wordWrap: true,
             } };
@@ -778,11 +774,11 @@ function processSingleLine(input) {
                 break;
             }
 
-            if(argX > 78){
+            if(argX > FroggyscriptMemory.importsData.graphics.screenData.width){
                 token = new ScriptError("RangeError", `[createscreen] x length must be less than 79, found ${argX}`);
                 break;
             }
-            if(argY > 57){
+            if(argY > FroggyscriptMemory.importsData.graphics.screenData.height){
                 token = new ScriptError("RangeError", `[createscreen] y length must be less than 58, found ${argY}`);
                 break;
             }
@@ -864,7 +860,7 @@ function processSingleLine(input) {
                 // data needed for toRect method
                 token = { ...token, identifier: varName, type: "Rect", value: {
                     x, y, width, height, 
-                    fill: "c15",
+                    fill: FroggyscriptMemory.importsData.graphics.screenData.defaultBackgroundColor,
                     stroke: "c00",
                     identifier: varName, 
                     rendered: false
@@ -1495,48 +1491,67 @@ function setPixelTextColor(pixel, color) {
     pixel.style.color = `var(--${color})`;
 }
 
-function clearScreen() {
-    FroggyscriptMemory.importsData.graphics.renderOrder.forEach(identifier => {
-        let variable = FroggyscriptMemory.variables[identifier].value;
-        if(variable == undefined) return;
-        if(variable.type == "Rect"){
-            let i_x = variable.x;
-            let i_y = variable.y;
-            let i_width = variable.width;
-            let i_height = variable.height;
-            for(let i = i_y; i <= i_y + i_height; i++){
-                for(let j = i_x; j <= i_x + i_width; j++){
-                    let pixel = document.getElementById(`screen-${config.programSession}-${i}-${j}`);
-                    if(pixel == null) continue;
-                    setPixelColor(pixel, "c15");
-                }
-            }
-        }
-    })
+function tokenToRect(token){
+    if(token.type != "Array"){
+        token = new ScriptError("TypeError", `[>toRect()] expects type Array, found type ${token.type}`);
+        return token;
+    }
+    if(token.value.length != 4){
+        token = new ScriptError("TypeError", `[>toRect()] expects an array of length 4, found length ${token.value.length}`);
+        return token;
+    }
+    if(token.value.some(x => x.type != "Number")){
+        token = new ScriptError("TypeError", `[>toRect()] expects an array of Numbers, found type ${token.value.map(x => x.type).join(", ")}`);
+        return token;
+    }
+
+    token.type = "Rect";
+    token.value = {
+        x: token.value[0].value,
+        y: token.value[1].value,
+        width: token.value[2].value,
+        height: token.value[3].value,
+        fill: FroggyscriptMemory.importsData.graphics.screenData.defaultBackgroundColor,
+        stroke: "c00",
+        identifier: token.value.identifier
+    }
 }
 
-function renderScreen() {
-    FroggyscriptMemory.importsData.graphics.renderOrder.forEach(identifier => {
-        let variable = FroggyscriptMemory.variables[identifier].value;
-        if(rect == undefined) return;
-        if(rect.type == "Rect") {
-            let i_x = variable.x;
-            let i_y = variable.y;
-            let i_width = variable.width;
-            let i_height = variable.height;
-            let i_fill = variable.fill;
-            let i_stroke = variable.stroke;
-            for(let i = i_y; i <= i_y + i_height; i++){
-                for(let j = i_x; j <= i_x + i_width; j++){
-                    let pixel = document.getElementById(`screen-${config.programSession}-${i}-${j}`);
-                    if(pixel == null) continue;
-                    let color = i_fill;
-                    if(i == i_y || i == i_y + i_height || j == i_x || j == i_x + i_width) color = i_stroke;
-                    setPixelColor(pixel, color);
-                }
-            }
-        };
-    })
+function tokenToText(token){
+    if(token.type != "Array"){
+        token = new ScriptError("TypeError", `[>toText()] expects type Array, found type ${token.type}`);
+        return token;
+    }
+    if(token.value.length != 3){
+        token = new ScriptError("TypeError", `[>toText()] expects an array of length 3, found length ${token.value.length}`);
+        return token;
+    }
+    // first two must be Number, third must be String
+    if(token.value[0].type != "Number"){
+        token = new ScriptError("TypeError", `[>toText()] index 0 expects Number, found type ${token.value[0].type}`);
+        return token;
+    }
+    if(token.value[1].type != "Number"){
+        token = new ScriptError("TypeError", `[>toText()] index 1 expects Number, found type ${token.value[1].type}`);
+        return token;
+    }
+    if(token.value[2].type != "String"){
+        token = new ScriptError("TypeError", `[>toText()] index 2 expects String, found type ${token.value[2].type}`);
+        return token;
+    }
+
+    token.type = "Text";
+    token.value = {
+        x: token.value[0].value,
+        y: token.value[1].value,
+        text: token.value[2].value,
+        color: FroggyscriptMemory.importsData.graphics.screenData.defaultTextColor,
+        wordWrap: false,
+        width: Infinity,
+        identifier: token.value.identifier
+    }
+
+    return token;
 }
 
 function methodParser(startToken){
@@ -1704,100 +1719,171 @@ function methodParser(startToken){
 
             default: {
                 if(FroggyscriptMemory.imports.includes("graphics")){
-                    switch(methodName){
-                        // setters
-                        case "x": 
-                        case "y": 
-                        case "width": 
-                        case "height": {
-                            if(token.type != "Rect"){
-                                token = new ScriptError("TypeError", `[>${methodName}()] expects type Rect, found type ${token.type}`);
-                                break;
-                            }
-                            if(methodArgs[0] == undefined){
-                                token = new ScriptError("SyntaxError", `[>${methodName}()] must have a ${methodName} argument (arg 1)`);
-                                break;
-                            }
-                            if(methodArgs[0].type != "Number"){
-                                token = new ScriptError("TypeError", `[>${methodName}()] ${methodName} argument expects type Number, found type ${methodArgs[0].type}`);
-                                break;
-                            }
+                    if(token.type == "Array"){
+                        switch(methodName){
+                            case "toRect": {
+                                token = tokenToRect(token);
+                            } break;
 
-                            clearScreen();
-                            token.value[methodName] = methodArgs[0].value;
-                            FroggyscriptMemory.variables[token.value.identifier].value[methodName] = methodArgs[0].value;
-                            renderScreen();
-                        } break;
+                            case "toText": {
+                                token = tokenToText(token);
+                            } break;
 
-                        case "is": {
-                            if(token.type != "Pixel"){
-                                token = new ScriptError("TypeError", `[>is()] expects type Pixel, found type ${token.type}`);
-                                break;
-                            }
-                            if(methodArgs[0] == undefined){
-                                token = new ScriptError("SyntaxError", `[>is()] must have a color argument (arg 1)`);
-                                break;
-                            }
-                            if(methodArgs[0].type != "String"){
-                                token = new ScriptError("TypeError", `[>is()] color argument expects type String, found type ${methodArgs[0].type}`);
-                                break;
-                            }
-                            let pixel = document.getElementById(`screen-${config.programSession}-${token.value.y}-${token.value.x}`);
-                            if(pixel == null) {
-                                token = new ScriptError("ReferenceError", `[>is()] pixel does not exist`);
-                                break;
-                            }
-                            let color = pixel.style.backgroundColor.match(/var\(--(.*?)\)/)[1];
-                            if(color == methodArgs[0].value) {
-                                token.value = true;
-                                token.type = "Boolean";
-                            } else {
-                                token.value = false;
-                                token.type = "Boolean";
-                            }
-                        } break;
+                            default: {
+                                token = new ScriptError("TypeError", `[>${methodName}()] is not a valid method for Array`);
+                            } break;
+                        }
+                    }
 
-                        case "color": {
-                            if(methodArgs[0] == undefined){
-                                token = new ScriptError("SyntaxError", `[>color()] must have a color argument (arg 1)`);
-                                break;
-                            }
-                            if(methodArgs[0].type != "String"){
-                                token = new ScriptError("TypeError", `[>color()] color argument expects type String, found type ${methodArgs[0].type}`);
-                                break;
-                            }
-                            let pixel = document.getElementById(`screen-${config.programSession}-${token.value.y}-${token.value.x}`);
-                            if(pixel == null) {
-                                token = new ScriptError("ReferenceError", `pixel with coordinates (${token.value.x}, ${token.value.y}) does not exist`);
-                                break;
-                            }
-                            setPixelColor(pixel, methodArgs[0].value);
-                        } break;
+                    if(token.type == "Rect"){
+                        let rectRenderOrder = FroggyscriptMemory.importsData.graphics.rectRenderOrder;
+                        switch(methodName){
+                            case "x": 
+                            case "y": 
+                            case "width": 
+                            case "height": {
+                                if(methodArgs[0] == undefined){
+                                    token = new ScriptError("SyntaxError", `[>${methodName}()] must have a ${methodName} argument (arg 1)`);
+                                    break;
+                                }
+                                if(methodArgs[0].type != "Number"){
+                                    token = new ScriptError("TypeError", `[>${methodName}()] ${methodName} argument expects type Number, found type ${methodArgs[0].type}`);
+                                    break;
+                                }
+    
+                                token.value[methodName] = methodArgs[0].value;
+                                FroggyscriptMemory.variables[token.value.identifier].value[methodName] = methodArgs[0].value;
+                                renderGraphics(["back"]);
+                            } break;
 
-                        case "stroke":
-                        case "fill": {
-                            if(token.type != "Rect"){
-                                token = new ScriptError("TypeError", `[>${methodName}()] expects type Rect, found type ${token.type}`);
-                                break;
-                            }
-                            if(methodArgs[0] == undefined){
-                                token = new ScriptError("SyntaxError", `[>${methodName}()] must have a color argument (arg 1)`);
-                                break;
-                            }
-                            if(methodArgs[0].type != "String"){
-                                token = new ScriptError("TypeError", `[>${methodName}()] color argument expects type String, found type ${methodArgs[0].type}`);
-                                break;
-                            }
+                            case "_x":
+                            case "_y":
+                            case "_width":
+                            case "_height": {
+                                let formattedName = methodName.replace("_", "");
+                                token.value = getVariable(token.value.identifier).value[formattedName];
+                                token.type = "Number";
+                            } break;  
 
-                            clearScreen();
-                            token.value[methodName] = methodArgs[0].value;
-                            FroggyscriptMemory.variables[token.value.identifier].value[methodName] = methodArgs[0].value;
-                            renderScreen();
-                        } break;
+                            case "stroke":
+                            case "fill": {
+                                if(methodArgs[0] == undefined){
+                                    token = new ScriptError("SyntaxError", `[>${methodName}()] must have a color argument (arg 1)`);
+                                    break;
+                                }
+                                if(methodArgs[0].type != "String"){
+                                    token = new ScriptError("TypeError", `[>${methodName}()] color argument expects type String, found type ${methodArgs[0].type}`);
+                                    break;
+                                }
+    
+                                token.value[methodName] = methodArgs[0].value;
+                                FroggyscriptMemory.variables[token.value.identifier].value[methodName] = methodArgs[0].value;
+                                renderGraphics(["back"]);
+                            } break;
 
-                        // getters
-                        case "_color": {
-                            if(token.type == "Pixel"){
+                            case "_stroke":
+                            case "_fill": {
+                                let formattedName = methodName.replace("_", "");
+                                token.value = getVariable(token.value.identifier).value[formattedName];
+                                token.type = "String";
+                            } break;
+
+                            case "move": {
+                                if(token.value.rendered == false){
+                                    token = new ScriptError("TypeError", `[>move()] cannot move an unrendered Rect`);
+                                    break;
+                                }
+                                if(methodArgs[0] == undefined){
+                                    token = new ScriptError("SyntaxError", `[>move()] must have an x argument (arg 1)`);
+                                    break;
+                                }
+                                if(methodArgs[1] == undefined){
+                                    token = new ScriptError("SyntaxError", `[>move()] must have a y argument (arg 2)`);
+                                    break;
+                                }
+                                if(methodArgs[0].type != "Number"){
+                                    token = new ScriptError("TypeError", `[>move()] x argument expects type Number, found type ${methodArgs[0].type}`);
+                                    break;
+                                }
+                                if(methodArgs[1].type != "Number"){
+                                    token = new ScriptError("TypeError", `[>move()] y argument expects type Number, found type ${methodArgs[1].type}`);
+                                    break;
+                                }
+    
+                                let newX = methodArgs[0].value;
+                                let newY = methodArgs[1].value;
+    
+                                FroggyscriptMemory.variables[token.value.identifier].value.x = newX;
+                                FroggyscriptMemory.variables[token.value.identifier].value.y = newY;
+    
+                                renderGraphics(["back"]);
+                            } break;
+
+                            case "render": {
+                                let target = FroggyscriptMemory.variables[token.value.identifier]
+                                if(target.type != "Undefined") target.value.rendered = true;
+                                rectRenderOrder.push(token.value.identifier);
+                                renderGraphics(["back"]);
+                            } break;
+
+                            case "clear": {
+                                let target = FroggyscriptMemory.variables[token.value.identifier]
+                                if(target.type != "Undefined") target.value.rendered = false;
+                                let index = rectRenderOrder.indexOf(token.value.identifier);
+                                if(index != -1) rectRenderOrder.splice(index, 1);
+                                renderGraphics(["back"]);
+                            } break;
+
+                            default: {
+                                token = new ScriptError("TypeError", `[>${methodName}()] is not a valid method for Rect`);
+                            } break;
+                        }
+                        
+                    }
+                    if(token.type == "Pixel"){
+                        switch(methodName){
+                            case "is": {
+                                if(methodArgs[0] == undefined){
+                                    token = new ScriptError("SyntaxError", `[>is()] must have a color argument (arg 1)`);
+                                    break;
+                                }
+                                if(methodArgs[0].type != "String"){
+                                    token = new ScriptError("TypeError", `[>is()] color argument expects type String, found type ${methodArgs[0].type}`);
+                                    break;
+                                }
+                                let pixel = document.getElementById(`screen-${config.programSession}-${token.value.y}-${token.value.x}`);
+                                if(pixel == null) {
+                                    token = new ScriptError("ReferenceError", `[>is()] pixel does not exist`);
+                                    break;
+                                }
+                                let color = pixel.style.backgroundColor.match(/var\(--(.*?)\)/)[1];
+                                if(color == methodArgs[0].value) {
+                                    token.value = true;
+                                    token.type = "Boolean";
+                                } else {
+                                    token.value = false;
+                                    token.type = "Boolean";
+                                }
+                            } break;
+
+                            case "color": {
+                                if(methodArgs[0] == undefined){
+                                    token = new ScriptError("SyntaxError", `[>color()] must have a color argument (arg 1)`);
+                                    break;
+                                }
+                                if(methodArgs[0].type != "String"){
+                                    token = new ScriptError("TypeError", `[>color()] color argument expects type String, found type ${methodArgs[0].type}`);
+                                    break;
+                                }
+                                let pixel = document.getElementById(`screen-${config.programSession}-${token.value.y}-${token.value.x}`);
+                                if(pixel == null) {
+                                    token = new ScriptError("ReferenceError", `pixel with coordinates (${token.value.x}, ${token.value.y}) does not exist`);
+                                    break;
+                                }
+                                setPixelColor(pixel, methodArgs[0].value);
+                            } break;
+
+                            case "_color": {
                                 let pixel = document.getElementById(`screen-${config.programSession}-${token.value.y}-${token.value.x}`);
                                 if(pixel == null) {
                                     token = new ScriptError("ReferenceError", `[>_color()] pixel does not exist`);
@@ -1805,231 +1891,32 @@ function methodParser(startToken){
                                 }
                                 token.value = pixel.style.backgroundColor.match(/var\(--(.*?)\)/)[1];
                                 token.type = "String";
-                            }
-                        } break;
+                            } break;
 
-                        case "_stroke":
-                        case "_fill": {
-                            let formattedName = methodName.replace("_", "");
-                            if(token.type != "Rect"){
-                                token = new ScriptError("TypeError", `[>_${formattedName}()] expects type Rect or Pixel, found type ${token.type}`);
-                                break;
+                            default: {
+                                token = new ScriptError("TypeError", `[>${methodName}()] is not a valid method for Pixel`);
                             }
-
-                            token.value = getVariable(token.value.identifier).value[formattedName];
-                            token.type = "String";
-                        } break;
-
-                        case "_x":
-                        case "_y":
-                        case "_width":
-                        case "_height": {
-                            let formattedName = methodName.replace("_", "");
-                            if(token.type != "Rect"){
-                                token = new ScriptError("TypeError", `[>_${formattedName}()] expects type Rect, found type ${token.type}`);
-                                break;
-                            }
-                            token.value = getVariable(token.value.identifier).value[formattedName];
-                            token.type = "Number";
-                        } break;  
-
-                        // methods
-                        case "move": {
-                            if(token.type != "Rect"){
-                                token = new ScriptError("TypeError", `[>move()] expects type Rect, found type ${token.type}`);
-                                break;
-                            }
-                            if(token.value.rendered == false){
-                                token = new ScriptError("TypeError", `[>move()] cannot move an unrendered Rect`);
-                                break;
-                            }
-                            if(methodArgs[0] == undefined){
-                                token = new ScriptError("SyntaxError", `[>move()] must have an x argument (arg 1)`);
-                                break;
-                            }
-                            if(methodArgs[1] == undefined){
-                                token = new ScriptError("SyntaxError", `[>move()] must have a y argument (arg 2)`);
-                                break;
-                            }
-                            if(methodArgs[0].type != "Number"){
-                                token = new ScriptError("TypeError", `[>move()] x argument expects type Number, found type ${methodArgs[0].type}`);
-                                break;
-                            }
-                            if(methodArgs[1].type != "Number"){
-                                token = new ScriptError("TypeError", `[>move()] y argument expects type Number, found type ${methodArgs[1].type}`);
-                                break;
-                            }
-
-                            let oldX = token.value.x;
-                            let oldY = token.value.y;
-                            let width = token.value.width;
-                            let height = token.value.height;
-
-                            for(let i = oldY; i <= oldY + height; i++){
-                                for(let j = oldX; j <= oldX + width; j++){
-                                    let pixel = document.getElementById(`screen-${config.programSession}-${i}-${j}`);
-                                    if(pixel == null) continue;
-                                    setPixelColor(pixel, "c15");
-                                }
-                            }
-
-                            let newX = methodArgs[0].value;
-                            let newY = methodArgs[1].value;
-
-                            FroggyscriptMemory.variables[token.value.identifier].value.x = newX;
-                            FroggyscriptMemory.variables[token.value.identifier].value.y = newY;
-
-                            renderScreen();
-                        } break;
-
-                        case "toRect": {
-                            if(token.type != "Array"){
-                                token = new ScriptError("TypeError", `[>toRect()] expects type Array, found type ${token.type}`);
-                                break;
-                            }
-                            if(token.value.length != 4){
-                                token = new ScriptError("TypeError", `[>toRect()] expects an array of length 4, found length ${token.value.length}`);
-                                break;
-                            }
-                            if(token.value.some(x => x.type != "Number")){
-                                token = new ScriptError("TypeError", `[>toRect()] expects an array of Numbers, found type ${token.value.map(x => x.type).join(", ")}`);
-                                break;
-                            }
-
-                            token.type = "Rect";
-                            token.value = {
-                                x: token.value[0].value,
-                                y: token.value[1].value,
-                                width: token.value[2].value,
-                                height: token.value[3].value,
-                                fill: "c15",
-                                stroke: "c00",
-                                identifier: token.value.identifier
-                            }
-                        } break;
-
-                        case "render": {
-                            if(FroggyscriptMemory.importsData.graphics.screenData.rendered == false){
-                                token = new ScriptError("RenderError", `Screen has not yet been rendered`);
-                                break;
-                            }
-                            if(token.type == "Rect"){
-                                let x = token.value.x;
-                                let y = token.value.y;
-                                let width = token.value.width;
-                                let height = token.value.height;
-                                let fill = token.value.fill;
-                                let stroke = token.value.stroke;
-
-                                // bugs with unnamed arrays
+                        }
+                    }
+                    if(token.type == "Text"){
+                        switch(methodName){
+                            // width only takes affect if wordwrap is true
+                            // wordwrap, width, color (use format objects? < if so, would have to replace the default color stuff with arrays or wtv), text, x, y
+                            case "render": {
                                 let target = FroggyscriptMemory.variables[token.value.identifier]
                                 if(target.type != "Undefined") target.value.rendered = true;
+                                renderGraphics(["front"]);
+                            } break;
 
-                                for(let i = y; i <= y + height; i++){
-                                    for(let j = x; j <= x + width; j++){
-                                        let pixel = document.getElementById(`screen-${config.programSession}-${i}-${j}`);
-                                        if(pixel == null) continue;
+                            case "clear": {
+                                let target = FroggyscriptMemory.variables[token.value.identifier]
+                                if(target.type != "Undefined") target.value.rendered = false;
+                                renderGraphics(["front"]);
+                            } break;
 
-                                        let color = fill;
-                                        
-                                        if(i == y || i == y + height || j == x || j == x + width) color = stroke;
-
-                                        setPixelColor(pixel, color);
-                                    }
-                                }
-
-                                FroggyscriptMemory.importsData.graphics.renderOrder.push(token.value.identifier);
-                            } else if(token.type == "Text"){
-                                let x = token.value.x - 1;
-                                let y = token.value.y;
-                                let text = token.value.text;
-                                let width = token.value.width;
-                                let wordWrap = token.value.wordWrap;
-
-                                let xLevel = x;
-                                let yLevel = y;
-
-                                for(let i = 0; i < text.length; i++){
-                                    if(wordWrap){
-                                        if(xLevel >= Math.min(x + width, FroggyscriptMemory.importsData.graphics.screenData.width)){
-                                            yLevel++;
-                                            xLevel = x;
-                                        }
-                                    }
-                                    xLevel += 1;
-
-                                    let pixel = document.getElementById(`screen-${config.programSession}-${yLevel}-${xLevel}`);
-
-                                    if(pixel == null) continue;
-                                    pixel.textContent = text[i];
-                                    setPixelTextColor(pixel, token.value.color);
-                                }
-
-                                if(token.type != "Undefined") token.value.rendered = true;
-                            } else {
-                                token = new ScriptError("TypeError", `[>render()] expects type Rect or Text, found type ${token.type}`);
-                                break;
-                            }
-                        } break;
-
-                        case "clear": {
-                            if(token.type == "Rect"){
-                                clearScreen();
-                                let x = token.value.x;
-                                let y = token.value.y;
-                                let width = token.value.width;
-                                let height = token.value.height;
-                                let identifier = token.value.identifier;
-    
-                                FroggyscriptMemory.variables[token.value.identifier].value.rendered = false;
-    
-    
-                                let index = FroggyscriptMemory.importsData.graphics.renderOrder.findIndex(x => x == identifier);
-                                if(index != -1) FroggyscriptMemory.importsData.graphics.renderOrder.splice(index, 1);
-    
-                                for(let i = y; i <= y + height; i++){
-                                    for(let j = x; j <= x + width; j++){
-                                        let pixel = document.getElementById(`screen-${config.programSession}-${i}-${j}`);
-                                        if(pixel == null) continue;
-    
-                                        setPixelColor(pixel, "c15");
-                                    }
-                                }
-                                renderScreen();
-                            } else if(token.type == "Text"){
-                                let x = token.value.x - 1;
-                                let y = token.value.y;
-                                let text = token.value.text;
-                                let wordWrap = token.value.wordWrap;
-
-                                let xLevel = x;
-                                let yLevel = y;
-
-                                for(let i = 0; i < text.length; i++){
-                                    if(wordWrap){
-                                        // Math.max(x + width, [...]screenData.width)
-                                        if(xLevel >= FroggyscriptMemory.importsData.graphics.screenData.width){
-                                            yLevel++;
-                                            xLevel = x;
-                                        }
-                                    }
-                                    xLevel += 1;
-
-                                    let pixel = document.getElementById(`screen-${config.programSession}-${yLevel}-${xLevel}`);
-
-                                    if(pixel == null) continue;
-                                    pixel.textContent = "\u00A0",
-                                    setPixelTextColor(pixel, "c15");
-                                }
-                                FroggyscriptMemory.variables[token.value.identifier].value.rendered = false;
-                            } else {
-                                token = new ScriptError("TypeError", `[>clear()] expects type Rect or Text, found type ${token.type}`);
-                                break;
-                            }
-                        } break;
-
-                        default: {
-                            token = new ScriptError("SyntaxError", `[>${methodName}] is not a valid method for ${token.type}`);
+                            default: {
+                                token = new ScriptError("TypeError", `[>${methodName}()] is not a valid method for Text`);
+                            } break;
                         }
                     }
                 } else if(methodName.trim() == "") token = new ScriptError("SyntaxError", `Missing method name`);
@@ -2041,9 +1928,86 @@ function methodParser(startToken){
     return token;
 }
 
+function renderGraphics(scope) {
+    let renderedBackPixels = document.querySelectorAll(`[data-render-back]`);
+    let renderedFrontPixels = document.querySelectorAll(`[data-render-front]`);
+
+    let screenData = FroggyscriptMemory.importsData.graphics.screenData;
+
+    if(scope.includes("back")){
+        renderedBackPixels.forEach(pixel => {
+            pixel.style.backgroundColor = `var(--${screenData.defaultBackgroundColor})`;
+            pixel.removeAttribute("data-render-back");
+        })
+
+        FroggyscriptMemory.importsData.graphics.rectRenderOrder.forEach(identifier => {
+            let variable = FroggyscriptMemory.variables[identifier].value;
+            if(variable == undefined) return;
+            let i_x = variable.x;
+            let i_y = variable.y;
+            let i_width = variable.width;
+            let i_height = variable.height;
+            let i_fill = variable.fill;
+            let i_stroke = variable.stroke;
+            for(let i = i_y; i <= i_y + i_height; i++){
+                for(let j = i_x; j <= i_x + i_width; j++){
+                    let pixel = document.getElementById(`screen-${config.programSession}-${i}-${j}`);
+                    if(pixel == null) continue;
+                    let color = i_fill;
+                    if(i == i_y || i == i_y + i_height || j == i_x || j == i_x + i_width) color = i_stroke;
+                    setPixelColor(pixel, color);
+                    pixel.setAttribute("data-render-back", identifier);
+                }
+            }
+        })
+    
+    }
+
+    if(scope.includes("front")){
+        renderedFrontPixels.forEach(pixel => {
+            pixel.style.color = "transparent";
+            pixel.textContent = '\u00A0';
+            pixel.removeAttribute("data-render-front");
+        })
+
+        // go through every variable
+        for(variable in FroggyscriptMemory.variables){
+            variable = FroggyscriptMemory.variables[variable];
+            if(variable.type == "Text" && variable.value.rendered == true){
+                let x = variable.value.x - 1;
+                let y = variable.value.y;
+                let text = variable.value.text;
+                let width = variable.value.width;
+                let wordWrap = variable.value.wordWrap;
+
+                let xLevel = x;
+                let yLevel = y;
+
+                for(let i = 0; i < text.length; i++){
+                    if(wordWrap){
+                        if(xLevel >= Math.min(x + width, screenData.width)){
+                            yLevel++;
+                            xLevel = x;
+                        }
+                    }
+                    xLevel += 1;
+
+                    let pixel = document.getElementById(`screen-${config.programSession}-${yLevel}-${xLevel}`);
+
+                    if(pixel == null) continue;
+                    pixel.textContent = text[i];
+                    setPixelTextColor(pixel, variable.value.color);
+                    pixel.setAttribute("data-render-front", variable.value.identifier);
+                }
+            }
+        }
+    }
+}
+
 function stringify(token){
-    if(token.type != "String" && token.type != "Number") token.value = `{{${token.type}}}`
-    if(token.type != "Number") token.type = "String";
+    if(token.type == "String" || token.type == "Number" || token.type == "Boolean") return token;
+    token.value = `{{${token.type}}}`
+    token.type = "String";
     return token;
 }
 
@@ -2559,11 +2523,13 @@ async function interpretSingleLine(interval, single_input, error_trace, block_er
                             FroggyscriptMemory.importsData.graphics.screenData.height = token.height.value;
                             FroggyscriptMemory.importsData.graphics.screenData.rendered = true;
 
+                            let defaultBkgd = FroggyscriptMemory.importsData.graphics.screenData.defaultBackgroundColor;
+
                             terminal.innerHTML = ""; // clear the terminal
                             for(let i = 0; i <= token.height.value; i++){
                                 let rowHtml = '';
                                 for(let j = 0; j <= token.width.value; j++){
-                                    let style = `"background-color: var(--c15); color: var(--c15)"`;
+                                    let style = `"background-color: var(--${defaultBkgd}); color: var(--${defaultBkgd})"`;
                                     rowHtml += `<span id="screen-${config.programSession}-${i}-${j}" style=${style}>\u00A0</span>`;
                                 }
                                 let lineContainer = document.createElement('div');

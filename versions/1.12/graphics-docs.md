@@ -1,5 +1,17 @@
 # Info
 (0,0) is in the top left corner of the screen. Maximum displayable x is 78 and maximum displayable y is 57.
+
+# methods
+## toRect
+Converts an array to a rectangle.
+```
+#$0, 0, 50, 50$>toRect
+```
+## toText
+Converts an array to a text object.
+```
+#$0, 0, 'Hello World'$>toText
+```
 # keywords
 ## createscreen
 Adds a screen to the terminal line.
@@ -21,6 +33,7 @@ Creates a variable of type Text. `x` and `y` is where the first character of the
 ```
 text [name] = $[x], [y], [text]$
 ```
+
 # Rect
 ## methods
 ### render
@@ -71,3 +84,16 @@ pxl pixel = $0, 0$
 * `>color` - color of the pixel
 
 # Text
+## methods
+### render
+Renders the text to the screen.
+```
+text text = $0, 0, 'Hello World'$
+#text>render
+```
+### clear
+Clears the text from the screen.
+```
+text text = $0, 0, 'Hello World'$
+#text>clear
+```
