@@ -1738,9 +1738,6 @@ function methodParser(startToken){
                     if(token.type == "Rect"){
                         let rectRenderOrder = FroggyscriptMemory.importsData.graphics.rectRenderOrder;
                         switch(methodName){
-                            // merge getters and setters:
-                            // if there is an argument, treat as setter
-                            // if there is no argument, treat as getter
                             case "x": 
                             case "y": 
                             case "width": 
@@ -1903,8 +1900,6 @@ function methodParser(startToken){
                     }
                     if(token.type == "Text"){
                         switch(methodName){
-                            // width only takes affect if wordwrap is true
-                            // wordwrap, width, color (use format objects? < if so, would have to replace the default color stuff with arrays or wtv), text, x, y
                             case "render": {
                                 let target = FroggyscriptMemory.variables[token.value.identifier]
                                 if(target.type != "Undefined") target.value.rendered = true;

@@ -97,3 +97,15 @@ Clears the text from the screen.
 text text = $0, 0, 'Hello World'$
 #text>clear
 ```
+
+```
+to do:
+width only takes affect if wordwrap is true
+text -> wrap (internally wordWrap), width, color (use format objects? < if so, would have to replace the default color stuff with arrays or wtv), text, x, y, move
+
+merge getters and setters:
+if there is an argument, treat as setter
+if there is no argument, treat as getter
+
+>clone for rect and text
+```
