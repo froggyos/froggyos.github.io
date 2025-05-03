@@ -1,5 +1,5 @@
 # Info
-Introduces a variable called `Config` of type `Config`. This variable has access to the froggyOS config via the `>get()` method.
+Introduces a variable called `Config` of type `Config`.
 
 # Config
 ## Methods
