@@ -531,7 +531,6 @@ function typeify(value) {
             evaluate(value);
         } catch (e) {
             error = true;
-            errMsg = e.message;
         }
 
         if (error) {
