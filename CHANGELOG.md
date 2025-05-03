@@ -145,4 +145,5 @@ idk
 ```
 + added imports to FroggyScript
     * graphics
+    * config
 ```

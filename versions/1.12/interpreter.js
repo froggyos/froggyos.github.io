@@ -17,7 +17,7 @@ const FroggyscriptMemory = {
                 height: 0,
                 defaultBackgroundColor: "c15",
             },
-            rectRenderOrder: [],
+            backRenderOrder: [],
         }
     },
     temporaryVariables: {},
@@ -75,10 +75,10 @@ const defaultVariables = {
         value: null,
         identifier: "OS_ProgramName",
         mutable: false,
-    }
+    },
 }
 
-const validImports = ["graphics"]
+const validImports = ["graphics", "config"]
 
 let freeze = (obj) => structuredClone(obj);
 
@@ -329,7 +329,7 @@ function typeify(value) {
     if(value == undefined) return new ScriptError("TypeAssignmentError", `Cannot assign type to [${value}]`);
 
     if(/^@.*$/g.test(value)) {
-        const match = value.match(/^@([a-zA-Z_][a-zA-Z0-9_]*)\((.*)\)$/);
+        const match = value.match(/^@([a-zA-Z][a-zA-Z0-9_]*)\((.*)\)$/);
         if (!match) {
             return new ScriptError("SyntaxError", `Invalid function syntax: ${value}`);
         }
@@ -510,7 +510,7 @@ function typeify(value) {
 
         typeObj.origin = "Boolean";
 
-    } else if(value.match(/^[a-zA-Z][a-zA-Z0-9]*$/)) {
+    } else if(value.match(/^[a-zA-Z][a-zA-Z0-9_]*$/)) {
         let name = value;
 
         let variableValue = getVariable(name);
@@ -693,200 +693,9 @@ function processSingleLine(input) {
     }
 
     switch (keyword) {
-        case "text": {
-            let varName = input.split(" ")[1].trim();
-            let value = typeify(input.split(" ").slice(3).join(" "));
-
-            if(varName == undefined) {
-                token = new ScriptError("SyntaxError", `[text] must be followed by a variable name`);
-                break;
-            }
-            if(getVariable(varName) != undefined) {
-                token = new ScriptError("ReferenceError", `Variable [${varName}] already exists, cannot override`);
-                break;
-            }
-            if(value.type == "Error") {
-                token = value;
-                break;
-            }
-            if(value.type != "Array") {
-                token = new ScriptError("TypeError", `[text] must be followed by a value of type Array, found type ${value.type}`);
-                break;
-            }
-            if(value.value.length != 3) {
-                token = new ScriptError("SyntaxError", `[text] must be followed by 3 values`);
-                break;
-            }
-            if(value.value[0].type != "Number"){
-                token = new ScriptError("TypeError", `[text] value 1 must be of type Number, found type ${value.value[0].type}`);
-                break;
-            }
-            if(value.value[1].type != "Number"){
-                token = new ScriptError("TypeError", `[text] value 2 must be of type Number, found type ${value.value[1].type}`);
-                break;
-            }
-            if(value.value[2].type != "String"){
-                token = new ScriptError("TypeError", `[text] value 3 must be of type String, found type ${value.value[2].type}`);
-                break;
-            }
-
-            let x = value.value[0].value;
-            let y = value.value[1].value;
-            let text = value.value[2].value;
-            
-            token = { ...token, type: "Text", identifier: varName, value: {
-                x, y, text,
-                color: "c00",
-                identifier: varName,
-                width: Infinity,
-                rendered: false,
-                wordWrap: false,
-            } };
-
-            if(value.cloneInfo){
-                token.value.color = value.cloneInfo.color;
-                token.value.width = value.cloneInfo.width - 1;
-                token.value.wordWrap = value.cloneInfo.wordWrap;
-            }
-            
-        } break;
-
-        case "createscreen": {
-            if(input.split(" ").length != 3) {
-                token = new ScriptError("SyntaxError", `[createscreen] must be followed by x and y length`);
-                break;
-            }
-
-            let argX = input.split(" ")[1].trim();
-            let argY = input.split(" ")[2].trim();
-
-            // 78x57
-
-            argX = typeify(argX);
-            argY = typeify(argY);
-
-            if(argX.type == "Error"){
-                token = argX;
-                token.value += ` (argument 1)`
-                break;
-            }
-            if(argY.type == "Error"){
-                token = argY;
-                token.value += ` (argument 2)`
-                break;
-            }
-
-            if(argX.type != "Number"){
-                token = new ScriptError("TypeError", `[createscreen] x length must be of type Number, found type ${argX.type}`);
-                break;
-            } 
-            if(argY.type != "Number"){
-                token = new ScriptError("TypeError", `[createscreen] y length must be of type Number, found type ${argY.type}`);
-                break;
-            }
-
-            if(argX > FroggyscriptMemory.importsData.graphics.screenData.width){
-                token = new ScriptError("RangeError", `[createscreen] x length must be less than 79, found ${argX}`);
-                break;
-            }
-            if(argY > FroggyscriptMemory.importsData.graphics.screenData.height){
-                token = new ScriptError("RangeError", `[createscreen] y length must be less than 58, found ${argY}`);
-                break;
-            }
-            if(argX < 1){
-                token = new ScriptError("RangeError", `[createscreen] x length must be greater than 0, found ${argX}`);
-                break;
-            }
-            if(argY < 1){
-                token = new ScriptError("RangeError", `[createscreen] y length must be greater than 0, found ${argY}`);
-                break;
-            }
-
-            token = { ...token, width: argX, height: argY };
-        } break;
-
-        case "pxl": {
-            let varName = input.split(" ")[1].trim();
-            let value = typeify(input.split(" ").slice(3).join(" "));
-
-            if(varName == undefined) {
-                token = new ScriptError("SyntaxError", `[pxl] must be followed by a variable name`);
-                break;
-            }
-            if(getVariable(varName) != undefined) {
-                token = new ScriptError("ReferenceError", `Variable [${varName}] already exists, cannot override`);
-                break;
-            }
-            if(value.type == "Error") {
-                token = value;
-                break;
-            } else if(value.type != "Array") {
-                token = new ScriptError("TypeError", `[pxl] must be followed by a value of type Array, found type ${value.type}`);
-                break;
-            } else if(value.value.length != 2) {
-                token = new ScriptError("SyntaxError", `[pxl] must be followed by 2 values`);
-                break;
-            } else if(value.value.some(v => v.type != "Number")) {
-                token = new ScriptError("TypeError", `[pxl] all values must be of type Number`);
-                break;
-            } else {
-                let x = value.value[0].value;
-                let y = value.value[1].value;
-                // data needed for toPixel method
-                token = { ...token, identifier: varName, type: "Pixel", value: {
-                    x, y,
-                } };
-            }
-        } break;
-
-        case "rect": {
-            let varName = input.split(" ")[1].trim();
-            let value = typeify(input.split(" ").slice(3).join(" "));
-
-            if(varName == undefined) {
-                token = new ScriptError("SyntaxError", `[rect] must be followed by a variable name`);
-                break;
-            }
-            if(getVariable(varName) != undefined) {
-                token = new ScriptError("ReferenceError", `Variable [${varName}] already exists, cannot override`);
-                break;
-            }
-            if(value.type == "Error") {
-                token = value;
-                break;
-            } else if(value.type != "Array") {
-                token = new ScriptError("TypeError", `[rect] must be followed by a value of type Array, found type ${value.type}`);
-                break;
-            } else if(value.value.length != 4) {
-                token = new ScriptError("SyntaxError", `[rect] must be followed by 4 values`);
-                break;
-            } else if(value.value.some(v => v.type != "Number")) {
-                token = new ScriptError("TypeError", `[rect] all values must be of type Number`);
-                break;
-            } else {
-                let x = value.value[0].value;
-                let y = value.value[1].value;
-                let width = value.value[2].value - 1;
-                let height = value.value[3].value;
-                // data needed for toRect method
-                token = { ...token, identifier: varName, type: "Rect", value: {
-                    x, y, width, height, 
-                    fill: FroggyscriptMemory.importsData.graphics.screenData.defaultBackgroundColor,
-                    stroke: "c00",
-                    identifier: varName, 
-                    rendered: false
-                } };
-
-                if(value.cloneInfo){
-                    token.value.fill = value.cloneInfo.fill;
-                    token.value.stroke = value.cloneInfo.stroke;
-                }
-            }
-        } break;
-
         case "import": {
             let moduleToken = typeify(input.split(" ")[1].trim());
-            let moduleName = moduleToken.value;
+            let importName = moduleToken.value;
             if(moduleToken.type == "Error") {   
                 token = moduleToken;
                 break;
@@ -895,12 +704,12 @@ function processSingleLine(input) {
                 token = new ScriptError("TypeError", `[import] module name must be type String, found type ${moduleToken.type}`);
                 break;
             }
-            if(!validImports.includes(moduleName)) {
-                token = new ScriptError("ImportError", `Module [${moduleName}] is not a valid import`);
+            if(!validImports.includes(importName)) {
+                token = new ScriptError("ImportError", `Module [${importName}] is not a valid import`);
                 break;
             }
 
-            token = { ...token, moduleName: moduleName };
+            token = { ...token, importName: importName };
         } break;
 
         case "func": {
@@ -1487,6 +1296,249 @@ function processSingleLine(input) {
                 token = {...token, ...typeifyValue};
             }
         }
+
+        default: {
+            if(hasImport('graphics')){
+                switch(keyword) {
+                    case "line": {
+                        let varName = input.split(" ")[1].trim();
+                        let value = typeify(input.split(" ").slice(3).join(" "));
+
+                        if(varName == undefined) {
+                            token = new ScriptError("SyntaxError", `[line] must be followed by a variable name`);
+                            break;
+                        }
+                        if(getVariable(varName) != undefined) {
+                            token = new ScriptError("ReferenceError", `Variable [${varName}] already exists, cannot override`);
+                            break;
+                        }
+                        if(value.type == "Error") {
+                            token = value;
+                            break;
+                        }
+                        if(value.type != "Array") {
+                            token = new ScriptError("TypeError", `[line] must be followed by a value of type Array, found type ${value.type}`);
+                            break;
+                        }
+                        if(value.value.length != 4) {
+                            token = new ScriptError("SyntaxError", `[line] must be followed by 4 values`);
+                            break;
+                        }
+                        if(value.value.some(v => v.type != "Number")) {
+                            token = new ScriptError("TypeError", `[line] all values must be of type Number`);
+                            break;
+                        }
+                        token = { ...token, type: "Line", identifier: varName, value: {
+                            x1: value.value[0].value,
+                            y1: value.value[1].value,
+                            x2: value.value[2].value,
+                            y2: value.value[3].value,
+                            stroke: "c00", // line color
+                            color: "c00", // text color
+                            text: "",
+                            identifier: varName
+                        } };
+
+                        if(value.cloneInfo){
+                            token.value.stroke = value.cloneInfo.stroke;
+                            token.value.color = value.cloneInfo.color;
+                            token.value.text = value.cloneInfo.text;
+                        }
+                    } break;
+
+                    case "text": {
+                        let varName = input.split(" ")[1].trim();
+                        let value = typeify(input.split(" ").slice(3).join(" "));
+            
+                        if(varName == undefined) {
+                            token = new ScriptError("SyntaxError", `[text] must be followed by a variable name`);
+                            break;
+                        }
+                        if(getVariable(varName) != undefined) {
+                            token = new ScriptError("ReferenceError", `Variable [${varName}] already exists, cannot override`);
+                            break;
+                        }
+                        if(value.type == "Error") {
+                            token = value;
+                            break;
+                        }
+                        if(value.type != "Array") {
+                            token = new ScriptError("TypeError", `[text] must be followed by a value of type Array, found type ${value.type}`);
+                            break;
+                        }
+                        if(value.value.length != 3) {
+                            token = new ScriptError("SyntaxError", `[text] must be followed by 3 values`);
+                            break;
+                        }
+                        if(value.value[0].type != "Number"){
+                            token = new ScriptError("TypeError", `[text] value 1 must be of type Number, found type ${value.value[0].type}`);
+                            break;
+                        }
+                        if(value.value[1].type != "Number"){
+                            token = new ScriptError("TypeError", `[text] value 2 must be of type Number, found type ${value.value[1].type}`);
+                            break;
+                        }
+                        if(value.value[2].type != "String"){
+                            token = new ScriptError("TypeError", `[text] value 3 must be of type String, found type ${value.value[2].type}`);
+                            break;
+                        }
+            
+                        let x = value.value[0].value;
+                        let y = value.value[1].value;
+                        let text = value.value[2].value;
+                        
+                        token = { ...token, type: "Text", identifier: varName, value: {
+                            x, y, text,
+                            color: "c00",
+                            identifier: varName,
+                            width: Infinity,
+                            rendered: false,
+                            wordWrap: false,
+                        } };
+            
+                        if(value.cloneInfo){
+                            token.value.color = value.cloneInfo.color;
+                            token.value.width = value.cloneInfo.width - 1;
+                            token.value.wordWrap = value.cloneInfo.wordWrap;
+                        }
+                        
+                    } break;
+            
+                    case "createscreen": {
+                        if(input.split(" ").length != 3) {
+                            token = new ScriptError("SyntaxError", `[createscreen] must be followed by x and y length`);
+                            break;
+                        }
+            
+                        let argX = input.split(" ")[1].trim();
+                        let argY = input.split(" ")[2].trim();
+            
+                        // 78x57
+            
+                        argX = typeify(argX);
+                        argY = typeify(argY);
+            
+                        if(argX.type == "Error"){
+                            token = argX;
+                            token.value += ` (argument 1)`
+                            break;
+                        }
+                        if(argY.type == "Error"){
+                            token = argY;
+                            token.value += ` (argument 2)`
+                            break;
+                        }
+            
+                        if(argX.type != "Number"){
+                            token = new ScriptError("TypeError", `[createscreen] x length must be of type Number, found type ${argX.type}`);
+                            break;
+                        } 
+                        if(argY.type != "Number"){
+                            token = new ScriptError("TypeError", `[createscreen] y length must be of type Number, found type ${argY.type}`);
+                            break;
+                        }
+            
+                        if(argX > FroggyscriptMemory.importsData.graphics.screenData.width){
+                            token = new ScriptError("RangeError", `[createscreen] x length must be less than 79, found ${argX}`);
+                            break;
+                        }
+                        if(argY > FroggyscriptMemory.importsData.graphics.screenData.height){
+                            token = new ScriptError("RangeError", `[createscreen] y length must be less than 58, found ${argY}`);
+                            break;
+                        }
+                        if(argX < 1){
+                            token = new ScriptError("RangeError", `[createscreen] x length must be greater than 0, found ${argX}`);
+                            break;
+                        }
+                        if(argY < 1){
+                            token = new ScriptError("RangeError", `[createscreen] y length must be greater than 0, found ${argY}`);
+                            break;
+                        }
+            
+                        token = { ...token, width: argX, height: argY };
+                    } break;
+            
+                    case "pxl": {
+                        let varName = input.split(" ")[1].trim();
+                        let value = typeify(input.split(" ").slice(3).join(" "));
+            
+                        if(varName == undefined) {
+                            token = new ScriptError("SyntaxError", `[pxl] must be followed by a variable name`);
+                            break;
+                        }
+                        if(getVariable(varName) != undefined) {
+                            token = new ScriptError("ReferenceError", `Variable [${varName}] already exists, cannot override`);
+                            break;
+                        }
+                        if(value.type == "Error") {
+                            token = value;
+                            break;
+                        } else if(value.type != "Array") {
+                            token = new ScriptError("TypeError", `[pxl] must be followed by a value of type Array, found type ${value.type}`);
+                            break;
+                        } else if(value.value.length != 2) {
+                            token = new ScriptError("SyntaxError", `[pxl] must be followed by 2 values`);
+                            break;
+                        } else if(value.value.some(v => v.type != "Number")) {
+                            token = new ScriptError("TypeError", `[pxl] all values must be of type Number`);
+                            break;
+                        } else {
+                            let x = value.value[0].value;
+                            let y = value.value[1].value;
+                            // data needed for toPixel method
+                            token = { ...token, identifier: varName, type: "Pixel", value: {
+                                x, y,
+                            } };
+                        }
+                    } break;
+            
+                    case "rect": {
+                        let varName = input.split(" ")[1].trim();
+                        let value = typeify(input.split(" ").slice(3).join(" "));
+            
+                        if(varName == undefined) {
+                            token = new ScriptError("SyntaxError", `[rect] must be followed by a variable name`);
+                            break;
+                        }
+                        if(getVariable(varName) != undefined) {
+                            token = new ScriptError("ReferenceError", `Variable [${varName}] already exists, cannot override`);
+                            break;
+                        }
+                        if(value.type == "Error") {
+                            token = value;
+                            break;
+                        } else if(value.type != "Array") {
+                            token = new ScriptError("TypeError", `[rect] must be followed by a value of type Array, found type ${value.type}`);
+                            break;
+                        } else if(value.value.length != 4) {
+                            token = new ScriptError("SyntaxError", `[rect] must be followed by 4 values`);
+                            break;
+                        } else if(value.value.some(v => v.type != "Number")) {
+                            token = new ScriptError("TypeError", `[rect] all values must be of type Number`);
+                            break;
+                        } else {
+                            let x = value.value[0].value;
+                            let y = value.value[1].value;
+                            let width = value.value[2].value - 1;
+                            let height = value.value[3].value;
+                            // data needed for toRect method
+                            token = { ...token, identifier: varName, type: "Rect", value: {
+                                x, y, width, height, 
+                                fill: FroggyscriptMemory.importsData.graphics.screenData.defaultBackgroundColor,
+                                stroke: "c00",
+                                identifier: varName, 
+                                rendered: false
+                            } };
+            
+                            if(value.cloneInfo){
+                                token.value.fill = value.cloneInfo.fill;
+                                token.value.stroke = value.cloneInfo.stroke;
+                            }
+                        }
+                    } break;
+                }
+            }
+        }
     }
 
     if(FroggyscriptMemory.imports.includes("graphics")){
@@ -1734,7 +1786,51 @@ function methodParser(startToken){
             } break;
 
             default: {
-                if(FroggyscriptMemory.imports.includes("graphics")){
+                if(FroggyscriptMemory.imports.includes("config")){
+                    if(token.type == "Config"){
+                        switch(methodName){
+                            case "get": {
+                                let arg1 = methodArgs[0];
+                                if(arg1 == undefined) {
+                                    token = new ScriptError("SyntaxError", `[>get()] must have a key argument (arg 1)`);
+                                    break;
+                                }
+                                if(arg1.type != "String") {
+                                    token = new ScriptError("TypeError", `[>get()] key argument expects type String, found type ${arg1.type}`);
+                                    break;
+                                }
+                                let validKeys = ["language", "colorPalette", "version", "showSpinner", "currentSpinner", "defaultSpinner", "timeFormat", "updateStatBar", "allowedProgramDirectories", "dissallowSubdirectoriesIn","validateLanguageOnStartup", "currentPath", "spinnerIndex", "programList", "programSession"];
+
+                                if(!validKeys.includes(arg1.value)){
+                                    token = new ScriptError("ReferenceError", `[>get()] key argument must be a valid key, found ${arg1.value}`);
+                                    break;
+                                }
+
+                                let data = config[arg1.value]
+
+                                if(Array.isArray(data)){
+                                    token.type = "Array";
+                                    token.value = data.map(x => typeify(`'${x}'`));
+                                    console.log(token);
+                                } else {
+                                    if(typeof data === 'number'){
+                                        token.type = "Number";
+                                        token.value = data;
+                                    } else if(typeof data === 'boolean'){
+                                        token.type = "Boolean";
+                                        token.value = data;
+                                    } else {
+                                        token.type = "String";
+                                        token.value = '"' + data + '"';
+                                    }
+                                }
+
+                                
+                            } break;
+                        }
+                    }
+                } else if(FroggyscriptMemory.imports.includes("graphics")){
+                    let renderOrder = FroggyscriptMemory.importsData.graphics.backRenderOrder;
                     if(token.type == "Array"){
                         switch(methodName){
                             case "toRect": {
@@ -1751,8 +1847,179 @@ function methodParser(startToken){
                         }
                     }
 
+                    if(token.type == "Line"){
+                        switch(methodName){
+                            case "render": {
+                                let target = FroggyscriptMemory.variables[token.value.identifier]
+                                if(target.type != "Undefined") target.value.rendered = true;
+                                renderOrder.push(token.value.identifier);
+                                renderGraphics(["back"]);
+                            } break;
+
+                            case "clear": {
+                                let target = FroggyscriptMemory.variables[token.value.identifier]
+                                if(target.type != "Undefined") target.value.rendered = false;
+                                let index = renderOrder.indexOf(token.value.identifier);
+                                if(index != -1) renderOrder.splice(index, 1);
+
+                                let scope = ["back"]
+
+                                if(target.value.text.length != 0) scope.push("front")
+                                renderGraphics(scope);
+                            } break;
+
+                            case "x1":
+                            case "y1":
+                            case "x2":
+                            case "y2": {
+                                // getter
+                                if(methodArgs[0] == undefined){
+                                    token.value = getVariable(token.value.identifier).value[methodName];
+                                    token.type = "Number";
+                                // setter
+                                } else {
+                                    if(methodArgs[0].type != "Number"){
+                                        token = new ScriptError("TypeError", `[>${methodName}()] ${methodName} argument expects type Number, found type ${methodArgs[0].type}`);
+                                        break;
+                                    }
+        
+                                    token.value[methodName] = methodArgs[0].value;
+                                    FroggyscriptMemory.variables[token.value.identifier].value[methodName] = methodArgs[0].value;
+                                    renderGraphics(["back"]);
+                                }
+                            } break;
+
+                            case "text":
+                            case "color":
+                            case "stroke": {
+                                if(methodArgs[0] == undefined){
+                                    token.value = FroggyscriptMemory.variables[token.value.identifier].value[methodName];
+                                    token.type = "String";
+                                } else {
+                                    if(methodArgs[0].type != "String"){
+                                        token = new ScriptError("TypeError", `[>${methodName}()] ${methodName} argument expects type String, found type ${methodArgs[0].type}`);
+                                        break;
+                                    }
+                                    FroggyscriptMemory.variables[token.value.identifier].value[methodName] = methodArgs[0].value;
+                                    token.value[methodName] = methodArgs[0].value;
+                                    renderGraphics(["back"]);
+                                }
+                            } break;
+
+                            case "clone": {
+                                let cloneValue = typeify(`$${token.value.x1}, ${token.value.y1}, ${token.value.x2}, ${token.value.y2}$`)
+                                let cloneToken = {
+                                    type: "Array",
+                                    value: cloneValue.value,
+                                    cloneInfo: {
+                                        stroke: token.value.stroke,
+                                        color: token.value.color,
+                                        text: token.value.text,
+                                    }
+                                }
+                                token = cloneToken;
+                            } break;
+
+                            case "intersection": {
+                                let arg1 = methodArgs[0];
+                                if(arg1 == undefined) {
+                                    token = new ScriptError("SyntaxError", `[>intersection()] must have a Line argument (arg 1)`);
+                                    break;
+                                }
+                                if(arg1.type != "Line") {
+                                    token = new ScriptError("TypeError", `[>intersection()] argument expects type Line, found type ${arg1.type}`);
+                                    break;
+                                }
+
+                                let line1 = token.value;
+                                let line2 = arg1.value;
+
+                                let x1 = line1.x1, y1 = line1.y1;
+                                let x2 = line1.x2, y2 = line1.y2;
+                                let x3 = line2.x1, y3 = line2.y1;
+                                let x4 = line2.x2, y4 = line2.y2;
+
+                                function getLineIntersection(x1, y1, x2, y2, x3, y3, x4, y4) {
+                                    // Calculate denominators
+                                    let denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
+                                    if (denom === 0) return null; // Lines are parallel or coincident
+
+                                    // Calculate intersection point
+                                    let px = ((x1*y2 - y1*x2)*(x3 - x4) - (x1 - x2)*(x3*y4 - y3*x4)) / denom;
+                                    let py = ((x1*y2 - y1*x2)*(y3 - y4) - (y1 - y2)*(x3*y4 - y3*x4)) / denom;
+
+                                    // Check if point is within both segments
+                                    let within1 = Math.min(x1, x2) <= px && px <= Math.max(x1, x2) &&
+                                                Math.min(y1, y2) <= py && py <= Math.max(y1, y2);
+                                    let within2 = Math.min(x3, x4) <= px && px <= Math.max(x3, x4) &&
+                                                Math.min(y3, y4) <= py && py <= Math.max(y3, y4);
+
+                                    if (within1 && within2) {
+                                        return { 
+                                            x: Math.round(px), 
+                                            y: Math.round(py)
+                                        };
+                                    }
+
+                                    return null; // The intersection is outside the segments
+                                }
+
+                                let intersection = getLineIntersection(x1, y1, x2, y2, x3, y3, x4, y4);
+
+                                if(intersection == null){
+                                    token.type = "Boolean"
+                                    token.value = false;
+                                } else {
+                                    token.type = "Array"
+                                    token.identifier = undefined
+                                    token.value = [
+                                        typeify(`${intersection.x}`),
+                                        typeify(`${intersection.y}`),
+                                    ]
+                                }
+
+
+                            } break;
+
+                            case "cross": {
+                                // check if this intersects with another line
+                                let arg1 = methodArgs[0];
+                                if(arg1 == undefined) {
+                                    token = new ScriptError("SyntaxError", `[>cross()] must have a Line argument (arg 1)`);
+                                    break;
+                                }
+                                if(arg1.type != "Line") {
+                                    token = new ScriptError("TypeError", `[>cross()] argument expects type Line, found type ${arg1.type}`);
+                                    break;
+                                }
+
+                                let line1 = token.value;
+                                let line2 = arg1.value;
+                                
+                                let x1 = line1.x1, y1 = line1.y1;
+                                let x2 = line1.x2, y2 = line1.y2;
+                                let x3 = line2.x1, y3 = line2.y1;
+                                let x4 = line2.x2, y4 = line2.y2;
+                                
+                                // Helper function to determine orientation
+                                function ccw(ax, ay, bx, by, cx, cy) {
+                                    return (cy - ay) * (bx - ax) > (by - ay) * (cx - ax);
+                                }
+                                
+                                // Check if lines (x1,y1)-(x2,y2) and (x3,y3)-(x4,y4) intersect
+                                function linesIntersect(x1, y1, x2, y2, x3, y3, x4, y4) {
+                                    return ccw(x1, y1, x3, y3, x4, y4) !== ccw(x2, y2, x3, y3, x4, y4) &&
+                                           ccw(x1, y1, x2, y2, x3, y3) !== ccw(x1, y1, x2, y2, x4, y4);
+                                }
+                                
+                                let intersects = linesIntersect(x1, y1, x2, y2, x3, y3, x4, y4);
+                                
+                                token.type = "Boolean"
+                                token.value = intersects;
+                            }
+                        }
+                    }
                     if(token.type == "Rect"){
-                        let rectRenderOrder = FroggyscriptMemory.importsData.graphics.rectRenderOrder;
                         switch(methodName){
                             case "intersects": {
                                 let arg1 = methodArgs[0];
@@ -1865,15 +2132,15 @@ function methodParser(startToken){
                             case "render": {
                                 let target = FroggyscriptMemory.variables[token.value.identifier]
                                 if(target.type != "Undefined") target.value.rendered = true;
-                                rectRenderOrder.push(token.value.identifier);
+                                renderOrder.push(token.value.identifier);
                                 renderGraphics(["back"]);
                             } break;
 
                             case "clear": {
                                 let target = FroggyscriptMemory.variables[token.value.identifier]
                                 if(target.type != "Undefined") target.value.rendered = false;
-                                let index = rectRenderOrder.indexOf(token.value.identifier);
-                                if(index != -1) rectRenderOrder.splice(index, 1);
+                                let index = renderOrder.indexOf(token.value.identifier);
+                                if(index != -1) renderOrder.splice(index, 1);
                                 renderGraphics(["back"]);
                             } break;
 
@@ -2098,23 +2365,63 @@ function renderGraphics(scope) {
             pixel.removeAttribute("data-render-back");
         })
 
-        FroggyscriptMemory.importsData.graphics.rectRenderOrder.forEach(identifier => {
+        FroggyscriptMemory.importsData.graphics.backRenderOrder.forEach(identifier => {
             let variable = FroggyscriptMemory.variables[identifier].value;
             if(variable == undefined) return;
-            let i_x = variable.x;
-            let i_y = variable.y;
-            let i_width = variable.width;
-            let i_height = variable.height;
-            let i_fill = variable.fill;
-            let i_stroke = variable.stroke;
-            for(let i = i_y; i <= i_y + i_height; i++){
-                for(let j = i_x; j <= i_x + i_width; j++){
-                    let pixel = document.getElementById(`screen-${config.programSession}-${i}-${j}`);
-                    if(pixel == null) continue;
-                    let color = i_fill;
-                    if(i == i_y || i == i_y + i_height || j == i_x || j == i_x + i_width) color = i_stroke;
-                    setPixelColor(pixel, color);
-                    pixel.setAttribute("data-render-back", identifier);
+            if(FroggyscriptMemory.variables[identifier].type == "Rect"){
+                let i_x = variable.x;
+                let i_y = variable.y;
+                let i_width = variable.width;
+                let i_height = variable.height;
+                let i_fill = variable.fill;
+                let i_stroke = variable.stroke;
+                for(let i = i_y; i <= i_y + i_height; i++){
+                    for(let j = i_x; j <= i_x + i_width; j++){
+                        let pixel = document.getElementById(`screen-${config.programSession}-${i}-${j}`);
+                        if(pixel == null) continue;
+                        let color = i_fill;
+                        if(i == i_y || i == i_y + i_height || j == i_x || j == i_x + i_width) color = i_stroke;
+                        setPixelColor(pixel, color);
+                        pixel.setAttribute("data-render-back", identifier);
+                    }
+                }
+            } else if(FroggyscriptMemory.variables[identifier].type == "Line"){
+                let x1 = variable.x1;
+                let y1 = variable.y1;
+                let x2 = variable.x2;
+                let y2 = variable.y2;
+                let stroke = variable.stroke;
+                let color = variable.color;
+
+                const dx = Math.abs(x2 - x1);
+                const dy = Math.abs(y2 - y1);
+                const sx = x1 < x2 ? 1 : -1;
+                const sy = y1 < y2 ? 1 : -1;
+                let err = dx - dy;
+
+                let textIncrement = 0;
+            
+                while (true) {
+                    let pixel = document.getElementById(`screen-${config.programSession}-${y1}-${x1}`);
+                    if (pixel != null) {
+                        setPixelColor(pixel, stroke);
+                        pixel.setAttribute("data-render-back", identifier);
+                    
+                        if (variable.text.length > 0 && textIncrement < variable.text.length) {
+                            pixel.textContent = variable.text[textIncrement];
+                            setPixelTextColor(pixel, color);
+                            pixel.setAttribute("data-render-front", identifier);
+                            textIncrement++;
+                        } else {
+                            pixel.textContent = "\u00A0"; // Clear text if not used
+                            pixel.removeAttribute("data-render-front"); // Optional cleanup
+                        }
+                    }
+            
+                    if (x1 === x2 && y1 === y2) break;
+                    const e2 = 2 * err;
+                    if (e2 > -dy) { err -= dy; x1 += sx; }
+                    if (e2 < dx) { err += dx; y1 += sy; }
                 }
             }
         })
@@ -2200,7 +2507,16 @@ async function interpretSingleLine(interval, single_input, error_trace, block_er
         // process tokens here =======================================================
         switch(token.keyword) {
             case "import": {
-                if(!FroggyscriptMemory.imports.includes(token.moduleName)) FroggyscriptMemory.imports.push(token.moduleName);
+                if(!FroggyscriptMemory.imports.includes(token.importName)) {
+                    FroggyscriptMemory.imports.push(token.importName);
+                    if(token.importName == "config"){
+                        FroggyscriptMemory.variables["Config"] = {
+                            type: "Config",
+                            identifier: "Config",
+                            mutable: false,
+                        }
+                    }
+                }            
             } break;
 
             case "loaddata": {
@@ -2664,6 +2980,10 @@ async function interpretSingleLine(interval, single_input, error_trace, block_er
             default: { 
                 if(hasImport("graphics")){
                     switch(token.keyword) {
+                        case "line": {
+                            writeVariable(token.identifier, "Line", token.value, true);
+                        } break;
+
                         case "pxl": {
                             writeVariable(token.identifier, "Pixel", token.value, true);
                         } break;

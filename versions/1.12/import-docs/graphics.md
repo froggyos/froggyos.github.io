@@ -1,7 +1,7 @@
 # Info
 (0,0) is in the top left corner of the screen. Maximum displayable x is 78 and maximum displayable y is 57.
 
-# methods
+# Methods
 ## toRect
 Converts an array to a rectangle.
 ```
@@ -12,7 +12,7 @@ Converts an array to a text object.
 ```
 #$0, 0, 'Hello World'$>toText
 ```
-# keywords
+# Keywords
 ## createscreen
 Adds a screen to the terminal line.
 ```
@@ -22,20 +22,32 @@ createscreen
 Creates a variable of type Rect.
 ```
 rect [name] = $[x], [y], [width], [height]$
+
+rect rect = $0, 0, 50, 50$
 ```
 ## pixel
 Creates a variable of type Pixel.
 ```
 pxl [name] = $[x], [y]$
+pxl pixel = $0, 0$
 ```
 ## text
 Creates a variable of type Text. `x` and `y` is where the first character of the text will be drawn.
 ```
 text [name] = $[x], [y], [text]$
+
+text text = $0, 0, 'Hello World'$
+```
+## line
+Creates a variable of type Line. `x1` and `y1` is the starting point of the line, and `x2` and `y2` is the ending point of the line.
+```
+line [name] = $[x1], [y1], [x2], [y2]$
+
+line line = $0, 0, 50, 50$
 ```
 
 # Rect
-## methods
+## Methods
 ### render
 Renders the rectangle to the screen.
 ```
@@ -69,7 +81,7 @@ rect rectangle1 = $0, 0, 50, 50$
 rect rectangle2 = $10, 10, 50, 50$
 #rectangle1>intersects(rectangle2)
 ```
-## getters and setters
+## Getters and Setters
 * `>x` - x position of the rectangle
 * `>y` - y position of the rectangle
 * `>width` - width of the rectangle
@@ -79,19 +91,18 @@ rect rectangle2 = $10, 10, 50, 50$
 
 # Pixel
 Manipulate individual pixels on the screen.
-## methods
+## Methods
 ### is
 Checks if the pixel is the provided color. Returns Boolean.
 ```
 pxl pixel = $0, 0$
 #pixel>is('c00')
 ```
-
-## getters and setters
+## Getters and Setters
 * `>color` - color of the pixel
 
 # Text
-## methods
+## Methods
 ### render
 Renders the text to the screen.
 ```
@@ -119,7 +130,7 @@ text clone = text>clone
 #clone>render>move(10;10) 
 -- does not affect the original text object
 ```
-## getters and setters
+## Getters and Setters
 * `>x` - x position of the text
 * `>y` - y position of the text
 * `>width` - width of the text (only if wordwrap is true)
@@ -127,6 +138,49 @@ text clone = text>clone
 * `>color` - color of the text
 * `>text` - text to be displayed
 
+# Line
+## Methods
+### render
+Renders the line to the screen.
+```
+line line = $0, 0, 50, 50$
+#line>render
+```
+### clear
+Clears the line from the screen.
+```
+line line = $0, 0, 50, 50$
+#line>clear
+```
+### cross
+Checks if the line crosses another line. Returns Boolean.
+```
+line line1 = $0, 0, 50, 50$
+line line2 = $10, 10, 50, 50$
+#line1>cross(line2)
+```
+### intersection
+Calculates the intersection point of two lines. Returns an array of two points $x, y$.
+```
+let line1 = $0, 0, 50, 50$
+let line2 = $10, 10, 50, 50$
+#line1>intersection(line2)
+```
+### clone
+Creates a clone of the line object. The clone will have the same properties as the original line object, but will not be linked to it. This means that changes made to the clone will not affect the original line object, and vice versa.
+```
+line line1 = $0, 0, 50, 50$
+line line2 = line1>clone
+#line2>render>move(10;10)
+```
+## Getters and Setters
+* `>x1` - x position of the first point of the line
+* `>y1` - y position of the first point of the line
+* `>x2` - x position of the second point of the line
+* `>y2` - y position of the second point of the line
+* `>text` - text to be displayed on the line
+* `>stroke` - stroke color of the line
+* `>color` - text color of the line
 ```
 to add:
 Line = $[x1], [y1], [x2], [y2]$

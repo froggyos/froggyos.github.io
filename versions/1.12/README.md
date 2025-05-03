@@ -595,4 +595,5 @@ import [import name:S]
 import "graphics"
 ```
 ### Imports List & Documentation
-* [graphics](https://rus1130.github.io/projects/mdparser.html?url=https://froggyos.github.io/versions/1.12/graphics-docs.md)
+* [graphics](https://rus1130.github.io/projects/mdparser.html?url=https://froggyos.github.io/versions/1.12/import-docs/graphics.md)
+* [config](https://rus1130.github.io/projects/mdparser.html?url=https://froggyos.github.io/versions/1.12/import-docs/config.md)
