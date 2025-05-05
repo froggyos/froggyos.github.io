@@ -603,4 +603,9 @@ trusted
 add a file called "trusted programs"
 at every boot, check if any files in the trusted programs file exist
 if they do, change their trusted permission to true
+
+overhaul inclusions in translation descriptors
+[T#:{value}]
+# = number
+this allows for multiple inclusions per descriptor
 -->
