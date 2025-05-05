@@ -1,0 +1,195 @@
+<style>
+    * {
+        font-family: monospace;
+    }
+
+    code {
+        white-space: pre;
+        overflow-x: auto;
+    }
+
+    #config {
+        display: grid;
+        grid-template-columns: 1fr 50px 1fr;
+    }
+
+    #container {
+        display: flex;
+        justify-content: flex-start;
+        overflow: auto;
+        overflow-y: hidden;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .border-vertical {
+        background-color: #ccc;
+        width: 1px;
+        margin-left: 20px;
+        margin-right: 20px;
+    }
+
+    .border-horizontal {
+        padding: 10px 0px 10px;
+        background-color: #ccc;
+        height: 1px;
+        background-clip: content-box;
+    }
+
+    .line-border {
+        font-family: 'Times New Roman', Times, serif;
+        display: inline-block;
+        background-color: #ccc;
+        color: #ccc;
+    }
+
+    .json-visualizer {
+        height: 100%;
+        width: calc(100% - 2px);
+        border: 1px solid #ccc;
+        overflow-y: auto;
+    }
+</style>
+<!-- <script src="test.js"></script> -->
+<script src="https://rus1130.github.io/projects/Global/jsonTreeViewer2.js"></script>
+<body>
+    <div id="config">
+        <div id="container"style="padding-left: 20px;">
+            <div style="padding-bottom: 10px;">user config:</div>
+            <code id="user-config"></code>
+        </div>
+        <div class="border-vertical"></div>
+        <div id="container">
+            <div style="padding-bottom: 10px;">os config:</div>
+            <code id="user-immutable-config"></code>
+        </div>
+    </div>
+    <div class="border-horizontal"></div>
+    <div id="config">
+        <div id="container" style="height: calc(100vh - 297px)">
+            <div style="padding-bottom: 10px;">program memory: <button id="step-button">[STEP]</button> <button id="rea;time-button" title="Enable and click [STEP] to access real time">REALTIME: OFF</button></div>
+            <div class="json-visualizer" id="program-memory"></div>
+        </div>
+        <div class="border-vertical"></div>
+        <div id="container" style="height: calc(100vh - 297px); margin-left: -8px;">
+            <div style="padding-bottom: 16px;">filesystem:</div>
+            <div class="json-visualizer" id="filesystem"></div>
+        </div>
+    </div>
+</body>
+<script>
+    const pingInterval = setInterval(() => {
+        try {
+            // Use `opener` for popup, `parent` for iframe
+            const isConnected = !!window.opener && !window.opener.closed;
+
+            if (!isConnected) {
+                clearInterval(pingInterval);
+                document.write(`<div style="color: red; font-size: 20px; font-family: monospace">Lost connection to froggyOS.</div>`);
+            }
+        } catch (e) {
+            clearInterval(pingInterval);
+            document.write(`<div style="color: red; font-size: 20px; font-family: monospace">Lost connection to froggyOS.</div>`);
+        }
+    }, 1000);
+
+    let recievedData = {
+        config: {},
+        memory: {},
+        fs: {},
+    }
+
+    const configElement = document.getElementById('config');
+    const memElement = document.getElementById('program-mem');
+
+    const userConfigElement = document.getElementById('user-config');
+    const userImmutableConfigElement = document.getElementById('user-immutable-config');
+
+    const filesystemElement = document.getElementById('filesystem');
+    const programMemoryElement = document.getElementById('program-memory');
+
+    const stepButton = document.getElementById('step-button');
+    const realtimeButton = document.getElementById('rea;time-button');
+
+    stepButton.addEventListener('click', () => {
+        window.opener.postMessage({ step: true }, '*');
+    });
+
+    let realtimeToggle = false;
+    realtimeButton.addEventListener('click', () => {
+        realtimeToggle = !realtimeToggle;
+        window.opener.postMessage({ realtime: realtimeToggle }, '*');
+        realtimeButton.innerText = `REALTIME: ${realtimeToggle ? 'ON' : 'OFF'}`;
+    });
+
+    let fsViewer = new JsonTreeViewer2(filesystemElement, {});
+    let memViewer = new JsonTreeViewer2(programMemoryElement, {});
+
+    let fsProxy = fsViewer.dynamicUpdate({});
+    let memProxy = memViewer.dynamicUpdate({});
+
+    fsViewer.container.style.border = "none";
+    memViewer.container.style.border = "none";
+    
+    window.addEventListener('message', (event) => {
+        if(event.data.FroggyscriptMemory) {
+            recievedData.memory = event.data.FroggyscriptMemory;
+            memProxy.data = event.data.FroggyscriptMemory;
+        }
+        if(event.data.config) {
+            recievedData.config = event.data.config;
+        }
+        if(event.data.fs) {
+            recievedData.fs = event.data.fs;
+            fsProxy.data = event.data.fs;
+        }
+        if(event.data.loseConnection){
+            clearInterval(pingInterval);
+            document.write(`<div style="color: red; font-size: 20px; font-family: monospace">Lost connection to froggyOS.</div>`);
+        }
+
+        updateDebugPanel()
+    });
+
+    function escapeHTML(str) {
+        return str.toString()
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    let userChangableSettings = ["debugMode", "version", "colorPalette", "showSpinner", "currentSpinner", "defaultSpinner", "timeFormat", "updateStatBar", "allowedProgramDirectories", "dissallowSubdirectoriesIn", "language", "validateLanguageOnStartup"]
+
+    let userImmutableSettings = ["currentPath", "commandHistory", "commandHistoryIndex", "spinnerIndex", "currentProgram", "programList", "programSession", "errorText", "translationErrorText","translationWarningText", "alertText", "programErrorText", "stepThroughProgram"]
+
+    let longestSettingLength = userChangableSettings.reduce((max, setting) => {
+        return Math.max(max, setting.length);
+    }, 0);
+
+    let longestImmutableSettingLength = userImmutableSettings.reduce((max, setting) => {
+        return Math.max(max, setting.length);
+    }, 0);
+
+    function updateDebugPanel(){
+        userConfigElement.innerHTML = ``
+        userImmutableConfigElement.innerHTML = ``
+
+        userChangableSettings.forEach((setting) => {
+            let value = recievedData.config[setting]
+            if(Array.isArray(value)) value = value.join(", ")
+            
+            userConfigElement.innerHTML += `${" ".repeat(longestSettingLength-setting.length)}${setting} = ${value}<br>`
+        });
+
+        userImmutableSettings.forEach((setting) => {
+            let value = recievedData.config[setting]
+            if(Array.isArray(value)) value = value.join(", ")
+            
+            userImmutableConfigElement.innerHTML += `${" ".repeat(longestImmutableSettingLength-setting.length)}${setting} = <div class='line-border'>|</div>${escapeHTML(value)}<div class='line-border'>|</div><br>`
+        });
+    }
+    updateDebugPanel()
+
+</script>

@@ -146,4 +146,5 @@ idk
 + added imports to FroggyScript
     * graphics
     * config
+~ slightly redid debug window again
 ```

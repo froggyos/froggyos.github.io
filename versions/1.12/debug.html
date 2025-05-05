@@ -8,12 +8,13 @@
         overflow-x: auto;
     }
 
-    #config {
+    .grid {
         display: grid;
-        grid-template-columns: 1fr 50px 1fr;
+        grid-template-columns: 1fr 11px 1fr 11px 1fr 11px 1fr;
+        height: 100%;
     }
 
-    #container {
+    .container {
         display: flex;
         justify-content: flex-start;
         overflow: auto;
@@ -22,25 +23,12 @@
         align-items: flex-start;
     }
 
-    .border-vertical {
+    .border-v {
         background-color: #ccc;
-        width: 1px;
-        margin-left: 20px;
-        margin-right: 20px;
-    }
-
-    .border-horizontal {
-        padding: 10px 0px 10px;
-        background-color: #ccc;
-        height: 1px;
-        background-clip: content-box;
-    }
-
-    .line-border {
-        font-family: 'Times New Roman', Times, serif;
-        display: inline-block;
-        background-color: #ccc;
-        color: #ccc;
+        width: 0px;
+        border-left: 1px solid #ccc;
+        margin-left: 5px;
+        margin-right: 5px;
     }
 
     .json-visualizer {
@@ -49,32 +37,75 @@
         border: 1px solid #ccc;
         overflow-y: auto;
     }
+
+    .label {
+        margin-bottom: 5px;
+        margin-left: 1px;
+        line-height: 21px;
+    }
+
+    button {
+        margin-top: -1px;
+    }
+
+    .inner-grid {
+        display: grid;
+        grid-template-rows: 1fr 11px 1fr;
+        height: 100%;
+        width: 100%;
+    }
+
+    .inner-container {
+        display: flex;
+        justify-content: flex-start;
+        overflow: auto;
+        overflow-y: hidden;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+
 </style>
 <!-- <script src="test.js"></script> -->
 <script src="https://rus1130.github.io/projects/Global/jsonTreeViewer2.js"></script>
 <body>
-    <div id="config">
-        <div id="container"style="padding-left: 20px;">
-            <div style="padding-bottom: 10px;">user config:</div>
-            <code id="user-config"></code>
-        </div>
-        <div class="border-vertical"></div>
-        <div id="container">
-            <div style="padding-bottom: 10px;">os config:</div>
-            <code id="user-immutable-config"></code>
-        </div>
-    </div>
-    <div class="border-horizontal"></div>
-    <div id="config">
-        <div id="container" style="height: calc(100vh - 297px)">
-            <div style="padding-bottom: 10px;">program memory: <button id="step-button">[STEP]</button> <button id="rea;time-button" title="Enable and click [STEP] to access real time">REALTIME: OFF</button></div>
+    <div class="grid">
+        <div class="container">
+            <span class="label">Program Memory: <button id="step-button">[STEP]</button> (updates every step)</span>
             <div class="json-visualizer" id="program-memory"></div>
         </div>
-        <div class="border-vertical"></div>
-        <div id="container" style="height: calc(100vh - 297px); margin-left: -8px;">
-            <div style="padding-bottom: 16px;">filesystem:</div>
+        <div class="border-v"></div>
+        <div class="container">
+            <span class="label">Filesystem: (updates every 400ms)</span>
             <div class="json-visualizer" id="filesystem"></div>
         </div>
+        <div class="border-v"></div>
+        <div class="container">
+            <span class="label">User Config: (updates every 400ms)</span>
+            <div class="json-visualizer" id="user-config"></div>
+        </div>
+        <div class="border-v"></div>
+        <div class="container">
+            <span class="label">OS Config: (updates every 400ms)</span>
+            <div class="json-visualizer" id="os-config"></div>
+        </div>
+        <!-- <div class="container">
+            <div class="inner-grid">
+                <div class="inner-container">
+                    <span class="label">User Config:</span>
+                    <div class="json-visualizer" id="user-config"></div>
+                </div>
+                <div class="border-h"></div>
+                <div class="inner-container">
+                    <span class="label">OS Config:</span>
+                    <div class="json-visualizer" id="os-config"></div>
+                </div>
+            </div>
+        </div>
+        <div class="border-v"></div>
+        <div class="container">
+            <div class="json-visualizer"></div>
+        </div> -->
     </div>
 </body>
 <script>
@@ -93,72 +124,13 @@
         }
     }, 1000);
 
-    let recievedData = {
-        config: {},
-        memory: {},
-        fs: {},
-    }
-
-    const configElement = document.getElementById('config');
-    const memElement = document.getElementById('program-mem');
-
-    const userConfigElement = document.getElementById('user-config');
-    const userImmutableConfigElement = document.getElementById('user-immutable-config');
-
     const filesystemElement = document.getElementById('filesystem');
     const programMemoryElement = document.getElementById('program-memory');
 
+    const userConfigElement = document.getElementById('user-config');
+    const osConfigElement = document.getElementById('os-config');
+
     const stepButton = document.getElementById('step-button');
-    const realtimeButton = document.getElementById('rea;time-button');
-
-    stepButton.addEventListener('click', () => {
-        window.opener.postMessage({ step: true }, '*');
-    });
-
-    let realtimeToggle = false;
-    realtimeButton.addEventListener('click', () => {
-        realtimeToggle = !realtimeToggle;
-        window.opener.postMessage({ realtime: realtimeToggle }, '*');
-        realtimeButton.innerText = `REALTIME: ${realtimeToggle ? 'ON' : 'OFF'}`;
-    });
-
-    let fsViewer = new JsonTreeViewer2(filesystemElement, {});
-    let memViewer = new JsonTreeViewer2(programMemoryElement, {});
-
-    let fsProxy = fsViewer.dynamicUpdate({});
-    let memProxy = memViewer.dynamicUpdate({});
-
-    fsViewer.container.style.border = "none";
-    memViewer.container.style.border = "none";
-    
-    window.addEventListener('message', (event) => {
-        if(event.data.FroggyscriptMemory) {
-            recievedData.memory = event.data.FroggyscriptMemory;
-            memProxy.data = event.data.FroggyscriptMemory;
-        }
-        if(event.data.config) {
-            recievedData.config = event.data.config;
-        }
-        if(event.data.fs) {
-            recievedData.fs = event.data.fs;
-            fsProxy.data = event.data.fs;
-        }
-        if(event.data.loseConnection){
-            clearInterval(pingInterval);
-            document.write(`<div style="color: red; font-size: 20px; font-family: monospace">Lost connection to froggyOS.</div>`);
-        }
-
-        updateDebugPanel()
-    });
-
-    function escapeHTML(str) {
-        return str.toString()
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#039;');
-    }
 
     let userChangableSettings = ["debugMode", "version", "colorPalette", "showSpinner", "currentSpinner", "defaultSpinner", "timeFormat", "updateStatBar", "allowedProgramDirectories", "dissallowSubdirectoriesIn", "language", "validateLanguageOnStartup"]
 
@@ -172,24 +144,57 @@
         return Math.max(max, setting.length);
     }, 0);
 
-    function updateDebugPanel(){
-        userConfigElement.innerHTML = ``
-        userImmutableConfigElement.innerHTML = ``
+    stepButton.addEventListener('click', () => {
+        window.opener.postMessage({ step: true }, '*');
+    });
 
-        userChangableSettings.forEach((setting) => {
-            let value = recievedData.config[setting]
-            if(Array.isArray(value)) value = value.join(", ")
-            
-            userConfigElement.innerHTML += `${" ".repeat(longestSettingLength-setting.length)}${setting} = ${value}<br>`
-        });
+    // let realtimeToggle = false;
+    // realtimeButton.addEventListener('click', () => {
+    //     realtimeToggle = !realtimeToggle;
+    //     window.opener.postMessage({ realtime: realtimeToggle }, '*');
+    //     realtimeButton.innerText = `REALTIME: ${realtimeToggle ? 'ON' : 'OFF'}`;
+    // });
 
-        userImmutableSettings.forEach((setting) => {
-            let value = recievedData.config[setting]
-            if(Array.isArray(value)) value = value.join(", ")
-            
-            userImmutableConfigElement.innerHTML += `${" ".repeat(longestImmutableSettingLength-setting.length)}${setting} = <div class='line-border'>|</div>${escapeHTML(value)}<div class='line-border'>|</div><br>`
-        });
-    }
-    updateDebugPanel()
+    let fsViewer = new JsonTreeViewer2(filesystemElement, {});
+    let memViewer = new JsonTreeViewer2(programMemoryElement, {});
 
+    let userConfigViewer = new JsonTreeViewer2(userConfigElement, {});
+    let osConfigViewer = new JsonTreeViewer2(osConfigElement, {});
+
+    let fsProxy = fsViewer.dynamicUpdate({});
+    let memProxy = memViewer.dynamicUpdate({});
+
+    let userConfigProxy = userConfigViewer.dynamicUpdate({});
+    let osConfigProxy = osConfigViewer.dynamicUpdate({});
+
+    fsViewer.container.style.border = "none";
+    memViewer.container.style.border = "none";
+
+    userConfigViewer.container.style.border = "none";
+    osConfigViewer.container.style.border = "none";
+    
+    window.addEventListener('message', (event) => {
+        if(event.data.FroggyscriptMemory) {
+            memProxy.data = event.data.FroggyscriptMemory;
+        }
+        if(event.data.fs) {
+            fsProxy.data = event.data.fs;
+        }
+        if(event.data.config) {
+            let userConfig = {};
+            let osConfig = {};
+            for (const key in event.data.config) {
+                if (userChangableSettings.includes(key)) {
+                    userConfig[key] = event.data.config[key];
+                } else if (userImmutableSettings.includes(key)) {
+                    osConfig[key] = event.data.config[key];
+                }
+            }
+            userConfigProxy.data = userConfig;
+            osConfigProxy.data = osConfig;
+        }
+    });
+
+    // weird ass bug with the shit not expanding ouuggg
+    
 </script>

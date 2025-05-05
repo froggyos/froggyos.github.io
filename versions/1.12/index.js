@@ -42,6 +42,14 @@ function setConfigFromSettings(){
     config.validateLanguageOnStartup = (getSetting("validateLanguageOnStartup") === "true");
 }
 
+const filePropertyDefaults = {
+    read: true,
+    write: true,
+    hidden: false,
+    transparent: false,
+    trusted: false,
+}
+
 function localize(descriptor, TRANSLATE_TEXT){
     let replacementData;
 
@@ -94,11 +102,7 @@ function programList(){
         if(getFileWithName("D:/Program-Data", program) == undefined){
             config.fileSystem["D:/Program-Data"].push({
                 name: program,
-                properties: {
-                    read: false,
-                    write: false,
-                    hidden: false
-                },
+                properties: { ...filePropertyDefaults },
                 data: []
             });
         }
@@ -162,9 +166,6 @@ function parseTimeFormat(text){
             default: return "th";
         }
     }
-
-
-    let dateTemplate = config.timeFormat;
 
     // totally not ai
     const replacements = [
@@ -792,11 +793,7 @@ function sendCommand(command, args, createEditableLineAfter){
             }
             config.fileSystem[config.currentPath].push({
                 name: args[0],
-                properties: {
-                    read: true,
-                    write: true,
-                    hidden: false
-                }, 
+                properties: { ...filePropertyDefaults },
                 data: [""]
             });
             createTerminalLine("T_file_created", ">")
@@ -1062,7 +1059,7 @@ function sendCommand(command, args, createEditableLineAfter){
                 break;
             }
 
-            let propertyTypes = Object.keys(file.properties);
+            let propertyTypes = Object.keys(file.properties).filter((property) => property != "trusted");
 
             if(property == undefined || propertyTypes.includes(property) == false){
                 createTerminalLine("T_provide_valid_property_type", config.errorText);
@@ -1403,7 +1400,7 @@ x
                 debugWindow.postMessage({ fs: config.fileSystem }, '*');
                 setInterval(() => {
                     debugWindow.postMessage({ config }, '*');
-                }, 1)
+                }, 400)
                 
                 setInterval(() => {
                     debugWindow.postMessage({ fs: config.fileSystem }, '*');
@@ -1771,16 +1768,17 @@ function createLilypadLine(path, linetype, filename){
             e.preventDefault();
             config.currentProgram = "cli";
             clearInterval(highlightedLineUpdater);
+
             let file = {
                 name: null,
-                properties: {
-                    read: true,
-                    write: true,
-                    hidden: false,
-                    transparent: false,
-                },
+                properties: { ...filePropertyDefaults },
                 data: []
             };
+
+            if(config.allowedProgramDirectories.includes(config.currentPath)){
+                file.properties.trusted = false;
+            }
+
             let lines = document.querySelectorAll(`[data-program='lilypad-session-${config.programSession}']`);
             for(let i = 0; i < lines.length; i++){
                 file.data.push(lines[i].textContent);

@@ -597,3 +597,10 @@ import "graphics"
 ### Imports List & Documentation
 * [graphics](https://rus1130.github.io/projects/mdparser.html?url=https://froggyos.github.io/versions/1.12/import-docs/graphics.md&toc=true)
 * [config](https://rus1130.github.io/projects/mdparser.html?url=https://froggyos.github.io/versions/1.12/import-docs/config.md)
+<!--
+to add:
+trusted
+add a file called "trusted programs"
+at every boot, check if any files in the trusted programs file exist
+if they do, change their trusted permission to true
+-->

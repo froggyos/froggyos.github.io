@@ -855,9 +855,9 @@ const config = {
         "C:/Docs": [],
         "D:": [], 
         "D:/Programs": [
-            { name: "cli", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["str cli = 'this program is hardcoded into froggyOS'", "endprog"] },
-            { name: "lilypad", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["str lilypad = 'this program is hardcoded into froggyOS'", "endprog"] },
-            { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
+            { name: "cli", properties: {transparent: false, read: false, write: false, hidden: true, trusted: false}, data: ["str cli = 'this program is hardcoded into froggyOS'", "endprog"] },
+            { name: "lilypad", properties: {transparent: false, read: false, write: false, hidden: true, trusted: false}, data: ["str lilypad = 'this program is hardcoded into froggyOS'", "endprog"] },
+            { name: "test", properties: {transparent: true, read: true, write: true, hidden: false, trusted: false}, data: [
                 "import 'config'",
                 'str meow = "woof"',
                 "out Config>get('programSession')>type",
@@ -880,7 +880,7 @@ const config = {
             //     'outf {t=c01, tr=meow:0-meow:1 | b=c04, br=57-91} "from the char 4 to char 48, the text will be blue. AND from char 57 to char 91 the background will be red" ',
             //     "endprog"
             // ] },
-            { name: "loop-test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
+            { name: "loop-test", properties: {transparent: true, read: true, write: true, hidden: false, trusted: false}, data: [
                 "num loopTest = 0",
                 "num quickloopTest = 0",
                 "num dummy = 0",
@@ -896,7 +896,7 @@ const config = {
                 "out 'quickloop doing 3000 loops of 100 dummy [set] calls: $|Time_MsEpoch - quickloopStartTime|ms'",
                 "endprog",
             ] },
-            { name: "fibonacci", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
+            { name: "fibonacci", properties: {transparent: false, read: true, write: true, hidden: false, trusted: false}, data: [
                 "num i = 0",
                 "num amount = 0",
                 "num nOne = 0",
