@@ -47,7 +47,6 @@ const filePropertyDefaults = {
     write: true,
     hidden: false,
     transparent: false,
-    trusted: false,
 }
 
 function localize(descriptor, TRANSLATE_TEXT){
@@ -1059,7 +1058,7 @@ function sendCommand(command, args, createEditableLineAfter){
                 break;
             }
 
-            let propertyTypes = Object.keys(file.properties).filter((property) => property != "trusted");
+            let propertyTypes = Object.keys(file.properties);
 
             if(property == undefined || propertyTypes.includes(property) == false){
                 createTerminalLine("T_provide_valid_property_type", config.errorText);
@@ -1772,12 +1771,8 @@ function createLilypadLine(path, linetype, filename){
             let file = {
                 name: null,
                 properties: { ...filePropertyDefaults },
-                data: []
+                data: [""]
             };
-
-            if(config.allowedProgramDirectories.includes(config.currentPath)){
-                file.properties.trusted = false;
-            }
 
             let lines = document.querySelectorAll(`[data-program='lilypad-session-${config.programSession}']`);
             for(let i = 0; i < lines.length; i++){
@@ -1834,11 +1829,28 @@ function createLilypadLine(path, linetype, filename){
     terminalLine.focus();
 }
 
+function setTrustedFiles(){
+    let trustedFiles = getFileWithName("D:", "trusted_files").data;
+    for(let directory of config.allowedProgramDirectories){
+        for(let file of config.fileSystem[directory]){
+           if(trustedFiles.includes(file.name) && !config.trustedFiles.includes(`${directory}/${file.name}`)) {
+            config.trustedFiles.push(`${directory}/${file.name}`);
+           }
+        }
+    }
+};
+
 document.title = `froggyOS v. ${config.version}`;
+sendCommand('[[BULLFROG]]autoloadstate', [], false);
 changeColorPalette(config.colorPalette);
 createColorTestBar();
-sendCommand('[[BULLFROG]]autoloadstate', [], false);
+setTrustedFiles();
 sendCommand('[[BULLFROG]]validatelanguage', [], false);
+
+function ready(){
+    document.getElementById("blackout").remove()
+    sendCommand('[[BULLFROG]]greeting', []);
+}
 
 // literally all of this is just for the animation
 let randomNumbers = [
@@ -1880,8 +1892,7 @@ if(!SKIP_ANIMATION) {
                 innerBar.animate(...getTimings(3)).onfinish = () => {
                     innerBar.animate(...getTimings(4)).onfinish = () => {
                         setTimeout(() => {
-                            document.getElementById("blackout").remove()
-                            sendCommand('[[BULLFROG]]greeting', []);
+                            ready()
                         }, 100)
                     }
                 }
@@ -1891,11 +1902,9 @@ if(!SKIP_ANIMATION) {
 
     document.addEventListener('keyup', function(e){
         animSkipped = true;
-        document.getElementById("blackout").remove()
-        sendCommand('[[BULLFROG]]greeting', []);   
+        ready()
     }, {once: true});
 
 } else {
-    document.getElementById("blackout").remove()
-    sendCommand('[[BULLFROG]]greeting', []);       
+    ready();    
 }

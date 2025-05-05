@@ -1404,13 +1404,15 @@ function processSingleLine(input) {
                     } break;
             
                     case "createscreen": {
+                        let argX;
+                        let argY;
                         if(input.split(" ").length != 3) {
                             token = new ScriptError("SyntaxError", `[createscreen] must be followed by x and y length`);
                             break;
                         }
             
-                        let argX = input.split(" ")[1].trim();
-                        let argY = input.split(" ")[2].trim();
+                        argX = input.split(" ")[1].trim();
+                        argY = input.split(" ")[2].trim();
             
                         // 78x57
             
@@ -1537,11 +1539,6 @@ function processSingleLine(input) {
                     } break;
                 }
             }
-        }
-    }
-
-    if(FroggyscriptMemory.imports.includes("graphics")){
-        switch(keyword) {
         }
     }
 
@@ -1785,9 +1782,19 @@ function methodParser(startToken){
             } break;
 
             default: {
-                if(FroggyscriptMemory.imports.includes("config")){
+                if(hasImport("config")){
                     if(token.type == "Config"){
                         switch(methodName){
+                            case "set": {
+                                if(!isTrusted(config.currentProgram)){
+                                    token = new ScriptError("PermissionError", `[>set()] cannot set config values outside of trusted programs`);
+                                    break;
+                                }
+                                let settableKeys = Object.keys(config).filter(x => x != "fileSystem" && x != "currentProgram" && x != "trustedPrograms" && x != "programList");
+
+                                
+                            } break;
+
                             case "get": {
                                 let arg1 = methodArgs[0];
                                 if(arg1 == undefined) {
@@ -1798,10 +1805,10 @@ function methodParser(startToken){
                                     token = new ScriptError("TypeError", `[>get()] key argument expects type String, found type ${arg1.type}`);
                                     break;
                                 }
-                                let validKeys = ["language", "colorPalette", "version", "showSpinner", "currentSpinner", "defaultSpinner", "timeFormat", "updateStatBar", "allowedProgramDirectories", "dissallowSubdirectoriesIn","validateLanguageOnStartup", "currentPath", "spinnerIndex", "programList", "programSession"];
+                                let validKeys = Object.keys(config).filter(x => x != "fileSystem");
 
                                 if(!validKeys.includes(arg1.value)){
-                                    token = new ScriptError("ReferenceError", `[>get()] key argument must be a valid key, found ${arg1.value}`);
+                                    token = new ScriptError("KeyError", `[>get()] key argument must be a valid key, found [${arg1.value}]\nvalid keys:\n\u00A0${validKeys.join("\n\u00A0")}`);
                                     break;
                                 }
 
@@ -1830,6 +1837,7 @@ function methodParser(startToken){
                     }
                 } else if(FroggyscriptMemory.imports.includes("graphics")){
                     let renderOrder = FroggyscriptMemory.importsData.graphics.backRenderOrder;
+                    let screenRendered = FroggyscriptMemory.importsData.graphics.screenData.rendered;
                     if(token.type == "Array"){
                         switch(methodName){
                             case "toRect": {
@@ -1849,6 +1857,10 @@ function methodParser(startToken){
                     if(token.type == "Line"){
                         switch(methodName){
                             case "render": {
+                                if(!screenRendered){
+                                    token = new ScriptError("RenderError", `screen must be created before rendering`);
+                                    break;
+                                }
                                 let target = FroggyscriptMemory.variables[token.value.identifier]
                                 if(target.type != "Undefined") target.value.rendered = true;
                                 renderOrder.push(token.value.identifier);
@@ -2129,6 +2141,10 @@ function methodParser(startToken){
                             } break;
 
                             case "render": {
+                                if(!screenRendered){
+                                    token = new ScriptError("RenderError", `screen must be created before rendering`);
+                                    break;
+                                }
                                 let target = FroggyscriptMemory.variables[token.value.identifier]
                                 if(target.type != "Undefined") target.value.rendered = true;
                                 renderOrder.push(token.value.identifier);
@@ -2327,6 +2343,10 @@ function methodParser(startToken){
                             } break;
 
                             case "render": {
+                                if(!screenRendered){
+                                    token = new ScriptError("RenderError", `screen must be created before rendering`);
+                                    break;
+                                }
                                 let target = FroggyscriptMemory.variables[token.value.identifier]
                                 if(target.type != "Undefined") target.value.rendered = true;
                                 renderGraphics(["front"]);
@@ -2482,6 +2502,7 @@ setInterval(() => {
 }, 1);
 
 let hasImport = (x) => FroggyscriptMemory.imports.includes(x);
+let isTrusted = (fileName) => config.trustedFiles.includes(fileName);
 
 async function interpretSingleLine(interval, single_input, error_trace, block_error) {
     let line = single_input;
@@ -2506,7 +2527,7 @@ async function interpretSingleLine(interval, single_input, error_trace, block_er
         // process tokens here =======================================================
         switch(token.keyword) {
             case "import": {
-                if(!FroggyscriptMemory.imports.includes(token.importName)) {
+                if(!hasImport(token.importName)) {
                     FroggyscriptMemory.imports.push(token.importName);
                     if(token.importName == "config"){
                         FroggyscriptMemory.variables["Config"] = {

@@ -4,7 +4,7 @@
 * programs can *only* be written in designated directories
 * you can press the `DEL` key to escape programs (ex. an infinite loop)
 * press `SHIFT + ESC` to exit lilypad (text editor) without saving
-* if a FroggyScript program exists with an error, the command `[[BULLFROG]]gotoprogramline [program] [line nwith error]` will be put into your command history
+* if a FroggyScript program exits with an error, the command `[[BULLFROG]]gotoprogramline [program] [line nwith error]` will be put into your command history
 
 ## Palette Conventions
 There are no set colors that you must have, but these are the color conventions.
@@ -125,6 +125,17 @@ If you edit the `Settings:` drive directly, some settings won't apply until you 
 * you cannot set values to array indexes
 * realtime mode is not real time
 * `>append` mutates the original variable when it shouldnt
+
+## Trusting Programs
+To trust a program, you must add its file name in the `D:/trusted_files` file. This will allow the program to have extended control over the operating system. Trusted programs are refreshed **only** on hard restarts (reload the page).
+
+## Load Order
+1. Load OS state if it exists
+2. Change color palette
+3. Create the color palette bar
+4. Set trusted files
+5. Validate language files
+6. Initiate the command line with `[[BULLFROG]]greeting`
 
 # FroggyScript Documentation
 * `[argument=default_value]` denotes a default argument value
@@ -526,23 +537,23 @@ str output = test2>join
 ### type
 Outputs the type of the input as a string.
 ```
-arr test = "a", "b", "c", "d", "e"
-str output = test>type
+arr array = "a", "b", "c", "d", "e"
+str output = array>type
 -- "Array"
 
-num test = 5
-str output = test>type
+num number = 5
+str output = number>type
 -- "Number"
 ```
 ### length
 Length of the input array or string.
 ```
-arr test = "a", "b", "c", "d", "e"
-num output = test>length
+arr array = "a", "b", "c", "d", "e"
+num output = array>length
 -- 5
 
-str test = "hello world!"
-num output = test>length
+str string = "hello world!"
+num output = string>length
 -- 12
 ```
 ### replace
@@ -570,7 +581,7 @@ out letters>append(numbers)
 To use methods without having to be in an argument or variable, prefix the line with `#`.
 ```
 arr test = "a", "b", "c"
-#test>append("d", "e")
+#test>append($"d", "e"$)
 -- "a", "b", "c", "d", "e"
 ```
 ## Program Data
@@ -602,7 +613,7 @@ to add:
 trusted
 add a file called "trusted programs"
 at every boot, check if any files in the trusted programs file exist
-if they do, change their trusted permission to true
+if they do, push the file name to config.trustedPrograms
 
 overhaul inclusions in translation descriptors
 [T#:{value}]

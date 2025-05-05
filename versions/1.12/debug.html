@@ -134,7 +134,7 @@
 
     let userChangableSettings = ["debugMode", "version", "colorPalette", "showSpinner", "currentSpinner", "defaultSpinner", "timeFormat", "updateStatBar", "allowedProgramDirectories", "dissallowSubdirectoriesIn", "language", "validateLanguageOnStartup"]
 
-    let userImmutableSettings = ["currentPath", "commandHistory", "commandHistoryIndex", "spinnerIndex", "currentProgram", "programList", "programSession", "errorText", "translationErrorText","translationWarningText", "alertText", "programErrorText", "stepThroughProgram"]
+    let userImmutableSettings = ["currentPath", "commandHistory", "commandHistoryIndex", "spinnerIndex", "currentProgram", "programList", "programSession", "errorText", "translationErrorText","translationWarningText", "alertText", "programErrorText", "stepThroughProgram", "trustedFiles"]
 
     let longestSettingLength = userChangableSettings.reduce((max, setting) => {
         return Math.max(max, setting.length);

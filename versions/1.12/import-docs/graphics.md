@@ -16,7 +16,8 @@ Converts an array to a text object.
 ## createscreen
 Adds a screen to the terminal line.
 ```
-createscreen
+createscreen [width] [height]
+createscreen 78 57
 ```
 ## rect
 Creates a variable of type Rect.

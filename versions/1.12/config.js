@@ -798,7 +798,6 @@ const presetLanguagesMap = {
 
 const config = {
     // settings as files
-    debugMode: null,
     version: null,
     colorPalette: null,
     showSpinner: null,
@@ -812,6 +811,7 @@ const config = {
     validateLanguageOnStartup: null,
 
     // immutable settings
+    trustedFiles: [],
     stepThroughProgram: false,
     currentPath: 'C:/Home',
     commandHistory: [],
@@ -853,14 +853,20 @@ const config = {
             { name: "welcome!", properties: {transparent: false, read: true, write: true, hidden: false}, data: ['Hello!', "Welcome to FroggyOS.", "Type 'help' for a list of commands.", "Have fun! ^v^"] },
         ],
         "C:/Docs": [],
-        "D:": [], 
+        "D:": [
+            { name: "trusted_files", properties: {transparent: false, read: true, write: true, hidden: false}, data: [""] },
+        ], 
         "D:/Programs": [
-            { name: "cli", properties: {transparent: false, read: false, write: false, hidden: true, trusted: false}, data: ["str cli = 'this program is hardcoded into froggyOS'", "endprog"] },
-            { name: "lilypad", properties: {transparent: false, read: false, write: false, hidden: true, trusted: false}, data: ["str lilypad = 'this program is hardcoded into froggyOS'", "endprog"] },
-            { name: "test", properties: {transparent: true, read: true, write: true, hidden: false, trusted: false}, data: [
+            { name: "cli", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["str cli = 'this program is hardcoded into froggyOS'", "endprog"] },
+            { name: "lilypad", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["str lilypad = 'this program is hardcoded into froggyOS'", "endprog"] },
+            { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
                 "import 'config'",
-                'str meow = "woof"',
-                "out Config>get('programSession')>type",
+                // 'str meow = "woof"',
+                "out Config>get('ppenis')",
+                // 'arr test = "a", "b", "c"',
+                // "#test>append($'d','e'$)",
+                // "out test>join",
+                // "createscreen 78 57",
                 // "rect rectangle1 = $0, 0, 10, 10$",
                 // "rect rectangle2 = $5, 0, 10, 10$",
                 // "#rectangle1>render",
@@ -868,7 +874,7 @@ const config = {
                 // "#rectangle2>fill('c03')",
                 // "rect rect3 = rectangle2>clone",
                 // "#rect3>render>move(10;9)",
-                // "wait 10000000000000",
+                //"wait 10000000000000",
                 "endprog"
             ] },
             // { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
@@ -880,7 +886,7 @@ const config = {
             //     'outf {t=c01, tr=meow:0-meow:1 | b=c04, br=57-91} "from the char 4 to char 48, the text will be blue. AND from char 57 to char 91 the background will be red" ',
             //     "endprog"
             // ] },
-            { name: "loop-test", properties: {transparent: true, read: true, write: true, hidden: false, trusted: false}, data: [
+            { name: "loop-test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
                 "num loopTest = 0",
                 "num quickloopTest = 0",
                 "num dummy = 0",
@@ -896,7 +902,7 @@ const config = {
                 "out 'quickloop doing 3000 loops of 100 dummy [set] calls: $|Time_MsEpoch - quickloopStartTime|ms'",
                 "endprog",
             ] },
-            { name: "fibonacci", properties: {transparent: false, read: true, write: true, hidden: false, trusted: false}, data: [
+            { name: "fibonacci", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
                 "num i = 0",
                 "num amount = 0",
                 "num nOne = 0",
