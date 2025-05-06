@@ -20,25 +20,53 @@ function setSetting(setting, value) {
     config.fileSystem["Config:"].find(file => file.name == setting).data = value;
 }
 
-function getSetting(setting, forceArray) {
-    let data = config.fileSystem["Config:"].find(file => file.name == setting).data;
-    if(data.length > 1 || forceArray) return data;
-    else return data[0];
+function getSetting(setting) {
+    let fsds = parsefSDSWithTyping(getFileWithName("Config:", "user_config").data);
+    return fsds[setting]?.value;
 }
 
-function setConfigFromSettings(){
-    config.debugMode = (getSetting("debugMode") === "true");
+function setUserConfigFromFile(){
+    let fsds = parsefSDSWithTyping(getFileWithName("Config:", "user_config").data);
+    if(fsds.error) {
+        alert(`OS ERROR!: ${fsds.message}\nloading last known good config`);
+        sendCommand("[[BULLFROG]]urgentloadstate", [], false);
+        sendCommand("[[BULLFROG]]urgentclearstate", [], false);
+        sendCommand("cl", [], true);
+        return;
+    }
+    
+    config.debugMode = getSetting("debugMode")
     config.version = getSetting("version");
     config.colorPalette = getSetting("colorPalette");
-    config.showSpinner = (getSetting("showSpinner") === "true");
+    config.showSpinner = getSetting("showSpinner");
     config.currentSpinner = getSetting("currentSpinner");
     config.defaultSpinner = getSetting("defaultSpinner");
     config.timeFormat = getSetting("timeFormat").slice(0, 78);
-    config.updateStatBar = (getSetting("updateStatBar") === "true");
-    config.allowedProgramDirectories = getSetting("allowedProgramDirectories", true);
-    config.dissallowSubdirectoriesIn = getSetting("dissallowSubdirectoriesIn", true);
+    config.updateStatBar = getSetting("updateStatBar")
+    config.allowedProgramDirectories = getSetting("allowedProgramDirectories");
+    config.dissallowSubdirectoriesIn = getSetting("dissallowSubdirectoriesIn");
     config.language = getSetting("language");
-    config.validateLanguageOnStartup = (getSetting("validateLanguageOnStartup") === "true");
+    config.validateLanguageOnStartup = getSetting("validateLanguageOnStartup");
+
+    let goodToAutosave = true;
+    let badKey = null;
+    for (let key of user_config_keys) {
+        if(getSetting(key) == undefined){
+            goodToAutosave = false;
+            badKey = key;
+            break;
+        }
+    }
+
+    if(goodToAutosave) {
+        sendCommand("[[BULLFROG]]urgentsavestate", [], false);
+    } else {
+        alert(`OS ERROR!: missing key ${badKey} in user_config\nloading last known good config`);
+        sendCommand("[[BULLFROG]]urgentloadstate", [], false);
+        sendCommand("[[BULLFROG]]urgentclearstate", [], false);
+        sendCommand("cl", [], true);
+        return;
+    }
 }
 
 const filePropertyDefaults = {
@@ -46,6 +74,126 @@ const filePropertyDefaults = {
     write: true,
     hidden: false,
     transparent: false,
+}
+
+function parsefSDSWithTyping(inputFile){
+    let fsds = parse_fSDS(inputFile);
+    if(fsds.error) return fsds;
+    for(let key in fsds){
+        if(fsds[key].type == "Array"){
+            fsds[key].value = fsds[key].value.map(value => typeify(value).value);
+        } else {
+            fsds[key].value = typeify(fsds[key].value).value;
+        }
+    }
+    return fsds;
+}
+
+// FIX !! IS NOT WORKINGTON
+function set_fSDS(path, filename, key, value){
+    let directory = config.fileSystem[path];
+    if(directory == undefined) return false;
+    let file = directory.find(file => file.name == filename);
+    if(file == undefined) return false;
+
+    let fsds = parse_fSDS(file.data);
+    if(fsds.error) return false;
+
+    if(fsds[key] == undefined) {
+        if(Array.isArray(value)){
+            file.data.push(`KEY ${key} TYPE Array START`);
+            for(let i = 0; i < value.length; i++){
+                let type = typeof value[i];
+                type[0] = type[0].toUpperCase();
+                file.data.push(`TYPE ${type} VALUE ${value[i]}`);
+            }
+            file.data.push(`KEY ${key} TYPE Array END`);
+        } else {
+            let type = typeof value;
+            type[0] = type[0].toUpperCase();
+            file.data.push(`KEY ${key} TYPE ${type} VALUE ${value} END`);
+        }
+    } else {
+
+    }
+}
+
+
+
+function parse_fSDS(inputFile){
+    let output = {};
+
+    let error = '';
+
+    let dataError = 0;
+
+    for(let i = 0; i < inputFile.length; i++){
+        let line = inputFile[i].trim();
+        let match = line.match(/KEY (.+?) TYPE (String|Number|Boolean) VALUE (.+?) END/);
+        if(match != null){
+            let key = match[1];
+            let type = match[2];
+            let value = match[3];
+            if(type == "String") value = `"${value}"`;
+            output[key] = {type, value}
+        } else {
+            let arrayMatchStart = line.match(/KEY (.+?) TYPE Array START/);
+
+            if(arrayMatchStart != null){
+                let endingKey = arrayMatchStart[1];
+                let arrayMatchEnd = null;
+    
+                for(let j = i + 1; j < inputFile.length; j++){
+                    let arrayLine = inputFile[j].trim();
+                    if(arrayLine.includes(`KEY ${endingKey} TYPE Array END`)){
+                        arrayMatchEnd = arrayLine.match(/KEY (.+?) TYPE Array END/);
+                        break;
+                    }
+                }
+
+                if(inputFile.length != 0 && (arrayMatchEnd == null)){
+                    dataError++;
+                }
+
+                let key = arrayMatchStart[1];
+                let type = "Array";
+                let value = [];
+
+                if(arrayMatchStart == null) {
+                    dataError++;
+                    error = `missing config key start: ${key}`;
+                }
+                if(arrayMatchEnd == null) {
+                    dataError++;
+                    error = `missing config key end: ${key}`;
+                }
+
+                if(dataError > 0) break;
+
+                let searchStart = inputFile.indexOf(arrayMatchStart[0]) + 1;
+                let searchEnd = inputFile.indexOf(arrayMatchEnd[0]);
+
+                for(let j = searchStart; j < searchEnd; j++){
+                    let arrayDataLine = inputFile[j].trim();
+                    let arrayDataMatch = arrayDataLine.match(/^TYPE (String|Number|Boolean) VALUE (.+?)$/);
+                    if(arrayDataMatch != null){
+                        let arrayType = arrayDataMatch[1];
+                        let arrayValue = arrayDataMatch[2];
+                        if(arrayType == "String") arrayValue = `"${arrayValue}"`;
+                        value.push(arrayValue)
+                    }
+                }
+
+                output[key] = {type, value}
+            }
+        }
+    }
+
+    if(dataError > 0){
+        return {error: true, message: error}
+    }
+
+    return output;
 }
 
 function localize(descriptor, TRANSLATE_TEXT){
@@ -233,16 +381,16 @@ function updateDateTime() {
     }
 }
 
-setInterval(() => {
-    setConfigFromSettings()
+let configInterval = setInterval(() => {
+    setUserConfigFromFile()
     programList()
 }, 1);
 
-setInterval(() => {
+let dateTimeInterval = setInterval(() => {
     updateDateTime()
 }, 100);
 
-setConfigFromSettings()
+setUserConfigFromFile()
 programList();
 updateDateTime();
 

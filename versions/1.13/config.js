@@ -829,6 +829,28 @@ const config = {
     // filesystem
     fileSystem: {
         "Config:": [
+            { name: "user_config", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
+                "KEY language TYPE String VALUE eng END",
+                "KEY debugMode TYPE Boolean VALUE false END",
+                "KEY colorPalette TYPE String VALUE standard END",
+                "KEY version TYPE String VALUE 1.13-indev END",
+                "KEY showSpinner TYPE Boolean VALUE false END",
+                "KEY currentSpinner TYPE String VALUE default END",
+                "KEY defaultSpinner TYPE String VALUE default END",
+                "KEY timeFormat TYPE String VALUE w. y/mn/d h:m:s END",
+                "KEY updateStatBar TYPE Boolean VALUE true END",
+                "KEY allowedProgramDirectories TYPE Array START",
+                "TYPE String VALUE D:/Programs",
+                "KEY allowedProgramDirectories TYPE Array END",
+                "KEY dissallowSubdirectoriesIn TYPE Array START",
+                "TYPE String VALUE D:/Programs",
+                "TYPE String VALUE D:/Macros",
+                "TYPE String VALUE D:/Program-Data",
+                "TYPE String VALUE D:/Palettes",
+                "TYPE String VALUE D:/Spinners",
+                "KEY dissallowSubdirectoriesIn TYPE Array END",
+                "KEY validateLanguageOnStartup TYPE Boolean VALUE true END",
+            ] },
             { name: "language", properties: {transparent: false, read: true, write: true, hidden: false}, data: ["eng"] },
             { name: "debugMode", properties: {transparent: false, read: true, write: true, hidden: false}, data: ["false"] },
             { name: "colorPalette", properties: {transparent: false, read: true, write: true, hidden: false}, data: ["standard"] },

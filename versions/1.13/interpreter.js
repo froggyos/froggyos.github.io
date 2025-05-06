@@ -3134,57 +3134,6 @@ async function interpretSingleLine(interval, single_input, error_trace, block_er
     return token;
 }
 
-function parse_fSDS(inputFile){
-    let output = {};
-
-    let dataError = 0;
-
-    for(let i = 0; i < inputFile.length; i++){
-        let line = inputFile[i].trim();
-        let match = line.match(/KEY (.+?) TYPE (String|Number|Boolean) VALUE (.+?) END/);
-        if(match != null){
-            let key = match[1];
-            let type = match[2];
-            let value = match[3];
-            if(type == "String") value = `"${value}"`;
-            output[key] = {type, value}
-        } else {
-            let arrayMatchStart = line.match(/KEY (.+?) TYPE Array START/);
-            let arrayMatchEnd = line.match(/KEY (.+?) TYPE Array END/);
-
-
-            if(inputFile.length != 0 && (arrayMatchStart == null || arrayMatchEnd == null)){
-                dataError++;
-            }
-
-            if(arrayMatchStart != null){
-                let key = arrayMatchStart[1];
-                let type = "Array";
-                let value = [];
-
-                for(let j = i + 1; j < inputFile.length; j++){
-                    let arrayDataLine = inputFile[j].trim();
-                    let arrayDataMatch = arrayDataLine.match(/^TYPE (String|Number|Boolean) VALUE (.+?)$/);
-                    if(arrayDataMatch != null){
-                        let arrayType = arrayDataMatch[1];
-                        let arrayValue = arrayDataMatch[2];
-                        if(arrayType == "String") arrayValue = `"${arrayValue}"`;
-                        value.push(arrayValue)
-                    }
-                }
-
-                output[key] = {type, value}
-            }
-        }
-    }
-
-    if(dataError == 1){
-        return {error: "Program data is malformed. Some data cannot be loaded"}
-    }
-
-    return output;
-}
-
 function interpreter(input, fileArguments, programName) {
     let lines = input.split('\n').map(x => x.trim()).filter(x => x.length > 0 && x !== "--");
 

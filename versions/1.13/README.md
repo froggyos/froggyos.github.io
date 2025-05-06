@@ -5,6 +5,7 @@
 * you can press the `DEL` key to escape programs (ex. an infinite loop)
 * press `SHIFT + ESC` to exit lilypad (text editor) without saving
 * if a FroggyScript program exits with an error, the command `[[BULLFROG]]gotoprogramline [program] [line nwith error]` will be put into your command history
+* file types are inferred based on file location
 
 ## Palette Conventions
 There are no set colors that you must have, but these are the color conventions.
