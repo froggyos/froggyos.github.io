@@ -17,14 +17,13 @@ document.body.onclick = function() {
 }
 
 function setSetting(setting, value) {
-    if(typeof value === 'object') config.fileSystem["Config:"].find(file => file.name == setting).data = value;
-    else config.fileSystem["Config:"].find(file => file.name == setting).data[0] = value;
+    config.fileSystem["Config:"].find(file => file.name == setting).data = value;
 }
 
-function getSetting(setting, isArray) {
+function getSetting(setting, forceArray) {
     let data = config.fileSystem["Config:"].find(file => file.name == setting).data;
-    if(isArray) return data;
-    return data[0];
+    if(data.length > 1 || forceArray) return data;
+    else return data[0];
 }
 
 function setConfigFromSettings(){
@@ -269,7 +268,7 @@ function changeColorPalette(name){
         root.style.setProperty(`--${variable}`, `var(--c${color})`);
     }
 
-    setSetting("colorPalette", name);
+    setSetting("colorPalette", [name]);
     config.colorPalette = name;
     createColorTestBar();
 }
@@ -609,7 +608,7 @@ function sendCommand(command, args, createEditableLineAfter){
                 break;
             }
             
-            setSetting("language", code);
+            setSetting("language", [code]);
 
             setTimeout(() => {
                 createTerminalLine("T_lang_changed", ">")
@@ -759,7 +758,7 @@ function sendCommand(command, args, createEditableLineAfter){
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
-            setSetting("timeFormat", args.join(" "));
+            setSetting("timeFormat", [args.join(" ")]);
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         } break;
 
@@ -1225,7 +1224,7 @@ x
             function getProgramList(){
                 let programList = [];
                 for(let directory of config.allowedProgramDirectories){
-                    programList = programList.concat(config.fileSystem[directory].filter(file => {
+                    programList = programList.concat(config.fileSystem[directory]?.filter(file => {
                         if(file.properties.hidden == true) return false
                         if(file.properties.transparent == true) return false;
                         else return true;
@@ -1356,8 +1355,8 @@ x
 
         case '[[BULLFROG]]showspinner':
             let bool = args[0];
-            if(bool == "1") setSetting("showSpinner", "true");
-            else if(bool == "0") setSetting("showSpinner", "false");
+            if(bool == "1") setSetting("showSpinner", ["true"]);
+            else if(bool == "0") setSetting("showSpinner", ["false"]);
             else {
                 createTerminalLine("T_invalid_args_provide_1_0", config.errorText);
                 hadError = true;
@@ -1367,8 +1366,8 @@ x
 
         case '[[BULLFROG]]statbarlock': {
             let bool = args[0];
-            if(bool == "1") setSetting("updateStatBar", "false");
-            else if(bool == "0") setSetting("updateStatBar", "true");
+            if(bool == "1") setSetting("updateStatBar", ["false"]);
+            else if(bool == "0") setSetting("updateStatBar", ["true"]);
             else {
                 createTerminalLine("T_invalid_args_provide_1_0", config.errorText);
                 hadError = true;
@@ -1379,11 +1378,11 @@ x
         case "[[BULLFROG]]debugmode": {
             let bool = args[0];
             if(bool == "1") {
-                setSetting("debugMode", "true");
+                setSetting("debugMode", ["true"]);
                 config.stepThroughProgram = true;
             }
             else if(bool == "0") {
-                setSetting("debugMode", "false");
+                setSetting("debugMode", ["false"]);
                 config.stepThroughProgram = false;
             }
             else {
@@ -1429,7 +1428,7 @@ x
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             } else {
-                setSetting("currentSpinner", spinner);
+                setSetting("currentSpinner", [spinner]);
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
@@ -1492,7 +1491,7 @@ x
 
             if(validateLanguageFile(config.language) == false){
                 createTerminalLine(`T_current_lang_invalid`, config.translationErrorText);
-                setSetting("language", "lbh");
+                setSetting("language", ["lbh"]);
             }
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         } break;
@@ -1771,7 +1770,7 @@ function createLilypadLine(path, linetype, filename){
             let file = {
                 name: null,
                 properties: { ...filePropertyDefaults },
-                data: [""]
+                data: []
             };
 
             let lines = document.querySelectorAll(`[data-program='lilypad-session-${config.programSession}']`);
@@ -1795,14 +1794,14 @@ function createLilypadLine(path, linetype, filename){
                         dataLength += line.length;
                     });
                     
-                    setSetting("showSpinner", "true")
+                    setSetting("showSpinner", ["true"])
                     setTimeout(function(){
     
                         file.name = filename;
                         let fileIndex = config.fileSystem[config.currentPath].findIndex(file => file.name == filename);
                         config.fileSystem[config.currentPath][fileIndex].data = file.data;
     
-                        setSetting("showSpinner", "false")
+                        setSetting("showSpinner", ["false"])
                         createTerminalLine(`T_saving_done`, ">");
                         
                         createEditableTerminalLine(`${config.currentPath}>`);
@@ -1833,12 +1832,12 @@ function setTrustedFiles(){
     let trustedFiles = getFileWithName("D:", "trusted_files").data;
     for(let directory of config.allowedProgramDirectories){
         for(let file of config.fileSystem[directory]){
-           if(trustedFiles.includes(file.name) && !config.trustedFiles.includes(`${directory}/${file.name}`)) {
-            config.trustedFiles.push(`${directory}/${file.name}`);
-           }
+            if(trustedFiles.includes(file.name) && !config.trustedFiles.includes(`${directory}/${file.name}`)) {
+                config.trustedFiles.push(`${directory}/${file.name}`);
+            }
         }
     }
-};
+}
 
 document.title = `froggyOS v. ${config.version}`;
 sendCommand('[[BULLFROG]]autoloadstate', [], false);

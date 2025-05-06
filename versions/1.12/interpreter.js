@@ -1784,15 +1784,75 @@ function methodParser(startToken){
             default: {
                 if(hasImport("config")){
                     if(token.type == "Config"){
+                        let userConfig = []
                         switch(methodName){
-                            case "set": {
+                            case "oc_set":
+                            case "uc_set": {
                                 if(!isTrusted(config.currentProgram)){
-                                    token = new ScriptError("PermissionError", `[>set()] cannot set config values outside of trusted programs`);
+                                    token = new ScriptError("PermissionError", `[>${methodName}()] cannot set config values outside of trusted programs`);
                                     break;
                                 }
-                                let settableKeys = Object.keys(config).filter(x => x != "fileSystem" && x != "currentProgram" && x != "trustedPrograms" && x != "programList");
 
-                                
+                                let givenSetting = methodArgs[0];
+                                let givenValue = methodArgs[1];
+
+                                if(givenSetting == undefined) {
+                                    token = new ScriptError("SyntaxError", `[>${methodName}()] must have a key argument (arg 1)`);
+                                    break;
+                                }
+                                if(givenValue == undefined) {
+                                    token = new ScriptError("SyntaxError", `[>${methodName}()] must have a value argument (arg 2)`);
+                                    break;
+                                }
+                                if(givenSetting.type != "String") {
+                                    token = new ScriptError("TypeError", `[>${methodName}()] key argument expects type String, found type ${givenSetting.type}`);
+                                    break;
+                                }
+                                if(methodName == "uc_set") if(!user_config_keys.includes(givenSetting.value)){
+                                    token = new ScriptError("AccessError", `[>${methodName}()] key argument must be a valid key, found [${givenSetting.value}]\nvalid keys:\n\u00A0${user_config_keys.join("\n\u00A0")}`);
+                                    break;
+                                }
+                                if(methodName == "oc_set") if(!os_config_keys.includes(givenSetting.value)){
+                                    token = new ScriptError("AccessError", `[>${methodName}()] key argument must be a valid key, found [${givenSetting.value}]\nvalid keys:\n\u00A0${os_config_keys.join("\n\u00A0")}`);
+                                    break;
+                                }
+
+                                let setting = config[givenSetting.value];
+
+                                if(typeof setting === "number"){
+                                    if(givenValue.type != "Number"){
+                                        token = new ScriptError("TypeError", `[>${methodName}()] value argument expects type Number, found type ${givenValue.type}`);
+                                        break;
+                                    }
+                                }
+                                if(typeof setting === "boolean"){
+                                    if(givenValue.type != "Boolean"){
+                                        token = new ScriptError("TypeError", `[>${methodName}()] value argument expects type Boolean, found type ${givenValue.type}`);
+                                        break;
+                                    }
+                                }
+                                if(typeof setting === "string"){
+                                    if(givenValue.type != "String"){
+                                        token = new ScriptError("TypeError", `[>${methodName}()] value argument expects type String, found type ${givenValue.type}`);
+                                        break;
+                                    }
+                                }
+                                if(Array.isArray(setting)){
+                                    if(givenValue.type != "Array"){
+                                        token = new ScriptError("TypeError", `[>${methodName}()] value argument expects type Array, found type ${givenValue.type}`);
+                                        break;
+                                    }
+                                    if(givenValue.value.some(x => x.type != "String")){
+                                        token = new ScriptError("TypeError", `[>${methodName}()] value argument expects an array of Strings, found type ${givenValue.value.map(x => x.type).join(", ")}`);
+                                        break;
+                                    }
+                                }
+
+                                if(methodName == "uc_set"){
+                                    setSetting(givenSetting.value, givenValue.value.map(x => x.value))
+                                } else if(methodName == "oc_set"){
+                                    config[givenSetting.value] = givenValue.value;
+                                }
                             } break;
 
                             case "get": {
@@ -1808,7 +1868,7 @@ function methodParser(startToken){
                                 let validKeys = Object.keys(config).filter(x => x != "fileSystem");
 
                                 if(!validKeys.includes(arg1.value)){
-                                    token = new ScriptError("KeyError", `[>get()] key argument must be a valid key, found [${arg1.value}]\nvalid keys:\n\u00A0${validKeys.join("\n\u00A0")}`);
+                                    token = new ScriptError("AccessError", `[>get()] key argument must be a valid key, found [${arg1.value}]\nvalid keys:\n\u00A0${validKeys.join("\n\u00A0")}`);
                                     break;
                                 }
 
@@ -1817,7 +1877,6 @@ function methodParser(startToken){
                                 if(Array.isArray(data)){
                                     token.type = "Array";
                                     token.value = data.map(x => typeify(`'${x}'`));
-                                    console.log(token);
                                 } else {
                                     if(typeof data === 'number'){
                                         token.type = "Number";
@@ -2502,7 +2561,12 @@ setInterval(() => {
 }, 1);
 
 let hasImport = (x) => FroggyscriptMemory.imports.includes(x);
-let isTrusted = (fileName) => config.trustedFiles.includes(fileName);
+let isTrusted = (fileName) => {
+    for(directory of config.allowedProgramDirectories){
+        let fullName = `${directory}/${fileName}`;
+        return config.trustedFiles.includes(fullName);
+    }
+}
 
 async function interpretSingleLine(interval, single_input, error_trace, block_error) {
     let line = single_input;
@@ -3070,6 +3134,57 @@ async function interpretSingleLine(interval, single_input, error_trace, block_er
     return token;
 }
 
+function parse_fSDS(inputFile){
+    let output = {};
+
+    let dataError = 0;
+
+    for(let i = 0; i < inputFile.length; i++){
+        let line = inputFile[i].trim();
+        let match = line.match(/KEY (.+?) TYPE (String|Number|Boolean) VALUE (.+?) END/);
+        if(match != null){
+            let key = match[1];
+            let type = match[2];
+            let value = match[3];
+            if(type == "String") value = `"${value}"`;
+            output[key] = {type, value}
+        } else {
+            let arrayMatchStart = line.match(/KEY (.+?) TYPE Array START/);
+            let arrayMatchEnd = line.match(/KEY (.+?) TYPE Array END/);
+
+
+            if(inputFile.length != 0 && (arrayMatchStart == null || arrayMatchEnd == null)){
+                dataError++;
+            }
+
+            if(arrayMatchStart != null){
+                let key = arrayMatchStart[1];
+                let type = "Array";
+                let value = [];
+
+                for(let j = i + 1; j < inputFile.length; j++){
+                    let arrayDataLine = inputFile[j].trim();
+                    let arrayDataMatch = arrayDataLine.match(/^TYPE (String|Number|Boolean) VALUE (.+?)$/);
+                    if(arrayDataMatch != null){
+                        let arrayType = arrayDataMatch[1];
+                        let arrayValue = arrayDataMatch[2];
+                        if(arrayType == "String") arrayValue = `"${arrayValue}"`;
+                        value.push(arrayValue)
+                    }
+                }
+
+                output[key] = {type, value}
+            }
+        }
+    }
+
+    if(dataError == 1){
+        return {error: "Program data is malformed. Some data cannot be loaded"}
+    }
+
+    return output;
+}
+
 function interpreter(input, fileArguments, programName) {
     let lines = input.split('\n').map(x => x.trim()).filter(x => x.length > 0 && x !== "--");
 
@@ -3121,64 +3236,22 @@ function interpreter(input, fileArguments, programName) {
 
         let programDataFile = config.fileSystem['D:/Program-Data'].find(x => x.name == config.currentProgram).data;
 
-        for(let i = 0; i < programDataFile.length; i++){
-            let dataLine = programDataFile[i];
+        let fsdsData = parse_fSDS(programDataFile);
 
-            let dataMatchNotArray = dataLine.match(
-                /^KEY (.+?) TYPE (String|Number|Boolean) VALUE (.+?) END$/
-            )
+        if(fsdsData.error != undefined){
+            createTerminalLine(`Program data is malformed. Some data cannot be loaded`, config.alertText, {translate: false});
+        };
 
-            if(dataMatchNotArray != null){
-                let key = dataMatchNotArray[1];
-                let type = dataMatchNotArray[2];
-                let value = dataMatchNotArray[3];
-
-                if(type == "String") value = `"${value}"`;
-
-                FroggyscriptMemory.savedData[key] = typeify(value)
+        for(let key in fsdsData){
+            let data = fsdsData[key];
+            if(data.type == "Array"){
+                data.value = "$"+data.value.join(",")+"$"
             } else {
-                let dataMatchArrayStart = dataLine.match(
-                    /^KEY (.+?) TYPE Array START$/
-                )
-
-                let dataMatchArrayEnd = dataLine.match(
-                    /^KEY (.+?) TYPE Array END$/
-                )
-
-                if(programDataFile.length != 0 && (dataMatchArrayStart == null || dataMatchArrayEnd == null)){
-                    dataError++;
-                }
-
-                if(dataMatchArrayStart != null){
-                    let key = dataMatchArrayStart[1];
-                    let type = "Array";
-                    let value = [];
-
-                    for(let j = i + 1; j < programDataFile.length; j++){
-                        let arrayDataLine = programDataFile[j];
-
-                        let arrayDataMatch = arrayDataLine.match(
-                            /^TYPE (String|Number|Boolean) VALUE (.+?)$/
-                        )
-
-                        if(arrayDataMatch != null){
-                            let arrayType = arrayDataMatch[1];
-                            let arrayValue = arrayDataMatch[2];
-
-                            if(arrayType == "String") arrayValue = `"${arrayValue}"`;
-                            value.push(arrayValue)
-                        }
-                    }
-
-                    value = "$"+value.join(",")+"$"
-                    FroggyscriptMemory.savedData[key] = {type, value}
-                }
+                data = typeify(data.value);
             }
         }
 
-        if(dataError == 1){
-            createTerminalLine(`Program data is malformed. Some data cannot be loaded`, config.alertText, {translate: false});
-        }
+        FroggyscriptMemory.savedData = fsdsData;
         
         if(realtime) {
             if(FroggyscriptMemory.CLOCK_PAUSED == false){

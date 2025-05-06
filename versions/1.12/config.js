@@ -854,7 +854,7 @@ const config = {
         ],
         "C:/Docs": [],
         "D:": [
-            { name: "trusted_files", properties: {transparent: false, read: true, write: true, hidden: false}, data: [""] },
+            { name: "trusted_files", properties: {transparent: false, read: true, write: true, hidden: false}, data: ["test"] },
         ], 
         "D:/Programs": [
             { name: "cli", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["str cli = 'this program is hardcoded into froggyOS'", "endprog"] },
@@ -862,7 +862,10 @@ const config = {
             { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
                 "import 'config'",
                 // 'str meow = "woof"',
-                "out Config>get('ppenis')",
+                // "#Config>oc_set('error';'penis')",
+                "arr meow = _",
+                "loaddata meow meow!!",
+                "out meow>:(2)>type",
                 // 'arr test = "a", "b", "c"',
                 // "#test>append($'d','e'$)",
                 // "out test>join",
@@ -962,7 +965,16 @@ const config = {
                 "ft w. mn/d/y H:m:s a",
             ] },
         ],
-        "D:/Program-Data": [],
+        "D:/Program-Data": [
+            { name: "test", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
+                "KEY meow!! TYPE Array START",
+                "TYPE String VALUE Meow!",
+                "TYPE String VALUE Ribbit!",
+                "TYPE Number VALUE 7.201",
+                "KEY meow!! TYPE Array END",
+                "KEY Ribbit TYPE String VALUE woof END",
+            ] },
+        ],
         "D:/Palettes": [
             // standard and revised palettes:  https://int10h.org/blog/2022/06/ibm-5153-color-true-cga-palette/
             { name: "standard", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
@@ -1251,6 +1263,9 @@ const config = {
         ],
     }
 }
+
+const user_config_keys = Object.keys(structuredClone(config)).filter(key => structuredClone(config)[key] === null);
+const os_config_keys = Object.keys(structuredClone(config)).filter(key => structuredClone(config)[key] !== null).filter(key => !["fileSystem", "trustedFiles"].includes(key));
 
 Object.keys(presetLanguagesMap).forEach((key, i) => {
     config.fileSystem["Config:/lang_files"][0].data.push(Object.keys(presetLanguagesMap)[i])

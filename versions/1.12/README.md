@@ -137,6 +137,19 @@ To trust a program, you must add its file name in the `D:/trusted_files` file. T
 5. Validate language files
 6. Initiate the command line with `[[BULLFROG]]greeting`
 
+## froggyOS Structured Data Storage (fSDS)
+fSDS is a way to store key-value pairs in a file. A value can be one of four types: `String`, `Number`, `Boolean`, or `Array`. fSDS is most prominently used to store file data in the `D:/Program-Data` directory, but may be used in other places as well. You cannot store arrays inside of arrays.
+### Non-Array
+```
+KEY [key name] TYPE [type (String/Number/Boolean)] VALUE [value] END
+```
+### Array
+```
+KEY [key name] TYPE Array START
+(list indexes as Non-Array entries)
+KEY [key name] TYPE Array END
+```
+
 # FroggyScript Documentation
 * `[argument=default_value]` denotes a default argument value
 * `:[character]` denotes a specific type input
@@ -610,10 +623,12 @@ import "graphics"
 * [config](https://rus1130.github.io/projects/mdparser.html?url=https://froggyos.github.io/versions/1.12/import-docs/config.md)
 <!--
 to add:
-trusted
-add a file called "trusted programs"
-at every boot, check if any files in the trusted programs file exist
-if they do, push the file name to config.trustedPrograms
+reformat config files and recode getSetting and setSetting to use fSDS
+^ put them all into one file
+add setfSDSKey function
+function setFSDSKey(fileObject, key, value)
+getFSDSKey(fileObject, key)
+do not return typeified
 
 overhaul inclusions in translation descriptors
 [T#:{value}]
