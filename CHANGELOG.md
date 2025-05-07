@@ -74,7 +74,6 @@ literally everything is new
     * wait
 + new hidden commands
 + gave the command error prefix color
-~ changed metaprop to metaperm
 ~ separated FroggyScript keywords into their own interpreter file
 ~ changed parser file to formatter file (name more accurate)
 ```
@@ -92,6 +91,7 @@ literally everything is new
     * savedata
     * loaddata
 + added different color palettes to customize the theme
+~ changed metaperm to metaprop
 ```
 
 ## 1.5-lbc2
