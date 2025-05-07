@@ -151,5 +151,5 @@ idk
 
 # 1.13
 ```
-~ reformatted froggyOS config to fSDS
+~ reformatted froggyOS user config to fSDS
 ```
