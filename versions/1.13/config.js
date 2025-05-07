@@ -829,7 +829,10 @@ const config = {
     // filesystem
     fileSystem: {
         "Config:": [
-            { name: "user_config", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
+            { name: "trusted_files", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
+                "test",
+            ] },
+            { name: "user", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
                 "KEY language TYPE String VALUE eng END",
                 "KEY debugMode TYPE Boolean VALUE false END",
                 "KEY colorPalette TYPE String VALUE standard END",
@@ -851,43 +854,37 @@ const config = {
                 "KEY dissallowSubdirectoriesIn TYPE Array END",
                 "KEY validateLanguageOnStartup TYPE Boolean VALUE true END",
             ] },
-            { name: "language", properties: {transparent: false, read: true, write: true, hidden: false}, data: ["eng"] },
-            { name: "debugMode", properties: {transparent: false, read: true, write: true, hidden: false}, data: ["false"] },
-            { name: "colorPalette", properties: {transparent: false, read: true, write: true, hidden: false}, data: ["standard"] },
-            { name: "version", properties: {transparent: false, read: true, write: true, hidden: false}, data: ["1.13-indev"] },
-            { name: "showSpinner", properties: {transparent: false, read: true, write: true, hidden: false}, data: ["false"] },
-            { name: "currentSpinner", properties: {transparent: false, read: true, write: true, hidden: false}, data: ["default"] },
-            { name: "defaultSpinner", properties: {transparent: false, read: true, write: true, hidden: false}, data: ["default"] },
-            { name: "timeFormat", properties: {transparent: false, read: true, write: true, hidden: false}, data: ["w. y/mn/d h:m:s"] },
-            { name: "updateStatBar", properties: {transparent: false, read: true, write: true, hidden: false}, data: ["true"] },
-            { name: "allowedProgramDirectories", properties: {transparent: false, read: true, write: true, hidden: false}, data: ["D:/Programs"] },
-            { name: "dissallowSubdirectoriesIn", properties: {transparent: false, read: true, write: true, hidden: false}, data: ["D:/Programs", "D:/Macros", "D:/Program-Data", "D:/Palettes", "D:/Spinners"] },
-            { name: "validateLanguageOnStartup", properties: {transparent: false, read: true, write: true, hidden: false}, data: ["true"] }
         ],
-        "Config:/lang_files": [
+        "Config:/langs": [
             { name: "lbh", properties: {transparent: true, read: true, write: false, hidden: false}, data: ["!LANGNAME: language build helper"] },
             { name: "eng", properties: {transparent: false, read: true, write: true, hidden: false}, data: ["!LANGNAME: English"] },
             { name: "nmt", properties: {transparent: false, read: true, write: true, hidden: false}, data: ["!LANGNAME: ngimëte"] },
             { name: "jpn", properties: {transparent: false, read: true, write: true, hidden: false}, data: ["!LANGNAME: Japanese"] },
-        ],             
-        "C:": [],   
+        ],
+        "Config:/program_data": [
+            { name: "test", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
+                "KEY meow!! TYPE Array START",
+                "TYPE String VALUE Meow!",
+                "TYPE String VALUE Ribbit!",
+                "TYPE Number VALUE 7.201",
+                "KEY meow!! TYPE Array END",
+                "KEY Ribbit TYPE String VALUE woof END",
+                "KEY shit TYPE Number VALUE 1.2 END"
+            ] },
+        ],   
+        "C:": [],
         "C:/Home": [
             { name: "welcome!", properties: {transparent: false, read: true, write: true, hidden: false}, data: ['Hello!', "Welcome to FroggyOS.", "Type 'help' for a list of commands.", "Have fun! ^v^"] },
         ],
         "C:/Docs": [],
-        "D:": [
-            { name: "trusted_files", properties: {transparent: false, read: true, write: true, hidden: false}, data: ["test"] },
-        ], 
+        "D:": [], 
         "D:/Programs": [
             { name: "cli", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["str cli = 'this program is hardcoded into froggyOS'", "endprog"] },
             { name: "lilypad", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["str lilypad = 'this program is hardcoded into froggyOS'", "endprog"] },
             { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
                 "import 'config'",
                 // 'str meow = "woof"',
-                // "#Config>oc_set('error';'penis')",
-                "arr meow = _",
-                "loaddata meow meow!!",
-                "out meow>:(2)>type",
+                "#Config>oc_set('currentProgram';false)",
                 // 'arr test = "a", "b", "c"',
                 // "#test>append($'d','e'$)",
                 // "out test>join",
@@ -985,16 +982,6 @@ const config = {
             ] },
             { name: "set-US-time-format", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
                 "ft w. mn/d/y H:m:s a",
-            ] },
-        ],
-        "D:/Program-Data": [
-            { name: "test", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
-                "KEY meow!! TYPE Array START",
-                "TYPE String VALUE Meow!",
-                "TYPE String VALUE Ribbit!",
-                "TYPE Number VALUE 7.201",
-                "KEY meow!! TYPE Array END",
-                "KEY Ribbit TYPE String VALUE woof END",
             ] },
         ],
         "D:/Palettes": [
@@ -1290,8 +1277,8 @@ const user_config_keys = Object.keys(structuredClone(config)).filter(key => stru
 const os_config_keys = Object.keys(structuredClone(config)).filter(key => structuredClone(config)[key] !== null).filter(key => !["fileSystem", "trustedFiles"].includes(key));
 
 Object.keys(presetLanguagesMap).forEach((key, i) => {
-    config.fileSystem["Config:/lang_files"][0].data.push(Object.keys(presetLanguagesMap)[i])
-    if(presetLanguagesMap[key].eng != undefined) config.fileSystem["Config:/lang_files"][1].data.push(presetLanguagesMap[key].eng);
-    if(presetLanguagesMap[key].nmt != undefined) config.fileSystem["Config:/lang_files"][2].data.push(presetLanguagesMap[key].nmt);
-    if(presetLanguagesMap[key].jpn != undefined) config.fileSystem["Config:/lang_files"][3].data.push(presetLanguagesMap[key].jpn);
+    config.fileSystem["Config:/langs"][0].data.push(Object.keys(presetLanguagesMap)[i])
+    if(presetLanguagesMap[key].eng != undefined) config.fileSystem["Config:/langs"][1].data.push(presetLanguagesMap[key].eng);
+    if(presetLanguagesMap[key].nmt != undefined) config.fileSystem["Config:/langs"][2].data.push(presetLanguagesMap[key].nmt);
+    if(presetLanguagesMap[key].jpn != undefined) config.fileSystem["Config:/langs"][3].data.push(presetLanguagesMap[key].jpn);
 })

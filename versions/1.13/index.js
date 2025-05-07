@@ -17,22 +17,18 @@ document.body.onclick = function() {
 }
 
 function setSetting(setting, value) {
-    config.fileSystem["Config:"].find(file => file.name == setting).data = value;
+    set_fSDS("Config:", "user", setting, value);
 }
 
 function getSetting(setting) {
-    let fsds = parsefSDSWithTyping(getFileWithName("Config:", "user_config").data);
+    let fsds = parsefSDSWithTyping(getFileWithName("Config:", "user").data);
     return fsds[setting]?.value;
 }
 
 function setUserConfigFromFile(){
-    let fsds = parsefSDSWithTyping(getFileWithName("Config:", "user_config").data);
+    let fsds = parsefSDSWithTyping(getFileWithName("Config:", "user").data);
     if(fsds.error) {
-        alert(`OS ERROR!: ${fsds.message}\nloading last known good config`);
-        sendCommand("[[BULLFROG]]urgentloadstate", [], false);
-        sendCommand("[[BULLFROG]]urgentclearstate", [], false);
-        sendCommand("cl", [], true);
-        return;
+        alert(`OS ERROR!: ${fsds.message}\nOS may brick itself`);
     }
     
     config.debugMode = getSetting("debugMode")
@@ -48,23 +44,16 @@ function setUserConfigFromFile(){
     config.language = getSetting("language");
     config.validateLanguageOnStartup = getSetting("validateLanguageOnStartup");
 
-    let goodToAutosave = true;
-    let badKey = null;
+    let badConfig = false;
     for (let key of user_config_keys) {
         if(getSetting(key) == undefined){
-            goodToAutosave = false;
-            badKey = key;
+            badConfig = true;
             break;
         }
     }
 
-    if(goodToAutosave) {
-        sendCommand("[[BULLFROG]]urgentsavestate", [], false);
-    } else {
-        alert(`OS ERROR!: missing key ${badKey} in user_config\nloading last known good config`);
-        sendCommand("[[BULLFROG]]urgentloadstate", [], false);
-        sendCommand("[[BULLFROG]]urgentclearstate", [], false);
-        sendCommand("cl", [], true);
+    if(badConfig) {
+        alert(`OS ERROR!: missing key ${badKey} in Config:/user\nloading last known good config`);
         return;
     }
 }
@@ -100,25 +89,51 @@ function set_fSDS(path, filename, key, value){
     if(fsds.error) return false;
 
     if(fsds[key] == undefined) {
-        if(Array.isArray(value)){
-            file.data.push(`KEY ${key} TYPE Array START`);
+        let isArray = Array.isArray(value);
+
+        if(isArray){
+            let array_fsds = [];
+
             for(let i = 0; i < value.length; i++){
-                let type = typeof value[i];
-                type[0] = type[0].toUpperCase();
-                file.data.push(`TYPE ${type} VALUE ${value[i]}`);
+                let type = (typeof value[i])[0].toUpperCase() + (typeof value[i]).slice(1);
+                array_fsds.push(`TYPE ${type} VALUE ${value[i]}`);
             }
+            file.data.push(`KEY ${key} TYPE Array START`);
+            file.data.push(...array_fsds);
             file.data.push(`KEY ${key} TYPE Array END`);
+            
         } else {
             let type = typeof value;
-            type[0] = type[0].toUpperCase();
+            type = type[0] + type.slice(1);
+
+
             file.data.push(`KEY ${key} TYPE ${type} VALUE ${value} END`);
         }
     } else {
+        let isArray = Array.isArray(value);
 
+        if(isArray){
+            let keyStart = file.data.findIndex(line => line.includes(`KEY ${key} TYPE Array START`));
+            let keyEnd = file.data.findIndex(line => line.includes(`KEY ${key} TYPE Array END`));
+
+            let array_fsds = [];
+
+            for(let i = 0; i < value.length; i++){
+                let type = (typeof value[i])[0].toUpperCase() + (typeof value[i]).slice(1);
+                array_fsds.push(`TYPE ${type} VALUE ${value[i]}`);
+            }
+            file.data.splice(keyStart + 1, keyEnd - keyStart - 1);
+            file.data.splice(keyStart + 1, 0, ...array_fsds);
+        } else {
+            let type = (typeof value)[0].toUpperCase() + (typeof value).slice(1);
+            
+            let keyRegex = new RegExp(`KEY ${key} TYPE ${type} VALUE (.+?) END`);
+            let keyIndex = file.data.findIndex(line => line.match(keyRegex));
+
+            file.data[keyIndex] = file.data[keyIndex].replace(keyRegex, `KEY ${key} TYPE ${type} VALUE ${value} END`);
+        }
     }
 }
-
-
 
 function parse_fSDS(inputFile){
     let output = {};
@@ -208,8 +223,8 @@ function localize(descriptor, TRANSLATE_TEXT){
         descriptor = descriptor.replaceAll(`|||[${replacementData}]|||`, "|||[]|||");
     }
 
-    let translationMap = config.fileSystem["Config:/lang_files"].find(translation => translation.name == "lbh").data;
-    let languageMap = config.fileSystem["Config:/lang_files"].find(translation => translation.name == config.language).data;
+    let translationMap = config.fileSystem["Config:/langs"].find(translation => translation.name == "lbh").data;
+    let languageMap = config.fileSystem["Config:/langs"].find(translation => translation.name == config.language).data;
 
     let englishData = translationMap.indexOf(descriptor);
     let translation = languageMap[englishData];
@@ -245,8 +260,8 @@ function programList(){
 
     // for all the programs, if there is not a corresponding file in the D:Program-Data directory, create one
     for(let program of config.programList){
-        if(getFileWithName("D:/Program-Data", program) == undefined){
-            config.fileSystem["D:/Program-Data"].push({
+        if(getFileWithName("Config:/program_data", program) == undefined){
+            config.fileSystem["Config:/program_data"].push({
                 name: program,
                 properties: { ...filePropertyDefaults },
                 data: []
@@ -416,7 +431,7 @@ function changeColorPalette(name){
         root.style.setProperty(`--${variable}`, `var(--c${color})`);
     }
 
-    setSetting("colorPalette", [name]);
+    setSetting("colorPalette", name);
     config.colorPalette = name;
     createColorTestBar();
 }
@@ -678,11 +693,11 @@ function updateLineHighlighting() {
 }
 
 function validateLanguageFile(code){
-    let langFile = config.fileSystem["Config:/lang_files"].find(file => file.name == code)
+    let langFile = config.fileSystem["Config:/langs"].find(file => file.name == code)
     if(langFile == undefined) return false;
 
     let langData = langFile.data;
-    let translation_map = config.fileSystem["Config:/lang_files"].find(file => file.name == "lbh").data;
+    let translation_map = config.fileSystem["Config:/langs"].find(file => file.name == "lbh").data;
     
     if(langData.length != translation_map.length) return false;
     if(langFile.properties.hidden == true) return false;
@@ -710,11 +725,11 @@ function sendCommand(command, args, createEditableLineAfter){
         // change language
         case "lang":
         case "changelanguage": {
-            let langCodes = config.fileSystem["Config:/lang_files"].map(file => file.name);
+            let langCodes = config.fileSystem["Config:/langs"].map(file => file.name);
 
             function getDisplayCodes(){ 
                 let arr = [];
-                let displayCodes = config.fileSystem["Config:/lang_files"]
+                let displayCodes = config.fileSystem["Config:/langs"]
                     .filter(file => {
                         if(file.properties.hidden == true) return false;
                         if(file.properties.transparent == true) return false;
@@ -724,7 +739,7 @@ function sendCommand(command, args, createEditableLineAfter){
                 
                 for(let i = 0; i < displayCodes.length; i++){
                     let code = displayCodes[i];
-                    let langName = config.fileSystem["Config:/lang_files"].find(file => file.name == displayCodes[i]).data[0].match(/^!LANGNAME: (.*?)$/)[1];
+                    let langName = config.fileSystem["Config:/langs"].find(file => file.name == displayCodes[i]).data[0].match(/^!LANGNAME: (.*?)$/)[1];
                     arr.push(`${displayCodes[i]} (${validateLanguageFile(code) ? langName : localize("T_invalid_lang")})`);
                 }
                 return arr.join(", ");
@@ -756,7 +771,7 @@ function sendCommand(command, args, createEditableLineAfter){
                 break;
             }
             
-            setSetting("language", [code]);
+            setSetting("language", code);
 
             setTimeout(() => {
                 createTerminalLine("T_lang_changed", ">")
@@ -906,7 +921,7 @@ function sendCommand(command, args, createEditableLineAfter){
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
-            setSetting("timeFormat", [args.join(" ")]);
+            setSetting("timeFormat", args.join(" "));
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         } break;
 
@@ -931,7 +946,7 @@ function sendCommand(command, args, createEditableLineAfter){
                 break;
             }
             // if the current path is settings and the name isnt exactly 3 character long, throw an error
-            if(config.currentPath == "Config:/lang_files" && args[0].length != 3){
+            if(config.currentPath == "Config:/langs" && args[0].length != 3){
                 createTerminalLine("T_file_name_not_3_char", config.errorText);
                 hadError = true;
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
@@ -1282,7 +1297,7 @@ x
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
-            if(fileName.length != 3 && config.currentPath == "Config:/lang_files"){
+            if(fileName.length != 3 && config.currentPath == "Config:/langs"){
                 createTerminalLine("T_file_name_not_3_char", config.errorText);
                 hadError = true;
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
@@ -1503,8 +1518,8 @@ x
 
         case '[[BULLFROG]]showspinner':
             let bool = args[0];
-            if(bool == "1") setSetting("showSpinner", ["true"]);
-            else if(bool == "0") setSetting("showSpinner", ["false"]);
+            if(bool == "1") setSetting("showSpinner", true);
+            else if(bool == "0") setSetting("showSpinner", false);
             else {
                 createTerminalLine("T_invalid_args_provide_1_0", config.errorText);
                 hadError = true;
@@ -1514,8 +1529,8 @@ x
 
         case '[[BULLFROG]]statbarlock': {
             let bool = args[0];
-            if(bool == "1") setSetting("updateStatBar", ["false"]);
-            else if(bool == "0") setSetting("updateStatBar", ["true"]);
+            if(bool == "1") setSetting("updateStatBar", false);
+            else if(bool == "0") setSetting("updateStatBar", true);
             else {
                 createTerminalLine("T_invalid_args_provide_1_0", config.errorText);
                 hadError = true;
@@ -1526,11 +1541,11 @@ x
         case "[[BULLFROG]]debugmode": {
             let bool = args[0];
             if(bool == "1") {
-                setSetting("debugMode", ["true"]);
+                setSetting("debugMode", true);
                 config.stepThroughProgram = true;
             }
             else if(bool == "0") {
-                setSetting("debugMode", ["false"]);
+                setSetting("debugMode", false);
                 config.stepThroughProgram = false;
             }
             else {
@@ -1576,7 +1591,7 @@ x
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             } else {
-                setSetting("currentSpinner", [spinner]);
+                setSetting("currentSpinner", spinner);
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
@@ -1629,7 +1644,7 @@ x
                 return;
             }
             // get every language file except for TRANSLATION_MAP and the current language
-            let languageFiles = config.fileSystem["Config:/lang_files"].map(file => file.name).filter(name => name != "lbh" && name != config.language);
+            let languageFiles = config.fileSystem["Config:/langs"].map(file => file.name).filter(name => name != "lbh" && name != config.language);
 
             languageFiles.forEach(name => {
                 if(validateLanguageFile(name) == false){
@@ -1639,15 +1654,15 @@ x
 
             if(validateLanguageFile(config.language) == false){
                 createTerminalLine(`T_current_lang_invalid`, config.translationErrorText);
-                setSetting("language", ["lbh"]);
+                setSetting("language", "lbh");
             }
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         } break;
 
         case "[[BULLFROG]]translations": {
-            let translationFiles = config.fileSystem["Config:/lang_files"].filter(file => file.name != "lbh");
+            let translationFiles = config.fileSystem["Config:/langs"].filter(file => file.name != "lbh");
 
-            let lbh = config.fileSystem["Config:/lang_files"].find(file => file.name == "lbh").data;
+            let lbh = config.fileSystem["Config:/langs"].find(file => file.name == "lbh").data;
 
             let linesNotTranslated = {};
 
@@ -1942,14 +1957,14 @@ function createLilypadLine(path, linetype, filename){
                         dataLength += line.length;
                     });
                     
-                    setSetting("showSpinner", ["true"])
+                    setSetting("showSpinner", "true")
                     setTimeout(function(){
     
                         file.name = filename;
                         let fileIndex = config.fileSystem[config.currentPath].findIndex(file => file.name == filename);
                         config.fileSystem[config.currentPath][fileIndex].data = file.data;
     
-                        setSetting("showSpinner", ["false"])
+                        setSetting("showSpinner", "false")
                         createTerminalLine(`T_saving_done`, ">");
                         
                         createEditableTerminalLine(`${config.currentPath}>`);
@@ -1977,7 +1992,7 @@ function createLilypadLine(path, linetype, filename){
 }
 
 function setTrustedFiles(){
-    let trustedFiles = getFileWithName("D:", "trusted_files").data;
+    let trustedFiles = getFileWithName("Config:", "trusted_files").data;
     for(let directory of config.allowedProgramDirectories){
         for(let file of config.fileSystem[directory]){
             if(trustedFiles.includes(file.name) && !config.trustedFiles.includes(`${directory}/${file.name}`)) {

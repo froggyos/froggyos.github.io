@@ -148,3 +148,8 @@ idk
     * config
 ~ slightly redid debug window again
 ```
+
+# 1.13
+```
+~ reformatted froggyOS config to fSDS
+```

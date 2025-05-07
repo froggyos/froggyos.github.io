@@ -102,7 +102,7 @@ function outputWithFormatting(token) {
 function resetTerminalForUse(interval){
     resetMemState()
     clearInterval(interval);
-    setSetting("showSpinner", "false")
+    setSetting("showSpinner", false)
     setSetting("currentSpinner", getSetting("defaultSpinner"));
     config.currentProgram = "cli";
 }
@@ -1784,12 +1784,11 @@ function methodParser(startToken){
             default: {
                 if(hasImport("config")){
                     if(token.type == "Config"){
-                        let userConfig = []
                         switch(methodName){
                             case "oc_set":
                             case "uc_set": {
                                 if(!isTrusted(config.currentProgram)){
-                                    token = new ScriptError("PermissionError", `[>${methodName}()] cannot set config values outside of trusted programs`);
+                                    token = new ScriptError("PermissionError", `cannot [>${methodName}()] config values outside of trusted programs`);
                                     break;
                                 }
 
@@ -1809,11 +1808,11 @@ function methodParser(startToken){
                                     break;
                                 }
                                 if(methodName == "uc_set") if(!user_config_keys.includes(givenSetting.value)){
-                                    token = new ScriptError("AccessError", `[>${methodName}()] key argument must be a valid key, found [${givenSetting.value}]\nvalid keys:\n\u00A0${user_config_keys.join("\n\u00A0")}`);
+                                    token = new ScriptError("AccessError", `[>${methodName}()] key argument must be a valid key, found [${givenSetting.value}] instead\nvalid keys:\n\u00A0${user_config_keys.join("\n\u00A0")}`);
                                     break;
                                 }
                                 if(methodName == "oc_set") if(!os_config_keys.includes(givenSetting.value)){
-                                    token = new ScriptError("AccessError", `[>${methodName}()] key argument must be a valid key, found [${givenSetting.value}]\nvalid keys:\n\u00A0${os_config_keys.join("\n\u00A0")}`);
+                                    token = new ScriptError("AccessError", `[>${methodName}()] key argument must be a valid key, found [${givenSetting.value}] instead\nvalid keys:\n\u00A0${os_config_keys.join("\n\u00A0")}`);
                                     break;
                                 }
 
@@ -1821,35 +1820,41 @@ function methodParser(startToken){
 
                                 if(typeof setting === "number"){
                                     if(givenValue.type != "Number"){
-                                        token = new ScriptError("TypeError", `[>${methodName}()] value argument expects type Number, found type ${givenValue.type}`);
+                                        token = new ScriptError("TypeError", `[>${methodName}()] with key of [${givenSetting.value}] expects a value argument of type Number, found type ${givenValue.type}`);
                                         break;
                                     }
                                 }
                                 if(typeof setting === "boolean"){
                                     if(givenValue.type != "Boolean"){
-                                        token = new ScriptError("TypeError", `[>${methodName}()] value argument expects type Boolean, found type ${givenValue.type}`);
+                                        token = new ScriptError("TypeError", `[>${methodName}()] with key of [${givenSetting.value}] expects a value argument of type Boolean, found type ${givenValue.type}`);
                                         break;
                                     }
                                 }
                                 if(typeof setting === "string"){
                                     if(givenValue.type != "String"){
-                                        token = new ScriptError("TypeError", `[>${methodName}()] value argument expects type String, found type ${givenValue.type}`);
+                                        token = new ScriptError("TypeError", `[>${methodName}()] with key of [${givenSetting.value}] expects a value argument of type String, found type ${givenValue.type}`);
                                         break;
                                     }
                                 }
                                 if(Array.isArray(setting)){
                                     if(givenValue.type != "Array"){
-                                        token = new ScriptError("TypeError", `[>${methodName}()] value argument expects type Array, found type ${givenValue.type}`);
+                                        token = new ScriptError("TypeError", `[>${methodName}()] with key of [${givenSetting.value}] expects a value argument of type Array, found type ${givenValue.type}`);
                                         break;
                                     }
                                     if(givenValue.value.some(x => x.type != "String")){
-                                        token = new ScriptError("TypeError", `[>${methodName}()] value argument expects an array of Strings, found type ${givenValue.value.map(x => x.type).join(", ")}`);
+                                        token = new ScriptError("TypeError", `[>${methodName}()] with key of [${givenSetting.value}] expects a value argument of an array of Strings, found type ${givenValue.value.map(x => x.type).join(", ")}`);
                                         break;
                                     }
                                 }
 
                                 if(methodName == "uc_set"){
-                                    setSetting(givenSetting.value, givenValue.value.map(x => x.value))
+                                    let value = '';
+                                    if(givenValue.type == "Array"){
+                                        value = givenValue.value.map(x => x.value);
+                                    } else {
+                                        value = givenValue.value;
+                                    }
+                                    setSetting(givenSetting.value, value)
                                 } else if(methodName == "oc_set"){
                                     config[givenSetting.value] = givenValue.value;
                                 }
@@ -2623,49 +2628,8 @@ async function interpretSingleLine(interval, single_input, error_trace, block_er
             case "savedata": {
                 let key = token.key;
                 let value = token.value.value;
-                let valueType = token.value.type;
 
-                let dataArray = [];
-
-                if(valueType == "Array"){
-                    dataArray.push(`KEY ${key} TYPE ${valueType} START`)
-                    for(let i = 0; i < value.length; i++){
-                        let index = value[i];
-                        dataArray.push(`TYPE ${index.type} VALUE ${index.value}`)
-                    }
-                    dataArray.push(`KEY ${key} TYPE ${valueType} END`)
-                } else {
-                    dataArray.push(`KEY ${key} TYPE ${valueType} VALUE ${value} END`)
-                }
-
-                let fileData = config.fileSystem['D:/Program-Data'].find(x => x.name == config.currentProgram);
-
-                if(valueType == "Array"){
-                    let startIndex = fileData.data.findIndex(x => x.match(new RegExp(`^KEY ${key} TYPE ${valueType} START$`)));
-
-                    let endIndex = fileData.data.findIndex(x => x.match(new RegExp(`^KEY ${key} TYPE ${valueType} END$`)));
-
-                    if((startIndex == -1 && endIndex != -1) || (startIndex != -1 && endIndex == -1)){
-                        token = new ScriptError("ProgramDataError", `The program data in D:/Program-Data is malformed. Cannot save data`);
-                    }
-
-                    if(startIndex == -1 && endIndex == -1){
-                        fileData.data.push(...dataArray);
-                    }
-                    else if(startIndex != -1 && endIndex != -1){
-                        fileData.data.splice(startIndex, endIndex - startIndex + 1, ...dataArray);
-                    } else {
-                        fileData.data.push(...dataArray);
-                    }
-                } else {
-                    let dataIndex = fileData.data.findIndex(x => x.match(new RegExp(`^KEY ${key} TYPE ${valueType} VALUE (.+?) END`)));
-
-                    if(dataIndex == -1){
-                        fileData.data.push(...dataArray);
-                    } else {
-                        fileData.data[dataIndex] = dataArray[0];
-                    }
-                }
+                set_fSDS("Config:/program_data", config.currentProgram, key, value);
             } break;
 
             case "prompt": {
@@ -2718,7 +2682,7 @@ async function interpretSingleLine(interval, single_input, error_trace, block_er
                         if(e.key == "Enter"){
                             e.preventDefault();
                             document.body.removeEventListener('keyup', promptHandler);
-                            setSetting("showSpinner", "false");
+                            setSetting("showSpinner", false);
                             setSetting("currentSpinner", getSetting("defaultSpinner"));
 
                             let selectedValue = options[selectedIndex].textContent;
@@ -2733,7 +2697,7 @@ async function interpretSingleLine(interval, single_input, error_trace, block_er
 
                     document.body.addEventListener('keyup', promptHandler);
                     terminal.appendChild(terminalLineElement);
-                    setSetting("showSpinner", "true");
+                    setSetting("showSpinner", true);
                     setSetting("currentSpinner", "prompt-in-progress")
                 }
             } break;
@@ -2783,7 +2747,7 @@ async function interpretSingleLine(interval, single_input, error_trace, block_er
                 inputElement.focus();
 
                 setSetting("currentSpinner", "ask-in-progress")
-                setSetting("showSpinner", "true");
+                setSetting("showSpinner", true);
                 inputElement.addEventListener('keydown', function(e){
                     if(e.key == "Enter") e.preventDefault();
                 }); 
@@ -2791,7 +2755,7 @@ async function interpretSingleLine(interval, single_input, error_trace, block_er
                 inputElement.addEventListener('keyup', function(e){
                     if(e.key == "Enter") {
                         setSetting("currentSpinner", getSetting("defaultSpinner"))
-                        setSetting("showSpinner", "false");
+                        setSetting("showSpinner", false);
                         e.preventDefault();
                         inputElement.setAttribute('contenteditable', 'false');
 
@@ -2873,8 +2837,8 @@ async function interpretSingleLine(interval, single_input, error_trace, block_er
                 if(endIndex === null) {
                     token = new ScriptError("SyntaxError", `Missing matching [endquickloop] for [quickloop]`);
                 } else {
-                    setSetting("showSpinner", ["true"])
-                    setSetting("currentSpinner", ["quickloop-in-progress"])
+                    setSetting("showSpinner", true)
+                    setSetting("currentSpinner", "quickloop-in-progress")
 
                     token.endQuickloopIndex = endIndex;
                     FroggyscriptMemory.lines[token.endQuickloopIndex] += " " + FroggyscriptMemory.CLOCK_INTERVAL;
@@ -2895,8 +2859,8 @@ async function interpretSingleLine(interval, single_input, error_trace, block_er
             case "endprog": {
                 resetMemState()
                 clearInterval(interval);
-                setSetting("showSpinner", ["false"])
-                setSetting("currentSpinner", [getSetting("defaultSpinner")]);
+                setSetting("showSpinner", false)
+                setSetting("currentSpinner", getSetting("defaultSpinner"));
                 createEditableTerminalLine(config.currentPath + ">");
                 return;
             } break;
@@ -2909,9 +2873,9 @@ async function interpretSingleLine(interval, single_input, error_trace, block_er
                 let loopCondition = FroggyscriptMemory.lines[token.goto].replace("loop", "").trim();
                 if(evaluate(loopCondition)) {
                     FroggyscriptMemory.CLOCK_INTERVAL = token.goto;
-                    setSetting("showSpinner", ["true"])
+                    setSetting("showSpinner", true)
                 } else {
-                    setSetting("showSpinner", ["false"])
+                    setSetting("showSpinner", false)
                 }
             } break;
 
@@ -3147,6 +3111,25 @@ function interpreter(input, fileArguments, programName) {
     FroggyscriptMemory.cliPromptCount = 0;
     FroggyscriptMemory.CLOCK_PAUSED = false;
 
+    let programDataFile = config.fileSystem['Config:/program_data'].find(x => x.name == config.currentProgram).data;
+
+    let fsdsData = parse_fSDS(programDataFile);
+
+    if(fsdsData.error != undefined){
+        createTerminalLine(`Program data is malformed. Some data cannot be loaded`, config.alertText, {translate: false});
+    };
+
+    for(let key in fsdsData){
+        let data = fsdsData[key];
+        if(data.type == "Array"){
+            data.value = "$"+data.value.join(",")+"$"
+        } else {
+            data = typeify(data.value);
+        }
+    }
+
+    FroggyscriptMemory.savedData = fsdsData;
+
     writeVariable("OS_ProgramName", "String", programName, false);
     config.currentProgram = programName;
 
@@ -3157,8 +3140,6 @@ function interpreter(input, fileArguments, programName) {
     }
 
     const PROGRAM_RUNTIME_START = Date.now();
-
-    let dataError = 0;
 
     let realtime = false;
 
@@ -3182,25 +3163,6 @@ function interpreter(input, fileArguments, programName) {
 
         FroggyscriptMemory.variables.Time_ProgramRuntime.value = Date.now() - PROGRAM_RUNTIME_START;
         FroggyscriptMemory.variables.Time_MsEpoch.value = Date.now();
-
-        let programDataFile = config.fileSystem['D:/Program-Data'].find(x => x.name == config.currentProgram).data;
-
-        let fsdsData = parse_fSDS(programDataFile);
-
-        if(fsdsData.error != undefined){
-            createTerminalLine(`Program data is malformed. Some data cannot be loaded`, config.alertText, {translate: false});
-        };
-
-        for(let key in fsdsData){
-            let data = fsdsData[key];
-            if(data.type == "Array"){
-                data.value = "$"+data.value.join(",")+"$"
-            } else {
-                data = typeify(data.value);
-            }
-        }
-
-        FroggyscriptMemory.savedData = fsdsData;
         
         if(realtime) {
             if(FroggyscriptMemory.CLOCK_PAUSED == false){
@@ -3244,7 +3206,7 @@ function interpreter(input, fileArguments, programName) {
         if(e.key == "Delete"){
             clearInterval(clock);
             createTerminalLine("Program escaped.", config.alertText, {translate: false});
-            setSetting("showSpinner", ["false"])
+            setSetting("showSpinner", false)
             createEditableTerminalLine(config.currentPath + ">");
         }
     }, {once: true});
