@@ -178,12 +178,12 @@ function evaluate(expression) {
         expression = expression.slice(0, methodIndex).trim();
     }
 
-    let variableNames = Object.keys(FroggyscriptMemory.variables);
+    let variableNames = [...Object.keys(FroggyscriptMemory.variables), ...Object.keys(FroggyscriptMemory.temporaryVariables)];
 
     let scope = {};
 
     variableNames.forEach(variableName => {
-        let variableValue = FroggyscriptMemory.variables[variableName];
+        let variableValue = getVariable(variableName);
         if(variableValue) {
             scope[variableName] = variableValue.value;
         }
@@ -197,6 +197,8 @@ function evaluate(expression) {
     } catch (e) {
         error = true;
     }
+
+    console.log(result)
 
     if (error) {
         return new ScriptError("EvaluationError", `Cannot evaluate [${expression}]`);
@@ -281,29 +283,44 @@ async function runFunctionBody(funcBody, typeObj) {
         FroggyscriptMemory.CLOCK_PAUSED = true;
 
         const subclock = setInterval(() => {
-            if (subclock_interval >= funcBody.length) {
-                FroggyscriptMemory.CLOCK_PAUSED = false;
-                FroggyscriptMemory.temporaryVariables = {};
-                clearInterval(subclock);
-                return resolve(lastToken);
-            }
+            const tick = async () => {
+                if (subclock_interval >= funcBody.length) {
+                    FroggyscriptMemory.CLOCK_PAUSED = false;
+                    FroggyscriptMemory.temporaryVariables = {};
+                    clearInterval(subclock);
+                    return resolve(lastToken);
+                }
 
-            let line = funcBody[subclock_interval].trim();
-            lastToken = interpretSingleLine(subclock, line, undefined, true);
+                let line = funcBody[subclock_interval].trim();
+                try {
+                    lastToken = await interpretSingleLine(subclock, line, undefined, true);
+                } catch (e) {
+                    lastToken = {
+                        type: "Error",
+                        message: e.message,
+                        line: subclock_interval + 1
+                    };
+                }
 
-            if (lastToken.type === "Error") {
-                lastToken.line--;
-                let errorTrace = {
-                    name: typeObj.functionName,
-                    line: subclock_interval + funcBody.indexOf(line) + 1
-                };
-                outputError(lastToken, subclock, errorTrace);
+                console.log(lastToken);
 
-                clearInterval(subclock);
-                return resolve(lastToken); // still resolve so the caller can catch
-            }
+                if (lastToken.type === "Error") {
+                    lastToken.line = subclock_interval + 1;
+                    let errorTrace = {
+                        name: typeObj.functionName,
+                        line: subclock_interval + 1
+                    };
+                    outputError(lastToken, subclock, errorTrace);
 
-            subclock_interval++;
+                    clearInterval(subclock);
+                    return resolve(lastToken);
+                }
+
+                subclock_interval++;
+            };
+
+            // Call the async tick manually
+            tick();
         }, FroggyscriptMemory.CLOCK_CYCLE_LENGTH);
     });
 }
@@ -545,7 +562,55 @@ function typeify(value) {
     } else {
         if(methods.length != 0 && typeObj.type != "Function") {
             typeObj.methods = methods;
-        } else typeObj = new ScriptError("TypeifyError", `Cannot assign type to [${value}]`);
+        } else {
+            let stringComparison = value.match(/^(.*?)([<>]=?|==|!=|===|!==)(.*?)$/);
+            if (stringComparison) {
+                let left = stringComparison[1].trim();
+                let operator = stringComparison[2].trim();
+                let right = stringComparison[3].trim();
+            
+                let leftType = typeify(left);
+                let rightType = typeify(right);
+            
+                if (leftType.type === "Error") {
+                    typeObj = leftType;
+                } else if (rightType.type === "Error") {
+                    typeObj = rightType;
+                } else if (leftType.type !== rightType.type) {
+                    typeObj = new ScriptError(
+                        "TypeError",
+                        `Cannot compare types [${leftType.type}] and [${rightType.type}]`
+                    );
+                } else {
+                    typeObj.type = "Boolean";
+                    switch (operator) {
+                        case "==":
+                            typeObj.value = leftType.value === rightType.value;
+                            break;
+                        case "!=":
+                            typeObj.value = leftType.value !== rightType.value;
+                            break;
+                        case "<":
+                            typeObj.value = leftType.value < rightType.value;
+                            break;
+                        case "<=":
+                            typeObj.value = leftType.value <= rightType.value;
+                            break;
+                        case ">":
+                            typeObj.value = leftType.value > rightType.value;
+                            break;
+                        case ">=":
+                            typeObj.value = leftType.value >= rightType.value;
+                            break;
+                        default:
+                            typeObj = new ScriptError(
+                                "SyntaxError",
+                                `Invalid comparison operator [${operator}]`
+                            );
+                    }
+                }
+            } else typeObj = new ScriptError("TypeifyError", `Cannot assign type to [${value}]`);
+        }
     }
 
     return typeObj;
@@ -668,9 +733,7 @@ function processSingleLine(input) {
 
         if(functionToken.type == "Error") return functionToken
         else {
-            console.log(functionToken)
             let result = runFunctionBody(functionToken.body, functionToken);
-            console.log(result)
             token.keyword = "SKIP_LINE";
             return token;
         }
@@ -2947,11 +3010,13 @@ async function interpretSingleLine(interval, single_input, error_trace, block_er
 
                 token.elseKeywordIndex = elseIndex;
                 token.endKeywordIndex = endIndex;
+
+                console.log(endIndex);
             
-                if (endIndex === null) {
-                    token = new ScriptError("SyntaxError", `Missing matching [endif] for [if]`);
-                    break;
-                }
+                // if (endIndex === null) {
+                //     token = new ScriptError("SyntaxError", `Missing matching [endif] for [if]`);
+                //     break;
+                // }
 
                 if (token.value === true) {
                     if (elseIndex !== null) {

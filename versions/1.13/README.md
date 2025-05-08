@@ -123,7 +123,8 @@ Properties:
 If you edit the `Settings:` drive directly, some settings won't apply until you reload the froggyOS state. An easy way to do this would be to run the `reload` macro.
 
 ## Bugs
-* **FUNCTIONS DONT WORK???**
+* **If with string comparison doesnt compute properly**
+* **If/endif dont count properly as a result it fucked the big shit bufk fuck fuck fuck FUCK**
 * you cannot set values to array indexes
 * realtime mode is not real time
 * `>append` mutates the original variable when it shouldnt
