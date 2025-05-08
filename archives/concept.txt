@@ -7,6 +7,41 @@ statement: a line that has a keyword
 oneliner: a term that is being acted on by a method
 function: a key that has multiple statements and/or oneliners associated with it
 
+tokenizer: a function that takes in an input and returns a token
+
+new LineToken = {
+    input: String,
+    type: String, // statement, oneliner, function
+    spec: {
+        // if statement
+        keyword: String,
+        args: Array of Tokens // array of strings, numbers, booleans, arrays
+
+        // if oneliner
+        methods: Array of MethodToken,
+
+        // if function
+        name: String,
+        params: Array,
+        body: Array of Tokens // array of statements and/or oneliners
+    }
+}
+
+new Token = {
+    input: String,
+    type: String, // String, Number, Boolean, Array
+    methods: Array of MethodToken,
+    value: evaluator(input)
+}
+
+new MethodToken = {
+    ...
+}
+
+// takes in a string and returns a typed value ("5" -> 5, "true" -> true, etc.)
+function evaluator(input){
+    ...
+}
 
 process:
 1. read the file line by line
