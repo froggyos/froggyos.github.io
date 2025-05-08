@@ -329,7 +329,7 @@ function typeify(value) {
     if(value == undefined) return new ScriptError("TypeAssignmentError", `Cannot assign type to [${value}]`);
 
     if(/^@.*$/g.test(value)) {
-        const match = value.match(/^@([a-zA-Z][a-zA-Z0-9_]*)\((.*)\)$/);
+        const match = value.match(/^@([a-zA-Z_][a-zA-Z0-9_]*)\((.*)\)$/);
         if (!match) {
             return new ScriptError("SyntaxError", `Invalid function syntax: ${value}`);
         }
@@ -391,13 +391,6 @@ function typeify(value) {
                 mutable: true,
             }
         }
-
-        FroggyscriptMemory.CLOCK_PAUSED = true;
-
-        runFunctionBody(funcBody, typeObj).then((result) => {
-            typeObj.type = result.type;
-            typeObj.value = result.value;
-        });
 
         typeObj.body = funcBody,
         typeObj.origin = "Function";
@@ -675,6 +668,7 @@ function processSingleLine(input) {
 
         if(functionToken.type == "Error") return functionToken
         else {
+            console.log(functionToken)
             runFunctionBody(functionToken.body, functionToken);
             token.keyword = "SKIP_LINE";
             return token;
@@ -2586,12 +2580,13 @@ async function interpretSingleLine(interval, single_input, error_trace, block_er
         return token;
     } else {
         if(token.origin == "Function"){
-            let lastToken = await runFunctionBody(token.body, token);
+            console.log(token)
+            // let lastToken = await runFunctionBody(token.body, token);
 
-            if(lastToken.keyword == "return"){
-                token.value = lastToken.value;
-                token.type = lastToken.type;
-            }
+            // if(lastToken.keyword == "return"){
+            //     token.value = lastToken.value;
+            //     token.type = lastToken.type;
+            // }
         }
         // process tokens here =======================================================
         switch(token.keyword) {
@@ -3111,12 +3106,18 @@ function interpreter(input, fileArguments, programName) {
     FroggyscriptMemory.cliPromptCount = 0;
     FroggyscriptMemory.CLOCK_PAUSED = false;
 
+    writeVariable("OS_ProgramName", "String", programName, false);
+    config.currentProgram = programName;
+
     let programDataFile = config.fileSystem['Config:/program_data'].find(x => x.name == config.currentProgram).data;
 
     let fsdsData = parse_fSDS(programDataFile);
 
     if(fsdsData.error != undefined){
-        createTerminalLine(`Program data is malformed. Some data cannot be loaded`, config.alertText, {translate: false});
+        createTerminalLine(`Program data is malformed.`, config.errorText, {translate: false});
+        createTerminalLine(`Error: ${fsdsData.message}`, config.errorText, {translate: false});
+        resetTerminalForUse();
+        createEditableTerminalLine(config.currentPath + ">");
     };
 
     for(let key in fsdsData){
@@ -3129,9 +3130,6 @@ function interpreter(input, fileArguments, programName) {
     }
 
     FroggyscriptMemory.savedData = fsdsData;
-
-    writeVariable("OS_ProgramName", "String", programName, false);
-    config.currentProgram = programName;
 
     if(FroggyscriptMemory.lines[FroggyscriptMemory.lines.length - 1].trim() !== "endprog") {
         output({value: `PrecheckError -> [endprog] must be the last line of the program <-`});
@@ -3164,25 +3162,7 @@ function interpreter(input, fileArguments, programName) {
         FroggyscriptMemory.variables.Time_ProgramRuntime.value = Date.now() - PROGRAM_RUNTIME_START;
         FroggyscriptMemory.variables.Time_MsEpoch.value = Date.now();
         
-        if(realtime) {
-            if(FroggyscriptMemory.CLOCK_PAUSED == false){
-                if(FroggyscriptMemory.CLOCK_INTERVAL < FroggyscriptMemory.lines.length) {
-                    let line = FroggyscriptMemory.lines[FroggyscriptMemory.CLOCK_INTERVAL]
-                    interpretSingleLine(clock, line).then((t) => {
-                        FroggyscriptMemory.tokens.push(t);
-                    })
-                    FroggyscriptMemory.CLOCK_INTERVAL++;
-                    FroggyscriptMemory.CLOCK_ITERATIONS++;
-                    
-                    if(window.debugWindow){
-                        window.debugWindow.postMessage({ FroggyscriptMemory }, '*');
-                    }
-                } else {
-                    resetTerminalForUse(clock);
-                }
-            }
-
-        } else if(FroggyscriptMemory.CLOCK_PAUSED == false && FroggyscriptMemory.CLOCK_STEP == false) {
+        if(FroggyscriptMemory.CLOCK_PAUSED == false && FroggyscriptMemory.CLOCK_STEP == false) {
             if(FroggyscriptMemory.CLOCK_INTERVAL < FroggyscriptMemory.lines.length) {
                 let line = FroggyscriptMemory.lines[FroggyscriptMemory.CLOCK_INTERVAL]
                 interpretSingleLine(clock, line).then((t) => {

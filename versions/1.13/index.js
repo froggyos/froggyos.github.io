@@ -21,14 +21,15 @@ function setSetting(setting, value) {
 }
 
 function getSetting(setting) {
-    let fsds = parsefSDSWithTyping(getFileWithName("Config:", "user").data);
+    let fsds = fSDSTrueParse(getFileWithName("Config:", "user").data);
     return fsds[setting]?.value;
 }
 
 function setUserConfigFromFile(){
-    let fsds = parsefSDSWithTyping(getFileWithName("Config:", "user").data);
+    let fsds = fSDSTrueParse(getFileWithName("Config:", "user").data);
     if(fsds.error) {
-        alert(`OS ERROR!: ${fsds.message}\nOS may brick itself`);
+        alert(`OS ERROR!: ${fsds.message}\nthis may brick froggyOS\ncancelling config check`);
+        clearInterval(configInterval);
     }
     
     config.debugMode = getSetting("debugMode")
@@ -45,15 +46,18 @@ function setUserConfigFromFile(){
     config.validateLanguageOnStartup = getSetting("validateLanguageOnStartup");
 
     let badConfig = false;
+    let badKey = '';
     for (let key of user_config_keys) {
         if(getSetting(key) == undefined){
             badConfig = true;
+            badKey = key;
             break;
         }
     }
 
     if(badConfig) {
-        alert(`OS ERROR!: missing key ${badKey} in Config:/user\nloading last known good config`);
+        alert(`OS ERROR!: missing key ${badKey} in Config:/user\nthis may brick froggyOS\ncancelling config check`);
+        clearInterval(configInterval);
         return;
     }
 }
@@ -65,7 +69,7 @@ const filePropertyDefaults = {
     transparent: false,
 }
 
-function parsefSDSWithTyping(inputFile){
+function fSDSTrueParse(inputFile){
     let fsds = parse_fSDS(inputFile);
     if(fsds.error) return fsds;
     for(let key in fsds){
@@ -78,7 +82,7 @@ function parsefSDSWithTyping(inputFile){
     return fsds;
 }
 
-// FIX !! IS NOT WORKINGTON
+// FIX !! IS NOT WORKINGTON (add index to front)
 function set_fSDS(path, filename, key, value){
     let directory = config.fileSystem[path];
     if(directory == undefined) return false;
@@ -91,12 +95,15 @@ function set_fSDS(path, filename, key, value){
     if(fsds[key] == undefined) {
         let isArray = Array.isArray(value);
 
+        console.log("meow")
+
         if(isArray){
             let array_fsds = [];
 
             for(let i = 0; i < value.length; i++){
                 let type = (typeof value[i])[0].toUpperCase() + (typeof value[i]).slice(1);
-                array_fsds.push(`TYPE ${type} VALUE ${value[i]}`);
+                // index number needs to go here
+                array_fsds.push(`${i} TYPE ${type} VALUE ${value[i]}`);
             }
             file.data.push(`KEY ${key} TYPE Array START`);
             file.data.push(...array_fsds);
@@ -120,7 +127,8 @@ function set_fSDS(path, filename, key, value){
 
             for(let i = 0; i < value.length; i++){
                 let type = (typeof value[i])[0].toUpperCase() + (typeof value[i]).slice(1);
-                array_fsds.push(`TYPE ${type} VALUE ${value[i]}`);
+                // index number needs to go here
+                array_fsds.push(`${i} TYPE ${type} VALUE ${value[i]}`);
             }
             file.data.splice(keyStart + 1, keyEnd - keyStart - 1);
             file.data.splice(keyStart + 1, 0, ...array_fsds);
@@ -144,7 +152,7 @@ function parse_fSDS(inputFile){
 
     for(let i = 0; i < inputFile.length; i++){
         let line = inputFile[i].trim();
-        let match = line.match(/KEY (.+?) TYPE (String|Number|Boolean) VALUE (.+?) END/);
+        let match = line.match(/^KEY (.+?) TYPE (String|Number|Boolean) VALUE (.+?) END$/);
         if(match != null){
             let key = match[1];
             let type = match[2];
@@ -152,7 +160,7 @@ function parse_fSDS(inputFile){
             if(type == "String") value = `"${value}"`;
             output[key] = {type, value}
         } else {
-            let arrayMatchStart = line.match(/KEY (.+?) TYPE Array START/);
+            let arrayMatchStart = line.match(/^KEY (.+?) TYPE Array START$/);
 
             if(arrayMatchStart != null){
                 let endingKey = arrayMatchStart[1];
@@ -161,7 +169,7 @@ function parse_fSDS(inputFile){
                 for(let j = i + 1; j < inputFile.length; j++){
                     let arrayLine = inputFile[j].trim();
                     if(arrayLine.includes(`KEY ${endingKey} TYPE Array END`)){
-                        arrayMatchEnd = arrayLine.match(/KEY (.+?) TYPE Array END/);
+                        arrayMatchEnd = arrayLine.match(/^KEY (.+?) TYPE Array END$/);
                         break;
                     }
                 }
@@ -190,7 +198,8 @@ function parse_fSDS(inputFile){
 
                 for(let j = searchStart; j < searchEnd; j++){
                     let arrayDataLine = inputFile[j].trim();
-                    let arrayDataMatch = arrayDataLine.match(/^TYPE (String|Number|Boolean) VALUE (.+?)$/);
+                    let regex = new RegExp(`${value.length} TYPE (String|Number|Boolean) VALUE (.+?)$`);
+                    let arrayDataMatch = arrayDataLine.match(regex);
                     if(arrayDataMatch != null){
                         let arrayType = arrayDataMatch[1];
                         let arrayValue = arrayDataMatch[2];
@@ -2070,3 +2079,5 @@ if(!SKIP_ANIMATION) {
 } else {
     ready();    
 }
+
+sendCommand("st", ["kaerugotchi"], true);

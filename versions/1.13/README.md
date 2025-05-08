@@ -123,6 +123,7 @@ Properties:
 If you edit the `Settings:` drive directly, some settings won't apply until you reload the froggyOS state. An easy way to do this would be to run the `reload` macro.
 
 ## Bugs
+* **FUNCTIONS DONT WORK???**
 * you cannot set values to array indexes
 * realtime mode is not real time
 * `>append` mutates the original variable when it shouldnt
@@ -147,7 +148,9 @@ KEY [key name] TYPE [type (String/Number/Boolean)] VALUE [value] END
 ### Array
 ```
 KEY [key name] TYPE Array START
-(list indexes as Non-Array entries)
+0 TYPE [type (String/Number/Boolean)] VALUE [value]
+1 TYPE [type (String/Number/Boolean)] VALUE [value]
+(...)
 KEY [key name] TYPE Array END
 ```
 

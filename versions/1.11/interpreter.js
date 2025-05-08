@@ -376,10 +376,6 @@ function typeify(value) {
 
         FroggyscriptMemory.CLOCK_PAUSED = true;
 
-        // runFunctionBody(funcBody, typeObj).then((result) => {
-        //     typeObj.value = result.value;
-        // });
-
         typeObj.body = funcBody,
         typeObj.origin = "Function";
 
