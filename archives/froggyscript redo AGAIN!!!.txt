@@ -1,0 +1,14 @@
+3 types of lines:
+1. statement
+2. oneliner
+3. function
+
+statement: a line that has a keyword
+oneliner: a term that is being acted on by a method
+function: a key that has multiple statements and/or oneliners associated with it
+
+
+process:
+1. read the file line by line
+2. for each line, check if it is a statement, oneliner, or function
+3. depending on which it is, act accordingly
