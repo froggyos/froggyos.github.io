@@ -1968,8 +1968,14 @@ function interpreter(input, fileArguments, programName) {
     FroggyscriptMemory.cliPromptCount = 0;
     FroggyscriptMemory.CLOCK_PAUSED = false;
 
-    writeVariable("OS_ProgramName", "String", programName, false);
     config.currentProgram = programName;
+
+    FroggyscriptMemory.variables.OS_ProgramName = {
+        type: "String",
+        identifier: "OS_ProgramName",
+        value: programName,
+        mutable: false
+    }
 
     if(FroggyscriptMemory.lines[FroggyscriptMemory.lines.length - 1].trim() !== "endprog") {
         output({value: `PrecheckError -> [endprog] must be the last line of the program <-`});

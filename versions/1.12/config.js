@@ -866,6 +866,8 @@ const config = {
                 "arr meow = _",
                 "loaddata meow meow!!",
                 "out meow>:(2)>type",
+                "num ba = 5",
+                "out ba > 4",
                 // 'arr test = "a", "b", "c"',
                 // "#test>append($'d','e'$)",
                 // "out test>join",

@@ -918,15 +918,12 @@ const config = {
                 "    out ' ^^~~^^'",
                 "endfunc",
                 "@display_frog('default')",
+                "out true == true",
                 "endprog",
             ] },
             { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
-                "import 'config'",
-                "if 1 < 2",
-                "out 'meow'",
-                "else",
-                "out 'woof'",
-                "endif",
+                "num meow = 15",
+                "out num > 5",
                 "endprog"
             ] },
             // { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
