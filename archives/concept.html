@@ -1,0 +1,47 @@
+<style>
+    textarea {
+        resize: none;
+        height: 920px;
+        width: 330px;
+    }
+
+    textarea:focus {
+        outline: none;
+    }
+</style>
+<head>
+    <script src="https://cdn.jsdelivr.net/npm/mathjs@14.4.0/lib/browser/math.min.js"></script>
+    <script src="./new-index.js"></script>
+</head>
+<body>
+    <!--
+-- Fibonacci sequence example in Froggyscript
+num nOne = 0
+num nTwo = 1
+num sum = 0
+set sum = nOne + nTwo
+out sum
+set nTwo = nOne
+set nOne = sum
+goto 3
+-->
+    <button id="run">Run</button><br>
+    <textarea id="in">
+        str one = 'woof'
+        str one = 'meow'
+        out one + one
+    </textarea>
+    <textarea id="out" readonly></textarea>
+</body>
+<script>
+    const runButton = document.getElementById('run');
+    const input = document.getElementById('in');
+
+    runButton.addEventListener('click', () => {
+        let interpreter = new Interpreter(input.value);
+        console.log(interpreter);
+    });
+
+    let interpreter = new Interpreter(input.value);
+    interpreter.run()
+</script>

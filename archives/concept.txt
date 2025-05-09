@@ -9,7 +9,7 @@ function: a key that has multiple statements and/or oneliners associated with it
 
 tokenizer: a function that takes in an input and returns a token
 
-new LineToken = {
+new Line = {
     input: String,
     type: String, // statement, oneliner, function
     spec: {
@@ -30,12 +30,13 @@ new LineToken = {
 new Token = {
     input: String,
     type: String, // String, Number, Boolean, Array
-    methods: Array of MethodToken,
+    methods: Array of MethodToken, // if any
     value: evaluator(input)
 }
 
 new MethodToken = {
-    ...
+    name: String,
+    args: Array of Token
 }
 
 // takes in a string and returns a typed value ("5" -> 5, "true" -> true, etc.)
