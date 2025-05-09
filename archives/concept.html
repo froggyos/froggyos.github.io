@@ -27,19 +27,23 @@ goto 3
 -->
     <button id="run">Run</button><br>
     <textarea id="in">
-        str one = 'woof'
         str one = 'meow'
-        out one + one
+        str two = 'woof'
+        num meow = 6
+        arr meow = $100, meow,'3'$
+        out meow
     </textarea>
     <textarea id="out" readonly></textarea>
 </body>
 <script>
     const runButton = document.getElementById('run');
     const input = document.getElementById('in');
+    const output = document.getElementById('out');
 
     runButton.addEventListener('click', () => {
         let interpreter = new Interpreter(input.value);
-        console.log(interpreter);
+        output.value = '';
+        interpreter.run()
     });
 
     let interpreter = new Interpreter(input.value);
