@@ -153,3 +153,9 @@ idk
 ```
 ~ reformatted froggyOS user config to fSDS
 ```
+
+# 1.14
+```
+~ in the process of rewriting froggyscript again lmao
+    - some functionality lost
+```

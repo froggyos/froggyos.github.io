@@ -27,8 +27,9 @@ goto 3
 -->
     <button id="run">Run</button><br>
     <textarea id="in">
-        str meow = $1>type, 2, 3, 4, 5$>join(' and ')
-        out meow
+        out 'before'
+        wait 10000
+        out 'after'
     </textarea>
     <textarea id="out" readonly></textarea>
 </body>
@@ -44,5 +45,150 @@ goto 3
     });
 
     let interpreter = new Interpreter(input.value);
+    interpreter.load = () => {
+        const KEYWORD_STR = new Keyword('str', "assigner", ['Assigner', 'Assignee', 'Assignment', 'String'], {
+            post: (tokens, interp, k) => {
+                let identifier = tokens[1];
+                let value = tokens[3];
+
+                interp.setVariable(identifier.value, value.value, 'String', true);
+            }
+        });
+
+        const KEYWORD_NUM = new Keyword('num', "assigner", ['Assigner', 'Assignee', 'Assignment', 'Number'], {
+            post: (tokens, interp) => {
+                let identifier = tokens[1];
+                let value = tokens[3];
+
+                interp.setVariable(identifier.value, value.value, 'Number', true);
+            }
+        });
+
+        const KEYWORD_BOOL = new Keyword('bln', "assigner", ['Assigner', 'Assignee', 'Assignment', 'Boolean'], {
+            post: (tokens, interp) => {
+                let identifier = tokens[1];
+                let value = tokens[3];
+
+                interp.setVariable(identifier.value, value.value, 'Boolean', true);
+            }
+        });
+
+        const KEYWORD_OUT = new Keyword('out', "basic", ['Keyword', 'String|Number|Boolean'], {
+            post: (tokens, interp) => {
+                let value = tokens[1];
+                interp.output(value.value);
+            }
+        });
+
+        const KEYWORD_SET = new Keyword('set', "assigner", ['Assigner', 'Assignee', 'Assignment', '*'], {
+            pre: (tokens, interp, keyword) => {
+                keyword.scheme[3] = interp.getVariable(tokens[1].value).type;
+            },
+            post: (tokens, interp) => {
+                let identifier = tokens[1];
+                let value = tokens[3];
+
+                interp.setVariable(identifier.value, value.value, interp.getVariable(tokens[1].value).type, true);
+            }
+        });
+
+        const KEYWORD_ARR = new Keyword('arr', "assigner", ['Assigner', 'Assignee', 'Assignment', 'Array'], {
+            post: (tokens, interp) => {
+                let identifier = tokens[1];
+                let token = tokens[3];
+
+                interp.setVariable(identifier.value, token.value, 'Array', true);
+            }
+        });
+
+        const KEYWORD_IF = new Keyword('if', "basic", ['Keyword', 'Number|Boolean'], {
+            pre: (tokens, interp, keyword) => {
+                let depth = 1;
+                let elseIndex = -1;
+                let endIfIndex = -1;
+
+                for (let i = interp.interval + 1; i < interp.lines.length; i++) {
+                    const line = interp.lines[i].trim();
+
+                    if (line.startsWith('if')) {
+                        depth++;
+                    } else if (line.startsWith('endif')) {
+                        depth--;
+                        if (depth === 0) {
+                            endIfIndex = i;
+                            break;
+                        }
+                    } else if (line.startsWith('else') && depth === 1 && elseIndex === -1) {
+                        elseIndex = i;
+                    }
+                }
+
+                if(endIfIndex == -1) {
+                    return interp.outputError(new InterpreterError('SyntaxError', `Missing matching [endif]`, tokens, interp.interval, tokens[0].position));
+                }
+
+                if(elseIndex != -1) interp.lines[elseIndex] += ` ${endIfIndex}`
+
+                let ifCondition = keyword.args[1].value;
+
+                if (!ifCondition) {
+                    if (elseIndex !== -1) {
+                        interp.interval = elseIndex;
+                    } else {
+                        interp.interval = endIfIndex;
+                    }
+                }
+            },
+        });
+
+        const KEYWORD_ENDIF = new Keyword('endif', "basic", ['Keyword'], { dud: true });
+
+        const KEYWORD_ELSE = new Keyword('else', "basic", ['Keyword', 'Number'], {
+            post: (tokens, interp, keyword) => {
+                interp.interval = tokens[1].value
+            }
+        })
+
+        const KEYWORD_WAIT = new Keyword('wait', "basic", ['Keyword', 'Number'], {
+            post: (tokens, interp) => {
+                let value = tokens[1];
+                interp.pause();
+                setTimeout(() => {
+                    interp.resume();
+                }, value.value);
+            }
+        });
+
+        // Multi
+        new Method("type", ["String", "Number", "Boolean", "Array"], (token, args) => {
+            return new Token("String", token.type, token.position, token.methods);
+        }, []);
+
+        // pure array
+        new Method("join", ["Array"], (token, args) => {
+            let arg0 = args[0]?.value || ","
+            return new Token("String", token.value.map(t => t.value).join(arg0), token.position, token.methods);
+        }, ["String?"]);
+
+        new Method("append", ["Array"], (token, args) => {
+            let arg0 = args[0];
+            return new Token("Array", [...token.value, ...arg0.value], token.position, token.methods);
+        }, ["Array"]);
+
+        new Method("index", ["Array"], (token, args) => {
+            let arg0 = args[0];
+            let indexValue = token.value[arg0.value]
+            return new Token(indexValue.type, indexValue.value, indexValue.position, token.methods);
+        }, ["Number"]);
+
+        // pure string
+        new Method("eq", ["String"], (token, args) => {
+            return new Token("Boolean", token.value == args[0].value, token.position, token.methods);
+        }, ["String"]);
+
+        new Method("neq", ["String"], (token, args) => {
+            return new Token("Boolean", token.value != args[0].value, token.position, token.methods);
+        }, ["String"]);
+    }
     interpreter.run()
 </script>

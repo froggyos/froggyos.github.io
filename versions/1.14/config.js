@@ -836,7 +836,7 @@ const config = {
                 "KEY language TYPE String VALUE eng END",
                 "KEY debugMode TYPE Boolean VALUE false END",
                 "KEY colorPalette TYPE String VALUE standard END",
-                "KEY version TYPE String VALUE 1.13 END",
+                "KEY version TYPE String VALUE 1.14 END",
                 "KEY showSpinner TYPE Boolean VALUE false END",
                 "KEY currentSpinner TYPE String VALUE default END",
                 "KEY defaultSpinner TYPE String VALUE default END",
