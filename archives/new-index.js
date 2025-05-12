@@ -91,7 +91,11 @@ class Keyword {
 
             if(parsedMethods instanceof InterpreterError) return interp.outputError(parsedMethods);
             else {
-                this.args = [...firstTokens, parsedMethods];
+                if(firstTokens[0].type == "Keyword" && firstTokens[0].value == "func") {
+                    this.args = [...firstTokens, ...args];
+                } else {
+                    this.args = [...firstTokens, parsedMethods];
+                }
                 try {
                     let tokens = pre(this.args, interp, this);
                     if(tokens != undefined) {
@@ -152,6 +156,7 @@ class Token {
             ["CalculateStart", /{/],
             ["CalculateEnd", /}/],
             ["Escape", /\\/],
+            ["TypeDef", /:/],
         ]
     }
 
@@ -284,7 +289,24 @@ class Interpreter {
         Interpreter.interpreters.push(this);
         this.running = false
         this.load = () => {};
-    
+
+        let boundKillFunction = function(e) {
+            if (!this.running) {
+                window.removeEventListener('keydown', boundKillFunction);
+                return;
+            }
+
+            if (e.key === "Delete" && this.running) {
+                this.outputError(new InterpreterError(
+                    'Interrupt',
+                    'Program was interrupted by user',
+                    null, NaN, NaN
+                ));
+                window.removeEventListener('keydown', boundKillFunction);
+            }
+        }.bind(this);
+
+        window.addEventListener('keydown', boundKillFunction);
     }
 
     static trimQuotes(value) {
@@ -458,6 +480,8 @@ class Interpreter {
                 }
             }
         });
+
+        if(tokens[0].type == "Keyword" && tokens[0].value == "func") return tokens;       
 
         tokens.forEach((token, index) => {
             if(token.type == "Identifier") {

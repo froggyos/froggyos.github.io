@@ -27,9 +27,11 @@ goto 3
 -->
     <button id="run">Run</button><br>
     <textarea id="in">
-        out 'before'
+        func meow (meow:S,woof:N)
+        out meow
+        endfunc
+        out 'outside!'
         wait 10000
-        out 'after'
     </textarea>
     <textarea id="out" readonly></textarea>
 </body>
@@ -156,6 +158,84 @@ goto 3
                 setTimeout(() => {
                     interp.resume();
                 }, value.value);
+            }
+        });
+
+        const KEYWORD_FUNC = new Keyword('func', "basic", ['Keyword', 'Identifier'], {
+            pre: (tokens, interp, keyword) => {
+                let depth = 1;
+                let endFuncIndex = -1;
+                for (let i = interp.interval + 1; i < interp.lines.length; i++) {
+                    const line = interp.lines[i].trim();
+
+                    if (line.startsWith('func')) {
+                        depth++;
+                    } else if (line.startsWith('endfunc')) {
+                        depth--;
+                        if (depth === 0) {
+                            endFuncIndex = i;
+                            break;
+                        }
+                    }
+                }
+                if (endFuncIndex == -1) {
+                    return interp.outputError(new InterpreterError('SyntaxError', `Missing matching [endfunc]`, tokens, interp.interval, tokens[0].position));
+                }
+                interp.interval = endFuncIndex;
+
+                let functionIdentifier = tokens[1];
+
+                let argArray = structuredClone(tokens);
+
+                argArray.shift();
+                argArray.shift();
+
+                // if the first index isnt type LeftParenthesis, throw error
+                if (argArray[0].type != "LeftParenthesis") {
+                    return interp.outputError(new InterpreterError('SyntaxError', `Expected [LeftParenthesis]`, argArray, interp.interval, argArray[0].position));
+                }
+
+                if(argArray[argArray.length - 1].type != "RightParenthesis") {
+                    return interp.outputError(new InterpreterError('SyntaxError', `Expected [RightParenthesis]`, argArray, interp.interval, argArray[argArray.length - 1].position));
+                }
+
+                argArray.pop();
+                argArray.shift();
+
+                const TypeMap = {
+                    "S": "String",
+                    "N": "Number",
+                    "B": "Boolean",
+                    "A": "Array"
+                }
+                let argGroups = interp.groupByCommas(argArray)
+
+                argGroups.forEach((group, i) => {
+                    if (group.length != 3) {
+                        return interp.outputError(new InterpreterError('SyntaxError', `Missing [Identifier]:[Type] for arg ${i}`, group, interp.interval, group[0].position));
+                    }
+
+                    let argName = group[0];
+                    let argDef = group[1];
+                    let argValue = group[2];
+
+                    if(argName.type != "Identifier") {
+                        return interp.outputError(new InterpreterError('SyntaxError', `Expected argument Identifier for arg ${i}`, argName, interp.interval, argName.position));
+                    }
+
+                    if(argDef.type != "TypeDef") {
+                        return interp.outputError(new InterpreterError('SyntaxError', `Expected [:] for arg ${i}`, argDef, interp.interval, argDef.position));
+                    }
+
+                    if(argValue.type != "Identifier") {
+                        return interp.outputError(new InterpreterError('SyntaxError', `Expected argument Type (S, N, B, A) for arg ${i}`, argValue, interp.interval, argValue.position));
+                    }
+
+                    if(TypeMap[argValue.value] == undefined) {
+                        return interp.outputError(new InterpreterError('SyntaxError', `Expected argument Type (S, N, B, A) for arg ${i}`, argValue, interp.interval, argValue.position));
+                    }
+                }) 
+                console.log(argGroups)
             }
         });
 
