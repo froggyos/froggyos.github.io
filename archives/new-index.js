@@ -15,6 +15,7 @@ class Keyword {
      * @param {string} keyword - The literal keyword string (e.g., 'str', 'out').
      * @param {string} type - The type of keyword (e.g., 'basic', 'assigner').
      * @param {string[]} scheme - An array describing the expected token types.
+     * @param {Object} [options] - Optional settings for the keyword.
      * @param {function(Token[], Interpreter): void} [post] - A function called after validation to execute keyword logic.
      * @param {function(Token[], Interpreter, Keyword): void} [pre] - A function called before validation, allows modification of the keyword or environment.
      * @example
@@ -42,6 +43,7 @@ class Keyword {
         this.keyword = keyword;
         this.scheme = scheme;
         this.type = type;
+        this.argumentOverride = null;
 
         const { post, pre } = options;
 
@@ -50,6 +52,7 @@ class Keyword {
          * @type {function(Token[], Interpreter): void}
          */
         this.fn = (args, interp) => {
+            if(this.argumentOverride) args = this.argumentOverride;
             for(let i = 0; i < this.scheme.length; i++) {
                 if(!args[i]) {
                     return interp.outputError(new InterpreterError('SyntaxError', `Expected [${this.scheme[i]}]`, args, interp.interval, i));
@@ -66,6 +69,7 @@ class Keyword {
 
             if (typeof post === 'function') {
                 post(args, interp);
+                this.argumentOverride = null;
             }
         };
 
@@ -75,7 +79,10 @@ class Keyword {
          */
         this.prefn = (args, interp) => {
             if (typeof pre === 'function') {
-                pre(args, interp, this);
+                let tokens = pre(args, interp, this);
+                if(tokens != undefined) {
+                    this.argumentOverride = tokens;
+                }
             }
         }
 
@@ -103,19 +110,27 @@ class Token {
             ['Assigner', new RegExp(`\\b(${assignerKeywords.join('|')})\\b`)],
             ['Number', /\b\d+\b/],
             ["Oneliner", /^#/],
-            ['String', /('|")[^\1]*\1/],
+            ['String', /'(?:\\'|[^'])*'|"(?:\\"|[^"])*"/],
+            ['Calculation_Equals', / == /],
+            ['Calculation_Nequals', / != /],
+            ['Calculation_LessThan', / < /],
+            ['Calculation_GreaterThan', / > /],
+            ['Calculation_LessThanEquals', / <= /],
+            ['Calculation_GreaterThanEquals', / >= /],
+            ['MethodInitiator', />/],
             ['Array', /\$([^\$]+)\$/],
             ['Boolean', /\b(true|false)\b/],
-            ["Calculate", /%/],
             ['Identifier', /\b[a-zA-Z][a-zA-Z0-9_]*\b/],
             ["FunctionCall", /\b@[a-zA-Z][a-zA-Z0-9_]*/],
-            ['Assignment', /[=]/],
+            ['Assignment', /=/],
             ["Comma", /,/],
-            ['Operator', /[+-/\*]/],
+            ['Operator', /[+-/\*\^]/],
             ['Whitespace', /[ \t]+/],
-            ['MethodInitiator', /\>/],
             ["LeftParenthesis", /\(/],
             ["RightParenthesis", /\)/],
+            ["CalculateStart", /{/],
+            ["CalculateEnd", /}/],
+            ["Escape", /\\/],
         ]
     }
 
@@ -130,10 +145,11 @@ class Token {
         this.type = type;
         this.value = value;
         this.position = position;
+        this.methods = [];
     }
   
     toString() {
-        return `Token(${this.type})`;
+        return Interpreter.trimQuotes(this.value);
     }
 }
 
@@ -151,10 +167,74 @@ class InterpreterError {
     }
 }
 
-// meow meow meow meow meow
+class Method {
+    static registry = new Map(); // Map<type, Map<methodName, Method>>
+
+    /**
+     * @param {string} name - Method name.
+     * @param {string} type - Token type this method is for.
+     * @param {function(Token, Token[], Interpreter): any} fn - The method logic.
+     * @param {string[]} [args=[]] - Arg types, with optional ones like 'String?'.
+     */
+    constructor(name, type, fn, args = []) {
+        this.name = name;
+        this.type = type;
+        this.fn = fn;
+        this.args = args.map(arg => ({
+            type: arg.replace(/\?$/, ''),
+            optional: arg.endsWith('?')
+        }));
+
+        const types = Array.isArray(type) ? type : [type];
+
+        // Register this method for each provided type
+        types.forEach(t => {
+            if (!Method.registry.has(t)) {
+                Method.registry.set(t, new Map());
+            }
+            Method.registry.get(t).set(name, this);
+        });
+    }
+
+    static get(type, name) {
+        return Method.registry.get(type)?.get(name) ?? null;
+    }
+
+    static list(type) {
+        return [...(Method.registry.get(type)?.keys() ?? [])];
+    }
+
+    /**
+     * Validates token argument types against the required signature.
+     * @param {Token[]} args 
+     * @returns {boolean}
+     */
+    validateArgs(args) {
+        for (let i = 0; i < this.args.length; i++) {
+            const expected = this.args[i];
+            const actual = args[i];
+
+            if (!actual) {
+                if (!expected.optional) return false;
+                continue; // it's okay if the argument is missing and optional
+            }
+
+            if (actual.type !== expected.type) return false;
+        }
+
+        // If there are more args than expected, fail
+        if (args.length > this.args.length) {
+            return false;
+        }
+
+        return true;
+    }
+}
+
 
 class Interpreter {
     static interpreters = [];
+    static blockErrorOutput = false;
     constructor(input) {
         this.lines = input.split("\n").map(line => line.trim()).filter(line => line.length > 0);
         this.variables = {};
@@ -166,34 +246,51 @@ class Interpreter {
         this.iteration = 0;
         this.interval_length = 1;
         Interpreter.interpreters.push(this);
-        this.error = false;
         this.running = false
     
     }
 
+    static trimQuotes(value) {
+        return typeof value === 'string' ? value.replace(/^['"]|['"]$/g, '') : value;
+    }
+
     output(value) {
+        if(value == undefined) return;
         document.getElementById('out').value += `${value}\n`;
     }
 
+    /**
+     * Outputs an error message to the console and kills the interpreter.
+     * @param {InterpreterError} error 
+     * @returns 
+     */
     outputError(error) {
-        if(this.error) return;
-        this.error = true;
-        document.getElementById('out').value += `\n${error.toString()}`;
+        if(Interpreter.blockErrorOutput) return;
+        Interpreter.blockErrorOutput = true;
+        this.output(`\n${error.toString()}`);
         this.kill();
     }
 
-    evaluate(tokens) {
+    evaluateMathExpression(tokens) {
         let expr = '';
 
         for (let token of tokens) {
-            if (token.type === 'Number' || token.type === 'Operator') {
+            if (["Number", "Operator"].includes(token.type) || token.type.startsWith("Calculation_")) {
                 expr += token.value;
             } else if (token.type === 'LeftParenthesis') {
                 expr += '(';
             } else if (token.type === 'RightParenthesis') {
                 expr += ')';
             } else {
-                return this.outputError(`Unsupported token type: ${token.type}`);
+                if(token.type === 'Identifier') {
+                    let variable = this.getVariable(token.value);
+                    if(variable == false){
+                        return this.outputError(new InterpreterError('ReferenceError', `Variable [${token.value}] is not defined`, tokens, this.interval, token.position));
+                    } else if(variable.type != "Number") {
+                        return this.outputError(new InterpreterError('TypeError', `Expected type Number, found type ${variable.type} in Math Expression`, tokens, this.interval, token.position));
+                    }
+                    expr += variable.value;
+                } else return this.outputError(`Unsupported token type: ${token.type}`);
             }
         }
 
@@ -217,11 +314,7 @@ class Interpreter {
 
     setVariable(name, value, type, mutable) {
         if(this.variables[name] && this.variables[name].mutable) {
-            try {
-                this.variables[name].value = math.evaluate(value);
-            } catch (er) {
-                this.variables[name].value = value;
-            }
+            this.variables[name].value = value;
             this.variables[name].type = type;
             this.variables[name].mutable = mutable;
         } else {
@@ -229,23 +322,33 @@ class Interpreter {
                 this.variables[name] = {
                     type: type,
                     mutable: mutable,
-                };
-
-                try {
-                    this.variables[name].value = math.evaluate(value);
-                } catch (er) {
-                    this.variables[name].value = value;
-                }
+                    value: value,
+                };           
             }
         }
     }
 
+    evaluate(token) {
+        try {
+            return math.evaluate(token.value);
+        } catch (err) {
+            this.outputError(new InterpreterError('MathError', `Math evaluation failed: ${token.value}`, token, this.interval, token.position));
+        }
+    }
+
     tokenize(line) {
-        const tokens = [];
+        let tokens = [];
         let pos = 0;
+
+        let iterations = 0;
     
         while (pos < line.length) {
             let matched = false;
+
+            if (iterations++ > 10000) {
+                tokens.push(new InterpreterError('TokenizationError', `Infinite loop detected in tokenization`, tokens, this.interval, pos));
+                break;
+            }
     
             for (const [type, baseRegex] of Token.specs) {
                 const regex = new RegExp(baseRegex.source, 'y'); // sticky match
@@ -264,7 +367,11 @@ class Interpreter {
             }
     
             if (!matched) {
-                return new InterpreterError('SyntaxError', `Unexpected [${line[pos]}]`, tokens, this.interval, pos);
+                tokens.push(new InterpreterError('SyntaxError', `Unexpected [${line[pos]}]`, tokens, this.interval, pos));
+            }
+
+            if(tokens[tokens.length - 1] instanceof InterpreterError) {
+                break;
             }
         }
 
@@ -275,7 +382,7 @@ class Interpreter {
                 if (i + 1 < tokens.length && tokens[i + 1].type === 'Identifier') {
                     tokens[i + 1].type = 'Method';
                 } else {
-                    return InterpreterError('SyntaxError', `Expected Method after MethodInitiator`, tokens, this.interval, tokens[i].position);
+                    tokens.push(new InterpreterError('SyntaxError', `Expected Method after MethodInitiator not found`, tokens, this.interval, tokens[i].position));
                 }
             }
         }
@@ -286,47 +393,33 @@ class Interpreter {
                 if (i + 1 < tokens.length && tokens[i + 1].type === 'Identifier') {
                     tokens[i + 1].type = 'Assignee';
                 } else {
-                    return new InterpreterError('SyntaxError', `Expected Identifier after Assigner`, tokens, this.interval, tokens[i].position);
+                    tokens.push(new InterpreterError('SyntaxError', `Expected Identifier after Assigner not found`, tokens, this.interval, tokens[i].position));
                 }
             }
         }
 
-
         // parse methods here depending on the type of token, make a Methods class and such
         tokens.forEach((token, index) => {
-            if (token.type === 'Calculate') {
-                if (tokens[index + 1]?.type !== 'LeftParenthesis') {
-                    return new InterpreterError('SyntaxError', `Expected [(] after [calc]`, tokens, this.interval, tokens[index].position);
-                }
-
-                let openParens = 1;
+            if (token.type === 'CalculateStart') {
                 let exprTokens = [];
-                let i = index + 2;
+                let endFound = false;
+                for(let j = index + 1; j < tokens.length; j++) {
+                    if (tokens[j].type === 'CalculateEnd') {
+                        endFound = true;
+                        break;
+                    }
 
-                while (i < tokens.length && openParens > 0) {
-                    const t = tokens[i];
-                    if (t.type === 'LeftParenthesis') openParens++;
-                    else if (t.type === 'RightParenthesis') openParens--;
-
-                    if (openParens > 0) exprTokens.push(t);
-                    i++;
+                    exprTokens.push(tokens[j]);
                 }
 
-                if (openParens !== 0) {
-                    return new InterpreterError('SyntaxError', `Unmatched parentheses in [calc] expression`, tokens, this.interval, tokens[index].position);
+                if(endFound) {
+                    let result = this.evaluateMathExpression(exprTokens);
+                    let resultType = (typeof result)[0].toUpperCase() + (typeof result).slice(1);
+                    let resultToken = new Token(resultType, result, token.position);
+                    tokens.splice(index, exprTokens.length + 2, resultToken);
+                } else {
+                    tokens.push(new InterpreterError('SyntaxError', `Expected closing [}] for calculation statement not found`, tokens, this.interval, token.position));
                 }
-
-                const expr = exprTokens.map(t => t.value).join('');
-                let result;
-                try {
-                    result = math.evaluate(expr);
-                } catch (err) {
-                    return new InterpreterError('EvalError', `Invalid expression: [${expr}]`, tokens, this.interval, tokens[index].position);
-                }
-
-                // Replace from Calculate to closing parenthesis with result token
-                const endIndex = i; // one past the last token used
-                tokens.splice(index, endIndex - index, new Token('Number', result, token.position));
             }
         });
 
@@ -335,7 +428,7 @@ class Interpreter {
                 let variable = this.getVariable(token.value);
 
                 if(variable == false){
-                    return new InterpreterError('ReferenceError', `Variable [${token.value}] is not defined`, tokens, this.interval, token.position);
+                    tokens.push(new InterpreterError('ReferenceError', `Variable [${token.value}] is not defined`, tokens, this.interval, token.position));
                 }
 
                 token.type = variable.type;
@@ -343,45 +436,240 @@ class Interpreter {
             }
         })
 
+        tokens.forEach((token, index) => {
+            if(token.type == "String") {
+                token.value = Interpreter.trimQuotes(token.value);
+            } else if(token.type == "String") {
+                token.value = math.evaluate(token.value);
+            }
+        })
+
+        tokens.forEach((token, index) => {
+            if(token.type == "Array" && typeof token.value == "string") {
+                if(!Array.isArray(token.value)) {
+                    let array = token.value.slice(1, -1);
+                    let values = [];
+                    let groups = this.groupByCommas(this.tokenize(array));
+
+                    groups.forEach((group, i) => {
+                        let formatted = this.formatMethods(group);
+
+                        let parsed = this.parseMethods(formatted);
+                        if(parsed instanceof InterpreterError) {
+                            this.outputError(parsed);
+                            return;
+                        } else {
+                            values.push(parsed);
+                        }
+                    });
+
+
+                    token.value = values;
+                }
+            }
+        })
+
         return tokens;
+    }
+
+    groupByCommas(tokenArray) {
+        const groups = [];
+        let currentGroup = [];
+        let depth = 0;
+
+        for (const token of tokenArray) {
+            if (token.type === 'LeftParenthesis') {
+                depth++;
+            } else if (token.type === 'RightParenthesis') {
+                depth--;
+            }
+
+            // If we hit a comma at top level, start a new group
+            if (token.type === 'Comma' && depth === 0) {
+                groups.push(currentGroup);
+                currentGroup = [];
+            } else {
+                currentGroup.push(token);
+            }
+        }
+
+        // Push the final group if it's non-empty
+        if (currentGroup.length > 0) {
+            groups.push(currentGroup);
+        }
+
+        return groups;
+    }
+
+    formatMethods(tokenArray) {
+        if (!tokenArray || tokenArray.length === 0) return null;
+
+        const root = structuredClone(tokenArray[0]);
+        const methods = [];
+
+        let i = 1;
+        while (i < tokenArray.length) {
+            if (tokenArray[i].type === 'Keyword') {
+                i++;
+                continue;
+            }
+            if (
+                tokenArray[i].type === 'MethodInitiator' &&
+                tokenArray[i + 1] &&
+                tokenArray[i + 1].type === 'Method'
+            ) {
+                const methodToken = tokenArray[i + 1];
+                const method = {
+                    name: methodToken.value,
+                    args: []
+                };
+
+                // Check for arguments
+                if (
+                    tokenArray[i + 2] &&
+                    tokenArray[i + 2].type === 'LeftParenthesis'
+                ) {
+                    let args = [];
+                    let depth = 1;
+                    let j = i + 3;
+                    const argTokens = [];
+
+                    while (j < tokenArray.length && depth > 0) {
+                        const t = tokenArray[j];
+                        if (t.type === 'LeftParenthesis') depth++;
+                        else if (t.type === 'RightParenthesis') depth--;
+
+                        if (depth > 0) argTokens.push(t);
+                        j++;
+                    }
+
+                    // Split and recursively format each top-level arg
+                    const argGroups = this.groupByCommas(argTokens);
+                    method.args = argGroups.map(group => this.formatMethods(group));
+
+                    i = j; // move past closing parenthesis
+                } else {
+                    i += 2; // move past '>' and method
+                }
+
+                methods.push(method);
+            } else {
+                i++; // skip unknown tokens
+            }
+        }
+
+        root.methods = methods;
+        return root;
+    }
+
+    parseMethods(token) {
+        if(token.methods == undefined) return token;
+        while (token.methods.length > 0) {
+            let method = token.methods.shift();
+
+            // Resolve arguments
+            let args = method.args.map(arg => {
+                if (arg.type === 'Identifier') {
+                    return this.getVariable(arg.value);
+                } else if (['Number', 'String', 'Boolean', "Array"].includes(arg.type)) {
+                    return arg;
+                } else {
+                    return null;
+                }
+            });
+
+            // Retrieve method definition
+            let methodInstance = Method.get(token.type, method.name);
+
+            if (!methodInstance) {
+                return new InterpreterError(
+                    'ReferenceError',
+                    `Method [${method.name}] is not a valid method for type ${token.type}`,
+                    token, this.interval, token.position
+                );
+            }
+
+            // Validate argument types
+            if (methodInstance.validateArgs(args)) {
+                const expected = methodInstance.args
+                    .map(a => a.type + (a.optional ? '?' : ''))
+                    .join(', ');
+                const received = args.map(a => a?.type ?? 'null').join(', ');
+
+                if(expected != received) {
+                    return new InterpreterError(
+                        'TypeError',
+                        `Expected argument type of [${expected}] for method [${method.name}], found type [${received}]`,
+                        token, this.interval, token.position
+                    );
+                }
+            }
+
+            // Execute method
+            const result = methodInstance.fn(token, args, this);
+
+            if (result instanceof InterpreterError) {
+                this.outputError(result);
+                return;
+            }
+
+            // Apply method result to token value
+            token.value = result;
+        }
+
+        if(token.value instanceof Token) token = token.value;
+        else token = new Token(token.type, token.value, token.position);
+
+        return token;
+    }
+
+    step() {
+        this.pause();
+        this.gotoNext();
+    }
+
+    gotoNext() {
+        Token.generateSpecs();
+        this.error = false;
+
+        let line = this.lines[this.interval];
+
+        if (line === undefined) {
+            this.kill();
+            return;
+        }
+
+        let token = this.tokenize(line);
+
+        if (token instanceof InterpreterError) {
+            this.outputError(token);
+        } else if (token.some(t => t instanceof InterpreterError)) {
+            this.outputError(token.find(t => t instanceof InterpreterError));
+        } else if (["Keyword", "Assigner"].includes(token[0].type)) {
+            const scheme = Keyword.schemes[token[0].value];
+            scheme.prefn(token, this);
+            const keywordResult = scheme.fn(token, this);
+
+            if (keywordResult instanceof InterpreterError) {
+                this.outputError(keywordResult);
+                this.kill()
+            }
+        }
+
+        this.interval++;
+        this.iteration++;
     }
 
     run() {
         if(this.running) return;
         this.running = true;
+        Interpreter.blockErrorOutput = false;
         Token.generateSpecs();
         this.error = false;
         this.clock = setInterval(() => {
-            this.iteration++;
             if(this.paused) return;
 
-            let line = this.lines[this.interval];
-
-            if(line == undefined) {
-                this.kill();
-                return;
-            }
-
-            let token = this.tokenize(line);
-
-            if(token instanceof InterpreterError) {
-                this.outputError(token);
-            }
-
-            if(token.some(t => t instanceof InterpreterError)) {
-                this.outputError(token.find(t => t instanceof InterpreterError));
-            }
-
-            if(["Keyword", "Assigner"].includes(token[0].type)) {
-                Keyword.schemes[token[0].value].prefn(token, this);
-                let keywordResult = Keyword.schemes[token[0].value].fn(token, this);
-
-
-                if(keywordResult instanceof InterpreterError) {
-                    this.outputError(keywordResult);
-                }
-            }
-            this.interval++;
+            this.gotoNext();
         }, this.interval_length);
     }
 
@@ -391,6 +679,7 @@ class Interpreter {
 
     resume() {
         this.paused = false;
+        this.run();
     }
 
     resetMemory() {
@@ -403,8 +692,8 @@ class Interpreter {
         this.iteration = 0;
         this.interval_length = 1;
         Interpreter.interpreters.push(this);
-        this.error = false;
         this.running = false;
+        this.lines = [];
     }
 
     kill() {
@@ -415,9 +704,18 @@ class Interpreter {
 }
 
 const KEYWORD_STR = new Keyword('str', "assigner", ['Assigner', 'Assignee', 'Assignment', 'String'], {
+    pre: (tokens, interp, keyword) => {
+        // instead of tokens.filter(token => token.type !== 'Keyword'), do:
+        // tokens remove first keyword.scheme.length - 1 indexes
+        let parsedMethods = interp.parseMethods(interp.formatMethods(interp.groupByCommas(tokens.filter(token => token.type !== 'Keyword'))[0]));
+        if(parsedMethods instanceof InterpreterError) return interp.outputError(parsedMethods);
+        // instead of [tokens[0], parsedMethods], do [first keyword.scheme.length - 1 indexes, parsedMethods]
+        else return [tokens[0], parsedMethods];
+    },
     post: (tokens, interp) => {
         let identifier = tokens[1];
         let value = tokens[3];
+
         interp.setVariable(identifier.value, value.value, 'String', true);
     }
 });
@@ -427,7 +725,7 @@ const KEYWORD_NUM = new Keyword('num', "assigner", ['Assigner', 'Assignee', 'Ass
         let identifier = tokens[1];
         let value = tokens[3];
 
-        interp.setVariable(identifier.value, math.evaluate(value.value), 'Number', true);
+        interp.setVariable(identifier.value, value.value, 'Number', true);
     }
 });
 
@@ -441,6 +739,14 @@ const KEYWORD_BOOL = new Keyword('bln', "assigner", ['Assigner', 'Assignee', 'As
 });
 
 const KEYWORD_OUT = new Keyword('out', "basic", ['Keyword', 'String|Number|Boolean'], {
+    pre: (tokens, interp, keyword) => {
+        // instead of tokens.filter(token => token.type !== 'Keyword'), do:
+        // tokens remove first (keyword.scheme.length - 1) indexes
+        let parsedMethods = interp.parseMethods(interp.formatMethods(interp.groupByCommas(tokens.filter(token => token.type !== 'Keyword'))[0]));
+        if(parsedMethods instanceof InterpreterError) return interp.outputError(parsedMethods);
+        // instead of [tokens[0], parsedMethods], do [tokens index 0 to keyword.scheme.length - 1, parsedMethods]
+        else return [tokens[0], parsedMethods];
+    },
     post: (tokens, interp) => {
         let value = tokens[1];
         interp.output(value.value);
@@ -462,28 +768,17 @@ const KEYWORD_SET = new Keyword('set', "assigner", ['Assigner', 'Assignee', 'Ass
 const KEYWORD_ARR = new Keyword('arr', "assigner", ['Assigner', 'Assignee', 'Assignment', 'Array'], {
     post: (tokens, interp) => {
         let identifier = tokens[1];
-        let value = tokens[3];
+        let token = tokens[3];
 
-        value.value = value.value.slice(1, -1);
-
-        let tokenizedArray = interp.tokenize(value.value);
-
-        let valueArray = [];
-
-        tokenizedArray.forEach((token, index) => {
-            if(token.type != "Comma") {
-                if(token.type == "String") {
-                    token.value = math.evaluate(token.value);
-                    valueArray.push(token);
-                } else if(token.type == "Number" && typeof token.value == "string") {
-                    token.value = math.evaluate(token.value);
-                    valueArray.push(token);
-                } else if(token.type == "Number" || token.type == "Boolean") {
-                    valueArray.push(token);
-                }
-            }
-        })
-
-        interp.setVariable(identifier.value, valueArray, 'Array', true);
+        interp.setVariable(identifier.value, token.value, 'Array', true);
     }
 });
+
+// BUG: formatting methods doesnt work with keywords
+new Method("join", ["Array"], (token, args) => {
+    return new Token("String", token.value.map(t => t.value).join(args[0].value), token.position);
+}, ["String?"]);
+
+new Method("type", ["String", "Number", "Boolean", "Array"], (token, args) => {
+    return new Token("String", token.type, token.position);
+}, []);
