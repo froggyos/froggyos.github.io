@@ -14,24 +14,12 @@
     <script src="./new-index.js"></script>
 </head>
 <body>
-    <!--
--- Fibonacci sequence example in Froggyscript
-num nOne = 0
-num nTwo = 1
-num sum = 0
-set sum = nOne + nTwo
-out sum
-set nTwo = nOne
-set nOne = sum
-goto 3
--->
     <button id="run">Run</button><br>
     <textarea id="in">
-        func meow (meow:S,woof:N)
-        out meow
+        func meow (beh:S)
+            return beh
         endfunc
-        out 'outside!'
-        wait 10000
+        out @meow('woof')
     </textarea>
     <textarea id="out" readonly></textarea>
 </body>
@@ -41,15 +29,17 @@ goto 3
     const output = document.getElementById('out');
 
     runButton.addEventListener('click', () => {
+        output.value = "";
         let interpreter = new Interpreter(input.value);
-        output.value = '';
-        interpreter.run()
+        interpreter.interval_length = 1000;
+        interpreter.run();
     });
 
     let interpreter = new Interpreter(input.value);
-    interpreter.load = () => {
+
+    Interpreter.load = () => {
         const KEYWORD_STR = new Keyword('str', "assigner", ['Assigner', 'Assignee', 'Assignment', 'String'], {
-            post: (tokens, interp, k) => {
+            post: (tokens, interp, keyword) => {
                 let identifier = tokens[1];
                 let value = tokens[3];
 
@@ -86,6 +76,7 @@ goto 3
             pre: (tokens, interp, keyword) => {
                 keyword.scheme[3] = interp.getVariable(tokens[1].value).type;
             },
+
             post: (tokens, interp) => {
                 let identifier = tokens[1];
                 let value = tokens[3];
@@ -210,6 +201,8 @@ goto 3
                 }
                 let argGroups = interp.groupByCommas(argArray)
 
+                let args = {};
+
                 argGroups.forEach((group, i) => {
                     if (group.length != 3) {
                         return interp.outputError(new InterpreterError('SyntaxError', `Missing [Identifier]:[Type] for arg ${i}`, group, interp.interval, group[0].position));
@@ -234,8 +227,18 @@ goto 3
                     if(TypeMap[argValue.value] == undefined) {
                         return interp.outputError(new InterpreterError('SyntaxError', `Expected argument Type (S, N, B, A) for arg ${i}`, argValue, interp.interval, argValue.position));
                     }
-                }) 
-                console.log(argGroups)
+
+                    args[argName.value] = TypeMap[argValue.value]
+                })
+
+                if(interp.functions[functionIdentifier.value] != undefined) {
+                    return interp.outputError(new InterpreterError('SyntaxError', `Function ${functionIdentifier.value} already defined`, functionIdentifier, interp.interval, functionIdentifier.position));
+                }
+
+                interp.functions[functionIdentifier.value] = {
+                    args: args,
+                    body: structuredClone(interp.lines).slice(interp.interval - 1, endFuncIndex)
+                }
             }
         });
 
@@ -261,6 +264,10 @@ goto 3
             return new Token(indexValue.type, indexValue.value, indexValue.position, token.methods);
         }, ["Number"]);
 
+        new Method("length", ["Array"], (token, args) => {
+            return new Token("Number", token.value.length, token.position, token.methods);
+        }, []);
+
         // pure string
         new Method("eq", ["String"], (token, args) => {
             return new Token("Boolean", token.value == args[0].value, token.position, token.methods);
@@ -269,6 +276,29 @@ goto 3
         new Method("neq", ["String"], (token, args) => {
             return new Token("Boolean", token.value != args[0].value, token.position, token.methods);
         }, ["String"]);
+
+        new Method("append", ["String"], (token, args) => {
+            let arg0 = args[0];
+            return new Token("String", token.value + arg0.value, token.position, token.methods);
+        }, ["String"]);
+
+        new Method("length", ["String"], (token, args) => {
+            return new Token("Number", token.value.length, token.position, token.methods);
+        }, []);
+
+        new Method("index", ["String"], (token, args) => {
+            let arg0 = args[0];
+            let indexValue = token.value[arg0.value]
+            if(indexValue == undefined) {
+                return new InterpreterError('IndexError', `Index out of range`, token, token.position, token.position);
+            }
+            return new Token("String", indexValue, token.position, token.methods);
+        }, ["Number"]);
+
+        new Method("repeat", ["String"], (token, args) => {
+            let arg0 = args[0];
+            return new Token("String", token.value.repeat(arg0.value), token.position, token.methods);
+        }, ["Number"]);
     }
     interpreter.run()
 </script>

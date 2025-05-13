@@ -135,6 +135,7 @@ class Token {
             ['Number', /\b\d+\b/],
             ['String', /'(?:\\'|[^'])*'|"(?:\\"|[^"])*"/],
             ['Array', /\$([^\$]+)\$/],
+            ['FunctionIdentifier', /@/],
             ['Calculation_Equals', / == /],
             ['Calculation_Nequals', / != /],
             ['Calculation_LessThan', / < /],
@@ -146,7 +147,7 @@ class Token {
             ['MethodInitiator', />/],
             ['Boolean', /\b(true|false)\b/],
             ['Identifier', /\b[a-zA-Z][a-zA-Z0-9_]*\b/],
-            ["FunctionCall", /\b@[a-zA-Z][a-zA-Z0-9_]*/],
+            ["FunctionCall", /@[a-zA-Z][a-zA-Z0-9_]*\(.+?\)/],
             ['Assignment', /=/],
             ["Comma", /,/],
             ['Operator', /[+-/\*\^]/],
@@ -263,17 +264,19 @@ class Method {
 
 class Interpreter {
     static interpreters = [];
+    static load = () => {};
     static blockErrorOutput = false;
     /**
      * **IMPORTANT**: In order to load keywords and methods, it its best to do them in the load function. Example:
      * ```js
-     * let interpreter = new Interpreter(input);
-     * interpreter.load = () => {
+     * Interpreter.load = () => {
      *     // define keywords, methods, etc. here
      * }
+     * let interpreter = new Interpreter(input);
      * interpreter.run();
      * ```
-     * You can also define them outside of the interpreter, but it is not recommended. If this is done, make sure to load them before calling `interpreter.run()`.
+     * #
+     * The `onComplete` function is called when the interpreter has finished running. If it has an error, the `onError` function is called instead.
      */
     constructor(input) {
         this.lines = input.split("\n").map(line => line.trim()).filter(line => line.length > 0);
@@ -288,7 +291,8 @@ class Interpreter {
         this.interval_length = 1;
         Interpreter.interpreters.push(this);
         this.running = false
-        this.load = () => {};
+        this.onComplete = () => {};
+        this.onError = (error) => {};
 
         let boundKillFunction = function(e) {
             if (!this.running) {
@@ -327,6 +331,7 @@ class Interpreter {
         if(Interpreter.blockErrorOutput) return;
         Interpreter.blockErrorOutput = true;
         this.output(`\n${error.toString()}`);
+        this.onError(error);
         this.kill();
     }
 
@@ -481,7 +486,18 @@ class Interpreter {
             }
         });
 
-        if(tokens[0].type == "Keyword" && tokens[0].value == "func") return tokens;       
+        if(tokens[0].type == "Keyword" && tokens[0].value == "func") return tokens;
+        
+        tokens.forEach((token, index) => {
+            if(token.type == "FunctionIdentifier") {
+                let functionName = tokens[index + 1];
+                if(this.functions[functionName.value]) {
+                    console.log("exists!")
+                } else {
+                    tokens.push(new InterpreterError('SyntaxError', `Function [${functionName.value}] is not defined`, tokens, this.interval, token.position));
+                }
+            }
+        })
 
         tokens.forEach((token, index) => {
             if(token.type == "Identifier") {
@@ -495,6 +511,7 @@ class Interpreter {
                 token.value = variable.value;
             }
         })
+
 
         tokens.forEach((token, index) => {
             if(token.type == "String") {
@@ -515,14 +532,8 @@ class Interpreter {
                         let formatted = this.formatMethods(group);
 
                         let parsed = this.parseMethods(formatted);
-                        if(parsed instanceof InterpreterError) {
-                            this.outputError(parsed);
-                            return;
-                        } else {
-                            values.push(parsed);
-                        }
+                        values.push(parsed);
                     });
-
 
                     token.value = values;
                 }
@@ -555,12 +566,8 @@ class Interpreter {
                         let formatted = this.formatMethods(group);
 
                         let parsed = this.parseMethods(formatted);
-                        if(parsed instanceof InterpreterError) {
-                            this.outputError(parsed);
-                            return;
-                        } else {
-                            values.push(parsed);
-                        }
+
+                        values.push(parsed);
                     });
 
                     if(!["String", "Number", "Boolean"].includes(values[0].type)) {
@@ -668,7 +675,7 @@ class Interpreter {
     parseMethods(token) {
         if(token == null) return null;
         if(token.methods == undefined) return token;
-        while (token.methods.length > 0) {
+        while (token.methods?.length > 0) {
             let method = token.methods.shift();
 
             // Resolve arguments
@@ -694,18 +701,23 @@ class Interpreter {
             }
 
             if(!methodInstance.validateArgs(args).result) {
-                this.outputError(new InterpreterError(methodInstance.validateArgs(args).type, methodInstance.validateArgs(args).message, token, this.interval, token.position));
-                return;
+                return new InterpreterError(methodInstance.validateArgs(args).type, methodInstance.validateArgs(args).message, token, this.interval, token.position);
             }
 
             // Execute method
             const result = methodInstance.fn(token, args, this);
 
-            // Apply method result to token;
+            if(result instanceof InterpreterError) {
+                this.outputError(result);
+                this.kill();
+                return;
+            }
             token = result;
         }
 
-        if(token.value instanceof Token) token = token.value;
+
+        if(token instanceof InterpreterError) return token;
+        else if(token.value instanceof Token) token = token.value;
         else token = new Token(token.type, token.value, token.position);
 
         return token;
@@ -717,12 +729,14 @@ class Interpreter {
     }
 
     gotoNext() {
+        if(this.paused) return;
         Token.generateSpecs();
         this.error = false;
 
         let line = this.lines[this.interval];
 
         if (line === undefined) {
+            this.onComplete();
             this.kill();
             return;
         }
@@ -753,11 +767,9 @@ class Interpreter {
         this.running = true;
         Interpreter.blockErrorOutput = false;
         Token.generateSpecs();
-        this.load();
+        Interpreter.load();
         this.error = false;
         this.clock = setInterval(() => {
-            if(this.paused) return;
-
             this.gotoNext();
         }, this.interval_length);
     }
@@ -784,7 +796,12 @@ class Interpreter {
         Interpreter.interpreters = Interpreter.interpreters.filter(interp => interp !== this);
         this.running = false;
         this.lines = [];
-        this.load = () => {};
+    }
+
+    restart() {
+        this.resetMemory();
+        this.lines = this.lines.map(line => line.trim()).filter(line => line.length > 0);
+        this.run();
     }
 
     kill() {
