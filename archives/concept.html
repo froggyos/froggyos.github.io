@@ -16,10 +16,10 @@
 <body>
     <button id="run">Run</button><br>
     <textarea id="in">
-        func meow (beh:S)
+        func meow(beh:S)
             return beh
         endfunc
-        out @meow('woof')
+        out @meow('woof', 1>type)
     </textarea>
     <textarea id="out" readonly></textarea>
 </body>
@@ -30,12 +30,12 @@
 
     runButton.addEventListener('click', () => {
         output.value = "";
-        let interpreter = new Interpreter(input.value);
+        let interpreter = new Interpreter(input.value.split("\n"));
         interpreter.interval_length = 1000;
         interpreter.run();
     });
 
-    let interpreter = new Interpreter(input.value);
+    let interpreter = new Interpreter(input.value.split("\n"));
 
     Interpreter.load = () => {
         const KEYWORD_STR = new Keyword('str', "assigner", ['Assigner', 'Assignee', 'Assignment', 'String'], {

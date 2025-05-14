@@ -279,7 +279,7 @@ class Interpreter {
      * The `onComplete` function is called when the interpreter has finished running. If it has an error, the `onError` function is called instead.
      */
     constructor(input) {
-        this.lines = input.split("\n").map(line => line.trim()).filter(line => line.length > 0);
+        this.lines = input.map(line => line.trim()).filter(line => line.length > 0);
         this.variables = {};
         this.temporaryVariables = {};
         this.savedData = {};
@@ -289,6 +289,7 @@ class Interpreter {
         this.interval = 0;
         this.iteration = 0;
         this.interval_length = 1;
+        this.tokens = [];
         Interpreter.interpreters.push(this);
         this.running = false
         this.onComplete = () => {};
@@ -333,6 +334,14 @@ class Interpreter {
         this.output(`\n${error.toString()}`);
         this.onError(error);
         this.kill();
+    }
+    
+    /**
+     * 
+     * @param {Interpreter} interpreter2 
+     */
+    inhereit(interpreter2) {
+
     }
 
     evaluateMathExpression(tokens) {
@@ -461,6 +470,15 @@ class Interpreter {
             }
         }
 
+        for (let i = 0; i < tokens.length; i++) {
+            if(tokens[i].type === "FunctionIdentifier") {
+                if(tokens[i+1].type === "Identifier") {
+                    tokens[i+1].type = "FunctionName";
+                }
+            }
+        }
+        
+
         // parse methods here depending on the type of token, make a Methods class and such
         tokens.forEach((token, index) => {
             if (token.type === 'CalculateStart') {
@@ -489,17 +507,6 @@ class Interpreter {
         if(tokens[0].type == "Keyword" && tokens[0].value == "func") return tokens;
         
         tokens.forEach((token, index) => {
-            if(token.type == "FunctionIdentifier") {
-                let functionName = tokens[index + 1];
-                if(this.functions[functionName.value]) {
-                    console.log("exists!")
-                } else {
-                    tokens.push(new InterpreterError('SyntaxError', `Function [${functionName.value}] is not defined`, tokens, this.interval, token.position));
-                }
-            }
-        })
-
-        tokens.forEach((token, index) => {
             if(token.type == "Identifier") {
                 let variable = this.getVariable(token.value);
 
@@ -511,6 +518,29 @@ class Interpreter {
                 token.value = variable.value;
             }
         })
+
+        for(let i = 0; i < tokens.length; i++) { 
+            let token = tokens[i];
+            if(token.type == "FunctionIdentifier") {
+                let functionName = tokens[i + 1];
+                if(!this.functions[functionName.value]) tokens.push(new InterpreterError('ReferenceError', `Function [${functionName.value}] is not defined`, tokens, this.interval, token.position));
+
+                let func = this.functions[functionName.value];
+
+                let notGroupedArgs = tokens.slice(i + 3, tokens.length - 1);
+                let args = this.groupByCommas(notGroupedArgs).map(group => this.parseMethods(this.formatMethods(group)));
+
+                args.forEach((arg, i) => {
+                    if(arg.type == "String") {
+                        arg.value = Interpreter.trimQuotes(arg.value);
+                    }
+                });
+
+                console.log(args, func)
+
+                break;
+            }
+        }
 
 
         tokens.forEach((token, index) => {
@@ -742,6 +772,8 @@ class Interpreter {
         }
 
         let token = this.tokenize(line);
+
+        this.tokens.push(token)
 
         if (token instanceof InterpreterError) {
             this.outputError(token);
