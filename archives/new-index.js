@@ -531,9 +531,7 @@ class Interpreter {
                 let args = this.groupByCommas(notGroupedArgs).map(group => this.parseMethods(this.formatMethods(group)));
 
                 args.forEach((arg, i) => {
-                    if(arg.type == "String") {
-                        arg.value = Interpreter.trimQuotes(arg.value);
-                    }
+                    if(arg.type == "String") arg.value = Interpreter.trimQuotes(arg.value);
                 });
 
                 console.log(args, func)
