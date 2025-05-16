@@ -264,18 +264,18 @@ class Method {
 
 class Interpreter {
     static interpreters = [];
-    static load = () => {};
     static blockErrorOutput = false;
     /**
      * **IMPORTANT**: In order to load keywords and methods, it its best to do them in the load function. Example:
      * ```js
-     * Interpreter.load = () => {
+     * let interpreter = new Interpreter(input);
+     * interpreter.load = () => {
      *     // define keywords, methods, etc. here
      * }
-     * let interpreter = new Interpreter(input);
      * interpreter.run();
      * ```
      * #
+     * This must be done for every `Interpreter` instance.
      * The `onComplete` function is called when the interpreter has finished running. If it has an error, the `onError` function is called instead.
      */
     constructor(input) {
@@ -292,6 +292,7 @@ class Interpreter {
         this.tokens = [];
         Interpreter.interpreters.push(this);
         this.running = false
+        this.load = () => {};
         this.onComplete = () => {};
         this.onError = (error) => {};
 
@@ -336,12 +337,19 @@ class Interpreter {
         this.kill();
     }
     
-    /**
-     * 
-     * @param {Interpreter} interpreter2 
-     */
-    inhereit(interpreter2) {
+    subInterpreter(lines){
+        let subinterval = 0;
+        let subclock = setInterval(() => {
+            if(subinterval >= lines.length) {
+                clearInterval(subclock);
+                return;
+            }
+            let token = this.tokenize(lines[subinterval]);
 
+            console.log(token)
+
+            subinterval++;
+        }, this.interval_length);
     }
 
     evaluateMathExpression(tokens) {
@@ -375,10 +383,10 @@ class Interpreter {
     }
 
     getVariable(name) {
-        if(this.variables[name]) {
-            return this.variables[name];
-        } else if(this.temporaryVariables[name]) {
+        if(this.temporaryVariables[name]) {
             return this.temporaryVariables[name];
+        } else if(this.variables[name]) {
+            return this.variables[name];
         } else {
             return false;
         }
@@ -519,6 +527,8 @@ class Interpreter {
             }
         })
 
+        let pausedForFunction = false;
+
         for(let i = 0; i < tokens.length; i++) { 
             let token = tokens[i];
             if(token.type == "FunctionIdentifier") {
@@ -534,12 +544,15 @@ class Interpreter {
                     if(arg.type == "String") arg.value = Interpreter.trimQuotes(arg.value);
                 });
 
-                console.log(args, func)
+                this.pause();
+                this.subInterpreter(func.body);
+                pausedForFunction = true;
 
-                break;
+                break;  
             }
         }
 
+        if(pausedForFunction) return;
 
         tokens.forEach((token, index) => {
             if(token.type == "String") {
@@ -797,7 +810,7 @@ class Interpreter {
         this.running = true;
         Interpreter.blockErrorOutput = false;
         Token.generateSpecs();
-        Interpreter.load();
+        this.load();
         this.error = false;
         this.clock = setInterval(() => {
             this.gotoNext();
@@ -826,6 +839,10 @@ class Interpreter {
         Interpreter.interpreters = Interpreter.interpreters.filter(interp => interp !== this);
         this.running = false;
         this.lines = [];
+        this.tokens = [];
+        Keyword.schemes = {};
+        Method.registry = new Map();
+        Token.specs = [];
     }
 
     restart() {
