@@ -135,7 +135,7 @@ class Token {
             ['Number', /\b\d+\b/],
             ['String', /'(?:\\'|[^'])*'|"(?:\\"|[^"])*"/],
             ['Array', /\$([^\$]+)\$/],
-            ['FunctionIdentifier', /@/],
+            ['Function', /@.*\(.*\)/],
             ['Calculation_Equals', / == /],
             ['Calculation_Nequals', / != /],
             ['Calculation_LessThan', / < /],
@@ -336,21 +336,6 @@ class Interpreter {
         this.onError(error);
         this.kill();
     }
-    
-    subInterpreter(lines){
-        let subinterval = 0;
-        let subclock = setInterval(() => {
-            if(subinterval >= lines.length) {
-                clearInterval(subclock);
-                return;
-            }
-            let token = this.tokenize(lines[subinterval]);
-
-            console.log(token)
-
-            subinterval++;
-        }, this.interval_length);
-    }
 
     evaluateMathExpression(tokens) {
         let expr = '';
@@ -527,33 +512,6 @@ class Interpreter {
             }
         })
 
-        let pausedForFunction = false;
-
-        for(let i = 0; i < tokens.length; i++) { 
-            let token = tokens[i];
-            if(token.type == "FunctionIdentifier") {
-                let functionName = tokens[i + 1];
-                if(!this.functions[functionName.value]) tokens.push(new InterpreterError('ReferenceError', `Function [${functionName.value}] is not defined`, tokens, this.interval, token.position));
-
-                let func = this.functions[functionName.value];
-
-                let notGroupedArgs = tokens.slice(i + 3, tokens.length - 1);
-                let args = this.groupByCommas(notGroupedArgs).map(group => this.parseMethods(this.formatMethods(group)));
-
-                args.forEach((arg, i) => {
-                    if(arg.type == "String") arg.value = Interpreter.trimQuotes(arg.value);
-                });
-
-                this.pause();
-                this.subInterpreter(func.body);
-                pausedForFunction = true;
-
-                break;  
-            }
-        }
-
-        if(pausedForFunction) return;
-
         tokens.forEach((token, index) => {
             if(token.type == "String") {
                 token.value = Interpreter.trimQuotes(token.value);
@@ -617,6 +575,74 @@ class Interpreter {
 
                     token.value = token.value.replace(`$\|${expr}\|`,values[0].value);
                 });
+            }
+        })
+
+        tokens.forEach((token, index) => {
+            if(token.type == "Function"){
+                this.pause();
+                let functionName = token.value.split("(")[0].slice(1);
+                let args = this.tokenize(token.value.split("(")[1].slice(0, -1));
+
+                if(args.some(t => t instanceof InterpreterError)) {
+                    let error = args.find(t => t instanceof InterpreterError);
+                    tokens.push(error);
+                    return;
+                }
+
+                args = this.groupByCommas(args);
+
+                args.forEach((group, i) => {
+                    let formatted = this.formatMethods(group);
+
+                    let parsed = this.parseMethods(formatted);
+
+                    if(parsed instanceof InterpreterError) {
+                        tokens.push(parsed);
+                        return;
+                    }
+
+                    args[i] = parsed;
+                });
+
+                let expectedArguments = this.functions[functionName]?.args;
+                if(!expectedArguments) {
+                    tokens.push(new InterpreterError('ReferenceError', `Function [${functionName}] is not defined`, tokens, this.interval, token.position));
+                    return;
+                }
+
+                for(let i = 0; i < Object.keys(expectedArguments).length; i++) {
+                    this.temporaryVariables[Object.keys(expectedArguments)[i]] = {
+                        type: expectedArguments[Object.keys(expectedArguments)[i]],
+                        value: args[i].value,
+                        mutable: true
+                    }
+                }
+
+                let functionTokens = [];
+
+                let funcBody = this.functions[functionName].body;
+
+                let subInterval = 0;
+                let subClock = setInterval(() => {
+                    if(subInterval >= funcBody.length) {
+                        console.log(functionTokens)
+                        clearInterval(subClock);
+                        this.resume();
+                        return;
+                    }
+
+                    let functionToken = this.tokenize(funcBody[subInterval]);
+
+                    if(functionToken instanceof InterpreterError) {
+                        tokens.push(functionToken);
+                        clearInterval(subClock);
+                        return;
+                    }
+
+                    functionTokens.push(functionToken);
+                    subInterval++;
+                }, 1);
             }
         })
 
@@ -783,6 +809,12 @@ class Interpreter {
         }
 
         let token = this.tokenize(line);
+
+        // if(token == undefined) {
+        //     this.interval++;
+        //     this.iteration++;
+        //     return;
+        // }
 
         this.tokens.push(token)
 
