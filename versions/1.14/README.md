@@ -258,7 +258,6 @@ free "test"
 ```
 
 ## Output
-Automatically stringifies inputs.
 ### Basic Output
 ```
 out [argument]
