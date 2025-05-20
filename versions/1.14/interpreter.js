@@ -369,7 +369,19 @@ class Interpreter {
      */
     constructor(input, programName, fileArguments) {
         this.lines = input.map(line => line.trim()).filter(line => line.length > 0);
-        this.variables = {};
+        this.variables = {
+            "ProgramName": {
+                type: "String",
+                value: programName,
+                mutable: false
+            },
+            "Pi": {
+                type: "Number",
+                value: Math.PI.toString(),
+                mutable: false
+            }
+        };
+
         this.temporaryVariables = {};
         this.savedData = {};
         this.functions = {};
@@ -383,6 +395,27 @@ class Interpreter {
         this.importData = {};
         Interpreter.interpreters.push(this);
         this.running = false
+
+        for(let i = 0; i < fileArguments.length; i++) {
+            if(!isNaN(parseInt(fileArguments[i]))){
+                fileArguments[i] = {
+                    type: 'Number',
+                    value: fileArguments[i]
+                }
+            } else if(fileArguments[i] == "true" || fileArguments[i] == "false") {
+                fileArguments[i] = {
+                    type: 'Boolean',
+                    value: fileArguments[i] == "true"
+                }
+            } else if((fileArguments[i].startsWith('"') && fileArguments[i].endsWith('"')) || (fileArguments[i].startsWith("'") && fileArguments[i].endsWith("'"))) {
+                fileArguments[i] = {
+                    type: 'String',
+                    value: Interpreter.trimQuotes(fileArguments[i])
+                }
+            } 
+        }
+
+        this.fileArguments = fileArguments;
         this.load = () => {};
         this.onComplete = () => {};
         this.onError = (error) => {};

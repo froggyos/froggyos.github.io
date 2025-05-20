@@ -189,14 +189,13 @@ clearterminal
 ### Preset Variables
 These variables are immutable.
 ```
-true:B - true
-false:B - false
 Pi:N - 3.141592653589793
-Time_MsEpoch:N - time since epoch (January 1, 1970) in milliseconds
+ProgramName:S - name of the current program
+```
+<!-- Time_MsEpoch:N - time since epoch (January 1, 1970) in milliseconds
 Time_OSRuntime:N - OS uptime in milliseconds
 Time_ProgramRuntime:N - program uptime in milliseconds
-Undefined:U - undefined
-```
+Undefined:U - undefined -->
 ## Variables
 ### Create a Variable
 #### String

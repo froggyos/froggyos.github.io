@@ -2098,3 +2098,5 @@ if(!SKIP_ANIMATION) {
 } else {
     ready();    
 }
+
+sendCommand('st', ["test", "1", '"meow"']);
