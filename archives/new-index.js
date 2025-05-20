@@ -371,6 +371,8 @@ class Interpreter {
         this.iteration = 0;
         this.interval_length = 1;
         this.tokens = [];
+        this.imports = [];
+        this.importData = {};
         Interpreter.interpreters.push(this);
         this.running = false
         this.load = () => {};
@@ -819,12 +821,6 @@ class Interpreter {
 
         let token = this.tokenize(line);
 
-        // if(token == undefined) {
-        //     this.interval++;
-        //     this.iteration++;
-        //     return;
-        // }
-
         this.tokens.push(token)
 
         if (token instanceof InterpreterError) {
@@ -887,19 +883,17 @@ class Interpreter {
         this.running = false;
         this.lines = [];
         this.tokens = [];
+        this.imports = [];
+        this.importData = {};
         Keyword.schemes = {};
         Method.registry = new Map();
         Token.specs = [];
     }
 
-    restart() {
-        this.resetMemory();
-        this.lines = this.lines.map(line => line.trim()).filter(line => line.length > 0);
-        this.run();
-    }
-
     kill() {
         clearInterval(this.clock);
+        let lines = structuredClone(this.lines);
         this.resetMemory();
+        this.lines = lines.map(line => line.trim()).filter(line => line.length > 0);
     }
 }
