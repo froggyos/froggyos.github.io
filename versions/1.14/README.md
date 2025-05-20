@@ -167,15 +167,13 @@ KEY [key name] TYPE Array END
     * `U` - Undefined
 
 ## General Utilities
-
-### End the Program
-* An error **WILL** be thrown is this is not the last line of the program.
-```
-endprog
-```
 ### Comments
 ```
 -- comment!
+```
+### Prematurely End the Program
+```
+endprog
 ```
 ### Wait
 ```
@@ -200,8 +198,9 @@ Time_ProgramRuntime:N - program uptime in milliseconds
 Undefined:U - undefined
 ```
 ## Variables
-### Types
+### Create a Variable
 #### String
+Make a variable immutable by prefixing the keyword with `c` (ex. `cstr`).
 ```
 str [variable name] = [value]
 
@@ -229,27 +228,12 @@ bln test = true
 #### Array
 * Indexing starts at `0`.
 * To create an empty array, do `arr [variable_name] = _`.
-##### Named
 ```
-arr [variable name] = [value], [value], ...
+arr [variable name] = $[value], [value], ...$
 
-arr test1 = 1, 2, 3, 4, 5
-arr test2 = "a", "b", "c", "d", "e"
-arr test3 = "a", 1, true, 2.5, "b"
--- surrounding with $ is optional when using the arr keyword
-```
-##### Unnamed
-* surrounding strings with `$` will force a type of `Array`.
-```
-out 'one', 'two', 'three'
--- one', 'two, 'three
-
-out $'one', 'two', 'three'$
--- {{Array}}
-
-str variable = "thirty three million"
-out $variable, 'two', 'three'$>index(0)
--- thirty three million
+arr test1 = $1, 2, 3, 4, 5$
+arr test2 = $"a", "b", "c", "d", "e"$
+arr test3 = $"a", 1, true, 2.5, "b"$
 ```
 
 ### Edit a Variable
@@ -285,7 +269,7 @@ out "text"
 out "more text"
 out 1
 ```
-### Formatted Output
+<!-- ### Formatted Output
 #### General
 * index `0` is the 1st character.
 * There is less than normal error checking on formatting objects, so make sure they're correct.
@@ -331,9 +315,9 @@ C:/Home> st [program name]
 !!ERROR!! - this is an error message
 hello world!
 C:/Home>
-```
+``` -->
 ## Input
-### Define a File Argument
+<!-- ### Define a File Argument
 File arguments are passed in the terminal when running the program. The `filearg` keyword will create an **immutable** variable in the format of `filearg_[variable name]` and cannot override other variable values, even if that variable is mutable. The order they are defined will determine the order that they are passed in the terminal.
 ```
 filearg [variable name] [type]
@@ -348,8 +332,8 @@ endprog
 C:/Home> st [program name] [arg1] [arg2]
 C:/Home> st about_froggy froggy 7
 > hello I am froggy and I am 7 years old
-```
-### Typeable Input
+``` -->
+<!-- ### Typeable Input
 ```
 ask [variable] [prefix='?']
 
@@ -361,7 +345,6 @@ str name = ""
 out "What is your name?"
 ask name
 out 'Hello $|name|!'
-endprog
 
 -- in the terminal
 C:/Home> st [program name]
@@ -380,7 +363,6 @@ C:/Home> st [program name]
 > What is your name?
 custom prefix Froggy
 > Hello Froggy!
-engprog
 
 -- TypeError
 num age = 0
@@ -394,15 +376,15 @@ C:/Home> st [program name]
 > How old are you?
 ? Froggy
 -- Throws a TypeError because [age] is type Number while the input for [ask] was type String
-```
+``` -->
 
-### Input with Navigable Options
+<!-- ### Input with Navigable Options
 ```
 prompt [variable:*] [default highlighted option:N] [options:A]
 
 str output = ''
 prompt output 0 $'hello', "world!", "I am froggy!"$
-```
+``` -->
 
 ## Functions
 ### Create a Function
@@ -439,15 +421,15 @@ num i = @name
 #### No Arguments
 Currently they do require the parenthesis but i wanna make it not
 ```
-@[func name]
+call @[func name]
 
-@name
+call @name
 ```
 #### Arguments
 ```
-@[func name]([arg1];[arg2];...;[argN])
+call @[func name]([arg1],[arg2],...,[argN])
 
-@name("hello";"world!")
+call @name("hello","world!")
 ```
 
 ## Control Flow
@@ -475,7 +457,7 @@ endif
 ```
 
 ### Loops
-#### Standard Loop
+<!-- #### Standard Loop
 ```
 loop [condition]
     [code]
@@ -497,9 +479,9 @@ loop i < 5
     set i = i + 1
     set j = 0
 endloop
-```
+``` -->
 
-#### Quickloop
+<!-- #### Quickloop
 Quickloops are different from standard loops in that the entire loop is executed *almost instantly*, while standard loops are executed one line at a time.
 
 ```
@@ -511,35 +493,15 @@ quickloop 100
     out "hello"
 endquickloop
 -- outputs "hello" 100 times in a row
-```
-## Method Keywords
-### stringify
-Converts a Number to a String
-```
-num test = 5
-stringify 5
--- "5"
-```
-### append
-Appends the second argument to the first argument. Both must be arrays.
-```
-arr test1 = "a", "b", "c"
-arr test2 = 1, 2, 3
-append test1 test2
--- "a", "b", "c", 1, 2, 3
-```
+``` -->
 ## Methods
-If no arguments are passed, you may omit the parentheses. Arguments are separated by `;`.
+If no arguments are passed, you may omit the parentheses. Arguments are separated by `,`.
 ### index
 Indexing starts at `0`.
 ```
 arr test = "a", "b", "c", "d", "e"
 str output = test>index(0)
 -- "a"
-
-arr test2 = 1, 2, 3, 4, 5
-str output = test2>:(1)
--- "2"
 ```
 ### join
 Join the elements of an array into a string, delimited by the provided separator. If no argument is passed, "," will be used instead.
@@ -578,7 +540,7 @@ num output = string>length
 Replace the first instance of the first argument with the second argument.
 ```
 str test = "hello world!"
-str output = test>replace("hello";"goodbye")
+str output = test>replace("hello","goodbye")
 -- "goodbye world!"
 ```
 ### stringify
@@ -595,34 +557,27 @@ arr numbers = 1, 2, 3
 out letters>append(numbers)
 -- "a", "b", "c", 1, 2, 3
 ```
-## Oneliners
-To use methods without having to be in an argument or variable, prefix the line with `#`.
-```
-arr test = "a", "b", "c"
-#test>append($"d", "e"$)
--- "a", "b", "c", "d", "e"
-```
 ## Program Data
-### Saving Data
+<!-- ### Saving Data
 Saves the contents of `[variable]` to the corresponding file in the `Config:/program_data` file. The key cannot contain spaces.
 ```
 savedata [key] [value]
-```
+``` -->
 
 ### Loading Data
-From the corresponding `Config:/program_data` file, loads the contents of entry of `[variable]` to the variable called `[variable]`
+<!-- From the corresponding `Config:/program_data` file, loads the contents of entry of `[variable]` to the variable called `[variable]`
 ```
 loaddata [variable] [key]
-```
+``` -->
 ## Imports
 Imports are a way to extend the functionality of FroggyScript.
 
-### Import a Module
+<!-- ### Import a Module
 ```
 import [import name:S]
 
 import "graphics"
-```
+``` -->
 ### Imports List & Documentation
 * [graphics](https://rus1130.github.io/projects/mdparser.html?url=https://froggyos.github.io/versions/1.14/import-docs/graphics.md&toc=true)
 * [config](https://rus1130.github.io/projects/mdparser.html?url=https://froggyos.github.io/versions/1.14/import-docs/config.md)

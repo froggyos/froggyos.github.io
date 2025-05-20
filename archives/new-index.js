@@ -123,8 +123,14 @@ class Keyword {
                             let expectedArgs = Object.keys(func.args);
 
                             for(let j = 0; j < expectedArgs.length; j++) {
-                                if(func.args[expectedArgs[j]] != values[j].type) {
-                                    return interp.outputError(new InterpreterError('TypeError', `Expected type ${func.args[expectedArgs[j]]}, found type ${values[j].type}`, args, interp.interval, arg.position));
+                                if(func.args[expectedArgs[j]] != values[j]?.type) {
+                                    let returnValue = null;
+                                    if(values[j] == undefined){
+                                        returnValue = 'Nothing';
+                                    } else {
+                                        returnValue = `type [${values[j].type}]`;
+                                    }
+                                    return interp.outputError(new InterpreterError('TypeError', `Expected type [${func.args[expectedArgs[j]]}], found ${returnValue}`, args, interp.interval, arg.position));
                                 }
 
                                 interp.temporaryVariables[expectedArgs[j]] = {
@@ -582,7 +588,7 @@ class Interpreter {
             }
         });
 
-        if(tokens[0].type == "Keyword" && tokens[0].value == "func") return tokens;
+        if(tokens[0]?.type == "Keyword" && tokens[0].value == "func") return tokens;
         
         tokens.forEach((token, index) => {
             if(token.type == "Identifier") {

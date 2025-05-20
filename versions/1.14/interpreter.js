@@ -123,8 +123,14 @@ class Keyword {
                             let expectedArgs = Object.keys(func.args);
 
                             for(let j = 0; j < expectedArgs.length; j++) {
-                                if(func.args[expectedArgs[j]] != values[j].type) {
-                                    return interp.outputError(new InterpreterError('TypeError', `Expected type ${func.args[expectedArgs[j]]}, found type ${values[j].type}`, args, interp.interval, arg.position));
+                                if(func.args[expectedArgs[j]] != values[j]?.type) {
+                                    let returnValue = null;
+                                    if(values[j] == undefined){
+                                        returnValue = 'Nothing';
+                                    } else {
+                                        returnValue = `type [${values[j].type}]`;
+                                    }
+                                    return interp.outputError(new InterpreterError('TypeError', `Expected type [${func.args[expectedArgs[j]]}], found ${returnValue}`, args, interp.interval, arg.position));
                                 }
 
                                 interp.temporaryVariables[expectedArgs[j]] = {
@@ -173,6 +179,8 @@ class Keyword {
                             if(lastToken != null){
                                 this.args = lastToken;
                             }
+
+                            interp.temporaryVariables = {};
                         }
                     }
                 }
@@ -359,7 +367,7 @@ class Interpreter {
      * This must be done for every `Interpreter` instance.
      * The `onComplete` function is called when the interpreter has finished running. If it has an error, the `onError` function is called instead.
      */
-    constructor(input) {
+    constructor(input, programName, fileArguments) {
         this.lines = input.map(line => line.trim()).filter(line => line.length > 0);
         this.variables = {};
         this.temporaryVariables = {};
@@ -418,11 +426,9 @@ class Interpreter {
         createTerminalLine("", config.programErrorText.replace("{{}}", error.error), {translate: false});
         createTerminalLine(" ", "", {translate: false});
         createTerminalLine(error.message, "", {translate: false});
-        createTerminalLine(`\u00A0in line: ${error.line}`, "", {translate: false})
+        createTerminalLine(`\u00A0in line: ${error.line+1}`, "", {translate: false})
         createTerminalLine(`\u00A0at position: ${error.pos}`, "", {translate: false})
-        console.log(error)
         
-        //this.output(`\n${error.toString()}`);
         this.onError(error);
         this.kill();
     }
@@ -589,7 +595,7 @@ class Interpreter {
             }
         });
 
-        if(tokens[0].type == "Keyword" && tokens[0].value == "func") return tokens;
+        if(tokens[0]?.type == "Keyword" && tokens[0].value == "func") return tokens;
         
         tokens.forEach((token, index) => {
             if(token.type == "Identifier") {
@@ -910,12 +916,44 @@ class Interpreter {
 }
 
 const load_function = () => {
+    const KEYWORD_ENDPROG = new Keyword('endprog', "basic", ['Keyword'], { 
+        post: (tokens, interp) => {
+            interp.kill();
+            interp.onComplete();
+        }
+     });
+
+    const KEYWORD_FREE = new Keyword('free', "basic", ['Keyword', "String"], { 
+        pre: (tokens, interp, keyword) => {
+            let variableName = tokens[1].value;
+
+            if (interp.variables[variableName] == undefined) {
+                return interp.outputError(new InterpreterError('ReferenceError', `Variable [${variableName}] is not defined`, tokens, interp.interval, tokens[0].position));
+            } else if(interp.variables[variableName].mutable == false) {
+                return interp.outputError(new InterpreterError('ReferenceError', `Variable [${variableName}] is not mutable`, tokens, interp.interval, tokens[0].position));
+            } else {
+                delete interp.variables[variableName];
+            }
+        }
+    });
+
+    const KEYWORD_CALL = new Keyword('call', "basic", ['Keyword'], { dud: false });
+
     const KEYWORD_STR = new Keyword('str', "assigner", ['Assigner', 'Assignee', 'Assignment', 'String'], {
         post: (tokens, interp, keyword) => {
             let identifier = tokens[1];
             let value = tokens[3];
 
             interp.setVariable(identifier.value, value.value, 'String', true);
+        }
+    });
+
+    const KEYWORD_CSTR = new Keyword('cstr', "assigner", ['Assigner', 'Assignee', 'Assignment', 'String'], {
+        post: (tokens, interp, keyword) => {
+            let identifier = tokens[1];
+            let value = tokens[3];
+
+            interp.setVariable(identifier.value, value.value, 'String', false);
         }
     });
 
@@ -928,12 +966,30 @@ const load_function = () => {
         }
     });
 
-    const KEYWORD_BOOL = new Keyword('bln', "assigner", ['Assigner', 'Assignee', 'Assignment', 'Boolean'], {
+    const KEYWORD_CNUM = new Keyword('cnum', "assigner", ['Assigner', 'Assignee', 'Assignment', 'Number'], {
+        post: (tokens, interp) => {
+            let identifier = tokens[1];
+            let value = tokens[3];
+
+            interp.setVariable(identifier.value, value.value, 'Number', false);
+        }
+    });
+
+    const KEYWORD_BLN = new Keyword('bln', "assigner", ['Assigner', 'Assignee', 'Assignment', 'Boolean'], {
         post: (tokens, interp) => {
             let identifier = tokens[1];
             let value = tokens[3];
 
             interp.setVariable(identifier.value, value.value, 'Boolean', true);
+        }
+    });
+
+    const KEYWORD_CBLN = new Keyword('cbln', "assigner", ['Assigner', 'Assignee', 'Assignment', 'Boolean'], {
+        post: (tokens, interp) => {
+            let identifier = tokens[1];
+            let value = tokens[3];
+
+            interp.setVariable(identifier.value, value.value, 'Boolean', false);
         }
     });
 
@@ -953,7 +1009,13 @@ const load_function = () => {
             let identifier = tokens[1];
             let value = tokens[3];
 
-            interp.setVariable(identifier.value, value.value, interp.getVariable(tokens[1].value).type, true);
+            let variable = interp.getVariable(identifier.value);
+
+            if(variable.mutable == false){
+                return interp.outputError(new InterpreterError('ReferenceError', `Variable [${identifier.value}] is not mutable`, tokens, interp.interval, identifier.position));
+            }
+
+            interp.setVariable(identifier.value, value.value, variable.type, true);
         }
     });
 
@@ -963,6 +1025,15 @@ const load_function = () => {
             let token = tokens[3];
 
             interp.setVariable(identifier.value, token.value, 'Array', true);
+        }
+    });
+
+    const KEYWORD_CARR = new Keyword('carr', "assigner", ['Assigner', 'Assignee', 'Assignment', 'Array'], {
+        post: (tokens, interp) => {
+            let identifier = tokens[1];
+            let token = tokens[3];
+
+            interp.setVariable(identifier.value, token.value, 'Array', false);
         }
     });
 
@@ -1020,8 +1091,10 @@ const load_function = () => {
         post: (tokens, interp) => {
             let value = tokens[1];
             interp.pause();
+            setSetting('showSpinner', true)
             setTimeout(() => {
                 interp.resume();
+                setSetting('showSpinner', false)
             }, value.value);
         }
     });
