@@ -16,11 +16,7 @@
 <body>
     <button id="run">Run</button><br>
     <textarea id="in">
-        str meow = 'woof'
-        func meow(n1:N,n2:N)
-            return {n1 + n2}
-        endfunc
-        out @meow(2, 7)
+        out 'meow!'
     </textarea>
     <textarea id="out" readonly></textarea>
 </body>
@@ -35,6 +31,7 @@
     runButton.addEventListener('click', () => {
         output.value = "";
         interpreter.load = () => load();
+        interpreter.setLines(input.value.split("\n"));
         interpreter.run();
     });
 
@@ -309,6 +306,4 @@
         }, ["Number"]);
     }
 
-    // interpreter.load = () => load();
-    // interpreter.run()
 </script>

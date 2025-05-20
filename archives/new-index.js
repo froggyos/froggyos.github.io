@@ -420,6 +420,10 @@ class Interpreter {
         this.kill();
     }
 
+    setLines(lines){
+        this.lines = lines.map(line => line.trim()).filter(line => line.length > 0);
+    }
+
     evaluateMathExpression(tokens) {
         let expr = '';
 
@@ -461,10 +465,12 @@ class Interpreter {
     }
 
     setVariable(name, value, type, mutable) {
-        if(this.temporaryVariables[name] && this.temporaryVariables[name].mutable) {
-            this.temporaryVariables[name].value = value;
-            this.temporaryVariables[name].type = type;
-            this.temporaryVariables[name].mutable = mutable;
+        if(this.variables[name] == undefined) {
+            this.variables[name] = {
+                type: type,
+                value: value,
+                mutable: mutable
+            }
         } else if(this.variables[name] && this.variables[name].mutable) {
             this.variables[name].value = value;
             this.variables[name].type = type;
@@ -892,8 +898,6 @@ class Interpreter {
 
     kill() {
         clearInterval(this.clock);
-        let lines = structuredClone(this.lines);
         this.resetMemory();
-        this.lines = lines.map(line => line.trim()).filter(line => line.length > 0);
     }
 }

@@ -924,13 +924,10 @@ const config = {
                 "else",
                 "    out '10 < 2'",
                 "endif",
-                
-                "endprog",
             ] },
             { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
                 "num meow = 15",
-                "out num > 5",
-                "endprog"
+                "out {num > 5}",
             ] },
             // { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
             //     "arr meow = 4,48",

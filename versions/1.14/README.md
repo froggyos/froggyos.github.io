@@ -627,13 +627,7 @@ import "graphics"
 * [graphics](https://rus1130.github.io/projects/mdparser.html?url=https://froggyos.github.io/versions/1.14/import-docs/graphics.md&toc=true)
 * [config](https://rus1130.github.io/projects/mdparser.html?url=https://froggyos.github.io/versions/1.14/import-docs/config.md)
 <!--
-to add:
-reformat config files and recode getSetting and setSetting to use fSDS
-^ put them all into one file
-add setfSDSKey function
-function setFSDSKey(fileObject, key, value)
-getFSDSKey(fileObject, key)
-do not return typeified
+literally fucking everything
 
 overhaul inclusions in translation descriptors
 [T#:{value}]

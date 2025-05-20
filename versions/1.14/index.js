@@ -21,12 +21,12 @@ function setSetting(setting, value) {
 }
 
 function getSetting(setting) {
-    let fsds = fSDSTrueParse(getFileWithName("Config:", "user").data);
+    let fsds = parse_fSDS(getFileWithName("Config:", "user").data);
     return fsds[setting]?.value;
 }
 
 function setUserConfigFromFile(){
-    let fsds = fSDSTrueParse(getFileWithName("Config:", "user").data);
+    let fsds = parse_fSDS(getFileWithName("Config:", "user").data);
     if(fsds.error) {
         alert(`OS ERROR!: ${fsds.message}\nthis may brick froggyOS\ncancelling config check`);
         clearInterval(configInterval);
@@ -69,295 +69,6 @@ const filePropertyDefaults = {
     transparent: false,
 }
 
-function separated_evaluate(expression) {
-    let methodIndex = findMethodIdentifier(expression);
-
-    if(methodIndex != -1) {
-        expression = expression.slice(0, methodIndex).trim();
-    }
-
-    let variableNames = Object.keys(FroggyscriptMemory.variables);
-
-    let scope = {};
-
-    variableNames.forEach(variableName => {
-        let variableValue = getVariable(variableName);
-        if(variableValue) {
-            scope[variableName] = variableValue.value;
-        }
-    })
-
-    let result = null;
-    let error = false;
-
-    try {
-        result = math.evaluate(expression, scope);
-    } catch (e) {
-        error = true;
-    }
-
-    if (error) {
-        return new ScriptError("EvaluationError", `Cannot evaluate [${expression}]`);
-    } else {
-        return result;
-    }
-}
-function separated_typeify(value) {
-    let typeObj = {
-        type: null,
-        value: null,
-        originalInput: value,
-    };
-
-    let methods = getMethods(value);
-
-    if(!/^@.*$/g.test(value) && methods.length != 0) {
-        let rawValue = value.slice(0, findMethodIdentifier(value)).trim();
-
-        let methodToken = typeify(rawValue);
-        methodToken.methods = methods;
-
-        typeObj = methodParser(methodToken)
-    }
-
-    if(value == undefined) return new ScriptError("TypeAssignmentError", `Cannot assign type to [${value}]`);
-
-    if(/^@.*$/g.test(value)) {
-        const match = value.match(/^@([a-zA-Z_][a-zA-Z0-9_]*)\((.*)\)$/);
-        if (!match) {
-            return new ScriptError("SyntaxError", `Invalid function syntax: ${value}`);
-        }
-    
-
-        let matchedValue = match[2].trim();
-
-        typeObj.functionName = match[1];
-        typeObj.value = 'undefined';
-        typeObj.type = "Undefined";
-        typeObj.origin = "Function";
-
-        let functionArguments = extractFunctionArguments(matchedValue).map(x => typeify(x))
-
-        let func = FroggyscriptMemory.functions[typeObj.functionName];
-
-        if(func == undefined) {
-            typeObj = new ScriptError("ReferenceError", `Function [${typeObj.functionName}] does not exist`);
-            return typeObj;
-        }
-
-        let expectedArguments = func.args;
-
-        for(let i = 0; i < expectedArguments.length; i++) {
-            let funcArg = functionArguments[i];
-            let expectedArg = expectedArguments[i];
-
-            if(funcArg == undefined){
-                let expectedLen = expectedArguments.length;
-                let foundLen = functionArguments.length;
-                typeObj = new ScriptError("ArgumentError", `Function [${typeObj.functionName}] expected ${expectedLen} argument${expectedLen != 1 ? "s" : ""}, found ${foundLen}`);
-                break;
-            }
-
-            if(funcArg.type == "Error"){
-                typeObj = funcArg;
-                break;
-            }
-
-            if(expectedArg.type == "Any") continue;
-
-            if(funcArg.type != expectedArg.type) {
-                typeObj = new ScriptError("TypeError", `Function [${typeObj.functionName}] argument [${i+1}] expected type ${expectedArg.type}, found type ${funcArg.type}`);
-                break;
-            }
-        }    
-
-        if(typeObj.type == "Error") return typeObj;
-
-        let funcBody = func.body;
-
-        for(let i = 0; i < functionArguments.length; i++){
-            let variableName = expectedArguments[i].name;
-
-            FroggyscriptMemory.temporaryVariables[variableName] = {
-                identifier: variableName,
-                type: functionArguments[i].type,
-                value: functionArguments[i].value,
-                mutable: true,
-            }
-        }
-
-        typeObj.body = funcBody,
-        typeObj.origin = "Function";
-
-    } else if(value.match(/^("|').*\1$/g)) {// string
-        typeObj.type = "String";
-        typeObj.value = value.replace(/^("|')|("|')$/g, '');
-
-        let literals = []
-
-        const regex = /\$\|(.+?)\|/g;
-        const matches = [...value.matchAll(regex)];
-    
-        literals = matches.map(match => ({
-            literal: match[0],       //  "$|name|"
-            symbol: match[1].trim()  //  "name"
-        }));
-
-        literals.forEach((literal, i) => {
-            let evaluated = separated_evaluate(literal.symbol);
-            if(evaluated.type == "Error"){
-                typeObj = evaluated;
-                typeObj.value = `String literal [${i}]: ${typeObj.value}`
-            } else {
-                let replacer = typeify(literal.symbol);
-                replacer = stringify(replacer);
-                typeObj.value = typeObj.value.replaceAll(literal.literal, replacer.value)
-            }
-        })
-
-        typeObj.origin = "String";
-    } else if(value.match(/^\$("|'|\d|\w).*("|'|\d|\w)\$$/)){
-        value = value.replace(/^\$/, '');
-        value = value.replace(/\$$/, '');
-
-        let splitValues = [];
-        let current = '';
-        let inQuotes = false;
-        let quoteChar = '';
-
-        for (let i = 0; i < value.length; i++) {
-            const char = value[i];
-
-            if ((char === '"' || char === "'")) {
-                if (inQuotes && char === quoteChar) {
-                inQuotes = false;
-                } else if (!inQuotes) {
-                inQuotes = true;
-                quoteChar = char;
-                }
-            }
-
-            if (char === ',' && !inQuotes) {
-                splitValues.push(current.trim());
-                current = '';
-            } else {
-                current += char;
-            }
-        }
-
-        if (current) {
-            splitValues.push(current.trim());
-        }
-
-        let typedValues = splitValues.map(x => typeify(x));
-
-        typeObj.originalInput = typeObj.originalInput.replace(/( )?\$/, "$1[FORCE_ARRAY]").replace(/\$$/, "[FORCE_ARRAY]");
-
-        if(typedValues.some(value => value.type == "Error")){
-            typeObj = typedValues[typedValues.findIndex(value => value.type == "Error")]
-        } else {
-            typeObj.type = "Array";
-            typeObj.value = typedValues;
-        }
-
-        // typeObj.origin = "Array";
-    } else if(separated_evaluate(value) === true || separated_evaluate(value) === false) {
-        typeObj.type = "Boolean";
-        let error = false;
-        try {
-            separated_evaluate(value)
-        } catch (e) {
-            error = true;
-        }
-
-        if (error) {
-            typeObj = new ScriptError("EvaluationError", `Cannot evaluate [${value}]`);
-        } else {
-            if(findMethodIdentifier(value) != -1){
-                typeObj = new ScriptError("TypeifyError", `Cannot use methods in a Boolean`);
-            } else {
-                typeObj.value = separated_evaluate(value);
-
-                let variableNames = Object.keys(FroggyscriptMemory.variables).join('|');
-                let regex = new RegExp(`(${variableNames})`, 'g');
-                if(variableNames && variableNames.length > 0) {
-                    // replace the variable names in the expression with their values for evaluation
-                    typeObj.originalInput = typeObj.originalInput.replace(regex, (match) => {
-                        let variableValue = getVariable(match);
-                        if(variableValue) {
-                            return variableValue.value;
-                        } else {
-                            return match; // fallback to original if not found
-                        }
-                    });
-                }
-            }
-
-        }
-
-        typeObj.origin = "Boolean";
-
-    } else if(value.match(/^[a-zA-Z][a-zA-Z0-9_]*$/)) {
-        let name = value;
-
-        let variableValue = getVariable(name);
-
-        if (variableValue != undefined) {
-            typeObj.originalInput = "[VARIABLE_IDENTIFIER]"+value;
-            typeObj.value = variableValue.value;
-            typeObj.type = variableValue.type;
-        } else {
-            typeObj = new ScriptError("ReferenceError", `Variable [${value}] is not defined`);
-        }
-
-        typeObj.origin = "VariableIdentifier";
-
-    } else if(typeof separated_evaluate(value) === 'number') {
-        let error = false;
-        try {
-            separated_evaluate(value);
-        } catch (e) {
-            error = true;
-        }
-
-        if (error) {
-            typeObj = new ScriptError("EvaluationError", `Cannot evaluate [${value}]`);
-        } else {
-            typeObj.type = "Number";
-            typeObj.value = separated_evaluate(value);
-
-            if(Object.keys(FroggyscriptMemory.variables).length > 0) {
-                let variableNames = Object.keys(FroggyscriptMemory.variables).join('|');
-                let regex = new RegExp(`(${variableNames})`, 'g');
-                typeObj.originalInput = typeObj.originalInput.replace(regex, (match) => {
-                    return `[VARIABLE_IDENTIFIER]${match}`;
-                });
-            }
-        }
-
-        typeObj.origin = "Number";
-    } else {
-        if(methods.length != 0 && typeObj.type != "Function") {
-            typeObj.methods = methods;
-        } else typeObj = new ScriptError("TypeifyError", `Cannot assign type to [${value}]`);
-    }
-
-    return typeObj;
-}
-
-function fSDSTrueParse(inputFile){
-    let fsds = parse_fSDS(inputFile);
-    if(fsds.error) return fsds;
-    for(let key in fsds){
-        if(fsds[key].type == "Array"){
-            fsds[key].value = fsds[key].value.map(value => separated_typeify(value).value);
-        } else {
-            fsds[key].value = separated_typeify(fsds[key].value).value;
-        }
-    }
-    return fsds;
-}
-
 // FIX !! IS NOT WORKINGTON (add index to front)
 function set_fSDS(path, filename, key, value){
     let directory = config.fileSystem[path];
@@ -370,8 +81,6 @@ function set_fSDS(path, filename, key, value){
 
     if(fsds[key] == undefined) {
         let isArray = Array.isArray(value);
-
-        console.log("meow")
 
         if(isArray){
             let array_fsds = [];
@@ -493,7 +202,32 @@ function parse_fSDS(inputFile){
         return {error: true, message: error}
     }
 
+    for(let key in output){
+        smallParse(output[key]);
+    }
+
     return output;
+}
+
+function smallParse(input){
+    if(input.type == "Boolean") {
+        input.value = input.value.toLowerCase() == "true" ? true : false;
+    } else if(input.type == "Number") {
+        input.value = parseFloat(input.value);
+    } else if(input.type == "String") {
+        input.value = input.value.slice(1, -1);
+    } else if(input.type == "Array") {
+        let array = input.value;
+
+        array.forEach((item, i) => {
+            // if item is surrounded by quotes, remove them
+            if(item.includes('"')) item = item.slice(1, -1);
+            array[i] = item
+        })
+        input = {type: "Array", value: array };
+    }
+
+    return input;
 }
 
 function localize(descriptor, TRANSLATE_TEXT){
@@ -1719,7 +1453,15 @@ x
                 // get all file arguments besides the first one
 
                 config.currentProgram = args[0];
-                interpreter(file.data.join("\n"), args.slice(1), args[0]);
+                let interpreter = new Interpreter(file.data);
+                interpreter.load = () => load_function();
+                interpreter.onComplete = () => {
+                    if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                }
+                interpreter.onError = (error) => {
+                    if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                }
+                interpreter.run();
             }
         break;
 
@@ -2242,14 +1984,14 @@ function createLilypadLine(path, linetype, filename){
                         dataLength += line.length;
                     });
                     
-                    setSetting("showSpinner", "true")
+                    setSetting("showSpinner", true)
                     setTimeout(function(){
     
                         file.name = filename;
                         let fileIndex = config.fileSystem[config.currentPath].findIndex(file => file.name == filename);
                         config.fileSystem[config.currentPath][fileIndex].data = file.data;
     
-                        setSetting("showSpinner", "false")
+                        setSetting("showSpinner", false)
                         createTerminalLine(`T_saving_done`, ">");
                         
                         createEditableTerminalLine(`${config.currentPath}>`);
@@ -2355,5 +2097,3 @@ if(!SKIP_ANIMATION) {
 } else {
     ready();    
 }
-
-sendCommand("st", ["kaerugotchi"], true);
