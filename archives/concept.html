@@ -17,14 +17,17 @@
     <button id="run">Run</button><br>
     <textarea id="in">
         str meow = 'woof'
-        func meow(beh:S)
-            return beh
+        func meow(n1:N, n2:N)
+            return {n1 + n2}
         endfunc
-        out @meow('woof', 1>type)
+        out @meow(2, 7)
     </textarea>
     <textarea id="out" readonly></textarea>
 </body>
 <script>
+    /*
+        setting function variables doesnt work properly? i think its because the set keyword doesnt check for temporary variables
+    */
     const runButton = document.getElementById('run');
     const input = document.getElementById('in');
     const output = document.getElementById('out');
@@ -136,7 +139,8 @@
         });
 
         const KEYWORD_ENDIF = new Keyword('endif', "basic", ['Keyword'], { dud: true });
-        const KEYWORD_RETURN = new Keyword('return', "basic", ['Keyword', 'String|Number|Boolean|Array'], { dud: true });
+
+        const KEYWORD_RETURN = new Keyword('return', "basic", ['Keyword', 'Number|String|Boolean'], { dud: true });
 
         const KEYWORD_ELSE = new Keyword('else', "basic", ['Keyword', 'Number'], {
             post: (tokens, interp, keyword) => {
@@ -158,6 +162,7 @@
             pre: (tokens, interp, keyword) => {
                 let depth = 1;
                 let endFuncIndex = -1;
+                let startFuncindex = interp.interval
                 for (let i = interp.interval + 1; i < interp.lines.length; i++) {
                     const line = interp.lines[i].trim();
 
@@ -239,7 +244,9 @@
 
                 interp.functions[functionIdentifier.value] = {
                     args: args,
-                    body: structuredClone(interp.lines).slice(interp.interval - 1, endFuncIndex)
+                    body: structuredClone(interp.lines).slice(startFuncindex + 1, endFuncIndex),
+                    start: startFuncindex,
+                    end: endFuncIndex
                 }
             }
         });

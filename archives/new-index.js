@@ -96,6 +96,87 @@ class Keyword {
                 } else {
                     this.args = [...firstTokens, parsedMethods];
                 }
+
+                for(let i = 0; i < args.length; i++) {
+                    let arg = args[i];
+                    if(arg.type == "Function"){
+                        let functionName = arg.value.split("(")[0].slice(1);
+                        let functionArgs = interp.tokenize(arg.value.split("(")[1].slice(0, -1))
+
+                        if(functionArgs.some(t => t instanceof InterpreterError)) {
+                            let error = functionArgs.find(t => t instanceof InterpreterError);
+                            return interp.outputError(error);
+                        } else {
+                            let groups = interp.groupByCommas(functionArgs);
+                            let values = [];
+                            groups.forEach((group, i) => {
+                                let formatted = interp.formatMethods(group);
+
+                                let parsed = interp.parseMethods(formatted);
+
+                                values.push(parsed);
+                            });
+
+                            let func = interp.functions[functionName];
+
+
+                            let expectedArgs = Object.keys(func.args);
+
+                            for(let j = 0; j < expectedArgs.length; j++) {
+                                if(func.args[expectedArgs[j]] != values[j].type) {
+                                    return interp.outputError(new InterpreterError('TypeError', `Expected type ${func.args[expectedArgs[j]]}, found type ${values[j].type}`, args, interp.interval, arg.position));
+                                }
+
+                                interp.temporaryVariables[expectedArgs[j]] = {
+                                    type: values[j].type,
+                                    value: values[j].value,
+                                    mutable: true
+                                }
+                            }
+
+                            let tokenizedBody = func.body.map(line => interp.tokenize(line));
+
+                            let lastToken = null;
+
+                            for(let j = 0; j < tokenizedBody.length; j++) {
+                                let line = tokenizedBody[j];
+
+                                for(let k = 0; k < tokenizedBody[j].length; k++) {
+                                    let token = tokenizedBody[j][k];
+                                    
+                                    if(token instanceof InterpreterError) {
+                                        token.line -= func.start;
+                                        return interp.outputError(token);
+                                    }
+                                }
+
+                                let scheme = Keyword.schemes[line[0].value];
+                                let errorInPre = scheme.prefn(line, interp, this);
+
+                                if(errorInPre instanceof InterpreterError) {
+                                    return interp.outputError(errorInPre);
+                                }
+
+                                let keywordResult = scheme.fn(line, interp);
+
+                                lastToken = line;
+
+                                if(line[0].type == "Keyword" && line[0].value == "return") {
+                                    break;
+                                }
+
+                                if (keywordResult instanceof InterpreterError) {
+                                    return interp.outputError(keywordResult);
+                                }
+                            }
+
+                            if(lastToken != null){
+                                this.args = lastToken;
+                            }
+                        }
+                    }
+                }
+
                 try {
                     let tokens = pre(this.args, interp, this);
                     if(tokens != undefined) {
@@ -378,18 +459,14 @@ class Interpreter {
     }
 
     setVariable(name, value, type, mutable) {
-        if(this.variables[name] && this.variables[name].mutable) {
+        if(this.temporaryVariables[name] && this.temporaryVariables[name].mutable) {
+            this.temporaryVariables[name].value = value;
+            this.temporaryVariables[name].type = type;
+            this.temporaryVariables[name].mutable = mutable;
+        } else if(this.variables[name] && this.variables[name].mutable) {
             this.variables[name].value = value;
             this.variables[name].type = type;
             this.variables[name].mutable = mutable;
-        } else {
-            if(!this.variables[name]) {
-                this.variables[name] = {
-                    type: type,
-                    mutable: mutable,
-                    value: value,
-                };           
-            }
         }
     }
 
@@ -578,74 +655,6 @@ class Interpreter {
             }
         })
 
-        tokens.forEach((token, index) => {
-            if(token.type == "Function"){
-                this.pause();
-                let functionName = token.value.split("(")[0].slice(1);
-                let args = this.tokenize(token.value.split("(")[1].slice(0, -1));
-
-                if(args.some(t => t instanceof InterpreterError)) {
-                    let error = args.find(t => t instanceof InterpreterError);
-                    tokens.push(error);
-                    return;
-                }
-
-                args = this.groupByCommas(args);
-
-                args.forEach((group, i) => {
-                    let formatted = this.formatMethods(group);
-
-                    let parsed = this.parseMethods(formatted);
-
-                    if(parsed instanceof InterpreterError) {
-                        tokens.push(parsed);
-                        return;
-                    }
-
-                    args[i] = parsed;
-                });
-
-                let expectedArguments = this.functions[functionName]?.args;
-                if(!expectedArguments) {
-                    tokens.push(new InterpreterError('ReferenceError', `Function [${functionName}] is not defined`, tokens, this.interval, token.position));
-                    return;
-                }
-
-                for(let i = 0; i < Object.keys(expectedArguments).length; i++) {
-                    this.temporaryVariables[Object.keys(expectedArguments)[i]] = {
-                        type: expectedArguments[Object.keys(expectedArguments)[i]],
-                        value: args[i].value,
-                        mutable: true
-                    }
-                }
-
-                let functionTokens = [];
-
-                let funcBody = this.functions[functionName].body;
-
-                let subInterval = 0;
-                let subClock = setInterval(() => {
-                    if(subInterval >= funcBody.length) {
-                        console.log(functionTokens)
-                        clearInterval(subClock);
-                        this.resume();
-                        return;
-                    }
-
-                    let functionToken = this.tokenize(funcBody[subInterval]);
-
-                    if(functionToken instanceof InterpreterError) {
-                        tokens.push(functionToken);
-                        clearInterval(subClock);
-                        return;
-                    }
-
-                    functionTokens.push(functionToken);
-                    subInterval++;
-                }, 1);
-            }
-        })
-
         return tokens;
     }
 
@@ -824,7 +833,13 @@ class Interpreter {
             this.outputError(token.find(t => t instanceof InterpreterError));
         } else if (["Keyword", "Assigner"].includes(token[0].type)) {
             const scheme = Keyword.schemes[token[0].value];
-            scheme.prefn(token, this);
+            let errorInPre = scheme.prefn(token, this);
+
+            if(errorInPre == undefined) if (errorInPre instanceof InterpreterError) {
+                this.outputError(errorInPre);
+                this.kill();
+            }
+
             const keywordResult = scheme.fn(token, this);
 
             if (keywordResult instanceof InterpreterError) {
