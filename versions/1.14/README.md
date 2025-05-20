@@ -252,9 +252,9 @@ set i = test
 
 ### Delete a Variable
 ```
-free [variable name]
+free [variable name:s]
 
-free test
+free "test"
 ```
 
 ## Output
