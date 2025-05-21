@@ -194,7 +194,7 @@ Time_OSRuntime:N - OS uptime in milliseconds
 Time_ProgramRuntime:N - program uptime in milliseconds
 Undefined:U - undefined -->
 ## Calculation
-To perform mathematical operations, you must surround the expression with `{}`. You cannot perform string comparison using calculations, use the `>eq` method instead.
+To perform mathematical operations, you must surround the expression with `{}`. You cannot perform string comparison using calculations, use the `>eq` method instead. You may use variables inside of calculations, but you cannot use methods.
 ```
 num i = 5
 num j = 10
@@ -507,7 +507,43 @@ out test>repeat(5)
 -- "hellohellohellohellohello"
 ```
 ### Number
+#### abs
+Returns the absolute value of a number.
+```
+num test = -5
+out test>abs
+-- 5
+```
+#### truncate
+Truncates a number to the nearest place value. Default is `0`.
+```
+out 5.5>truncate
+-- 5
+
+out 5.5>truncate(1)
+-- 5.5
+
+out 3.1203>truncate(3)
+-- 3.12
+
+out 54.291>truncate(3)
+-- 54.291
+```
+#### round
+Rounds a number to the nearest integer.
+```
+num test = 10.203
+out test>round
+-- 10
+```
 ### Boolean
+#### flip
+Flips a boolean value.
+```
+bln test = true
+out test>flip
+-- false
+```
 ### Array
 #### append
 Adds a value to the end of an array.

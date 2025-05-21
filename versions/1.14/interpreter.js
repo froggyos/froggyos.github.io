@@ -1466,7 +1466,7 @@ const load_function = () => {
         let arg0 = args[0];
         let indexValue = token.value[arg0.value]
         if(indexValue == undefined) {
-            return new InterpreterError('IndexError', `Index out of range`, token, token.position, token.position);
+            return new InterpreterError('RangeError', `Index out of range`, token, token.position, token.position);
         }
         return new Token("String", indexValue, token.position, token.methods);
     }, ["Number"]);
@@ -1508,4 +1508,28 @@ const load_function = () => {
         let arg0 = args[0];
         return new Token("String", token.value.repeat(arg0.value), token.position, token.methods);
     }, ["Number"]);
+
+    // pure boolean
+    new Method("flip", ["Boolean"], (token, args) => {
+        return new Token("Boolean", !token.value+"", token.position, token.methods);
+    }, []);
+
+    // pure number
+    new Method("abs", ["Number"], (token, args) => {
+        return new Token("Number", Math.abs(token.value), token.position, token.methods);
+    }, []);
+    
+    new Method("truncate", ["Number"], (token, args) => {
+        let precision = +args[0]?.value || 0;
+        if(precision < 0) return new InterpreterError('RangeError', `Cannot round to negative precision`, token, token.position, token.position);
+
+        const factor = Math.pow(10, precision);
+        let result = Math.round(token.value * factor) / factor;
+        return new Token("Number", result.toString(), token.position, token.methods);
+
+    }, ["Number?"]);
+
+    new Method("round", ["Number"], (token, args) => {
+        return new Token("Number", Math.round(token.value).toString(), token.position, token.methods);
+    }, []);
 }

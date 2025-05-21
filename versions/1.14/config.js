@@ -926,8 +926,8 @@ const config = {
                 "endif",
             ] },
             { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
-                "num meow = -100",
-                "out meow>coerce('String')"
+                "num meow = 10.203",
+                "out meow>round"
 
             ] },
             // { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
