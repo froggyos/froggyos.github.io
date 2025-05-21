@@ -2327,7 +2327,7 @@ let getTimings = (i) => {
     }]
 }
 
-const SKIP_ANIMATION = true;
+const SKIP_ANIMATION = false;
 
 let animSkipped = false;
 let innerBar = document.getElementById("inner-bar");
@@ -2355,5 +2355,3 @@ if(!SKIP_ANIMATION) {
 } else {
     ready();    
 }
-
-sendCommand("st", ["kaerugotchi"], true);
