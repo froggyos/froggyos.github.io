@@ -138,6 +138,10 @@ class Keyword {
 
                         let func = interp.functions[functionName];
 
+                        if(func == undefined) {
+                            return interp.outputError(new InterpreterError('ReferenceError', `Invalid function syntax for function [${functionName}]`, args, interp.interval, arg.position));
+                        }
+
                         let expectedArgs = Object.keys(func.args);
 
                         for(let j = 0; j < expectedArgs.length; j++) {

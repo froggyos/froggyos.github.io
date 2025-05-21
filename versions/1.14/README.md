@@ -402,11 +402,11 @@ If no arguments are passed, you may omit the parentheses. Arguments are separate
 ### Create a Function
 #### No Arguments
 ```
-func [func name]
+func [func name]()
     [code]
 endfunc
 
-func name
+func name()
     out "hello"
 endfunc
 ```
