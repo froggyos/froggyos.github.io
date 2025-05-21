@@ -243,7 +243,7 @@ class Token {
         Token.specs = [
             ['Keyword', new RegExp(`\\b(${basicKeywords.join('|')})\\b`)],
             ['Assigner', new RegExp(`\\b(${assignerKeywords.join('|')})\\b`)],
-            ['Number', /\b\d+\b/],
+            ['Number', /-?\b\d+(\.\d+)?\b/],
             ['String', /'(?:\\'|[^'])*'|"(?:\\"|[^"])*"/],
             ['Array', /\$([^\$]+)\$/],
             ['Function', /@.*\(.*\)/],
@@ -1053,7 +1053,7 @@ const load_function = () => {
                     interp.resume();
 
                     interp.interval--;
-                    interp.lines[interp.interval] = `set ${variable} = "${arrayOptions[selectedIndex]}"`;
+                    interp.lines[interp.interval] = `set ${variable} = "${arrayOptions[selectedIndex]}">coerce('${interp.variables[variable].type}')`;
                     document.body.removeEventListener("keyup", promptHandler);
                 }
             }
@@ -1457,8 +1457,8 @@ const load_function = () => {
             } break;
 
             default: {
-                return new InterpreterError('TypeError', `Cannot coerce type [${currentType}] to type [${targetType}]`, token, token.position, token.position);
-            } break;
+                return new InterpreterError('TypeError', `Cannot coerce type ${currentType} to type ${targetType}`, token, token.position, token.position);
+            };
         }
     }, ["String"])
 

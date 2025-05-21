@@ -325,7 +325,7 @@ C:/Home>
 ``` -->
 ## Input
 ### Define a File Argument
-File arguments are passed in the terminal when running the program. The `filearg` keyword will create an **immutable** variable in the format of `filearg_[variable name]` and cannot override other variable values, even if that variable is mutable. The order they are defined will determine the order that they are passed in the terminal. You cannot use spaces in file arguments in the terminal.
+File arguments are passed in the terminal when running the program. The `filearg` keyword will create an **immutable** variable in the format of `filearg_[variable name]` and cannot override other variable values, even if that variable is mutable. The order they are defined will determine the order that they are passed in the terminal. You cannot use spaces in file arguments.
 ```
 filearg [variable name:S] [type:S]
 
@@ -378,10 +378,169 @@ prompt 'output' 0 $'hello', "world!", "I am froggy!"$
 ```
 ## Methods
 If no arguments are passed, you may omit the parentheses. Arguments are separated by `,`.
+### Multi-type
+#### coerce
+Converts a variable to a different type. The type must be one of the following: `String`, `Number`, `Boolean`.
+##### String → Number
+```
+out "42">coerce("Number")
+-- 42
+
+out "not a number">coerce("Number")
+-- TypeError
+```
+##### String → Boolean
+```
+out "true">coerce("Boolean")
+-- true
+
+out "false">coerce("Boolean")
+-- false
+
+out "not a boolean">coerce("Boolean")
+-- TypeError
+```
+##### String → String
+```
+out "hello">coerce("String")
+-- "hello"
+```
+##### Number → String
+```
+out 42>coerce("String")
+-- "42"
+```
+##### Number → Boolean
+```
+out 1>coerce("Boolean")
+-- true
+
+out 0>coerce("Boolean")
+-- false
+
+out -1>coerce("Boolean")
+-- false
+
+out -123>coerce("Boolean")
+-- false
+```
+##### Number → Number
+```
+out 42>coerce("Number")
+-- 42
+```
+##### Boolean → String
+```
+out true>coerce("String")
+-- "true"
+
+out false>coerce("String")
+-- "false"
+```
+##### Boolean → Number
+```
+out true>coerce("Number")
+-- 1
+
+out false>coerce("Number")
+-- 0
+```
+##### Boolean → Boolean
+```
+out true>coerce("Boolean")
+-- true
+```
+#### type
+Returns the type of the variable as a string.
+```
+str string = "hello"
+out string>type
+-- "String"
+
+num number = 5
+out number>type
+-- "Number"
+
+bln boolean = true
+out boolean>type
+-- "Boolean"
+
+arr array = $1, 2, 3, 4, 5$
+out array>type
+-- "Array"
+```
 ### String
+#### eq
+Tests if two strings are equal.
+```
+str test = "hello"
+str test2 = "hello"
+out test>eq(test2)
+```
+#### neq
+Tests if two strings are not equal.
+```
+str test = "hello"
+str test2 = "world"
+out test>neq(test2)
+```
+#### append
+Adds a string to the end of another string.
+```
+str test = "hello"
+str test2 = " world"
+out test>append(test2)
+-- "hello world"
+```
+#### length
+Returns the length of a string.
+```
+str test = "this is a long string"
+out test>length
+-- 22
+```
+#### repeat
+Repeats a string a certain number of times.
+```
+str test = "hello"
+out test>repeat(5)
+-- "hellohellohellohellohello"
+```
 ### Number
 ### Boolean
 ### Array
+#### append
+Adds a value to the end of an array.
+```
+arr test = $1, 2, 3, 4, 5$
+out test>append(6)
+-- $1, 2, 3, 4, 5, 6$
+```
+#### join
+Joins an array into a string. Default delimiter is `,`.
+```
+arr test = $1, 2, 3, 4, 5$
+out test>join
+-- "1,2,3,4,5"
+
+arr test2 = $1, 2, 3, 4, 5$
+out test2>join(" and ")
+-- "1 and 2 and 3 and 4 and 5"
+```
+#### length
+Returns the length of an array.
+```
+arr test = $1, 2, 3, 4, 5$
+out test>length
+-- 5
+```
+#### index
+Returns the value at a specific index.
+```
+arr test = $1, 2, 3, 4, 5$
+out test>index(2)
+-- 3
+```
 ## Functions
 ### Create a Function
 #### No Arguments

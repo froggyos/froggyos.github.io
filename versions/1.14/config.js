@@ -926,9 +926,9 @@ const config = {
                 "endif",
             ] },
             { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
-                "str name = ''",
-                "ask 'name' 'What is your name?'",
-                "out 'Hi $|name|!'",
+                "num meow = -100",
+                "out meow>coerce('String')"
+
             ] },
             // { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
             //     "arr meow = 4,48",
