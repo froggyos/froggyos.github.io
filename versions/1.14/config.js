@@ -926,8 +926,11 @@ const config = {
                 "endif",
             ] },
             { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
-                "arr meow = $1, 2, 3$",
-                "out meow>index(5)",
+                "func meow()",
+                "    out 'a'",
+                "endfunc",
+                "call @meow()",
+
             ] },
             // { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
             //     "arr meow = 4,48",

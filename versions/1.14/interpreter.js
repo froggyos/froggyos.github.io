@@ -85,7 +85,12 @@ class Keyword {
         this.prefn = (args, interp) => {
             if(dud) return;
             if(this.type == "basic_noparse"){
-                this.args = args;
+                if(args[0].type == "Keyword" && args[0].value == "func" && args[1].type == "Function") {
+                    let func = args[1].value.slice(1);
+                    this.args = interp.tokenize(func, false)
+                } else {
+                    this.args = args;
+                }
             } else if(this.type == "assigner") {
                 let startingTokens = structuredClone(args.slice(0, 3));
                 args = args.slice(3);
@@ -115,7 +120,7 @@ class Keyword {
                 let arg = args[i];
                 if(arg.type == "Function"){
                     let functionName = arg.value.split("(")[0].slice(1);
-                    let functionArgs = interp.tokenize(arg.value.split("(")[1].slice(0, -1))
+                    let functionArgs = interp.tokenize(arg.value.split("(")[1].slice(0, -1), false)
 
                     if(functionArgs.some(t => t instanceof InterpreterError)) {
                         let error = functionArgs.find(t => t instanceof InterpreterError);
@@ -132,7 +137,6 @@ class Keyword {
                         });
 
                         let func = interp.functions[functionName];
-
 
                         let expectedArgs = Object.keys(func.args);
 
@@ -547,7 +551,7 @@ class Interpreter {
         }
     }
 
-    tokenize(line) {
+    tokenize(line, getVariables = true) {
         let tokens = [];
         let pos = 0;
 
@@ -598,13 +602,10 @@ class Interpreter {
             }
         }
 
-        // if there is a sequence of "Assigner", "Identifier", "Assignment", change "Identifier" to "Asignee"
         for (let i = 0; i < tokens.length; i++) {
-            if (tokens[i].type === 'Assigner') {
-                if (i + 1 < tokens.length && tokens[i + 1].type === 'Identifier') {
-                    tokens[i + 1].type = 'Assignee';
-                } else {
-                    tokens.push(new InterpreterError('SyntaxError', `Expected Identifier after Assigner not found`, tokens, this.interval, tokens[i].position));
+            if (tokens[i].type === 'Identifier') {
+                if(i - 1 >= 0 && tokens[i - 1].type === 'Assigner' && tokens[i + 1].type === 'Assignment') {
+                    tokens[i].type = 'Assignee';
                 }
             }
         }
@@ -643,9 +644,9 @@ class Interpreter {
             }
         });
 
-        if(tokens[0]?.type == "Keyword" && tokens[0].value == "func") return tokens;
+        if(tokens[0]?.type == "Keyword" && tokens[0]?.value == "func") return tokens;
         
-        tokens.forEach((token, index) => {
+        if(getVariables) tokens.forEach((token, index) => {
             if(token.type == "Identifier") {
                 let variable = this.getVariable(token.value);
 
@@ -1168,7 +1169,7 @@ const load_function = () => {
         }
     });
 
-    const KEYWORD_FUNC = new Keyword('func', "basic", ['Keyword', 'Identifier'], {
+    const KEYWORD_FUNC = new Keyword('func', "basic_noparse", ['Keyword', 'Identifier'], {
         pre: (tokens, interp, keyword) => {
             let depth = 1;
             let endFuncIndex = -1;
@@ -1195,7 +1196,7 @@ const load_function = () => {
 
             let argArray = structuredClone(tokens);
 
-            argArray.shift();
+            argArray.shift()
             argArray.shift();
 
             // if the first index isnt type LeftParenthesis, throw error

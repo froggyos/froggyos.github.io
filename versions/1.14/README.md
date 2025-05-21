@@ -461,7 +461,7 @@ else
     [if false]
 endif
 
-if variable_name == 4
+if {variable_name == 4}
     out "something"
 else
     out "something else"
