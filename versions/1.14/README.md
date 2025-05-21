@@ -4,7 +4,7 @@
 * programs can *only* be written in designated directories
 * you can press the `DEL` key to escape programs (ex. an infinite loop)
 * press `SHIFT + ESC` to exit lilypad (text editor) without saving
-* if a FroggyScript program exits with an error, the command `[[BULLFROG]]gotoprogramline [program] [line with error]` will be put into your command history
+<!-- * if a FroggyScript program exits with an error, the command `[[BULLFROG]]gotoprogramline [program] [line with error]` will be put into your command history -->
 * file types are inferred based on file location
 
 ## Palette Conventions
@@ -109,25 +109,21 @@ Properties:
     * when a file is cloned, this property will be set to `true`.
 * write - If this file can be written to. This includes being able to edit the file or delete it.
     * when a file is cloned, this property will be set to `true`.
-* hidden - If this file is hidden. This will *not* prevent you from editing the file.
-* transparent - This file will not show in the directory or in lists, but can be acted upon.
+* hidden - If this file is hidden. This will prevent the file from being acted upon (ie. cannot be edited).
+* transparent - This file will not show in the directory or in lists, but can be acted upon (ie. can be edited).
     * when a file is cloned, this property will be set to `false`.
 
 ## Macros
 * Macros are written in the `D:/Macros` directory
 * each line in a macro file is a command that will be executed
-* to add an alias to a macro, the **first** line must be `![alias]`. You can add only one alias per macro.
-* to use file arguments inside of a macro, use `$[file argument number]`
+* to add an alias to a macro, the **first line must** be `![alias]`. You can add only one alias per macro.
+* to use file arguments inside of a macro, use `$[file argument number]` (ex. `$1`)
 
 ## Settings Directory
 If you edit the `Settings:` drive directly, some settings won't apply until you reload the froggyOS state. An easy way to do this would be to run the `reload` macro.
 
 ## Bugs
-* **If with string comparison doesnt compute properly**
-* **If/endif dont count properly as a result it fucked the big shit bufk fuck fuck fuck FUCK**
-* you cannot set values to array indexes
-* realtime mode is not real time
-* `>append` mutates the original variable when it shouldnt
+* i recoded froggyscript so idk
 
 ## Trusting Programs
 To trust a program, you must add its file name in the `D:/trusted_files` file. This will allow the program to have extended control over the operating system. Trusted programs are refreshed **only** on hard restarts (reload the page).
@@ -156,6 +152,7 @@ KEY [key name] TYPE Array END
 ```
 
 # FroggyScript Documentation
+## Notes
 * `[argument=default_value]` denotes a default argument value
 * `:[character]` denotes a specific type input
     * `T` - placeholder; used in documentation **only** to show that the type should be specified
@@ -208,7 +205,7 @@ str test = "double"
 str test = "multiple words"
 
 -- string literals
-int age = 20
+num age = 20
 str output = "i am $|age| years old"
 ```
 #### Number
@@ -226,7 +223,7 @@ bln test = true
 ```
 #### Array
 * Indexing starts at `0`.
-* To create an empty array, do `arr [variable_name] = _`.
+* To create an empty array, do `arr [variable_name] = $ $`.
 ```
 arr [variable name] = $[value], [value], ...$
 
@@ -252,7 +249,7 @@ set i = test
 
 ### Delete a Variable
 ```
-free [variable name:s]
+free [variable name:S]
 
 free "test"
 ```
@@ -315,22 +312,21 @@ hello world!
 C:/Home>
 ``` -->
 ## Input
-<!-- ### Define a File Argument
-File arguments are passed in the terminal when running the program. The `filearg` keyword will create an **immutable** variable in the format of `filearg_[variable name]` and cannot override other variable values, even if that variable is mutable. The order they are defined will determine the order that they are passed in the terminal.
+### Define a File Argument
+File arguments are passed in the terminal when running the program. The `filearg` keyword will create an **immutable** variable in the format of `filearg_[variable name]` and cannot override other variable values, even if that variable is mutable. The order they are defined will determine the order that they are passed in the terminal. You cannot use spaces in file arguments in the terminal.
 ```
-filearg [variable name] [type]
+filearg [variable name:S] [type:S]
 
 -- default usage
-filearg name String
-filearg age Number
+filearg "name" "String"
+filearg "age" "Number"
 out "hello I am $|Filearg_name| and I am $|Filearg_age| years old"
-endprog
 
 -- when running the program
 C:/Home> st [program name] [arg1] [arg2]
-C:/Home> st about_froggy froggy 7
+C:/Home> st about_froggy "froggy" 7
 > hello I am froggy and I am 7 years old
-``` -->
+```
 <!-- ### Typeable Input
 ```
 ask [variable] [prefix='?']
@@ -383,7 +379,25 @@ prompt [variable:*] [default highlighted option:N] [options:A]
 str output = ''
 prompt output 0 $'hello', "world!", "I am froggy!"$
 ``` -->
+## Calculation
+To perform mathematical operations, you must surround the expression with `{}`.
+```
+num i = 5
+num j = 10
 
+out {i + j}
+-- results in 15
+
+out i + j
+-- results in 5
+```
+You cannot perform string comparison using calculations, use the `>eq` method instead.
+## Methods
+If no arguments are passed, you may omit the parentheses. Arguments are separated by `,`.
+### String
+### Number
+### Boolean
+### Array
 ## Functions
 ### Create a Function
 #### No Arguments
@@ -398,30 +412,30 @@ endfunc
 ```
 #### Arguments
 ```
-func [func name] [arg1:T] [arg2:T] ... [argN:T]
+func [func name]([arg1:T],[arg2:T],...,[argN:T])
     [code]
 endfunc
 
-func name str:S
+func name(str:S)
     out "hello $|str|!"
 endfunc
 ```
 #### Return Values
 If the function ends in the keyword `return`, the value of whatever passed will be the return value.
 ```
-func name
+func name()
     return 5
 endfunc
 
-num i = @name
+num i = @name()
 ```
 ### Call a Function
 #### No Arguments
 Currently they do require the parenthesis but i wanna make it not
 ```
-call @[func name]
+call @[func name]()
 
-call @name
+call @name()
 ```
 #### Arguments
 ```
@@ -433,11 +447,11 @@ call @name("hello","world!")
 ## Control Flow
 ### If Statement
 ```
-if [condition]
+if [condition]  
     [code]
 endif
 
-if variable_name == "value"
+if variable_name>eq('value')
     set variable_name = 'new value'
 endif
 
@@ -492,69 +506,6 @@ quickloop 100
 endquickloop
 -- outputs "hello" 100 times in a row
 ``` -->
-## Methods
-If no arguments are passed, you may omit the parentheses. Arguments are separated by `,`.
-### index
-Indexing starts at `0`.
-```
-arr test = "a", "b", "c", "d", "e"
-str output = test>index(0)
--- "a"
-```
-### join
-Join the elements of an array into a string, delimited by the provided separator. If no argument is passed, "," will be used instead.
-```
-arr test = "a", "b", "c", "d", "e"
-str output =  test>join(" and ")
--- "a and b and c and d and e"
-
-arr test2 = 1, 2, 3, 4, 5
-str output = test2>join
--- "1,2,3,4,5"
-```
-### type
-Outputs the type of the input as a string.
-```
-arr array = "a", "b", "c", "d", "e"
-str output = array>type
--- "Array"
-
-num number = 5
-str output = number>type
--- "Number"
-```
-### length
-Length of the input array or string.
-```
-arr array = "a", "b", "c", "d", "e"
-num output = array>length
--- 5
-
-str string = "hello world!"
-num output = string>length
--- 12
-```
-### replace
-Replace the first instance of the first argument with the second argument.
-```
-str test = "hello world!"
-str output = test>replace("hello","goodbye")
--- "goodbye world!"
-```
-### stringify
-Converts a Number or Array to a String
-```
-num test = 5
-str output = test>stringify
--- "5"
-```
-### append
-```
-arr letters = "a", "b", "c"
-arr numbers = 1, 2, 3
-out letters>append(numbers)
--- "a", "b", "c", 1, 2, 3
-```
 ## Program Data
 <!-- ### Saving Data
 Saves the contents of `[variable]` to the corresponding file in the `Config:/program_data` file. The key cannot contain spaces.

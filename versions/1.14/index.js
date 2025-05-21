@@ -690,6 +690,9 @@ function createTerminalLine(text, path, other){
 
     lineContainer.appendChild(terminalPath);
     lineContainer.appendChild(terminalLine);
+
+    if(terminalLine.textContent.trim().length == 0) terminalLine.textContent = "\u00A0";
+
     terminal.appendChild(lineContainer);
     terminal.scrollTop = terminal.scrollHeight;
 }

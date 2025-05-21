@@ -84,114 +84,127 @@ class Keyword {
          */
         this.prefn = (args, interp) => {
             if(dud) return;
-            let firstTokens = args.slice(0, this.type === 'assigner' ? 3 : 1);
-            args = args.slice(this.type === 'assigner' ? 3 : 1);
-
-            let parsedMethods = interp.parseMethods(interp.formatMethods(interp.groupByCommas(args)[0]))
-
-            if(parsedMethods instanceof InterpreterError) return interp.outputError(parsedMethods);
-            else {
-                if(firstTokens[0].type == "Keyword" && firstTokens[0].value == "func") {
-                    this.args = [...firstTokens, ...args];
-                } else {
-                    this.args = [...firstTokens, parsedMethods];
+            if(this.type == "basic_noparse"){
+                this.args = args;
+            } else if(this.type == "assigner") {
+                let startingTokens = structuredClone(args.slice(0, 3));
+                args = args.slice(3);
+                let parsedMethods = interp.parseMethods(interp.formatMethods(interp.groupByCommas(args)[0]));
+                
+                if(parsedMethods instanceof InterpreterError) return interp.outputError(parsedMethods);
+                else {
+                    startingTokens.forEach((token, i) => {
+                        startingTokens[i] = new Token(token.type, token.value, token.position);
+                    });
+                    this.args = [...startingTokens, parsedMethods];
                 }
-
-                for(let i = 0; i < args.length; i++) {
-                    let arg = args[i];
-                    if(arg.type == "Function"){
-                        let functionName = arg.value.split("(")[0].slice(1);
-                        let functionArgs = interp.tokenize(arg.value.split("(")[1].slice(0, -1))
-
-                        if(functionArgs.some(t => t instanceof InterpreterError)) {
-                            let error = functionArgs.find(t => t instanceof InterpreterError);
-                            return interp.outputError(error);
-                        } else {
-                            let groups = interp.groupByCommas(functionArgs);
-                            let values = [];
-                            groups.forEach((group, i) => {
-                                let formatted = interp.formatMethods(group);
-
-                                let parsed = interp.parseMethods(formatted);
-
-                                values.push(parsed);
-                            });
-
-                            let func = interp.functions[functionName];
-
-
-                            let expectedArgs = Object.keys(func.args);
-
-                            for(let j = 0; j < expectedArgs.length; j++) {
-                                if(func.args[expectedArgs[j]] != values[j]?.type) {
-                                    let returnValue = null;
-                                    if(values[j] == undefined){
-                                        returnValue = 'Nothing';
-                                    } else {
-                                        returnValue = `type [${values[j].type}]`;
-                                    }
-                                    return interp.outputError(new InterpreterError('TypeError', `Expected type [${func.args[expectedArgs[j]]}], found ${returnValue}`, args, interp.interval, arg.position));
-                                }
-
-                                interp.temporaryVariables[expectedArgs[j]] = {
-                                    type: values[j].type,
-                                    value: values[j].value,
-                                    mutable: true
-                                }
-                            }
-
-                            let tokenizedBody = func.body.map(line => interp.tokenize(line));
-
-                            let lastToken = null;
-
-                            for(let j = 0; j < tokenizedBody.length; j++) {
-                                let line = tokenizedBody[j];
-
-                                for(let k = 0; k < tokenizedBody[j].length; k++) {
-                                    let token = tokenizedBody[j][k];
-                                    
-                                    if(token instanceof InterpreterError) {
-                                        token.line -= func.start;
-                                        return interp.outputError(token);
-                                    }
-                                }
-
-                                let scheme = Keyword.schemes[line[0].value];
-                                let errorInPre = scheme.prefn(line, interp, this);
-
-                                if(errorInPre instanceof InterpreterError) {
-                                    return interp.outputError(errorInPre);
-                                }
-
-                                let keywordResult = scheme.fn(line, interp);
-
-                                lastToken = line;
-
-                                if(line[0].type == "Keyword" && line[0].value == "return") {
-                                    break;
-                                }
-
-                                if (keywordResult instanceof InterpreterError) {
-                                    return interp.outputError(keywordResult);
-                                }
-                            }
-
-                            if(lastToken != null){
-                                this.args = lastToken;
-                            }
-
-                            interp.temporaryVariables = {};
-                        }
-                    }
+            } else if(this.type == "basic") {
+                let startingTokens = structuredClone(args.slice(0, 1));
+                args = args.slice(1);
+                let parsedMethods = interp.parseMethods(interp.formatMethods(interp.groupByCommas(args)[0]));
+                if(parsedMethods instanceof InterpreterError) return interp.outputError(parsedMethods);
+                else {
+                    startingTokens.forEach((token, i) => {
+                        startingTokens[i] = new Token(token.type, token.value, token.position);
+                    });
+                    this.args = [...startingTokens, parsedMethods];
                 }
-
-                try {
-                    let tokens = pre(this.args, interp, this);
-                    if(tokens != undefined) {
-                        this.args = tokens;
-                    }
-                } catch (e) {}
             }
+
+            for(let i = 0; i < args.length; i++) {
+                let arg = args[i];
+                if(arg.type == "Function"){
+                    let functionName = arg.value.split("(")[0].slice(1);
+                    let functionArgs = interp.tokenize(arg.value.split("(")[1].slice(0, -1))
+
+                    if(functionArgs.some(t => t instanceof InterpreterError)) {
+                        let error = functionArgs.find(t => t instanceof InterpreterError);
+                        return interp.outputError(error);
+                    } else {
+                        let groups = interp.groupByCommas(functionArgs);
+                        let values = [];
+                        groups.forEach((group, i) => {
+                            let formatted = interp.formatMethods(group);
+
+                            let parsed = interp.parseMethods(formatted);
+
+                            values.push(parsed);
+                        });
+
+                        let func = interp.functions[functionName];
+
+
+                        let expectedArgs = Object.keys(func.args);
+
+                        for(let j = 0; j < expectedArgs.length; j++) {
+                            if(func.args[expectedArgs[j]] != values[j]?.type) {
+                                let returnValue = null;
+                                if(values[j] == undefined){
+                                    returnValue = 'Nothing';
+                                } else {
+                                    returnValue = `type [${values[j].type}]`;
+                                }
+                                return interp.outputError(new InterpreterError('TypeError', `Expected type [${func.args[expectedArgs[j]]}], found ${returnValue}`, args, interp.interval, arg.position));
+                            }
+
+                            interp.temporaryVariables[expectedArgs[j]] = {
+                                type: values[j].type,
+                                value: values[j].value,
+                                mutable: true
+                            }
+                        }
+
+                        let tokenizedBody = func.body.map(line => interp.tokenize(line));
+
+                        let lastToken = null;
+
+                        for(let j = 0; j < tokenizedBody.length; j++) {
+                            let line = tokenizedBody[j];
+
+                            for(let k = 0; k < tokenizedBody[j].length; k++) {
+                                let token = tokenizedBody[j][k];
+                                
+                                if(token instanceof InterpreterError) {
+                                    token.line -= func.start;
+                                    return interp.outputError(token);
+                                }
+                            }
+
+                            let scheme = Keyword.schemes[line[0].value];
+                            let errorInPre = scheme.prefn(line, interp, this);
+
+                            if(errorInPre instanceof InterpreterError) {
+                                return interp.outputError(errorInPre);
+                            }
+
+                            let keywordResult = scheme.fn(line, interp);
+
+                            lastToken = line;
+
+                            if(line[0].type == "Keyword" && line[0].value == "return") {
+                                break;
+                            }
+
+                            if (keywordResult instanceof InterpreterError) {
+                                return interp.outputError(keywordResult);
+                            }
+                        }
+
+                        if(lastToken != null){
+                            this.args = lastToken;
+                        }
+
+                        interp.temporaryVariables = {};
+                    }
+                }
+            }
+
+            try {
+                let tokens = pre(this.args, interp, this);
+                if(tokens != undefined) {
+                    this.args = tokens;
+                }
+            } catch (e) {}
         }
 
         Keyword.schemes[keyword] = this;
@@ -212,8 +225,9 @@ class Token {
         for (const [keyword, scheme] of Object.entries(Keyword.schemes)) {
             if (scheme.type === 'basic') {
                 basicKeywords.push(keyword);
-            }
-            if (scheme.type === 'assigner') {
+            } else if (scheme.type === 'basic_noparse') {
+                basicKeywords.push(keyword);
+            } else if (scheme.type === 'assigner') {
                 assignerKeywords.push(keyword);
             }
         }
@@ -416,6 +430,7 @@ class Interpreter {
         }
 
         this.fileArguments = fileArguments;
+        this.fileArgumentCount = 0;
         this.load = () => {};
         this.onComplete = () => {};
         this.onError = (error) => {};
@@ -881,6 +896,7 @@ class Interpreter {
             this.outputError(token.find(t => t instanceof InterpreterError));
         } else if (["Keyword", "Assigner"].includes(token[0].type)) {
             const scheme = Keyword.schemes[token[0].value];
+
             let errorInPre = scheme.prefn(token, this);
 
             if(errorInPre == undefined) if (errorInPre instanceof InterpreterError) {
@@ -937,6 +953,7 @@ class Interpreter {
         this.tokens = [];
         this.imports = [];
         this.importData = {};
+        this.fileArgumentCount = 0;
         Keyword.schemes = {};
         Method.registry = new Map();
         Token.specs = [];
@@ -949,12 +966,31 @@ class Interpreter {
 }
 
 const load_function = () => {
+    const KEYWORD_FILEARG = new Keyword('filearg', "basic_noparse", ['Keyword', 'String', 'String'], {
+        post: (tokens, interp, keyword) => {
+            let variableName = `Filearg_${tokens[1].value}`;
+            let variableType = tokens[2].value;
+
+            if(interp.fileArguments[interp.fileArgumentCount].type != variableType) {
+                return interp.outputError(new InterpreterError('TypeError', `Expected type [${variableType}] for Filearg [${interp.fileArgumentCount}], found type [${interp.fileArguments[interp.fileArgumentCount].type}]`, tokens, interp.interval, tokens[0].position));
+            }
+
+            if(interp.variables[variableName] != undefined) {
+                return interp.outputError(new InterpreterError('ReferenceError', `Filearg [${variableName}] is already defined`, tokens, interp.interval, tokens[0].position));
+            }
+
+            interp.setVariable(variableName, interp.fileArguments[interp.fileArgumentCount].value, variableType, false);
+
+            interp.fileArgumentCount++;
+        }
+    })
+
     const KEYWORD_ENDPROG = new Keyword('endprog', "basic", ['Keyword'], { 
         post: (tokens, interp) => {
             interp.kill();
             interp.onComplete();
         }
-     });
+    });
 
     const KEYWORD_FREE = new Keyword('free', "basic", ['Keyword', "String"], { 
         pre: (tokens, interp, keyword) => {
@@ -1230,6 +1266,15 @@ const load_function = () => {
         return new Token("String", token.type, token.position, token.methods);
     }, []);
 
+    new Method("index", ["String", "Array"], (token, args) => {
+        let arg0 = args[0];
+        let indexValue = token.value[arg0.value]
+        if(indexValue == undefined) {
+            return new InterpreterError('IndexError', `Index out of range`, token, token.position, token.position);
+        }
+        return new Token("String", indexValue, token.position, token.methods);
+    }, ["Number"]);
+
     // pure array
     new Method("join", ["Array"], (token, args) => {
         let arg0 = args[0]?.value || ","
@@ -1240,12 +1285,6 @@ const load_function = () => {
         let arg0 = args[0];
         return new Token("Array", [...token.value, ...arg0.value], token.position, token.methods);
     }, ["Array"]);
-
-    new Method("index", ["Array"], (token, args) => {
-        let arg0 = args[0];
-        let indexValue = token.value[arg0.value]
-        return new Token(indexValue.type, indexValue.value, indexValue.position, token.methods);
-    }, ["Number"]);
 
     new Method("length", ["Array"], (token, args) => {
         return new Token("Number", token.value.length, token.position, token.methods);
@@ -1268,15 +1307,6 @@ const load_function = () => {
     new Method("length", ["String"], (token, args) => {
         return new Token("Number", token.value.length, token.position, token.methods);
     }, []);
-
-    new Method("index", ["String"], (token, args) => {
-        let arg0 = args[0];
-        let indexValue = token.value[arg0.value]
-        if(indexValue == undefined) {
-            return new InterpreterError('IndexError', `Index out of range`, token, token.position, token.position);
-        }
-        return new Token("String", indexValue, token.position, token.methods);
-    }, ["Number"]);
 
     new Method("repeat", ["String"], (token, args) => {
         let arg0 = args[0];
