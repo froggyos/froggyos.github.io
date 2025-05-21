@@ -441,8 +441,8 @@ else
 endif
 ```
 
-### Loops
-<!-- #### Standard Loop
+<!-- ### Loops
+#### Standard Loop
 ```
 loop [condition]
     [code]

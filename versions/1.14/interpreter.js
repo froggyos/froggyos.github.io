@@ -1013,7 +1013,7 @@ const load_function = () => {
 
                 option.style.paddingLeft = 0;
                 lineContainer.appendChild(option);
-                if(i != arrayOptions.length-1) lineContainer.appendChild(document.createTextNode(" | "));
+                if(i != arrayOptions.length-1) lineContainer.appendChild(document.createTextNode(" • "));
             }
 
             function promptHandler(e){
