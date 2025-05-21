@@ -415,6 +415,7 @@ class Interpreter {
         this.tokens = [];
         this.imports = [];
         this.importData = {};
+        this.promptCount = 0;
         Interpreter.interpreters.push(this);
         this.running = false
 
@@ -957,6 +958,7 @@ class Interpreter {
         this.lines = [];
         this.tokens = [];
         this.imports = [];
+        this.promptCount = 0;
         this.importData = {};
         this.fileArgumentCount = 0;
         Keyword.schemes = {};
@@ -971,6 +973,134 @@ class Interpreter {
 }
 
 const load_function = () => {
+    const KEYWORD_COMMENT = new Keyword('--', "basic", ['Keyword'], { dud: true })
+
+    const KEYWORD_PROMPT = new Keyword('prompt', "basic_noparse", ['Keyword', "String", "Number", "Array"], {
+        post: (tokens, interp, keyword) => {
+            let variable = tokens[1].value;
+            let startingIndex = tokens[2].value;
+            let values = tokens[3].value;
+
+
+            interp.pause();
+            setSetting("currentSpinner", "prompt-in-progress");
+            setSetting("showSpinner", true)
+
+            let selectedIndex = startingIndex;
+            let arrayOptions = values.map(v => v.value);
+
+            if(selectedIndex < 0 || selectedIndex >= arrayOptions.length){
+                return interp.outputError(new InterpreterError('IndexError', `Index [${selectedIndex}] is out of bounds for array of length [${arrayOptions.length}]`, tokens, interp.interval, tokens[2].position));
+            }
+            interp.promptCount++;
+
+            let prefixElement = document.createElement('span');
+            prefixElement.textContent = `>`;
+
+            let lineContainer = document.createElement('div');
+            lineContainer.classList.add('line-container');
+
+            lineContainer.appendChild(prefixElement);
+
+            for(let i = 0; i < arrayOptions.length; i++){
+                let option = document.createElement('span');
+                option.setAttribute("data-program", `cli-session-${config.programSession}-${interp.promptCount}`);
+
+                if(i == selectedIndex) {
+                    option.classList.add('selected');
+                }
+                option.textContent = arrayOptions[i];
+
+                option.style.paddingLeft = 0;
+                lineContainer.appendChild(option);
+                if(i != arrayOptions.length-1) lineContainer.appendChild(document.createTextNode(" | "));
+            }
+
+            function promptHandler(e){
+                e.preventDefault();
+                let options = document.querySelectorAll(`[data-program='cli-session-${config.programSession}-${interp.promptCount}']`);
+
+                if(e.key == "ArrowLeft"){
+                    if(selectedIndex > 0) selectedIndex--;
+                    options.forEach(option => option.classList.remove('selected'));
+                    options[selectedIndex].classList.add('selected');
+                }
+
+                if(e.key == "ArrowRight"){
+                    if(selectedIndex < arrayOptions.length - 1) selectedIndex++;
+                    options.forEach(option => option.classList.remove('selected'));
+                    options[selectedIndex].classList.add('selected');
+                }
+
+                if(e.key == "Enter"){
+                    lineContainer.setAttribute('contenteditable', 'false');
+                    setSetting("currentSpinner", getSetting("defaultSpinner"));
+                    setSetting("showSpinner", false)
+                    interp.resume();
+
+                    interp.interval--;
+                    interp.lines[interp.interval] = `set ${variable} = "${arrayOptions[selectedIndex]}"`;
+                    document.body.removeEventListener("keyup", promptHandler);
+                }
+            }
+
+            terminal.appendChild(lineContainer);
+            document.body.addEventListener("keyup", promptHandler)
+        }
+    })
+
+    const KEYWORD_ASK = new Keyword('ask', "basic_noparse", ['Keyword', "String", "String"], {
+        post: (tokens, interp, keyword) => {
+            setSetting("currentSpinner", "ask-in-progress");
+            setSetting("showSpinner", true)
+            interp.pause();
+
+            let variable = tokens[1].value;
+            let prefix = tokens[2].value;
+
+            if(interp.variables[variable] == undefined) {
+                return interp.outputError(new InterpreterError('ReferenceError', `Variable [${variable}] is not defined`, tokens, interp.interval, tokens[0].position));
+            }
+
+            if(interp.variables[variable].mutable == false) {
+                return interp.outputError(new InterpreterError('ReferenceError', `Variable [${variable}] is not mutable`, tokens, interp.interval, tokens[0].position));
+            }
+
+            let prefixElement = document.createElement('span');
+            let lineElement = document.createElement('div');
+            let lineContainer = document.createElement('div');
+
+            lineElement.setAttribute('contenteditable', 'plaintext-only');
+            lineElement.setAttribute('spellcheck', 'false');
+
+            prefixElement.textContent = prefix;
+
+            lineContainer.appendChild(prefixElement);
+            lineContainer.appendChild(lineElement);
+
+            lineContainer.classList.add('line-container');
+            terminal.appendChild(lineContainer);
+            lineElement.focus();
+
+            lineElement.addEventListener('keydown', function(e){
+                if(e.key == "Enter") e.preventDefault();
+            });
+
+            lineElement.addEventListener('keyup', function(e){
+                if(e.key == "Enter"){
+                    lineElement.setAttribute('contenteditable', 'false');
+                    let inputValue = lineElement.textContent.trim();
+
+                    setSetting("currentSpinner", getSetting("defaultSpinner"));
+                    setSetting("showSpinner", false)
+                    interp.resume();
+
+                    interp.interval--;
+                    interp.lines[interp.interval] = `set ${variable} = "${inputValue}"`;
+                }
+            });
+        }
+    })
     const KEYWORD_FILEARG = new Keyword('filearg', "basic_noparse", ['Keyword', 'String', 'String'], {
         post: (tokens, interp, keyword) => {
             let variableName = `Filearg_${tokens[1].value}`;

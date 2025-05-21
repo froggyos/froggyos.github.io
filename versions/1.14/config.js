@@ -926,10 +926,11 @@ const config = {
                 "endif",
             ] },
             { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
-                "func meow()",
-                "    out 'a'",
-                "endfunc",
-                "call @meow()",
+                "str meow = ''",
+                "str xd = 'meowwww'",
+                "out 'What is your name?'",
+                "prompt 'meow' 1 $'meow', 'woof woof', xd, 1$",
+                "out 'you chose: $|meow|'",
 
             ] },
             // { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [

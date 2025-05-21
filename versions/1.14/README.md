@@ -193,6 +193,18 @@ ProgramName:S - name of the current program
 Time_OSRuntime:N - OS uptime in milliseconds
 Time_ProgramRuntime:N - program uptime in milliseconds
 Undefined:U - undefined -->
+## Calculation
+To perform mathematical operations, you must surround the expression with `{}`. You cannot perform string comparison using calculations, use the `>eq` method instead.
+```
+num i = 5
+num j = 10
+
+out {i + j}
+-- results in 15
+
+out i + j
+-- results in 5
+```
 ## Variables
 ### Create a Variable
 #### String
@@ -327,17 +339,16 @@ C:/Home> st [program name] [arg1] [arg2]
 C:/Home> st about_froggy "froggy" 7
 > hello I am froggy and I am 7 years old
 ```
-<!-- ### Typeable Input
+### Typeable Input
+The `ask` keyword will not create a new variable and cannot overwrite other variable values, even if that variable is mutable.
 ```
-ask [variable] [prefix='?']
+ask [variable:S] [prefix:S]
 
-ask name
-ask name "custom"
+ask "name" "?"
 
--- default usage
 str name = ""
 out "What is your name?"
-ask name
+ask "name" "?"
 out 'Hello $|name|!'
 
 -- in the terminal
@@ -345,53 +356,15 @@ C:/Home> st [program name]
 > What is your name?
 ? Froggy
 > Hello Froggy!
-
--- custom prefix
-str name = ""
-out "What is your name?"
-ask name "custom prefix"
-out 'Hello $|name|!'
-
--- in the terminal
-C:/Home> st [program name]
-> What is your name?
-custom prefix Froggy
-> Hello Froggy!
-
--- TypeError
-num age = 0
-out "How old are you?"
-ask age
-out 'You are $|age| years old.'
-engprog
-
--- in the terminal
-C:/Home> st [program name]
-> How old are you?
-? Froggy
--- Throws a TypeError because [age] is type Number while the input for [ask] was type String
-``` -->
-
-<!-- ### Input with Navigable Options
 ```
-prompt [variable:*] [default highlighted option:N] [options:A]
+
+### Input with Navigable Options
+```
+prompt [variable:S] [default highlighted option:N] [options:A]
 
 str output = ''
-prompt output 0 $'hello', "world!", "I am froggy!"$
-``` -->
-## Calculation
-To perform mathematical operations, you must surround the expression with `{}`.
+prompt 'output' 0 $'hello', "world!", "I am froggy!"$
 ```
-num i = 5
-num j = 10
-
-out {i + j}
--- results in 15
-
-out i + j
--- results in 5
-```
-You cannot perform string comparison using calculations, use the `>eq` method instead.
 ## Methods
 If no arguments are passed, you may omit the parentheses. Arguments are separated by `,`.
 ### String
