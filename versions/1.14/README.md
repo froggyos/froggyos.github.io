@@ -337,25 +337,36 @@ out "hello I am $|Filearg_name| and I am $|Filearg_age| years old"
 -- when running the program
 C:/Home> st [program name] [arg1] [arg2]
 C:/Home> st about_froggy "froggy" 7
-> hello I am froggy and I am 7 years old
+ hello I am froggy and I am 7 years old
 ```
 ### Typeable Input
-The `ask` keyword will not create a new variable and cannot overwrite other variable values, even if that variable is mutable.
+The `ask` keyword will not create a new variable and cannot overwrite other variable values, even if that variable is mutable. After input, the interpreter will replace the `ask` keyword line with `set [variable name] = "[input]">coerce([variable type])`.
 ```
 ask [variable:S] [prefix:S]
 
 ask "name" "?"
 
+-- different line
 str name = ""
 out "What is your name?"
 ask "name" "?"
 out 'Hello $|name|!'
 
--- in the terminal
+-- same line
+str name = ""
+ask "name" "What is your name?"
+out 'Hello $|name|!'
+
+-- in the terminal, different line
 C:/Home> st [program name]
-> What is your name?
+What is your name?
 ? Froggy
-> Hello Froggy!
+ Hello Froggy!
+
+-- in the terminal, same line
+C:/Home> st [program name]
+What is your name? Froggy
+ Hello Froggy!
 ```
 
 ### Input with Navigable Options

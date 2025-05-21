@@ -60,7 +60,7 @@ class Keyword {
                     for(let j = 0; j < args.length - 1; j++) {
                         position += args[j].value.length;
                     }
-                    return interp.outputError(new InterpreterError('TypeError', `Missing expected type of ${this.scheme[i]}`, args, interp.interval, position));
+                    return interp.outputError(new InterpreterError('TypeError', `Missing expected ${this.scheme[i]}`, args, interp.interval, position));
                 }
                 if (!new RegExp(args[i].type).test(this.scheme[i])) {
                     if(scheme[i] == "Assignment"){
@@ -415,6 +415,7 @@ class Interpreter {
         this.tokens = [];
         this.imports = [];
         this.importData = {};
+        this.realtimeMode = false;
         this.promptCount = 0;
         Interpreter.interpreters.push(this);
         this.running = false
@@ -826,7 +827,7 @@ class Interpreter {
     parseMethods(token) {
         if(token == null) return null;
         if(token.methods == undefined) return token;
-        while (token.methods?.length > 0) {
+        while (token?.methods.length > 0) {
             let method = token.methods.shift();
 
             // Resolve arguments
@@ -863,9 +864,9 @@ class Interpreter {
                 this.kill();
                 return;
             }
+
             token = result;
         }
-
 
         if(token instanceof InterpreterError) return token;
         else if(token.value instanceof Token) token = token.value;
@@ -875,7 +876,6 @@ class Interpreter {
     }
 
     step() {
-        this.pause();
         this.gotoNext();
     }
 
@@ -943,7 +943,7 @@ class Interpreter {
         this.load();
         this.error = false;
         this.clock = setInterval(() => {
-            this.gotoNext();
+            if(this.realtimeMode == false) this.gotoNext();
         }, this.interval_length);
     }
 
@@ -974,6 +974,7 @@ class Interpreter {
         this.promptCount = 0;
         this.importData = {};
         this.fileArgumentCount = 0;
+        this.realtimeMode = false;
         Keyword.schemes = {};
         Method.registry = new Map();
         Token.specs = [];
@@ -1109,7 +1110,7 @@ const load_function = () => {
                     interp.resume();
 
                     interp.interval--;
-                    interp.lines[interp.interval] = `set ${variable} = "${inputValue}"`;
+                    interp.lines[interp.interval] = `set ${variable} = "${inputValue}">coerce('${interp.variables[variable].type}')`;
                 }
             });
         }
@@ -1415,6 +1416,51 @@ const load_function = () => {
     new Method("type", ["String", "Number", "Boolean", "Array"], (token, args) => {
         return new Token("String", token.type, token.position, token.methods);
     }, []);
+
+    new Method("coerce", ["String", "Number", "Boolean"], (token, args) => {
+        let currentType = token.type;
+        let targetType = args[0].value;
+
+        switch(currentType){
+            case "String": {
+                if(targetType == "Number") {
+                    if(!isNaN(token.value)) {
+                        return new Token("Number", token.value, token.position, token.methods);
+                    } else {
+                        return new InterpreterError('TypeError', `Cannot coerce String [${token.value}] to Number`, token, token.position, token.position);
+                    }
+                } else if(targetType == "Boolean") {
+                    if(token.value == "true" || token.value == "false") {
+                        return new Token("Boolean", token.value, token.position, token.methods);
+                    } else {
+                        return new InterpreterError('TypeError', `Cannot coerce String [${token.value}] to Boolean`, token, token.position, token.position);
+                    }
+                } else if(targetType == "String") return new Token("String", token.value, token.position, token.methods);
+            } break;
+
+            case "Number": {
+                if(targetType == "String") {
+                    return new Token("String", token.value.toString(), token.position, token.methods);
+                } else if(targetType == "Boolean") {
+                    if(token.value > 0) return new Token("Boolean", "true", token.position, token.methods);
+                    else return new Token("Boolean", "false", token.position, token.methods);
+                } else if(targetType == "Number") return new Token("Number", token.value, token.position, token.methods);
+            } break;
+
+            case "Boolean": {
+                if(targetType == "String") {
+                    return new Token("String", token.value.toString(), token.position, token.methods);
+                } else if(targetType == "Number") {
+                    if(token.value == "true") return new Token("Number", 1, token.position, token.methods);
+                    else return new Token("Number", 0, token.position, token.methods);
+                } else if(targetType == "Boolean") return new Token("Boolean", token.value, token.position, token.methods);
+            } break;
+
+            default: {
+                return new InterpreterError('TypeError', `Cannot coerce type [${currentType}] to type [${targetType}]`, token, token.position, token.position);
+            } break;
+        }
+    }, ["String"])
 
     new Method("index", ["String", "Array"], (token, args) => {
         let arg0 = args[0];

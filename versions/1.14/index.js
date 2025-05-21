@@ -1465,7 +1465,11 @@ x
                 interpreter.onError = (error) => {
                     if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 }
+                //interpreter.realtimeMode = true;
                 interpreter.run();
+
+
+                window.stepInterpreter = interpreter.step.bind(interpreter);
             }
         break;
 
