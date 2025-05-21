@@ -156,6 +156,5 @@ idk
 
 # 1.14
 ```
-~ in the process of rewriting froggyscript again lmao
-    - some functionality lost
+~ rewrote FroggyScript again lmao
 ```
