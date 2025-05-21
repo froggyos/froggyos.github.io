@@ -926,12 +926,12 @@ const config = {
                 "endif",
             ] },
             { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
-                "str meow = ''",
-                "str xd = 'meowwww'",
-                "out 'What is your name?'",
-                "prompt 'meow' 1 $'meow', 'woof woof', xd, 1$",
-                "out 'you chose: $|meow|'",
-
+                "if false",
+                "out 'this will never be shown'",
+                "else",
+                "out 'this will be shown'",
+                "endif",
+                "out 'outside!!'",
             ] },
             // { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
             //     "arr meow = 4,48",

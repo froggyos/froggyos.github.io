@@ -17,7 +17,7 @@ class Keyword {
      * @param {string[]} scheme - An array describing the expected token types.
      * @param {Object} [options] - Optional settings for the keyword.
      * @param {function(Token[], Interpreter, Keyword): void} [post] - A function called after validation to execute keyword logic.
-     * @param {function(Token[], Interpreter, Keyword): void} [pre] - A function called before validation, allows modification of the keyword. To modify the tokens, return an array of tokens.
+     * @param {function(Token[], Interpreter, Keyword): void} [pre] - A function called before validation, allows modification of the keyword. To modify the tokens, return an array of tokens. The `pre` function is where functions are parsed.
      * @example
      * let KEYWORD_STR = new Keyword('str', "assigner", ['Assigner', 'Assignee', 'Assignment', 'String'], {
      *     post: (tokens, interp, keyword) => {
@@ -879,6 +879,19 @@ class Interpreter {
         this.gotoNext();
     }
 
+    gotoIndex(index) {
+        if(this.paused) return;
+        this.error = false;
+
+        if (index < 0 || index >= this.lines.length) {
+            this.onComplete();
+            this.kill();
+            return;
+        }
+        
+        this.interval = index;
+    }
+
     gotoNext() {
         if(this.paused) return;
         Token.generateSpecs();
@@ -1241,7 +1254,7 @@ const load_function = () => {
         }
     });
 
-    const KEYWORD_IF = new Keyword('if', "basic", ['Keyword', 'Number|Boolean'], {
+    const KEYWORD_IF = new Keyword('if', "basic", ['Keyword', 'Boolean'], {
         pre: (tokens, interp, keyword) => {
             let depth = 1;
             let elseIndex = -1;
@@ -1271,11 +1284,13 @@ const load_function = () => {
 
             let ifCondition = keyword.args[1].value;
 
-            if (!ifCondition) {
+            if(typeof ifCondition == 'string') ifCondition = ifCondition === 'true';
+
+            if(ifCondition == false) {
                 if (elseIndex !== -1) {
-                    interp.interval = elseIndex;
+                    interp.gotoIndex(elseIndex);
                 } else {
-                    interp.interval = endIfIndex;
+                    interp.gotoIndex(endIfIndex);
                 }
             }
         },
