@@ -17,7 +17,7 @@ document.body.onclick = function() {
 }
 
 document.body.onkeyup = function(event) {
-    if(event.key == "Enter" && event.shiftKey == true) {
+    if(event.key == "Enter" && event.shiftKey == true && config.currentProgram == "cli") {
         event.preventDefault();
         createEditableTerminalLine(`${config.currentPath}>`);
     }
@@ -1480,7 +1480,6 @@ x
                 }
                 //interpreter.realtimeMode = true;
                 interpreter.run();
-
 
                 window.stepInterpreter = interpreter.step.bind(interpreter);
             }

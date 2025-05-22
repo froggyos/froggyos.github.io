@@ -124,7 +124,7 @@ Properties:
 If you edit the `Settings:` drive directly, some settings won't apply until you reload the froggyOS state. An easy way to do this would be to run the `reload` macro.
 
 ## Bugs
-* functions borken
+* parsing is broken in the prefunction lol
 
 ## Trusting Programs
 To trust a program, you must add its file name in the `D:/trusted_files` file. This will allow the program to have extended control over the operating system. Trusted programs are refreshed **only** on hard restarts (reload the page).
@@ -598,13 +598,15 @@ func name(str:S)
 endfunc
 ```
 #### Return Values
-If the function ends in the keyword `return`, the value of whatever passed will be the return value.
+If the *last parsed token* in a function is `return`, you can retrieve that value for use. `![function name]` will resolve as the return value of the specified function, and then discard the return value.
 ```
 func name()
     return 5
 endfunc
 
-num i = @name()
+@name()
+num i = !name ## i = 5
+out !name ## ReferenceError, value was already returned
 ```
 ### Call a Function
 #### No Arguments
