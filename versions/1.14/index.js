@@ -16,6 +16,13 @@ document.body.onclick = function() {
     } catch (err) { };
 }
 
+document.body.onkeyup = function(event) {
+    if(event.key == "Enter" && event.shiftKey == true) {
+        event.preventDefault();
+        createEditableTerminalLine(`${config.currentPath}>`);
+    }
+}
+
 function setSetting(setting, value) {
     set_fSDS("Config:", "user", setting, value);
 }
@@ -1778,6 +1785,7 @@ function createEditableTerminalLine(path){
     lineContainer.classList.add('line-container');
     terminalLine.setAttribute('contenteditable', 'plaintext-only');
     terminalLine.setAttribute('spellcheck', 'false');
+    terminalLine.classList.add('terminal-line');
 
     terminalPath.textContent = path;
     terminalLine.textContent = "";
@@ -1805,7 +1813,7 @@ function createEditableTerminalLine(path){
 
         // if the inputted character is japanese, change the font of the terminal line
 
-        if(e.key == "Enter"){
+        if(e.key == "Enter" && e.shiftKey == false){
             e.preventDefault();
             terminalLine.setAttribute('contenteditable', 'false');
             let args = userInput.split(" ");
@@ -1880,10 +1888,6 @@ function createLilypadLine(path, linetype, filename){
         })
     }
 
-    const isTextWrapping = (element) => {
-        return element.scrollHeight > element.clientHeight;
-    };
-
     function terminalLineKeydownHandler(e){
         if(e.key == "Enter"){
             e.preventDefault();
@@ -1935,8 +1939,6 @@ function createLilypadLine(path, linetype, filename){
             let focusedLine = document.activeElement;
             let focusedLineIndex = Array.from(lines).indexOf(focusedLine);
             
-            let maxYPos = focusedLine.clientHeight / 8;
-
             if(focusedLineIndex > 0){
                 let newLine = lines[focusedLineIndex - 1]
 
@@ -1956,16 +1958,13 @@ function createLilypadLine(path, linetype, filename){
             e.preventDefault();
             let lines = document.querySelectorAll(`[data-program='lilypad-session-${config.programSession}']`);
             let focusedLine = document.activeElement;
- 
-            let maxYPos = focusedLine.clientHeight / 8;
-
 
             let focusedLineIndex = Array.from(lines).indexOf(focusedLine);
 
             if(focusedLineIndex < lines.length - 1){
                 let newLine = lines[focusedLineIndex + 1];
-                focusedLine.setAttribute('data-currentLine', maxYPos);
 
+                currentYPos = 1;
                 let caretPosition = (focusedLine.textContent.trim().length === 0)
                     ? newLine.textContent.length
                     : getCaretPosition(focusedLine);

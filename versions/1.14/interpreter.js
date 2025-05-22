@@ -140,6 +140,8 @@ class Keyword {
 
                         let func = interp.functions[functionName];
 
+
+                        // weird ass thing. gonna have to redo functions
                         if(func == undefined) {
                             return interp.outputError(new InterpreterError('ReferenceError', `Invalid function syntax for function [${functionName}]`, args, interp.interval, arg.position));
                         }
@@ -164,47 +166,65 @@ class Keyword {
                             }
                         }
 
-                        let tokenizedBody = func.body.map(line => interp.tokenize(line));
+                        console.log(interp.functions)
 
-                        let lastToken = null;
 
-                        for(let j = 0; j < tokenizedBody.length; j++) {
-                            let line = tokenizedBody[j];
+                        let subInterpreter = new Interpreter(func.body, interp.variables["ProgramName"].value, interp.fileArguments);
+                        subInterpreter.inhereit(interp);
+                        // subInterpreter.functions = interp.functions;
+                        // subInterpreter.variables = interp.variables;
+                        // subInterpreter.temporaryVariables = interp.temporaryVariables;
+                        // subInterpreter.savedData = interp.savedData;
+                        // subInterpreter.imports = interp.imports;
+                        // subInterpreter.importData = interp.importData;
+                        // subInterpreter.interval_length = interp.interval_length;
+                        // subInterpreter.realtimeMode = interp.realtimeMode;
+                        // subInterpreter.fileArguments = interp.fileArguments;
+                        subInterpreter.load = () => load_function();
+                        subInterpreter.onComplete = () => {
+                            console.log(subInterpreter.tokens)
+                            interp.resume()
+                        }
 
-                            for(let k = 0; k < tokenizedBody[j].length; k++) {
-                                let token = tokenizedBody[j][k];
+                        //subInterpreter.run();
+
+                        // for(let j = 0; j < tokenizedBody.length; j++) {
+                        //     let line = tokenizedBody[j];
+
+                        //     for(let k = 0; k < tokenizedBody[j].length; k++) {
+                        //         let token = tokenizedBody[j][k];
                                 
-                                if(token instanceof InterpreterError) {
-                                    token.line -= func.start;
-                                    return interp.outputError(token);
-                                }
-                            }
+                        //         if(token instanceof InterpreterError) {
+                        //             token.line -= func.start;
+                        //             return interp.outputError(token);
+                        //         }
+                        //     }
 
-                            let scheme = Keyword.schemes[line[0].value];
-                            let errorInPre = scheme.prefn(line, interp, this);
+                        //     let scheme = Keyword.schemes[line[0].value];
+                        //     let errorInPre = scheme.prefn(line, interp, this);
 
-                            if(errorInPre instanceof InterpreterError) {
-                                return interp.outputError(errorInPre);
-                            }
+                        //     if(errorInPre instanceof InterpreterError) {
+                        //         return interp.outputError(errorInPre);
+                        //     }
 
-                            let keywordResult = scheme.fn(line, interp);
+                        //     let keywordResult = scheme.fn(line, interp);
+                        //     interp.subInterval = j + func.start;
+                        //     lastToken = line;
 
-                            lastToken = line;
+                        //     if(line[0].type == "Keyword" && line[0].value == "return") {
+                        //         break;
+                        //     }
 
-                            if(line[0].type == "Keyword" && line[0].value == "return") {
-                                break;
-                            }
+                        //     if (keywordResult instanceof InterpreterError) {
+                        //         return interp.outputError(keywordResult);
+                        //     }
+                        // }
 
-                            if (keywordResult instanceof InterpreterError) {
-                                return interp.outputError(keywordResult);
-                            }
-                        }
+                        // if(lastToken != null){
+                        //     this.args = lastToken;
+                        // }
 
-                        if(lastToken != null){
-                            this.args = lastToken;
-                        }
-
-                        interp.temporaryVariables = {};
+                        // interp.temporaryVariables = {};
                     }
                 }
             }
@@ -393,6 +413,7 @@ class Interpreter {
      * The `onComplete` function is called when the interpreter has finished running. If it has an error, the `onError` function is called instead.
      */
     constructor(input, programName, fileArguments) {
+        this.resetMemory();
         this.lines = input.map(line => line.trim()).filter(line => line.length > 0);
         this.variables = {
             "ProgramName": {
@@ -469,6 +490,22 @@ class Interpreter {
 
     static trimQuotes(value) {
         return typeof value === 'string' ? value.replace(/^['"]|['"]$/g, '') : value;
+    }
+
+    inhereit(interpreter2){
+        this.variables = structuredClone(interpreter2.variables);
+        this.temporaryVariables = structuredClone(interpreter2.temporaryVariables);
+        console.log(interpreter2.functions)
+        this.functions = structuredClone(interpreter2.functions);
+        this.savedData = structuredClone(interpreter2.savedData);
+        this.imports = structuredClone(interpreter2.imports);
+        this.importData = structuredClone(interpreter2.importData);
+        this.interval_length = structuredClone(interpreter2.interval_length);
+        this.realtimeMode = structuredClone(interpreter2.realtimeMode);
+        this.load = () => interpreter2.load();
+
+
+        console.log(structuredCopy(this))
     }
 
     output(value, format = []) {
@@ -985,7 +1022,6 @@ class Interpreter {
 
     kill() {
         clearInterval(this.clock);
-        this.resetMemory();
     }
 }
 
@@ -1372,6 +1408,7 @@ const load_function = () => {
     });
 
     const KEYWORD_ENDIF = new Keyword('endif', "basic", ['Keyword'], { dud: true });
+    const KEYWORD_ENDFUNC = new Keyword('endfunc', "basic", ['Keyword'], { dud: true });
 
     const KEYWORD_RETURN = new Keyword('return', "basic", ['Keyword', 'Number|String|Boolean'], { dud: true });
 
@@ -1397,7 +1434,6 @@ const load_function = () => {
         pre: (tokens, interp, keyword) => {
             let depth = 1;
             let endFuncIndex = -1;
-            let startFuncindex = interp.interval
             for (let i = interp.interval + 1; i < interp.lines.length; i++) {
                 const line = interp.lines[i].trim();
 
@@ -1414,11 +1450,10 @@ const load_function = () => {
             if (endFuncIndex == -1) {
                 return interp.outputError(new InterpreterError('SyntaxError', `Missing matching [endfunc]`, tokens, interp.interval, tokens[0].position));
             }
+
             interp.interval = endFuncIndex;
 
-            let functionIdentifier = tokens[1];
-
-            let argArray = structuredClone(tokens);
+            let argArray = structuredClone(tokens)
 
             argArray.shift()
             argArray.shift();
@@ -1453,10 +1488,6 @@ const load_function = () => {
                 let argName = group[0];
                 let argDef = group[1];
                 let argValue = group[2];
-
-                if(argName.type != "Identifier") {
-                    return interp.outputError(new InterpreterError('SyntaxError', `Expected argument Identifier for arg ${i}`, argName, interp.interval, argName.position));
-                }
 
                 if(argDef.type != "TypeDef") {
                     return interp.outputError(new InterpreterError('SyntaxError', `Expected [:] for arg ${i}`, argDef, interp.interval, argDef.position));

@@ -6,6 +6,7 @@
 * press `SHIFT + ESC` to exit lilypad (text editor) without saving
 * if a FroggyScript program exits with an error, the command `[[BULLFROG]]gotoprogramline [program] [line with error]` will be put into your command history
 * file types are inferred based on file location
+* For whatever reason, if there is no typeable line in the terminal, press `SHIFT + ENTER` to create a typeable line
 
 ## Palette Conventions
 There are no set colors that you must have, but these are the color conventions.
@@ -123,7 +124,7 @@ Properties:
 If you edit the `Settings:` drive directly, some settings won't apply until you reload the froggyOS state. An easy way to do this would be to run the `reload` macro.
 
 ## Bugs
-* i recoded froggyscript so idk
+* functions borken
 
 ## Trusting Programs
 To trust a program, you must add its file name in the `D:/trusted_files` file. This will allow the program to have extended control over the operating system. Trusted programs are refreshed **only** on hard restarts (reload the page).
