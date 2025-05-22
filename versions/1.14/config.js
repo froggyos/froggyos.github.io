@@ -926,8 +926,13 @@ const config = {
                 "endif",
             ] },
             { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
-                "num meow = 10.203",
-                "out meow>round"
+                "out",
+                'outf "t=c01, i=1" "this is blue text"',
+                'outf "b=c00" "this is a black background"',
+                'outf "t=c06, b=c01" "this is brown text on a blue background"',
+                'outf "t=c01, tr=0-21" "from char 0 to char 21, the text will be blue" ',
+                'outf "t=c01, tr=4-48 | b=c04, br=57-91" "from the char 4 to char 48, the text will be blue. AND from char 57 to char 91 the background will be red"',
+                "out 'meow'",
 
             ] },
             // { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [

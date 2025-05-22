@@ -25,6 +25,10 @@ function getSetting(setting) {
     return fsds[setting]?.value;
 }
 
+function addToCommandHistory(string){
+    if(config.commandHistory[config.commandHistory.length - 1] != string) config.commandHistory = [string].concat(config.commandHistory);
+}
+
 function setUserConfigFromFile(){
     let fsds = parse_fSDS(getFileWithName("Config:", "user").data);
     if(fsds.error) {
@@ -41,6 +45,7 @@ function setUserConfigFromFile(){
     config.timeFormat = getSetting("timeFormat").slice(0, 78);
     config.updateStatBar = getSetting("updateStatBar")
     config.allowedProgramDirectories = getSetting("allowedProgramDirectories");
+    // add other settings for macros, palettes, etc.
     config.dissallowSubdirectoriesIn = getSetting("dissallowSubdirectoriesIn");
     config.language = getSetting("language");
     config.validateLanguageOnStartup = getSetting("validateLanguageOnStartup");
@@ -1463,6 +1468,7 @@ x
                     if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 }
                 interpreter.onError = (error) => {
+                    addToCommandHistory(`[[BULLFROG]]gotoprogramline ${file.name} ${error.line}`);
                     if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 }
                 //interpreter.realtimeMode = true;
@@ -1874,6 +1880,10 @@ function createLilypadLine(path, linetype, filename){
         })
     }
 
+    const isTextWrapping = (element) => {
+        return element.scrollHeight > element.clientHeight;
+    };
+
     function terminalLineKeydownHandler(e){
         if(e.key == "Enter"){
             e.preventDefault();
@@ -1918,12 +1928,15 @@ function createLilypadLine(path, linetype, filename){
                 updateLinePrefixes(linetype);
             }
         };
+
         if(e.key == "ArrowUp"){
             e.preventDefault();
             let lines = document.querySelectorAll(`[data-program='lilypad-session-${config.programSession}']`);
             let focusedLine = document.activeElement;
-
             let focusedLineIndex = Array.from(lines).indexOf(focusedLine);
+            
+            let maxYPos = focusedLine.clientHeight / 8;
+
             if(focusedLineIndex > 0){
                 let newLine = lines[focusedLineIndex - 1]
 
@@ -1943,11 +1956,16 @@ function createLilypadLine(path, linetype, filename){
             e.preventDefault();
             let lines = document.querySelectorAll(`[data-program='lilypad-session-${config.programSession}']`);
             let focusedLine = document.activeElement;
+ 
+            let maxYPos = focusedLine.clientHeight / 8;
+
 
             let focusedLineIndex = Array.from(lines).indexOf(focusedLine);
+
             if(focusedLineIndex < lines.length - 1){
                 let newLine = lines[focusedLineIndex + 1];
-                
+                focusedLine.setAttribute('data-currentLine', maxYPos);
+
                 let caretPosition = (focusedLine.textContent.trim().length === 0)
                     ? newLine.textContent.length
                     : getCaretPosition(focusedLine);

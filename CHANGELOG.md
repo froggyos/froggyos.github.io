@@ -157,4 +157,5 @@ idk
 # 1.14
 ```
 ~ rewrote FroggyScript again lmao
+    - read the documentation !!!
 ```

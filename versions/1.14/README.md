@@ -4,7 +4,7 @@
 * programs can *only* be written in designated directories
 * you can press the `DEL` key to escape programs (ex. an infinite loop)
 * press `SHIFT + ESC` to exit lilypad (text editor) without saving
-<!-- * if a FroggyScript program exits with an error, the command `[[BULLFROG]]gotoprogramline [program] [line with error]` will be put into your command history -->
+* if a FroggyScript program exits with an error, the command `[[BULLFROG]]gotoprogramline [program] [line with error]` will be put into your command history
 * file types are inferred based on file location
 
 ## Palette Conventions
@@ -166,7 +166,8 @@ KEY [key name] TYPE Array END
 ## General Utilities
 ### Comments
 ```
--- comment!
+## comment!
+str test = "hello" ## this is a comment
 ```
 ### Prematurely End the Program
 ```
@@ -199,11 +200,9 @@ To perform mathematical operations, you must surround the expression with `{}`. 
 num i = 5
 num j = 10
 
-out {i + j}
--- results in 15
+out {i + j} ## outputs 15
 
-out i + j
--- results in 5
+out i + j ## outputs 5
 ```
 ## Variables
 ### Create a Variable
@@ -228,7 +227,6 @@ num i = 9
 ```
 #### Boolean
 ```
--- boolean
 bln [variable name] = [value]
 
 bln test = true
@@ -255,8 +253,7 @@ str test = "text"
 set test = "many word"
 set i = i + 1
 
-set i = test
--- throws a TypeError
+set i = test ## typeError
 ```
 
 ### Delete a Variable
@@ -276,21 +273,21 @@ out "text"
 out "more text"
 out 1
 ```
-<!-- ### Formatted Output
+### Formatted Output
 #### General
 * index `0` is the 1st character.
 * There is less than normal error checking on formatting objects, so make sure they're correct.
 ```
 outf [format] [text]
 
-outf {t=c01} "this is blue text"
-outf {b=c00} "this is a black background"
-outf {t=c06, b=c01} "this is brown text on a blue background"
-outf {t=c01, tr=0-21} "from char 0 to char 21, the text will be blue" 
-outf {t=c01, tr=4-48 | b=c04, br=57-91} "from the char 4 to char 48, the text will be blue. AND from char 57 to char 91 the background will be red"
+outf "t=c01" "this is blue text"
+outf "b=c00" "this is a black background"
+outf "t=c06, b=c01" "this is brown text on a blue background"
+outf "t=c01, tr=0-21" "from char 0 to char 21, the text will be blue" 
+outf "t=c01, tr=4-48 | b=c04, br=57-91" "from the char 4 to char 48, the text will be blue. AND from char 57 to char 91 the background will be red"
 ```
-#### Format Object
-* `{}` is a formatting object
+#### Formatting
+* The first string is the format string.
 * **rules** are delimited by the pipe operator: `{[property]=[value] | [property]=[value], [property]=[value]}`
 * **subrules** are delimited by the comma operator, and occur inside of **rules**: `{[property]=[value],[property]=[value]}`
     * If a range is not specified, it will apply to the entire string
@@ -302,7 +299,7 @@ outf {t=c01, tr=4-48 | b=c04, br=57-91} "from the char 4 to char 48, the text wi
     * `tr` - text color range
     * `br` - background color range
     * `ir` - italic range
-
+<!-- 
 ### Errors
 Errors do not end the program early, follow with the `endprog` keyword to do so.
 #### Basic Error
@@ -329,12 +326,12 @@ File arguments are passed in the terminal when running the program. The `filearg
 ```
 filearg [variable name:S] [type:S]
 
--- default usage
+## default usage
 filearg "name" "String"
 filearg "age" "Number"
 out "hello I am $|Filearg_name| and I am $|Filearg_age| years old"
 
--- when running the program
+## when running the program
 C:/Home> st [program name] [arg1] [arg2]
 C:/Home> st about_froggy "froggy" 7
  hello I am froggy and I am 7 years old
@@ -346,24 +343,24 @@ ask [variable:S] [prefix:S]
 
 ask "name" "?"
 
--- different line
+## different line
 str name = ""
 out "What is your name?"
 ask "name" "?"
 out 'Hello $|name|!'
 
--- same line
+## same line
 str name = ""
 ask "name" "What is your name?"
 out 'Hello $|name|!'
 
--- in the terminal, different line
+## in the terminal, different line
 C:/Home> st [program name]
 What is your name?
 ? Froggy
  Hello Froggy!
 
--- in the terminal, same line
+## in the terminal, same line
 C:/Home> st [program name]
 What is your name? Froggy
  Hello Froggy!
@@ -384,90 +381,90 @@ Converts a variable to a different type. The type must be one of the following: 
 ##### String → Number
 ```
 out "42">coerce("Number")
--- 42
+## 42
 
 out "not a number">coerce("Number")
--- TypeError
+## TypeError
 ```
 ##### String → Boolean
 ```
 out "true">coerce("Boolean")
--- true
+## true
 
 out "false">coerce("Boolean")
--- false
+## false
 
 out "not a boolean">coerce("Boolean")
--- TypeError
+## TypeError
 ```
 ##### String → String
 ```
 out "hello">coerce("String")
--- "hello"
+## "hello"
 ```
 ##### Number → String
 ```
 out 42>coerce("String")
--- "42"
+## "42"
 ```
 ##### Number → Boolean
 ```
 out 1>coerce("Boolean")
--- true
+## true
 
 out 0>coerce("Boolean")
--- false
+## false
 
 out -1>coerce("Boolean")
--- false
+## false
 
 out -123>coerce("Boolean")
--- false
+## false
 ```
 ##### Number → Number
 ```
 out 42>coerce("Number")
--- 42
+## 42
 ```
 ##### Boolean → String
 ```
 out true>coerce("String")
--- "true"
+## "true"
 
 out false>coerce("String")
--- "false"
+## "false"
 ```
 ##### Boolean → Number
 ```
 out true>coerce("Number")
--- 1
+## 1
 
 out false>coerce("Number")
--- 0
+## 0
 ```
 ##### Boolean → Boolean
 ```
 out true>coerce("Boolean")
--- true
+## true
 ```
 #### type
 Returns the type of the variable as a string.
 ```
 str string = "hello"
 out string>type
--- "String"
+## "String"
 
 num number = 5
 out number>type
--- "Number"
+## "Number"
 
 bln boolean = true
 out boolean>type
--- "Boolean"
+## "Boolean"
 
 arr array = $1, 2, 3, 4, 5$
 out array>type
--- "Array"
+## "Array"
 ```
 ### String
 #### eq
@@ -490,21 +487,21 @@ Adds a string to the end of another string.
 str test = "hello"
 str test2 = " world"
 out test>append(test2)
--- "hello world"
+## "hello world"
 ```
 #### length
 Returns the length of a string.
 ```
 str test = "this is a long string"
 out test>length
--- 22
+## 22
 ```
 #### repeat
 Repeats a string a certain number of times.
 ```
 str test = "hello"
 out test>repeat(5)
--- "hellohellohellohellohello"
+## "hellohellohellohellohello"
 ```
 ### Number
 #### abs
@@ -512,29 +509,29 @@ Returns the absolute value of a number.
 ```
 num test = -5
 out test>abs
--- 5
+## 5
 ```
 #### truncate
 Truncates a number to the nearest place value. Default is `0`.
 ```
 out 5.5>truncate
--- 5
+## 5
 
 out 5.5>truncate(1)
--- 5.5
+## 5.5
 
 out 3.1203>truncate(3)
--- 3.12
+## 3.12
 
 out 54.291>truncate(3)
--- 54.291
+## 54.291
 ```
 #### round
 Rounds a number to the nearest integer.
 ```
 num test = 10.203
 out test>round
--- 10
+## 10
 ```
 ### Boolean
 #### flip
@@ -542,7 +539,7 @@ Flips a boolean value.
 ```
 bln test = true
 out test>flip
--- false
+## false
 ```
 ### Array
 #### append
@@ -550,32 +547,32 @@ Adds a value to the end of an array.
 ```
 arr test = $1, 2, 3, 4, 5$
 out test>append(6)
--- $1, 2, 3, 4, 5, 6$
+## $1, 2, 3, 4, 5, 6$
 ```
 #### join
 Joins an array into a string. Default delimiter is `,`.
 ```
 arr test = $1, 2, 3, 4, 5$
 out test>join
--- "1,2,3,4,5"
+## "1,2,3,4,5"
 
 arr test2 = $1, 2, 3, 4, 5$
 out test2>join(" and ")
--- "1 and 2 and 3 and 4 and 5"
+## "1 and 2 and 3 and 4 and 5"
 ```
 #### length
 Returns the length of an array.
 ```
 arr test = $1, 2, 3, 4, 5$
 out test>length
--- 5
+## 5
 ```
 #### index
 Returns the value at a specific index.
 ```
 arr test = $1, 2, 3, 4, 5$
 out test>index(2)
--- 3
+## 3
 ```
 ## Functions
 ### Create a Function

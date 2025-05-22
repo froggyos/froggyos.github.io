@@ -60,7 +60,7 @@ class Keyword {
                     for(let j = 0; j < args.length - 1; j++) {
                         position += args[j].value.length;
                     }
-                    return interp.outputError(new InterpreterError('TypeError', `Missing expected ${this.scheme[i]}`, args, interp.interval, position));
+                    return interp.outputError(new InterpreterError('TypeError', `Missing expected ${this.scheme[i]} for keyword [${args[0].value}]`, args, interp.interval, position));
                 }
                 if (!new RegExp(args[i].type).test(this.scheme[i])) {
                     if(scheme[i] == "Assignment"){
@@ -106,7 +106,9 @@ class Keyword {
             } else if(this.type == "basic") {
                 let startingTokens = structuredClone(args.slice(0, 1));
                 args = args.slice(1);
+
                 let parsedMethods = interp.parseMethods(interp.formatMethods(interp.groupByCommas(args)[0]));
+
                 if(parsedMethods instanceof InterpreterError) return interp.outputError(parsedMethods);
                 else {
                     startingTokens.forEach((token, i) => {
@@ -241,6 +243,7 @@ class Token {
         }
         
         Token.specs = [
+            ['Comment', /##(.+)$/],
             ['Keyword', new RegExp(`\\b(${basicKeywords.join('|')})\\b`)],
             ['Assigner', new RegExp(`\\b(${assignerKeywords.join('|')})\\b`)],
             ['Number', /-?\b\d+(\.\d+)?\b/],
@@ -468,9 +471,9 @@ class Interpreter {
         return typeof value === 'string' ? value.replace(/^['"]|['"]$/g, '') : value;
     }
 
-    output(value) {
+    output(value, format = []) {
         if(value == undefined) return;
-        createTerminalLine(value, "", {translate: false});
+        createTerminalLine(value, "", {translate: false, formatting: format});
     }
 
     /**
@@ -987,7 +990,78 @@ class Interpreter {
 }
 
 const load_function = () => {
-    const KEYWORD_COMMENT = new Keyword('--', "basic", ['Keyword'], { dud: true })
+    const KEYWORD_OUTF = new Keyword('outf', "basic_noparse", ['Keyword', "String", "String"], {
+        post: (tokens, interp, keyword) => {
+            let format = tokens[1].value;
+            let text = tokens[2].value;
+            let formatArray = [];
+
+            let formatting = format.split("|");
+
+            let tokenError = null;
+
+            for (let i = 0; i < formatting.length; i++) {
+                const formattingObject = {};
+                const parts = formatting[i].split(",").map(p => p.trim());
+
+                for (const part of parts) {
+                    if (!part) continue;
+
+                    const [key, value] = part.split("=").map(s => s.trim());
+
+                    if (["t", "b", "i"].includes(key)) {
+                        formattingObject.type = "blanket";
+                        formattingObject[key] = value;
+
+                        if (key === "i" && value !== "1" && value !== "0") {
+                            tokenError = new InterpreterError("TypeError", `[${key}] must be 1 or 0, found ${value}`, tokens, interp.interval, tokens[0].position);
+                        }
+                    } else if (["tr", "br", "ir"].includes(key)) {
+                        const [startRaw, endRaw] = value.split("-").map(s => s.trim());
+                        let startTokens = interp.tokenize(startRaw);
+                        let endTokens = interp.tokenize(endRaw);
+
+                        if (startTokens.length !== 1 || endTokens.length !== 1) {
+                            tokenError = new InterpreterError("SyntaxError", `[${key}] range must be a single value, found ${startRaw} and ${endRaw}`, tokens, interp.interval, tokens[0].position);
+                            continue;
+                        }
+
+                        const start = startTokens[0];
+                        const end = endTokens[0];
+
+                        if (start.type !== "Number") {
+                            tokenError = new InterpreterError("TypeError", `[${key}] range start must be a Number, found ${start.type}`, tokens, interp.interval, tokens[0].position);
+                        } else if (end.type !== "Number") {
+                            tokenError = new InterpreterError("TypeError", `[${key}] range end must be a Number, found ${end.type}`, tokens, interp.interval, tokens[0].position);
+                        } else {
+                            formattingObject.type = "range";
+                            formattingObject[`${key}_start`] = start.value.toString();
+                            formattingObject[`${key}_end`] = end.value.toString();
+                        }
+                    }
+                }
+
+                formatArray.push(formattingObject);
+            }
+
+            if (tokenError == null) {
+                formatArray.forEach((format, i) => {
+                    if (format.t && format.t.length !== 3) {
+                        tokenError = new ScriptError("SyntaxError", `[t] in:\n${formatting[i]}\nmust be a color code (e.g., cXX)`);
+                    }
+                    if (format.b && format.b.length !== 3) {
+                        tokenError = new ScriptError("SyntaxError", `[b] in:\n${formatting[i]}\nmust be a color code (e.g., cXX)`);
+                    }
+                });
+            }
+
+            if(tokenError != null) return interp.outputError(tokenError);
+
+            interp.output(text, formatArray);
+        }
+    })
+
+    const KEYWORD_COMMENT = new Keyword('#', "basic", ['Keyword'], { dud: true })
 
     const KEYWORD_PROMPT = new Keyword('prompt', "basic_noparse", ['Keyword', "String", "Number", "Array"], {
         post: (tokens, interp, keyword) => {
