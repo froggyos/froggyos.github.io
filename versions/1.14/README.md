@@ -162,6 +162,7 @@ KEY [key name] TYPE Array END
     * `N` - Number
     * `B` - Boolean
     * `A` - Array
+    * `R` - Identifier Reference
     * `U` - Undefined
 
 ## General Utilities
@@ -195,6 +196,8 @@ ProgramName:S - name of the current program
 Time_OSRuntime:N - OS uptime in milliseconds
 Time_ProgramRuntime:N - program uptime in milliseconds
 Undefined:U - undefined -->
+## Identifier References
+To pass a reference to a variable, prefix the name with the `%` symbol. This is useful for getting variable names from users, like in the `ask` or `prompt` keywords.
 ## Calculation
 To perform mathematical operations, you must surround the expression with `{}`. You cannot perform string comparison using calculations, use the `>eq` method instead. You may use variables inside of calculations, but you cannot use methods.
 ```
@@ -259,9 +262,9 @@ set i = test ## typeError
 
 ### Delete a Variable
 ```
-free [variable name:S]
+free [variable name:R]
 
-free "test"
+free %test
 ```
 
 ## Output
@@ -340,9 +343,9 @@ C:/Home> st about_froggy "froggy" 7
 ### Typeable Input
 The `ask` keyword will not create a new variable and cannot overwrite other variable values, even if that variable is mutable. After input, the interpreter will replace the `ask` keyword line with `set [variable name] = "[input]">coerce([variable type])`.
 ```
-ask [variable:S] [prefix:S]
+ask [variable:R] [prefix:S]
 
-ask "name" "?"
+ask %name "?"
 
 ## different line
 str name = ""
@@ -369,10 +372,10 @@ What is your name? Froggy
 
 ### Input with Navigable Options
 ```
-prompt [variable:S] [default highlighted option:N] [options:A]
+prompt [variable:R] [default highlighted option:N] [options:A]
 
 str output = ''
-prompt 'output' 0 $'hello', "world!", "I am froggy!"$
+prompt %output 0 $'hello', "world!", "I am froggy!"$
 ```
 ## Methods
 If no arguments are passed, you may omit the parentheses. Arguments are separated by `,`.

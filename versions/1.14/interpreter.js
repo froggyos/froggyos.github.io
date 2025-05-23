@@ -97,9 +97,40 @@ class Keyword {
                     this.args = [...startingTokens, parsedMethods];
                 }
             } else if(this.type == "basic") {
-                // fix parsing here lol
-                console.log(args);
+                let tokens = [];
+
+                if(args[0].type == "Keyword") {
+                    if(args[0].value == "func") {
+                        this.args = args;
+                    } else {
+                        tokens = structuredClone(args.slice(0, 1));
+                        args = args.slice(1);
+                        let grouped = interp.groupByCommas(args);
+                        grouped.forEach((group, i) => {
+                            let formatted = interp.formatMethods(group);
+                            let parsed = interp.parseMethods(formatted);
+                            if(parsed instanceof InterpreterError) return interp.outputError(parsed);
+                            else {
+                                tokens.push(parsed);
+                            }
+                        })
+
+                        tokens.forEach((token, i) => {
+                            if(!(token instanceof Token)) {
+                                tokens[i] = new Token(token.type, token.value, token.position);
+                            }
+                        })
+
+                        this.args = tokens;
+                    }
+                }
             }
+
+            this.args.forEach((token, i) => {
+                if(token.type == "IdentifierReference") {
+                    token.value = token.value.slice(1);
+                }
+            })
 
             if(typeof pre === 'function') {
                 pre(args, interp, this)
@@ -136,7 +167,11 @@ class Token {
             ['Number', /-?\b\d+(\.\d+)?\b/],
             ['String', /'(?:\\'|[^'])*'|"(?:\\"|[^"])*"/],
             ['Array', /\$([^\$]+)\$/],
-            ['FunctionCall', /@.*\(.*\)/],
+            ['Boolean', /\b(true|false)\b/],
+            ['Identifier', /\b[a-zA-Z][a-zA-Z0-9_]*\b/],
+            ['IdentifierReference', /%[a-zA-Z][a-zA-Z0-9_]*\b/],
+            ["FunctionCall", /@[a-zA-Z][a-zA-Z0-9_]*(\(.*\))?/],
+            ['FunctionReturn', /![a-zA-Z][a-zA-Z0-9_]*/],
             ['Calculation_Equals', / == /],
             ['Calculation_Nequals', / != /],
             ['Calculation_LessThan', / < /],
@@ -146,10 +181,6 @@ class Token {
             ['Calculation_And', / & /],
             ['Calculation_Or', / \| /],
             ['MethodInitiator', />/],
-            ['Boolean', /\b(true|false)\b/],
-            ['Identifier', /\b[a-zA-Z][a-zA-Z0-9_]*\b/],
-            ["FunctionCall", /@[a-zA-Z][a-zA-Z0-9_]*\(.+?\)/],
-            ['FunctionReturn', /![a-zA-Z][a-zA-Z0-9_]*/],
             ['Assignment', /=/],
             ["Comma", /,/],
             ['Operator', /[+-/\*\^]/],
@@ -686,9 +717,9 @@ class Interpreter {
                         }
 
                         this.functions[functionName].returnValue = valueToReturn;
-                        this.resume();
                     }
                 }
+                this.resume();
             }
             subInterpreter.inhereit(this)
             subInterpreter.run();
@@ -1050,7 +1081,7 @@ const load_function = () => {
 
     const KEYWORD_COMMENT = new Keyword('##', "basic", ['Keyword'], { dud: true })
 
-    const KEYWORD_PROMPT = new Keyword('prompt', "basic", ['Keyword', "String", "Number", "Array"], {
+    const KEYWORD_PROMPT = new Keyword('prompt', "basic", ['Keyword', "IdentifierReference", "Number", "Array"], {
         post: (tokens, interp, keyword) => {
             let variable = tokens[1].value;
             let startingIndex = tokens[2].value;
@@ -1123,7 +1154,7 @@ const load_function = () => {
         }
     })
 
-    const KEYWORD_ASK = new Keyword('ask', "basic", ['Keyword', "String", "String"], {
+    const KEYWORD_ASK = new Keyword('ask', "basic", ['Keyword', "IdentifierReference", "String"], {
         post: (tokens, interp, keyword) => {
             setSetting("currentSpinner", "ask-in-progress");
             setSetting("showSpinner", true)
@@ -1201,7 +1232,7 @@ const load_function = () => {
         }
     });
 
-    const KEYWORD_FREE = new Keyword('free', "basic", ['Keyword', "String"], { 
+    const KEYWORD_FREE = new Keyword('free', "basic", ['Keyword', "IdentifierReference"], { 
         pre: (tokens, interp, keyword) => {
             let variableName = tokens[1].value;
 
@@ -1214,8 +1245,6 @@ const load_function = () => {
             }
         }
     });
-
-    const KEYWORD_CALL = new Keyword('call', "basic", ['Keyword'], { dud: false });
 
     const KEYWORD_STR = new Keyword('str', "assigner", ['Assigner', 'Assignee', 'Assignment', 'String'], {
         post: (tokens, interp, keyword) => {
@@ -1432,7 +1461,6 @@ const load_function = () => {
             let argGroups = interp.groupByCommas(argArray)
 
             let args = {};
-
             argGroups.forEach((group, i) => {
                 if (group.length != 3) {
                     return interp.outputError(new InterpreterError('SyntaxError', `Missing [Identifier]:[Type] for arg ${i}`, group, interp.interval, group[0].position));

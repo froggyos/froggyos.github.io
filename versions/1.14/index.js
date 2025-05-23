@@ -1129,7 +1129,11 @@ function sendCommand(command, args, createEditableLineAfter){
                     createTerminalLine("T_no_macros_found", config.errorText);
                 } else {
                     let macroList = macros.filter(macro => macro.properties.hidden == false && macro.properties.transparent == false);
-                    createTerminalLine(macroList.map(macro => macro.name).join(", "), ">", {translate: false})
+                    let macroAliases = macros.filter(macro => macro.properties.hidden == false && macro.properties.transparent == false);
+                    macroAliases = macroAliases.map(macro => macro.data[0].startsWith("!") ? macro.data[0].slice(1) : "no alias");
+
+                    console.log(macroAliases);
+                    createTerminalLine(macroList.map((macro, i) => `${macro.name} (${macroAliases[i]})`).join(", "), ">", {translate: false})
                 }
                 hadError = true;
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
