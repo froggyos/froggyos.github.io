@@ -197,7 +197,7 @@ Time_OSRuntime:N - OS uptime in milliseconds
 Time_ProgramRuntime:N - program uptime in milliseconds
 Undefined:U - undefined -->
 ## Identifier References
-To pass a reference to a variable, prefix the name with the `%` symbol. This is useful for getting variable names from users, like in the `ask` or `prompt` keywords.
+To pass a reference to a variable, prefix the name with the `%` symbol. This is useful for getting variable names from users, like in the `ask` or `prompt` keywords. For error-checking purposes, the type of the variable is still kept as `IdentifierReference` while it's value is changed to to the variable name.
 ## Calculation
 To perform mathematical operations, you must surround the expression with `{}`. You cannot perform string comparison using calculations, use the `>eq` method instead. You may use variables inside of calculations, but you cannot use methods.
 ```
@@ -341,21 +341,21 @@ C:/Home> st about_froggy "froggy" 7
  hello I am froggy and I am 7 years old
 ```
 ### Typeable Input
-The `ask` keyword will not create a new variable and cannot overwrite other variable values, even if that variable is mutable. After input, the interpreter will replace the `ask` keyword line with `set [variable name] = "[input]">coerce([variable type])`.
+The `ask` keyword will not create a new variable and cannot overwrite other variable values, even if that variable is mutable. After input, the interpreter will replace the `ask` keyword line with `set [variable name] = "[input]">coerce([variable type])`. If you do not include the comma, you will recieve a `TypeError: Missing expected [type]` error. The whitespace around the comma is not required, but is recommended for readability.
 ```
-ask [variable:R] [prefix:S]
+ask [variable:R],[prefix:S]
 
-ask %name "?"
+ask %name , "?"
 
 ## different line
 str name = ""
 out "What is your name?"
-ask "name" "?"
+ask %name , "?"
 out 'Hello $|name|!'
 
 ## same line
 str name = ""
-ask "name" "What is your name?"
+ask %name , "What is your name?"
 out 'Hello $|name|!'
 
 ## in the terminal, different line
@@ -371,8 +371,9 @@ What is your name? Froggy
 ```
 
 ### Input with Navigable Options
+If you do not include the commas, you will recieve a `TypeError: Missing expected [type]` error. The whitespace around the commas are not required, but is recommended for readability.
 ```
-prompt [variable:R] [default highlighted option:N] [options:A]
+prompt [variable:R] , [default highlighted option:N] , [options:A]
 
 str output = ''
 prompt %output 0 $'hello', "world!", "I am froggy!"$
@@ -607,7 +608,7 @@ func name()
     return 5
 endfunc
 
-@name()
+call @name()
 num i = !name ## i = 5
 out !name ## ReferenceError, value was already returned
 ```
@@ -650,44 +651,59 @@ else
 endif
 ```
 
-<!-- ### Loops
+### Loops
 #### Standard Loop
+When the `loop` keyword is read, if the condition is true, the code will continue. If it is false, the interpreter will skip the line after the next matching `endloop` keyword and the code inside will not be run. When an `endloop` keyword is read, the interpreter will move to the matching `loop` keyword.
 ```
-loop [condition]
+loop [condition:N|B]
     [code]
 endloop
 
-loop i < 5
+## Boolean condition
+loop {i < 5}
     out i
-    set i = i + 1
+    set i = {i + 1}
 endloop
+
+## Number condition
+loop 10
+    out "hello"
+endloop
+## will output "hello" 10 times
 
 num i = 0
 num j = 0
 num number = 0
-loop i < 5
-    loop j < 4
-        set number = number + 1
-        set j = j + 1
+loop {i < 5}
+    loop {j < 4}
+        set number = {number + 1}
+        set j = {j + 1}
     endloop
-    set i = i + 1
+    set i = {i + 1}
     set j = 0
 endloop
-``` -->
+```
 
-<!-- #### Quickloop
+#### Quickloop
 Quickloops are different from standard loops in that the entire loop is executed *almost instantly*, while standard loops are executed one line at a time.
 
 ```
-quickloop [loop iterations]
+quickloop [condition:N|B]
     [code]
 endquickloop
 
+## Boolean condition
+quickloop {i < 5}
+    out i
+    set i = {i + 1}
+endquickloop
+
+## Number condition
 quickloop 100
     out "hello"
 endquickloop
--- outputs "hello" 100 times in a row
-``` -->
+## outputs "hello" 100 times in a row
+```
 ## Program Data
 <!-- ### Saving Data
 Saves the contents of `[variable]` to the corresponding file in the `Config:/program_data` file. The key cannot contain spaces.

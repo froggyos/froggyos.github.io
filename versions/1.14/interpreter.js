@@ -62,13 +62,13 @@ class Keyword {
                     }
                     return interp.outputError(new InterpreterError('TypeError', `Missing expected ${this.scheme[i]} for keyword [${args[0].value}]`, args, interp.interval, position));
                 }
+
                 if (!new RegExp(args[i].type).test(this.scheme[i])) {
                     if(scheme[i] == "Assignment"){
                         return interp.outputError(new InterpreterError('SyntaxError', `Expected variable assignment, found ${args[i].type}`, args, interp.interval, args[i].position));
                     } else {
                         return interp.outputError(new InterpreterError('TypeError', `Expected type ${this.scheme[i]}, found type ${args[i].type}`, args, interp.interval, args[i].position));
                     }
-
                 }
             }
 
@@ -105,14 +105,13 @@ class Keyword {
                     } else {
                         tokens = structuredClone(args.slice(0, 1));
                         args = args.slice(1);
+
                         let grouped = interp.groupByCommas(args);
                         grouped.forEach((group, i) => {
                             let formatted = interp.formatMethods(group);
                             let parsed = interp.parseMethods(formatted);
                             if(parsed instanceof InterpreterError) return interp.outputError(parsed);
-                            else {
-                                tokens.push(parsed);
-                            }
+                            else tokens.push(parsed);
                         })
 
                         tokens.forEach((token, i) => {
@@ -121,6 +120,7 @@ class Keyword {
                             }
                         })
 
+
                         this.args = tokens;
                     }
                 }
@@ -128,12 +128,12 @@ class Keyword {
 
             this.args.forEach((token, i) => {
                 if(token.type == "IdentifierReference") {
-                    token.value = token.value.slice(1);
+                    this.args[i] = new Token("IdentifierReference", token.value.slice(1), token.position);
                 }
             })
-
+            
             if(typeof pre === 'function') {
-                pre(args, interp, this)
+                pre(this.args, interp, this)
             }  
         }     
 
@@ -168,6 +168,7 @@ class Token {
             ['String', /'(?:\\'|[^'])*'|"(?:\\"|[^"])*"/],
             ['Array', /\$([^\$]+)\$/],
             ['Boolean', /\b(true|false)\b/],
+            ['Pipe', /\|/],
             ['Identifier', /\b[a-zA-Z][a-zA-Z0-9_]*\b/],
             ['IdentifierReference', /%[a-zA-Z][a-zA-Z0-9_]*\b/],
             ["FunctionCall", /@[a-zA-Z][a-zA-Z0-9_]*(\(.*\))?/],
@@ -178,8 +179,6 @@ class Token {
             ['Calculation_GreaterThan', / > /],
             ['Calculation_LessThanEquals', / <= /],
             ['Calculation_GreaterThanEquals', / >= /],
-            ['Calculation_And', / & /],
-            ['Calculation_Or', / \| /],
             ['MethodInitiator', />/],
             ['Assignment', /=/],
             ["Comma", /,/],
@@ -338,6 +337,7 @@ class Interpreter {
         this.tokens = [];
         this.imports = [];
         this.importData = {};
+        this.data = {};
         this.realtimeMode = false;
         this.promptCount = 0;
         Interpreter.interpreters.push(this);
@@ -380,6 +380,8 @@ class Interpreter {
                     'Program was interrupted by user',
                     null, NaN, NaN
                 ));
+                setSetting("currentSpinner", getSetting("defaultSpinner"));
+                setSetting("showSpinner", false);
                 window.removeEventListener('keydown', boundKillFunction);
             }
         }.bind(this);
@@ -541,6 +543,7 @@ class Interpreter {
                     tokens[i + 1].type = 'Method';
                 } else {
                     tokens.push(new InterpreterError('SyntaxError', `Expected Method after MethodInitiator not found`, tokens, this.interval, tokens[i].position));
+                    return tokens;
                 }
             }
         }
@@ -549,14 +552,6 @@ class Interpreter {
             if (tokens[i].type === 'Identifier') {
                 if(i - 1 >= 0 && tokens[i - 1].type === 'Assigner' && tokens[i + 1].type === 'Assignment') {
                     tokens[i].type = 'Assignee';
-                }
-            }
-        }
-
-        for (let i = 0; i < tokens.length; i++) {
-            if(tokens[i].type === "FunctionIdentifier") {
-                if(tokens[i+1].type === "Identifier") {
-                    tokens[i+1].type = "FunctionName";
                 }
             }
         }
@@ -579,10 +574,11 @@ class Interpreter {
                 if(endFound) {
                     let result = this.evaluateMathExpression(exprTokens);
                     let resultType = (typeof result)[0].toUpperCase() + (typeof result).slice(1);
-                    let resultToken = new Token(resultType, result, token.position);
+                    let resultToken = new Token(resultType, result.toString(), token.position);
                     tokens.splice(index, exprTokens.length + 2, resultToken);
                 } else {
                     tokens.push(new InterpreterError('SyntaxError', `Expected closing [}] for calculation statement not found`, tokens, this.interval, token.position));
+                    return tokens;
                 }
             }
         });
@@ -595,6 +591,7 @@ class Interpreter {
 
                 if(variable == false){
                     tokens.push(new InterpreterError('ReferenceError', `Variable [${token.value}] is not defined`, tokens, this.interval, token.position));
+                    return tokens;
                 }
 
                 token.type = variable.type;
@@ -646,7 +643,7 @@ class Interpreter {
                     
                     if(exprTokens.some(t => t instanceof InterpreterError)) {
                         tokens.push(exprTokens.find(t => t instanceof InterpreterError));
-                        return;
+                        return tokens;
                     }
 
                     let groups = this.groupByCommas(exprTokens);
@@ -661,6 +658,7 @@ class Interpreter {
 
                     if(!["String", "Number", "Boolean"].includes(values[0].type)) {
                         tokens.push(new InterpreterError('TypeError', `Expected type String|Number|Boolean, found type ${values[0].type}`, tokens, this.interval, token.position));
+                        return tokens;
                     }
 
                     token.value = token.value.replace(`$\|${expr}\|`,values[0].value);
@@ -668,84 +666,25 @@ class Interpreter {
             }
         })
 
-        if(tokens[0].type == "FunctionCall"){
-            this.pause();
-            let functionName = tokens[0].value.split("(")[0].slice(1);
-            let args = this.groupByCommas(this.tokenize(tokens[0].value.split("(")[1].slice(0, -1)))
-
-            args = args.map(group => {
-                let formatted = this.formatMethods(group);
-                let parsed = this.parseMethods(formatted);
-                return parsed;
-            });
-
-            if(args.some(t => t instanceof InterpreterError)) {
-                tokens.push(args.find(t => t instanceof InterpreterError));
-                return tokens;
-            }
-
-            let func = this.functions[functionName];
-
-            if(func == undefined) {
-                tokens.push(new InterpreterError('ReferenceError', `Function [${functionName}] is not defined`, tokens, this.interval, tokens[0].position));
-                return tokens;
-            }
-
-            let expectedArgs = func.args;
-
-            Object.keys(expectedArgs).forEach((key, i) => {
-                this.temporaryVariables[key] = {
-                    type: args[i].type,
-                    value: args[i].value,
-                    mutable: true
-                }
-            })
-
-            let subInterpreter = new Interpreter(func.body, func.name, this.fileArguments);
-            subInterpreter.onComplete = () => {
-                let functionTokens = subInterpreter.tokens;
-                for(let i = 0; i < functionTokens.length; i++) {
-                    let functionToken = functionTokens[i];
-                    if(functionToken[0].type == "Keyword" && functionToken[0].value == "return"){
-                        let valueToReturn = functionToken.slice(1);
-
-                        valueToReturn = this.parseMethods(this.formatMethods(this.groupByCommas(valueToReturn)[0]));
-
-                        if(valueToReturn instanceof InterpreterError) {
-                            tokens.push(valueToReturn);
-                            return;
-                        }
-
-                        this.functions[functionName].returnValue = valueToReturn;
-                    }
-                }
-                this.resume();
-            }
-            subInterpreter.inhereit(this)
-            subInterpreter.run();
-        }
-
         tokens.forEach((token, index) => {
-            if(token.type == "FunctionReturn") {
+            if(token.type == "FunctionReturn"){
                 let functionName = token.value.slice(1);
-                let func = this.functions[functionName];
 
+                let func = this.functions[functionName];
                 if(func == undefined) {
                     tokens.push(new InterpreterError('ReferenceError', `Function [${functionName}] is not defined`, tokens, this.interval, token.position));
-                    return;
+                    return tokens;
                 }
 
                 let returnValue = func.returnValue;
                 if(returnValue == null) {
                     tokens.push(new InterpreterError('ReferenceError', `Function [${functionName}] has no return value`, tokens, this.interval, token.position));
-                    return;
+                    return tokens;
                 }
-
-                returnValue.value = returnValue.value.toString();
 
                 tokens[index] = returnValue;
 
-                this.functions[functionName].returnValue = null;
+                func.returnValue = null;
             }
         })
 
@@ -780,6 +719,36 @@ class Interpreter {
 
         return groups;
     }
+
+    groupByPipes(tokenArray) {
+        const groups = [];
+        let currentGroup = [];
+        let depth = 0;
+
+        for (const token of tokenArray) {
+            if (token.type === 'LeftParenthesis') {
+                depth++;
+            } else if (token.type === 'RightParenthesis') {
+                depth--;
+            }
+
+            // If we hit a comma at top level, start a new group
+            if (token.type === 'Pipe' && depth === 0) {
+                groups.push(currentGroup);
+                currentGroup = [];
+            } else {
+                currentGroup.push(token);
+            }
+        }
+
+        // Push the final group if it's non-empty
+        if (currentGroup.length > 0) {
+            groups.push(currentGroup);
+        }
+
+        return groups;
+    }
+
 
     formatMethods(tokenArray) {
         if (!tokenArray || tokenArray.length === 0) return null;
@@ -957,6 +926,41 @@ class Interpreter {
         this.iteration++;
     }
 
+    runLine(line) {
+        if(this.paused) return;
+        this.error = false;
+
+        let token = this.tokenize(line);
+
+        this.tokens.push(token)
+
+        if (token instanceof InterpreterError) {
+            this.outputError(token);
+        } else if (token.some(t => t instanceof InterpreterError)) {
+            this.outputError(token.find(t => t instanceof InterpreterError));
+        } else
+        if (["Keyword", "Assigner"].includes(token[0].type)) {
+            const scheme = Keyword.schemes[token[0].value];
+
+            let errorInPre = scheme.prefn(token, this);
+
+            if(errorInPre == undefined) if (errorInPre instanceof InterpreterError) {
+                this.outputError(errorInPre);
+                this.kill();
+            }
+
+            const keywordResult = scheme.fn(token, this);
+
+            if (keywordResult instanceof InterpreterError) {
+                this.outputError(keywordResult);
+                this.kill()
+            }
+        }
+
+        this.interval++;
+        this.iteration++;
+    }
+
     run() {
         if(this.running) return;
         this.running = true;
@@ -1000,6 +1004,7 @@ class Interpreter {
         Keyword.schemes = {};
         Method.registry = new Map();
         Token.specs = [];
+        this.data = {};
     }
 
     kill() {
@@ -1008,6 +1013,141 @@ class Interpreter {
 }
 
 const load_function = () => {
+    const KEYWORD_QUICKLOOP = new Keyword('quickloop', "basic", ['Keyword', "Number|Boolean"], {
+        post: (tokens, interp, keyword) => {
+            let depth = 1;
+            let endQuickloopIndex = -1;
+
+            let startIndex = structuredClone(interp.interval);
+
+            for (let i = interp.interval + 1; i < interp.lines.length; i++) {
+                const line = interp.lines[i].trim();
+
+                if (line.startsWith('quickloop')) {
+                    depth++;
+                } else if (line.startsWith('endquickloop')) {
+                    depth--;
+                    if (depth === 0) {
+                        endQuickloopIndex = i;
+                        break;
+                    }
+                }
+            }
+
+            if(endQuickloopIndex == -1) {
+                return interp.outputError(new InterpreterError('SyntaxError', `Missing matching [endquickloop]`, tokens, interp.interval, tokens[0].position));
+            }
+
+            let lines = interp.lines.slice(interp.interval + 1, endQuickloopIndex);
+
+            let value = tokens[1];
+
+            if(value.type == "Number"){
+                let maxLoops = parseInt(value.value);
+                if(isNaN(maxLoops) || maxLoops <= 0) {
+                    return interp.outputError(new InterpreterError('TypeError', `Expected type Number, found type ${value.type} in quickloop`, tokens, interp.interval, value.position));
+                }
+
+                for(let i = 0; i < maxLoops; i++) {
+                    for(let j = 0; j < lines.length; j++) {
+                        interp.runLine(lines[j]);
+                    }
+                }
+                
+                interp.gotoIndex(endQuickloopIndex - 1);
+            } else if (value.type == "Boolean") {
+                if(value.value == "true") {
+                    for(let i = 0; i < lines.length; i++) {
+                        interp.runLine(lines[i]);
+                    }
+                    interp.gotoIndex(startIndex - 1);
+                } else {
+                    interp.gotoIndex(endQuickloopIndex - 1);
+                }
+            }
+        }
+    })
+
+    const KEYWORD_ENDQUICKLOOP = new Keyword('endquickloop', "basic", ['Keyword'], {
+        post: (tokens, interp, keyword) => {
+            let depth = 1;
+            let startQuickloopIndex = -1;
+
+            for (let i = interp.interval - 1; i >= 0; i--) {
+                const line = interp.lines[i].trim();
+
+                if (line.startsWith('endquickloop')) {
+                    depth++;
+                } else if (line.startsWith('quickloop')) {
+                    depth--;
+                    if (depth === 0) {
+                        startQuickloopIndex = i;
+                        break;
+                    }
+                }
+            }
+
+            if(startQuickloopIndex == -1) {
+                return interp.outputError(new InterpreterError('SyntaxError', `Missing matching [quickloop]`, tokens, interp.interval, tokens[0].position));
+            }
+
+        }
+    })
+
+    const KEYWORD_CALL = new Keyword('call', "basic", ['Keyword', "FunctionCall"], {
+        post: (tokens, interp, keyword) => {
+            interp.pause();
+
+            let functionName = tokens[1].value.split("(")[0].slice(1);
+            let args = interp.groupByCommas(interp.tokenize(tokens[1].value.split("(")[1].slice(0, -1)))
+
+            args = args.map(group => {
+                let formatted = interp.formatMethods(group);
+                let parsed = interp.parseMethods(formatted);
+                return parsed;
+            });
+
+            if(args.some(t => t instanceof InterpreterError)) {
+                return interp.outputError(args.find(t => t instanceof InterpreterError));
+            }
+
+            let func = interp.functions[functionName];
+            if(func == undefined) {
+                return interp.outputError(new InterpreterError('ReferenceError', `Function [${functionName}] is not defined`, tokens, interp.interval, tokens[1].position));
+            }
+
+            let expectedArgs = func.args;
+            Object.keys(expectedArgs).forEach((key, j) => {
+                if(args[j] != undefined){
+                    interp.temporaryVariables[key] = {
+                        type: args[j].type,
+                        value: args[j].value,
+                        mutable: true
+                    }
+                }
+            })
+
+            let subInterpreter = new Interpreter(func.body, func.name, interp.fileArguments);
+            subInterpreter.onComplete = () => {
+                let functionTokens = subInterpreter.tokens;
+                for(let j = 0; j < functionTokens.length; j++) {
+                    let functionToken = functionTokens[j];
+                    if(functionToken[0].type == "Keyword" && functionToken[0].value == "return"){
+                        let valueToReturn = functionToken.slice(1);
+                        valueToReturn = interp.parseMethods(interp.formatMethods(interp.groupByCommas(valueToReturn)[0]));
+                        if(valueToReturn instanceof InterpreterError) {
+                            return interp.outputError(valueToReturn);
+                        }
+                        interp.functions[functionName].returnValue = valueToReturn;
+                    }
+                }
+                interp.resume();
+            }
+            subInterpreter.inhereit(interp)
+            subInterpreter.run();
+        }
+    })
+
     const KEYWORD_OUTF = new Keyword('outf', "basic", ['Keyword', "String", "String"], {
         post: (tokens, interp, keyword) => {
             let format = tokens[1].value;
@@ -1269,7 +1409,7 @@ const load_function = () => {
             let identifier = tokens[1];
             let value = tokens[3];
 
-            interp.setVariable(identifier.value, value.value, 'Number', true);
+            interp.setVariable(identifier.value, value.value.toString(), 'Number', true);
         }
     });
 
@@ -1278,7 +1418,7 @@ const load_function = () => {
             let identifier = tokens[1];
             let value = tokens[3];
 
-            interp.setVariable(identifier.value, value.value, 'Number', false);
+            interp.setVariable(identifier.value, value.value.toString(), 'Number', false);
         }
     });
 
@@ -1343,6 +1483,92 @@ const load_function = () => {
             interp.setVariable(identifier.value, token.value, 'Array', false);
         }
     });
+
+    const KEYWORD_LOOP = new Keyword('loop', "basic", ['Keyword', 'Number|Boolean'], {
+        pre: (tokens, interp, keyword) => {
+            let depth = 1;
+            let endLoopIndex = -1;
+
+            for (let i = interp.interval + 1; i < interp.lines.length; i++) {
+                const line = interp.lines[i].trim();
+
+                if (line.startsWith('loop')) {
+                    depth++;
+                } else if (line.startsWith('endloop')) {
+                    depth--;
+                    if (depth === 0) {
+                        endLoopIndex = i;
+                        break;
+                    }
+                }
+            }
+
+            if(endLoopIndex == -1) {
+                return interp.outputError(new InterpreterError('SyntaxError', `Missing matching [endloop]`, tokens, interp.interval, tokens[0].position));
+            }
+
+            let loopCondition = keyword.args[1];
+
+            if(loopCondition.type == "Boolean"){
+                setSetting("showSpinner", true);
+
+                if(loopCondition.value === 'false') {
+                    setSetting("showSpinner", false);
+                    interp.gotoIndex(endLoopIndex);
+                }
+            } else if(loopCondition.type == "Number"){
+                let maxLoops = parseInt(loopCondition.value);
+                if(maxLoops <= 0) {
+                    return interp.outputError(new InterpreterError('TypeError', `Number cannot be negative or 0`, tokens, interp.interval, loopCondition.position));
+                }
+
+                if(interp.data[`${interp.interval}_loop`] == undefined) interp.data[`${interp.interval}_loop`] = {
+                    loopCount: 0,
+                }
+
+                //console.log(interp.data[`${interp.interval}_loop`])
+
+                if(interp.data[`${interp.interval}_loop`].loopCount >= maxLoops) {
+                    delete interp.data[`${interp.interval}_loop`];
+                    setSetting("showSpinner", false);
+                    interp.gotoIndex(endLoopIndex + 1);
+                } else {
+                    interp.data[`${interp.interval}_loop`].loopCount++;
+                }
+
+                console.log(interp.data)
+
+                setSetting("showSpinner", true);
+            }
+
+
+        },
+    })
+
+    const KEYWORD_ENDLOOP = new Keyword('endloop', "basic", ['Keyword'], { 
+        pre: (tokens, interp, keyword) => {
+            // find the matching 'loop' keyword
+            let depth = 1;
+            let startLoopIndex = -1;
+            for (let i = interp.interval - 1; i >= 0; i--) {
+                const line = interp.lines[i].trim();
+                if (line.startsWith('endloop')) {
+                    depth++;
+                } else if (line.startsWith('loop')) {
+                    depth--;
+                    if (depth === 0) {
+                        startLoopIndex = i;
+                        break;
+                    }
+                }
+            }
+            if(startLoopIndex == -1) {
+                return interp.outputError(new InterpreterError('SyntaxError', `Missing matching [loop]`, tokens, interp.interval, tokens[0].position));
+            }
+            interp.interval = startLoopIndex - 1;
+        }
+    });
+
 
     const KEYWORD_IF = new Keyword('if', "basic", ['Keyword', 'Boolean'], {
         pre: (tokens, interp, keyword) => {
