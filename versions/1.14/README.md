@@ -3,7 +3,6 @@
 * in paths, `.` will be replaced with the current directory
 * programs can *only* be written in designated directories
 * you can press the `DEL` key to escape programs (ex. an infinite loop)
-* press `SHIFT + ESC` to exit lilypad (text editor) without saving
 * if a FroggyScript program exits with an error, the command `[[BULLFROG]]gotoprogramline [program] [line with error]` will be put into your command history
 * file types are inferred based on file location
 * For whatever reason, if there is no typeable line in the terminal, press `SHIFT + ENTER` to create a typeable line
@@ -36,7 +35,6 @@ There are no set colors that you must have, but these are the color conventions.
 * neon
 
 ## Aliases
-
 * changelanguage -> lang
 * clear -> cl
 * clearstate -> cls
@@ -151,6 +149,39 @@ KEY [key name] TYPE Array START
 (...)
 KEY [key name] TYPE Array END
 ```
+## Lilypad keybinds
+Lilypad is the text editor in froggyOS. It has a few keybinds that you can use to make editing easier.
+### Saving
+* `ESC` - save and exit
+* `SHIFT + ESC` - exit without saving
+
+### Navigation
+* `ArrowUp` - move cursor up one line
+* `ArrowDown` - move cursor down one line
+
+* `CTRL + ArrowUp` - Move to first line
+* `CTRL + ArrowDown` - Move to last line
+
+* `CTRL + Q` - Move to beginning of current line
+* `CTRL + E` - Move to end of current line
+
+* `ALT + ArrowUp` - Move current line up one line
+* `ALT + ArrowDown` - Move current line down one line
+
+## Selection
+* `Shift + ArrowLeft` - select one character to the left
+* `Shift + ArrowRight` - select one character to the right
+
+* `CTRL + Shift + ArrowLeft` - select one word to the left
+* `CTRL + Shift + ArrowRight` - select one word to the right
+
+* `CTRL + A` - select all text on the current line
+
+## Other
+* `CTRL + C` - copy selected text
+* `CTRL + X` - cut selected text
+* `CTRL + V` - paste text from clipboard
+* `DEL` - delete current line
 
 # FroggyScript Documentation
 ## Notes
@@ -165,6 +196,7 @@ KEY [key name] TYPE Array END
     * `R` - Identifier Reference
     * `U` - Undefined
 * error position is unreliable
+* error lines are not always accurate ??? whyyy idk 
 
 ## General Utilities
 ### Comments
@@ -209,6 +241,19 @@ out {i + j} ## outputs 15
 
 out i + j ## outputs 5
 ```
+These are the valid operators in calculations:
+* `+` - addition
+* `-` - subtraction
+* `*` - multiplication
+* `/` - division
+* `^` - exponentiation
+* ` == ` - equality
+* ` != ` - inequality
+* ` < ` - less than
+* ` > ` - greater than
+* ` <= ` - less than or equal to
+* ` >= ` - greater than or equal to
+The whitespace around the comparison operators is **required**.
 ## Variables
 ### Create a Variable
 #### String
@@ -260,7 +305,12 @@ set i = i + 1
 
 set i = test ## typeError
 ```
-
+You can also use the `<` (reflexive) operator and a variable reference to set a value to itself.
+```
+str string = "hello, "
+<%string>append("world!")
+## "hello, world!"
+```
 ### Delete a Variable
 ```
 free [variable name:R]
@@ -535,9 +585,54 @@ out 54.291>truncate(3)
 #### round
 Rounds a number to the nearest integer.
 ```
-num test = 10.203
-out test>round
+out 10.203>round
 ## 10
+```
+#### mod
+Returns the modulus of a number.
+```
+out 10>mod(3)
+## 1
+```
+#### inc
+Increments a number by `1`.
+```
+out 1>inc
+## 2
+```
+#### dec
+Decrements a number by `1`.
+```
+out 5>dec
+## 4
+```
+
+#### add
+Adds two numbers together.
+```
+out 5>add(10)
+## 15
+```
+#### sub
+Subtracts two numbers.
+```
+out 10>sub(5)
+## 5
+```
+#### mul
+Multiplies two numbers.
+```
+out 5>mul(10)
+## 50
+```
+#### div
+Divides two numbers.
+```
+out 10>div(5)
+## 2
+
+out 10>div(0)
+## DivisionByZeroError
 ```
 ### Boolean
 #### flip

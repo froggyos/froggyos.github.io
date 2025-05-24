@@ -159,4 +159,5 @@ idk
 ~ rewrote FroggyScript again lmao
     - read the documentation !!!
 ~ finally made the macro list show aliases 😩🙏
++ added new Lilypad keybinds
 ```

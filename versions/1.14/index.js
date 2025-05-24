@@ -576,6 +576,16 @@ function moveCaretToEnd(element) {
     }
 }
 
+function scrollTo(line){
+    if(line.getBoundingClientRect().y < terminal.getBoundingClientRect().y){
+        terminal.scrollTop = terminal.scrollTop - (terminal.getBoundingClientRect().y - line.getBoundingClientRect().y);
+    }
+
+    if(line.getBoundingClientRect().bottom > terminal.getBoundingClientRect().bottom) {
+        terminal.scrollTop += line.getBoundingClientRect().bottom - terminal.getBoundingClientRect().bottom;
+    }
+}
+
 function moveCaretToPosition(element, pos) {
     let textNode = element.firstChild;
     
@@ -594,9 +604,11 @@ function moveCaretToPosition(element, pos) {
     selection.removeAllRanges();
     selection.addRange(range);
 
-    const rect = element.getBoundingClientRect();
-    if (rect.bottom > window.innerHeight) element.scrollIntoView(false);
-    if (rect.top < 0) element.scrollIntoView(true);
+    scrollTo(element);
+
+    // const rect = element.getBoundingClientRect();
+    // if (rect.bottom > window.innerHeight) element.scrollIntoView(false);
+    // if (rect.top < 0) element.scrollIntoView(true);
 }
 
 function getCaretPosition(element) {
@@ -1482,10 +1494,11 @@ x
                     addToCommandHistory(`[[BULLFROG]]gotoprogramline ${file.name} ${error.line}`);
                     if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 }
-                //interpreter.realtimeMode = true;
+
                 interpreter.run();
 
-                window.stepInterpreter = interpreter.step.bind(interpreter);
+                window.toggleInterpreterRealtime = () => interpreter.realtimeMode = !interpreter.realtimeMode;
+                window.stepInterpreter = () => interpreter.step();
             }
         break;
 
@@ -1892,11 +1905,43 @@ function createLilypadLine(path, linetype, filename){
     }
 
     function terminalLineKeydownHandler(e){
-        if(e.key == "Enter"){
-            e.preventDefault();
-            let line = document.activeElement;
+        function keybindCondition(key, meta = { shiftKey: false, ctrlKey: false, altKey: false }){
+            meta.shiftKey = meta.shiftKey || false;
+            meta.ctrlKey = meta.ctrlKey || false;
+            meta.altKey = meta.altKey || false;
 
-            let cursorPosition = getCaretPosition(line);
+            return e.key == key && e.shiftKey == meta.shiftKey && e.ctrlKey == meta.ctrlKey && e.altKey == meta.altKey;
+        }
+
+        function swapElements(a, b) {
+            const aParent = a.parentNode;
+            const bParent = b.parentNode;
+
+            const aNext = a.nextSibling;
+            const bNext = b.nextSibling;
+
+            // Move a to b's place
+            if (bNext) {
+                bParent.insertBefore(a, bNext);
+            } else {
+                bParent.appendChild(a);
+            }
+
+            // Move b to a's place
+            if (aNext) {
+                aParent.insertBefore(b, aNext);
+            } else {
+                aParent.appendChild(b);
+            }
+        }
+
+        let line = document.activeElement;
+        let cursorPosition = getCaretPosition(line);
+        let lines = document.querySelectorAll(`[data-program='lilypad-session-${config.programSession}']`);
+        let currentLineIndex = Array.from(lines).indexOf(line);
+
+        if(keybindCondition("Enter")){
+            e.preventDefault();
             let textAfterCursor = line.textContent.slice(cursorPosition);
 
             line.textContent = line.textContent.slice(0, cursorPosition);
@@ -1907,11 +1952,7 @@ function createLilypadLine(path, linetype, filename){
             updateLinePrefixes(linetype);
         }
 
-        if(e.key == "Backspace"){
-            let lines = document.querySelectorAll(`[data-program='lilypad-session-${config.programSession}']`);
-            let currentLineIndex = Array.from(lines).indexOf(document.activeElement);
-            let cursorPosition = getCaretPosition(document.activeElement);
-
+        if(keybindCondition("Backspace")){
             let selection = window.getSelection();
 
             if(selection.rangeCount > 0 && selection.getRangeAt(0).startOffset != selection.getRangeAt(0).endOffset){
@@ -1936,49 +1977,110 @@ function createLilypadLine(path, linetype, filename){
             }
         };
 
-        if(e.key == "ArrowUp"){
+        
+        if(keybindCondition("ArrowUp")){
             e.preventDefault();
-            let lines = document.querySelectorAll(`[data-program='lilypad-session-${config.programSession}']`);
-            let focusedLine = document.activeElement;
-            let focusedLineIndex = Array.from(lines).indexOf(focusedLine);
-            
-            if(focusedLineIndex > 0){
-                let newLine = lines[focusedLineIndex - 1]
+            if(currentLineIndex > 0){
+                let newLine = lines[currentLineIndex - 1]
 
-                let caretPosition = (focusedLine.textContent.trim().length === 0)
+                let caretPosition = (line.textContent.trim().length === 0)
                 ? newLine.textContent.length
-                : getCaretPosition(focusedLine);
+                : getCaretPosition(line);
 
                 moveCaretToPosition(newLine, caretPosition);
-
-                if(newLine.getBoundingClientRect().y < terminal.getBoundingClientRect().y){
-                    terminal.scrollTop = terminal.scrollTop - (terminal.getBoundingClientRect().y - newLine.getBoundingClientRect().y);
-                }
             };
         };
 
-        if(e.key == "ArrowDown"){
+        if(keybindCondition("ArrowDown")){
             e.preventDefault();
-            let lines = document.querySelectorAll(`[data-program='lilypad-session-${config.programSession}']`);
-            let focusedLine = document.activeElement;
 
-            let focusedLineIndex = Array.from(lines).indexOf(focusedLine);
+            if(currentLineIndex < lines.length - 1){
+                let newLine = lines[currentLineIndex + 1];
 
-            if(focusedLineIndex < lines.length - 1){
-                let newLine = lines[focusedLineIndex + 1];
-
-                currentYPos = 1;
-                let caretPosition = (focusedLine.textContent.trim().length === 0)
+                let caretPosition = (line.textContent.trim().length === 0)
                     ? newLine.textContent.length
-                    : getCaretPosition(focusedLine);
+                    : getCaretPosition(line);
 
                 moveCaretToPosition(newLine, caretPosition);
-
-                if(newLine.getBoundingClientRect().bottom > terminal.getBoundingClientRect().bottom) {
-                    terminal.scrollTop += newLine.getBoundingClientRect().bottom - terminal.getBoundingClientRect().bottom;
-                }
             };
         };
+
+        if(keybindCondition("ArrowUp", { ctrlKey: true })){
+            e.preventDefault();
+
+            let firstLine = lines[0];
+            let caretPosition = firstLine.textContent.length > line.textContent.length
+                ? line.textContent.length
+                : firstLine.textContent.length
+
+            moveCaretToPosition(firstLine, caretPosition);
+        };
+
+        if(keybindCondition("ArrowDown", { ctrlKey: true })){
+            e.preventDefault();
+
+            let lastLine = lines[lines.length - 1];
+
+            let caretPosition = lastLine.textContent.length > line.textContent.length
+                ? line.textContent.length
+                : lastLine.textContent.length;
+
+            moveCaretToPosition(lastLine, caretPosition);
+        };
+
+        if(keybindCondition("ArrowUp", { altKey: true })){
+            e.preventDefault();
+            let previousLine = lines[currentLineIndex - 1];
+            let currentLine = lines[currentLineIndex];
+
+            let cursorPosition = getCaretPosition(currentLine);
+
+            if(previousLine != undefined){
+                swapElements(previousLine, currentLine);
+                moveCaretToPosition(currentLine, cursorPosition);
+                updateLinePrefixes(linetype);
+            }
+        }
+
+        if(keybindCondition("ArrowDown", { altKey: true })){
+            e.preventDefault();
+            let nextLine = lines[currentLineIndex + 1];
+            let currentLine = lines[currentLineIndex];
+
+            let cursorPosition = getCaretPosition(currentLine);
+
+            if(nextLine != undefined){
+                swapElements(currentLine, nextLine);
+                moveCaretToPosition(currentLine, cursorPosition);
+                updateLinePrefixes(linetype);
+            }
+        }
+
+        if(keybindCondition("q", { ctrlKey: true })){
+            e.preventDefault();
+            moveCaretToPosition(line, 0);
+        };
+
+        if(keybindCondition("e", { ctrlKey: true })){
+            e.preventDefault();
+            moveCaretToPosition(line, line.textContent.length);
+        }
+
+        if(keybindCondition("Delete")){
+            e.preventDefault();
+            if(currentLineIndex != 0){
+                let previousLine = lines[currentLineIndex - 1];
+
+                moveCaretToPosition(previousLine, getCaretPosition(line));
+
+                line.parentElement.remove();
+
+                clearInterval(highlightedLineUpdater);
+                updateLinePrefixes(linetype);
+            }   
+        }
+
+
 
         if(e.key == "Escape"){
             e.preventDefault();
@@ -1991,7 +2093,6 @@ function createLilypadLine(path, linetype, filename){
                 data: []
             };
 
-            let lines = document.querySelectorAll(`[data-program='lilypad-session-${config.programSession}']`);
             for(let i = 0; i < lines.length; i++){
                 file.data.push(lines[i].textContent);
                 lines[i].setAttribute('contenteditable', 'false');
@@ -2067,6 +2168,7 @@ sendCommand('[[BULLFROG]]validatelanguage', [], false);
 function ready(){
     document.getElementById("blackout").remove()
     sendCommand('[[BULLFROG]]greeting', []);
+    sendCommand('m', ['welcome!'], false);
 }
 
 // literally all of this is just for the animation

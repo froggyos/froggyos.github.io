@@ -125,19 +125,20 @@ class Keyword {
                     }
                 }
             }
-
-            this.args.forEach((token, i) => {
-                if(token.type == "IdentifierReference") {
-                    this.args[i] = new Token("IdentifierReference", token.value.slice(1), token.position);
-                }
-            })
             
             if(typeof pre === 'function') {
                 pre(this.args, interp, this)
             }  
         }     
+    }
 
-        Keyword.schemes[keyword] = this;
+    add = () => Keyword.schemes[this.keyword] = this;
+    rescind = () => {
+        if (Keyword.schemes[this.keyword]) {
+            delete Keyword.schemes[this.keyword];
+        } else {
+            throw new Error(`Keyword [${this.keyword}] does not exist`);
+        }
     }
 }
 
@@ -180,6 +181,7 @@ class Token {
             ['Calculation_LessThanEquals', / <= /],
             ['Calculation_GreaterThanEquals', / >= /],
             ['MethodInitiator', />/],
+            ['Reflexive', /</],
             ['Assignment', /=/],
             ["Comma", /,/],
             ['Operator', /[+-/\*\^]/],
@@ -252,14 +254,41 @@ class Method {
             optional: arg.endsWith('?')
         }));
 
-        const types = Array.isArray(type) ? type : [type];
+        // const types = Array.isArray(type) ? type : [type];
+
+        // // Register this method for each provided type
+        // types.forEach(t => {
+        //     if (!Method.registry.has(t)) {
+        //         Method.registry.set(t, new Map());
+        //     }
+        //     Method.registry.get(t).set(name, this);
+        // });
+    }
+
+    add() {
+        const types = Array.isArray(this.type) ? this.type : [this.type];
 
         // Register this method for each provided type
         types.forEach(t => {
             if (!Method.registry.has(t)) {
                 Method.registry.set(t, new Map());
             }
-            Method.registry.get(t).set(name, this);
+            Method.registry.get(t).set(this.name, this);
+        });
+    }
+
+    rescind() {
+        const types = Array.isArray(this.type) ? this.type : [this.type];
+        // Remove this method from each type's registry
+        types.forEach(t => {
+            if (Method.registry.has(t)) {
+                Method.registry.get(t).delete(this.name);
+                if (Method.registry.get(t).size === 0) {
+                    Method.registry.delete(t);
+                }
+            } else {
+                throw new Error(`Method [${this.name}] does not exist for type [${t}]`);
+            }
         });
     }
 
@@ -506,7 +535,7 @@ class Interpreter {
             let matched = false;
 
             if (iterations++ > 10000) {
-                tokens.push(new InterpreterError('TokenizationError', `Infinite loop detected in tokenization`, tokens, this.interval, pos));
+                tokens.push(new InterpreterError('TokenizationError', `Malformed Tokens.\nPossible issues:\n No keywords in [Keyword] class?\n\n`, tokens, this.interval, pos));
                 break;
             }
     
@@ -623,6 +652,32 @@ class Interpreter {
 
                     token.value = values;
                 }
+            }
+        })
+
+        tokens.forEach((token, index) => {
+            if(token.type == "IdentifierReference") {
+                token.value = token.value.slice(1);
+            }
+        })
+
+        tokens.forEach((token, index) => {
+            if(token.type == "Reflexive") {
+                let nextToken = tokens[index + 1];
+
+                if(nextToken.type != "IdentifierReference"){
+                    tokens.push(new InterpreterError('SyntaxError', `Expected IdentifierReference after Reflexive, found ${nextToken.type}`, tokens, this.interval, token.position));
+                    return tokens;
+                }
+
+                let variable = nextToken.value;
+
+                let rest = tokens.slice(index + 2).map((t, i) => t.type == 'String' ? `"${t.value}"` : t.value).join("");
+
+                let string = `set ${variable} = ${variable}${rest}`;
+
+                this.lines[this.interval] = string;
+                this.interval--;
             }
         })
 
@@ -855,6 +910,8 @@ class Interpreter {
             token = result;
         }
 
+
+        if(token == undefined) return new InterpreterError('MethodParseError', `Token is undefined after parsing methods. Possible issues:\n No Method function\n Method function returns undefined\n\n`, token, this.interval, NaN);
         if(token instanceof InterpreterError) return token;
         else if(token.value instanceof Token) token = token.value;
         else token = new Token(token.type, token.value, token.position);
@@ -1017,7 +1074,7 @@ const load_function = () => {
         post: (tokens, interp, keyword) => {
             terminal.innerHTML = "";
         }
-    })
+    }).add()
 
     const KEYWORD_QUICKLOOP = new Keyword('quickloop', "basic", ['Keyword', "Number|Boolean"], {
         post: (tokens, interp, keyword) => {
@@ -1079,7 +1136,7 @@ const load_function = () => {
                 }
             }
         }
-    })
+    }).add()
 
     const KEYWORD_ENDQUICKLOOP = new Keyword('endquickloop', "basic", ['Keyword'], {
         post: (tokens, interp, keyword) => {
@@ -1105,7 +1162,7 @@ const load_function = () => {
             }
 
         }
-    })
+    }).add()
 
     const KEYWORD_CALL = new Keyword('call', "basic", ['Keyword', "FunctionCall"], {
         post: (tokens, interp, keyword) => {
@@ -1159,7 +1216,7 @@ const load_function = () => {
             subInterpreter.inhereit(interp)
             subInterpreter.run();
         }
-    })
+    }).add()
 
     const KEYWORD_OUTF = new Keyword('outf', "basic", ['Keyword', "String", "String"], {
         post: (tokens, interp, keyword) => {
@@ -1261,9 +1318,9 @@ const load_function = () => {
             if(tokenErrors.length > 0) interp.outputError(tokenErrors[0]);
             else interp.output(text, formatArray);
         }
-    })
+    }).add()
 
-    const KEYWORD_COMMENT = new Keyword('##', "basic", ['Keyword'], { dud: true })
+    const KEYWORD_COMMENT = new Keyword('##', "basic", ['Keyword'], { dud: true }).add()
 
     const KEYWORD_PROMPT = new Keyword('prompt', "basic", ['Keyword', "IdentifierReference", "Number", "Array"], {
         post: (tokens, interp, keyword) => {
@@ -1336,7 +1393,7 @@ const load_function = () => {
             terminal.appendChild(lineContainer);
             document.body.addEventListener("keyup", promptHandler)
         }
-    })
+    }).add();
 
     const KEYWORD_ASK = new Keyword('ask', "basic", ['Keyword', "IdentifierReference", "String"], {
         post: (tokens, interp, keyword) => {
@@ -1389,7 +1446,8 @@ const load_function = () => {
                 }
             });
         }
-    })
+    }).add()
+
     const KEYWORD_FILEARG = new Keyword('filearg', "basic", ['Keyword', 'String', 'String'], {
         post: (tokens, interp, keyword) => {
             let variableName = `Filearg_${tokens[1].value}`;
@@ -1407,14 +1465,14 @@ const load_function = () => {
 
             interp.fileArgumentCount++;
         }
-    })
+    }).add()
 
     const KEYWORD_ENDPROG = new Keyword('endprog', "basic", ['Keyword'], { 
         post: (tokens, interp) => {
             interp.kill();
             interp.onComplete();
         }
-    });
+    }).add()
 
     const KEYWORD_FREE = new Keyword('free', "basic", ['Keyword', "IdentifierReference"], { 
         pre: (tokens, interp, keyword) => {
@@ -1428,7 +1486,7 @@ const load_function = () => {
                 delete interp.variables[variableName];
             }
         }
-    });
+    }).add()
 
     const KEYWORD_STR = new Keyword('str', "assigner", ['Assigner', 'Assignee', 'Assignment', 'String'], {
         post: (tokens, interp, keyword) => {
@@ -1437,7 +1495,7 @@ const load_function = () => {
 
             interp.setVariable(identifier.value, value.value, 'String', true);
         }
-    });
+    }).add()
 
     const KEYWORD_CSTR = new Keyword('cstr', "assigner", ['Assigner', 'Assignee', 'Assignment', 'String'], {
         post: (tokens, interp, keyword) => {
@@ -1446,7 +1504,7 @@ const load_function = () => {
 
             interp.setVariable(identifier.value, value.value, 'String', false);
         }
-    });
+    }).add()
 
     const KEYWORD_NUM = new Keyword('num', "assigner", ['Assigner', 'Assignee', 'Assignment', 'Number'], {
         post: (tokens, interp) => {
@@ -1455,7 +1513,7 @@ const load_function = () => {
 
             interp.setVariable(identifier.value, value.value.toString(), 'Number', true);
         }
-    });
+    }).add()
 
     const KEYWORD_CNUM = new Keyword('cnum', "assigner", ['Assigner', 'Assignee', 'Assignment', 'Number'], {
         post: (tokens, interp) => {
@@ -1464,7 +1522,7 @@ const load_function = () => {
 
             interp.setVariable(identifier.value, value.value.toString(), 'Number', false);
         }
-    });
+    }).add()
 
     const KEYWORD_BLN = new Keyword('bln', "assigner", ['Assigner', 'Assignee', 'Assignment', 'Boolean'], {
         post: (tokens, interp) => {
@@ -1473,7 +1531,7 @@ const load_function = () => {
 
             interp.setVariable(identifier.value, value.value, 'Boolean', true);
         }
-    });
+    }).add()
 
     const KEYWORD_CBLN = new Keyword('cbln', "assigner", ['Assigner', 'Assignee', 'Assignment', 'Boolean'], {
         post: (tokens, interp) => {
@@ -1482,14 +1540,14 @@ const load_function = () => {
 
             interp.setVariable(identifier.value, value.value, 'Boolean', false);
         }
-    });
+    }).add()
 
     const KEYWORD_OUT = new Keyword('out', "basic", ['Keyword', 'String|Number|Boolean'], {
         post: (tokens, interp) => {
             let value = tokens[1];
             interp.output(value.value);
         }
-    });
+    }).add()
 
     const KEYWORD_SET = new Keyword('set', "assigner", ['Assigner', 'Assignee', 'Assignment', '*'], {
         pre: (tokens, interp, keyword) => {
@@ -1508,7 +1566,7 @@ const load_function = () => {
 
             interp.setVariable(identifier.value, value.value, variable.type, true);
         }
-    });
+    }).add()
 
     const KEYWORD_ARR = new Keyword('arr', "assigner", ['Assigner', 'Assignee', 'Assignment', 'Array'], {
         post: (tokens, interp) => {
@@ -1517,7 +1575,7 @@ const load_function = () => {
 
             interp.setVariable(identifier.value, token.value, 'Array', true);
         }
-    });
+    }).add()
 
     const KEYWORD_CARR = new Keyword('carr', "assigner", ['Assigner', 'Assignee', 'Assignment', 'Array'], {
         post: (tokens, interp) => {
@@ -1526,7 +1584,7 @@ const load_function = () => {
 
             interp.setVariable(identifier.value, token.value, 'Array', false);
         }
-    });
+    }).add()
 
     const KEYWORD_LOOP = new Keyword('loop', "basic", ['Keyword', 'Number|Boolean'], {
         pre: (tokens, interp, keyword) => {
@@ -1570,8 +1628,6 @@ const load_function = () => {
                     loopCount: 0,
                 }
 
-                //console.log(interp.data[`${interp.interval}_loop`])
-
                 if(interp.data[`${interp.interval}_loop`].loopCount >= maxLoops) {
                     delete interp.data[`${interp.interval}_loop`];
                     setSetting("showSpinner", false);
@@ -1580,14 +1636,12 @@ const load_function = () => {
                     interp.data[`${interp.interval}_loop`].loopCount++;
                 }
 
-                console.log(interp.data)
-
                 setSetting("showSpinner", true);
             }
 
 
         },
-    })
+    }).add();
 
     const KEYWORD_ENDLOOP = new Keyword('endloop', "basic", ['Keyword'], { 
         pre: (tokens, interp, keyword) => {
@@ -1611,7 +1665,7 @@ const load_function = () => {
             }
             interp.interval = startLoopIndex - 1;
         }
-    });
+    }).add();
 
 
     const KEYWORD_IF = new Keyword('if', "basic", ['Keyword', 'Boolean'], {
@@ -1654,18 +1708,18 @@ const load_function = () => {
                 }
             }
         },
-    });
+    }).add()
 
-    const KEYWORD_ENDIF = new Keyword('endif', "basic", ['Keyword'], { dud: true });
-    const KEYWORD_ENDFUNC = new Keyword('endfunc', "basic", ['Keyword'], { dud: true });
+    const KEYWORD_ENDIF = new Keyword('endif', "basic", ['Keyword'], { dud: true }).add()
+    const KEYWORD_ENDFUNC = new Keyword('endfunc', "basic", ['Keyword'], { dud: true }).add();
 
-    const KEYWORD_RETURN = new Keyword('return', "basic", ['Keyword', 'Number|String|Boolean'], { dud: true });
+    const KEYWORD_RETURN = new Keyword('return', "basic", ['Keyword', 'Number|String|Boolean'], { dud: true }).add();
 
     const KEYWORD_ELSE = new Keyword('else', "basic", ['Keyword', 'Number'], {
         post: (tokens, interp, keyword) => {
             interp.interval = tokens[1].value
         }
-    })
+    }).add();
 
     const KEYWORD_WAIT = new Keyword('wait', "basic", ['Keyword', 'Number'], {
         post: (tokens, interp) => {
@@ -1677,7 +1731,7 @@ const load_function = () => {
                 setSetting('showSpinner', false)
             }, value.value);
         }
-    });
+    }).add();
 
     const KEYWORD_FUNC = new Keyword('func', "basic", ['Keyword', 'Identifier'], {
         post: (tokens, interp, keyword) => {
@@ -1767,12 +1821,12 @@ const load_function = () => {
                 returnValue: null,
             }
         }
-    });
+    }).add();
 
     // Multi
     new Method("type", ["String", "Number", "Boolean", "Array"], (token, args) => {
         return new Token("String", token.type, token.position, token.methods);
-    }, []);
+    }, []).add();
 
     new Method("coerce", ["String", "Number", "Boolean"], (token, args) => {
         let currentType = token.type;
@@ -1817,7 +1871,7 @@ const load_function = () => {
                 return new InterpreterError('TypeError', `Cannot coerce type ${currentType} to type ${targetType}`, token, token.position, token.position);
             };
         }
-    }, ["String"])
+    }, ["String"]).add();
 
     new Method("index", ["String", "Array"], (token, args) => {
         let arg0 = args[0];
@@ -1826,55 +1880,55 @@ const load_function = () => {
             return new InterpreterError('RangeError', `Index out of range`, token, token.position, token.position);
         }
         return new Token("String", indexValue, token.position, token.methods);
-    }, ["Number"]);
+    }, ["Number"]).add();
 
     // pure array
     new Method("join", ["Array"], (token, args) => {
         let arg0 = args[0]?.value || ","
         return new Token("String", token.value.map(t => t.value).join(arg0), token.position, token.methods);
-    }, ["String?"]);
+    }, ["String?"]).add();
 
     new Method("append", ["Array"], (token, args) => {
         let arg0 = args[0];
         return new Token("Array", [...token.value, ...arg0.value], token.position, token.methods);
-    }, ["Array"]);
+    }, ["Array"]).add();
 
     new Method("length", ["Array"], (token, args) => {
         return new Token("Number", token.value.length, token.position, token.methods);
-    }, []);
+    }, []).add();
 
     // pure string
     new Method("eq", ["String"], (token, args) => {
         return new Token("Boolean", token.value == args[0].value, token.position, token.methods);
-    }, ["String"]);
+    }, ["String"]).add();
 
     new Method("neq", ["String"], (token, args) => {
         return new Token("Boolean", token.value != args[0].value, token.position, token.methods);
-    }, ["String"]);
+    }, ["String"]).add();
 
     new Method("append", ["String"], (token, args) => {
         let arg0 = args[0];
         return new Token("String", token.value + arg0.value, token.position, token.methods);
-    }, ["String"]);
+    }, ["String"]).add();
 
     new Method("length", ["String"], (token, args) => {
         return new Token("Number", token.value.length, token.position, token.methods);
-    }, []);
+    }, []).add();
 
     new Method("repeat", ["String"], (token, args) => {
         let arg0 = args[0];
         return new Token("String", token.value.repeat(arg0.value), token.position, token.methods);
-    }, ["Number"]);
+    }, ["Number"]).add();
 
     // pure boolean
     new Method("flip", ["Boolean"], (token, args) => {
         return new Token("Boolean", !token.value+"", token.position, token.methods);
-    }, []);
+    }, []).add();
 
     // pure number
     new Method("abs", ["Number"], (token, args) => {
         return new Token("Number", Math.abs(token.value), token.position, token.methods);
-    }, []);
+    }, []).add();
     
     new Method("truncate", ["Number"], (token, args) => {
         let precision = +args[0]?.value || 0;
@@ -1882,11 +1936,57 @@ const load_function = () => {
 
         const factor = Math.pow(10, precision);
         let result = Math.round(token.value * factor) / factor;
-        return new Token("Number", result.toString(), token.position, token.methods);
 
-    }, ["Number?"]);
+        return new Token("Number", result.toString(), token.position, token.methods);
+    }, ["Number?"]).add();
 
     new Method("round", ["Number"], (token, args) => {
         return new Token("Number", Math.round(token.value).toString(), token.position, token.methods);
-    }, []);
+    }, []).add();
+
+    new Method("mod", ["Number"], (token, args) => {
+        let arg0 = args[0];
+        if(arg0.value == 0) {
+            return new InterpreterError('ZeroDivisionError', `Cannot divide by zero`, token, token.position, token.position);
+        }
+        return new Token("Number", (token.value % arg0.value).toString(), token.position, token.methods);
+    }).add();
+
+    new Method("inc", ["Number"], (token, args) => {
+        return new Token("Number", (+token.value + 1).toString(), token.position, token.methods);
+    }, []).add();
+
+    new Method("dec", ["Number"], (token, args) => {
+        return new Token("Number", (+token.value - 1).toString(), token.position, token.methods);
+    }, []).add();
+
+    new Method("add", ["Number"], (token, args) => {
+        let arg0 = args[0];
+        return new Token("Number", (+token.value + +arg0.value).toString(), token.position, token.methods);
+    }, ["Number"]).add();
+
+    new Method("sub", ["Number"], (token, args) => {
+        let arg0 = args[0];
+        return new Token("Number", (+token.value - +arg0.value).toString(), token.position, token.methods);
+    }, ["Number"]).add();
+
+    new Method("mul", ["Number"], (token, args) => {
+        let arg0 = args[0];
+        return new Token("Number", (+token.value * +arg0.value).toString(), token.position, token.methods);
+    }, ["Number"]).add();
+
+    new Method("div", ["Number"], (token, args) => {
+        let arg0 = args[0];
+        if(arg0.value == 0) {
+            return new InterpreterError('ZeroDivisionError', `Cannot divide by zero`, token, token.position, token.position);
+        }
+        return new Token("Number", (+token.value / +arg0.value).toString(), token.position, token.methods);
+    }, ["Number"]).add();
+}
+
+const Imports = {
+    graphics: {
+        keywords: [],
+        methods: [],
+    }
 }
