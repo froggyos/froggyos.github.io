@@ -164,6 +164,7 @@ KEY [key name] TYPE Array END
     * `A` - Array
     * `R` - Identifier Reference
     * `U` - Undefined
+* error position is unreliable
 
 ## General Utilities
 ### Comments

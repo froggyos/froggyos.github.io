@@ -911,7 +911,7 @@ const config = {
                     "out '(>____<)'",
                     "out ' ^^~~^^'",
                 "endfunc",
-                "@display_frog('sleepy')",
+                "call @display_frog('sleepy')",
             ] },
             { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
                 // "out 'before!'",
@@ -934,15 +934,15 @@ const config = {
                 "endloop",
                 " out number"
             ] },
-            // { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
-            //     "arr meow = 4,48",
-            //     'outf {t=c01,i=1} "this is blue text"',
-            //     'outf {b=c00} "this is a black background"',
-            //     'outf {t=c06, b=c01} "this is brown text on a blue background"',
-            //     'outf {t=c01, tr=0-21} "from char 0 to char 21, the text will be blue" ',
-            //     'outf {t=c01, tr=meow:0-meow:1 | b=c04, br=57-91} "from the char 4 to char 48, the text will be blue. AND from char 57 to char 91 the background will be red" ',
-            //     "endprog"
-            // ] },
+            { name: "test2", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
+                "arr meow = $4, 48$",
+                'outf "t=c01,i=1" , "this is blue text"',
+                'outf "b=c00" , "this is a black background"',
+                'outf "t=c06, b=c01" , "this is brown text on a blue background"',
+                'outf "t=c01, tr=0-21" , "from char 0 to char 21, the text will be blue" ',
+                'outf "t=c01, tr=meow>index(0)-meow>index(1) | b=c04, br=57-91" , "from the char 4 to char 48, the text will be blue. AND from char 57 to char 91 the background will be red" ',
+                "clearterminal",
+            ] },
             { name: "loop-test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
                 "num loopTest = 0",
                 "num quickloopTest = 0",

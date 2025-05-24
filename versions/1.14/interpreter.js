@@ -1013,6 +1013,12 @@ class Interpreter {
 }
 
 const load_function = () => {
+    const KEYWORD_CLEARTERMINAL = new Keyword('clearterminal', "basic", ['Keyword'], {
+        post: (tokens, interp, keyword) => {
+            terminal.innerHTML = "";
+        }
+    })
+
     const KEYWORD_QUICKLOOP = new Keyword('quickloop', "basic", ['Keyword', "Number|Boolean"], {
         post: (tokens, interp, keyword) => {
             let depth = 1;
@@ -1042,6 +1048,9 @@ const load_function = () => {
 
             let value = tokens[1];
 
+            setSetting("currentSpinner", "quickloop-in-progress");
+            setSetting("showSpinner", true);
+
             if(value.type == "Number"){
                 let maxLoops = parseInt(value.value);
                 if(isNaN(maxLoops) || maxLoops <= 0) {
@@ -1055,6 +1064,8 @@ const load_function = () => {
                 }
                 
                 interp.gotoIndex(endQuickloopIndex - 1);
+                setSetting("currentSpinner", getSetting("defaultSpinner"));
+                setSetting("showSpinner", false);
             } else if (value.type == "Boolean") {
                 if(value.value == "true") {
                     for(let i = 0; i < lines.length; i++) {
@@ -1063,6 +1074,8 @@ const load_function = () => {
                     interp.gotoIndex(startIndex - 1);
                 } else {
                     interp.gotoIndex(endQuickloopIndex - 1);
+                    setSetting("currentSpinner", getSetting("defaultSpinner"));
+                    setSetting("showSpinner", false);
                 }
             }
         }
@@ -1154,9 +1167,9 @@ const load_function = () => {
             let text = tokens[2].value;
             let formatArray = [];
 
-            let formatting = format.split("|");
+            let formatting = format.split("|")
 
-            let tokenError = null;
+            let tokenErrors = [];
 
             for (let i = 0; i < formatting.length; i++) {
                 const formattingObject = {};
@@ -1172,29 +1185,72 @@ const load_function = () => {
                         formattingObject[key] = value;
 
                         if (key === "i" && value !== "1" && value !== "0") {
-                            tokenError = new InterpreterError("TypeError", `[${key}] must be 1 or 0, found ${value}`, tokens, interp.interval, tokens[0].position);
+                            tokenErrors.push(new InterpreterError("TypeError", `[${key}] must be 1 or 0, found ${value}`, tokens, interp.interval, tokens[0].position));
+                            break;
                         }
                     } else if (["tr", "br", "ir"].includes(key)) {
                         const [startRaw, endRaw] = value.split("-").map(s => s.trim());
                         let startTokens = interp.tokenize(startRaw);
                         let endTokens = interp.tokenize(endRaw);
 
-                        if (startTokens.length !== 1 || endTokens.length !== 1) {
-                            tokenError = new InterpreterError("SyntaxError", `[${key}] range must be a single value, found ${startRaw} and ${endRaw}`, tokens, interp.interval, tokens[0].position);
-                            continue;
+                        let startTokensGroup = interp.groupByCommas(startTokens);
+                        let endTokensGroup = interp.groupByCommas(endTokens);
+
+                        startTokens = startTokensGroup.map(group => {
+                            let formatted = interp.formatMethods(group);
+                            let parsed = interp.parseMethods(formatted);
+                            return parsed;
+                        });
+
+                        endTokens = endTokensGroup.map(group => {
+                            let formatted = interp.formatMethods(group);
+                            let parsed = interp.parseMethods(formatted);
+                            return parsed;
+                        });
+
+                        if(startTokens.some(t => t instanceof InterpreterError)) {
+                            tokenErrors.push(startTokens.find(t => t instanceof InterpreterError));
+                            break;
                         }
 
-                        const start = startTokens[0];
-                        const end = endTokens[0];
+                        if(endTokens.some(t => t instanceof InterpreterError)) {
+                            tokenErrors.push(endTokens.find(t => t instanceof InterpreterError));
+                            break;
+                        }
+
+                        if (startTokens.length !== 1 || endTokens.length !== 1) {
+                            tokenErrors.push(new InterpreterError("SyntaxError", `[${key}] range must be a single value, found ${startRaw} and ${endRaw}`, tokens, interp.interval, tokens[0].position));
+                            break;
+                        }
+
+                        let start = startTokens[0];
+                        let end = endTokens[0];
+
+                        if(typeof start.value === "object") start = start.value;
+                        if(typeof end.value === "object") end = end.value;
+
+                        start = new Token(start.type, start.value, start.position);
+                        end = new Token(end.type, end.value, end.position);
 
                         if (start.type !== "Number") {
-                            tokenError = new InterpreterError("TypeError", `[${key}] range start must be a Number, found ${start.type}`, tokens, interp.interval, tokens[0].position);
+                            tokenErrors.push(new InterpreterError("TypeError", `[${key}] range start must be a Number, found ${start.type}`, tokens, interp.interval, tokens[0].position));
+                            break;
                         } else if (end.type !== "Number") {
-                            tokenError = new InterpreterError("TypeError", `[${key}] range end must be a Number, found ${end.type}`, tokens, interp.interval, tokens[0].position);
+                            tokenErrors.push(new InterpreterError("TypeError", `[${key}] range end must be a Number, found ${end.type}`, tokens, interp.interval, tokens[0].position));
+                            break;
                         } else {
-                            formattingObject.type = "range";
-                            formattingObject[`${key}_start`] = start.value.toString();
-                            formattingObject[`${key}_end`] = end.value.toString();
+
+                            if(start.value == undefined){
+                                tokenErrors.push(new InterpreterError("TypeError", `[${key}] range start must be a Number`, tokens, interp.interval, tokens[0].position));
+                            } else if(end.value == undefined){
+                                tokenErrors.push(new InterpreterError("TypeError", `[${key}] range end must be a Number`, tokens, interp.interval, tokens[0].position));
+                            } else if(start.value > end.value){
+                                tokenErrors.push(new InterpreterError("TypeError", `[${key}] range start must be less than end`, tokens, interp.interval, tokens[0].position));
+                            } else {
+                                formattingObject.type = "range";
+                                formattingObject[`${key}_start`] = start.value.toString();
+                                formattingObject[`${key}_end`] = end.value.toString();
+                            }
                         }
                     }
                 }
@@ -1202,20 +1258,8 @@ const load_function = () => {
                 formatArray.push(formattingObject);
             }
 
-            if (tokenError == null) {
-                formatArray.forEach((format, i) => {
-                    if (format.t && format.t.length !== 3) {
-                        tokenError = new ScriptError("SyntaxError", `[t] in:\n${formatting[i]}\nmust be a color code (e.g., cXX)`);
-                    }
-                    if (format.b && format.b.length !== 3) {
-                        tokenError = new ScriptError("SyntaxError", `[b] in:\n${formatting[i]}\nmust be a color code (e.g., cXX)`);
-                    }
-                });
-            }
-
-            if(tokenError != null) return interp.outputError(tokenError);
-
-            interp.output(text, formatArray);
+            if(tokenErrors.length > 0) interp.outputError(tokenErrors[0]);
+            else interp.output(text, formatArray);
         }
     })
 
