@@ -254,6 +254,13 @@ These are the valid operators in calculations:
 * ` <= ` - less than or equal to
 * ` >= ` - greater than or equal to
 The whitespace around the comparison operators is **required**.
+## Oneliner Operator
+The `-> ` (oneliner) operator is used to perform methods without needing to use another keyword.
+```
+rect rectangle = $0, 0, 20, 20$
+-> rectangle>render
+.rectangle>render
+```
 ## Variables
 ### Create a Variable
 #### String
@@ -822,8 +829,8 @@ import [import name:S]
 import "graphics"
 ``` -->
 ### Imports List & Documentation
-* [graphics](https://rus1130.github.io/projects/mdparser.html?url=https://froggyos.github.io/versions/1.14/import-docs/graphics.md&toc=true)
-* [config](https://rus1130.github.io/projects/mdparser.html?url=https://froggyos.github.io/versions/1.14/import-docs/config.md)
+* [graphics](https://rus1130.github.io/projects/mdparser.html?url=https://froggyos.github.io/versions/1.14/extra-docs/graphics.md&toc=true)
+* [config](https://rus1130.github.io/projects/mdparser.html?url=https://froggyos.github.io/versions/1.14/extra-docs/config.md)
 <!--
 literally fucking everything
 

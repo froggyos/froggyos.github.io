@@ -169,7 +169,7 @@ class Token {
             ['String', /'(?:\\'|[^'])*'|"(?:\\"|[^"])*"/],
             ['Array', /\$([^\$]+)\$/],
             ['Boolean', /\b(true|false)\b/],
-            ['Pipe', /\|/],
+            ['Oneliner', /^-> /],
             ['Identifier', /\b[a-zA-Z][a-zA-Z0-9_]*\b/],
             ['IdentifierReference', /%[a-zA-Z][a-zA-Z0-9_]*\b/],
             ["FunctionCall", /@[a-zA-Z][a-zA-Z0-9_]*(\(.*\))?/],
@@ -365,7 +365,7 @@ class Interpreter {
         this.interval_length = 1;
         this.tokens = [];
         this.imports = [];
-        this.importData = {};
+        this.importData = defaultImportData;
         this.data = {};
         this.realtimeMode = false;
         this.promptCount = 0;
@@ -397,9 +397,9 @@ class Interpreter {
         this.onComplete = () => {};
         this.onError = (error) => {};
 
-        let boundKillFunction = function(e) {
+        let killFunction = function(e) {
             if (!this.running) {
-                window.removeEventListener('keydown', boundKillFunction);
+                window.removeEventListener('keydown', killFunction);
                 return;
             }
 
@@ -411,11 +411,11 @@ class Interpreter {
                 ));
                 setSetting("currentSpinner", getSetting("defaultSpinner"));
                 setSetting("showSpinner", false);
-                window.removeEventListener('keydown', boundKillFunction);
+                window.removeEventListener('keydown', killFunction);
             }
         }.bind(this);
 
-        window.addEventListener('keydown', boundKillFunction);
+        window.addEventListener('keydown', killFunction);
     }
 
     static trimQuotes(value) {
@@ -743,6 +743,23 @@ class Interpreter {
             }
         })
 
+        tokens.forEach((token, index) => {
+            if(token.type == "Oneliner"){
+                // get the the rest of the tokens after the pipe
+                let restTokens = tokens.slice(index + 1);
+                
+                let result = this.parseMethods(this.formatMethods(restTokens));
+
+                if(result instanceof InterpreterError) {
+                    tokens.push(result);
+                    return tokens;
+                }
+                
+
+                tokens = tokens.slice(0, index).concat(result);
+            }
+        })
+
         return tokens;
     }
 
@@ -1055,7 +1072,9 @@ class Interpreter {
         this.tokens = [];
         this.imports = [];
         this.promptCount = 0;
-        this.importData = {};
+        this.importData = {
+            graphics: defaultImportData.graphics,
+        };
         this.fileArgumentCount = 0;
         this.realtimeMode = false;
         Keyword.schemes = {};
@@ -1064,12 +1083,125 @@ class Interpreter {
         this.data = {};
     }
 
+    renderGraphics(scope){
+        let renderedBackPixels = document.querySelectorAll(`[data-render-back]`);
+        let renderedFrontPixels = document.querySelectorAll(`[data-render-front]`);
+
+        let backRenderStack = this.importData.graphics.backRenderStack;
+
+        console.log(renderedBackPixels, renderedFrontPixels, backRenderStack);
+    }
+
+    // function renderGraphics(scope) {
+//     let renderedBackPixels = document.querySelectorAll(`[data-render-back]`);
+//     let renderedFrontPixels = document.querySelectorAll(`[data-render-front]`);
+
+//     let screenData = FroggyscriptMemory.importsData.graphics.screenData;
+
+//     if(scope.includes("back")){
+//         renderedBackPixels.forEach(pixel => {
+//             pixel.style.backgroundColor = `var(--${screenData.defaultBackgroundColor})`;
+//             pixel.removeAttribute("data-render-back");
+//         })
+
+//         FroggyscriptMemory.importsData.graphics.backRenderOrder.forEach(identifier => {
+//             let variable = FroggyscriptMemory.variables[identifier].value;
+//             if(variable == undefined) return;
+//             if(FroggyscriptMemory.variables[identifier].type == "Rect"){
+//                 let i_x = variable.x;
+//                 let i_y = variable.y;
+//                 let i_width = variable.width;
+//                 let i_height = variable.height;
+//                 let i_fill = variable.fill;
+//                 let i_stroke = variable.stroke;
+//                 for(let i = i_y; i <= i_y + i_height; i++){
+//                     for(let j = i_x; j <= i_x + i_width; j++){
+//                         let pixel = document.getElementById(`screen-${config.programSession}-${i}-${j}`);
+//                         if(pixel == null) continue;
+//                         let color = i_fill;
+//                         if(i == i_y || i == i_y + i_height || j == i_x || j == i_x + i_width) color = i_stroke;
+//                         setPixelColor(pixel, color);
+//                         pixel.setAttribute("data-render-back", identifier);
+//                     }
+//                 }
+//             } else if(FroggyscriptMemory.variables[identifier].type == "Line"){
+//                 let x1 = variable.x1;
+//                 let y1 = variable.y1;
+//                 let x2 = variable.x2;
+//                 let y2 = variable.y2;
+//                 let stroke = variable.stroke;
+//                 let color = variable.color;
+
+//                 const dx = Math.abs(x2 - x1);
+//                 const dy = Math.abs(y2 - y1);
+//                 const sx = x1 < x2 ? 1 : -1;
+//                 const sy = y1 < y2 ? 1 : -1;
+//                 let err = dx - dy;
+
+//                 let textIncrement = 0;
+            
+//                 while (true) {
+//                     let pixel = document.getElementById(`screen-${config.programSession}-${y1}-${x1}`);
+//                     if (pixel != null) {
+//                         setPixelColor(pixel, stroke);
+//                         pixel.setAttribute("data-render-back", identifier);
+                    
+//                         if (variable.text.length > 0 && textIncrement < variable.text.length) {
+//                             pixel.textContent = variable.text[textIncrement];
+//                             setPixelTextColor(pixel, color);
+//                             pixel.setAttribute("data-render-front", identifier);
+//                             textIncrement++;
+//                         } else {
+//                             pixel.textContent = "\u00A0"; // Clear text if not used
+//                             pixel.removeAttribute("data-render-front"); // Optional cleanup
+//                         }
+//                     }
+            
+//                     if (x1 === x2 && y1 === y2) break;
+//                     const e2 = 2 * err;
+//                     if (e2 > -dy) { err -= dy; x1 += sx; }
+//                     if (e2 < dx) { err += dx; y1 += sy; }
+//                 }
+//             }
+//         })
+//     }
+// }
+
     kill() {
         clearInterval(this.clock);
     }
 }
 
 const load_function = () => {
+    const KEYWORD_IMPORT = new Keyword('import', "basic", ['Keyword', "String"], {
+        post: (tokens, interp, keyword) => {
+            let importName = tokens[1].value;
+
+            if(Imports[importName] == undefined) {
+                return interp.outputError(new InterpreterError('ImportError', `Import [${importName}] is not defined`, tokens, interp.interval, tokens[1].position));
+            }
+
+            if(interp.imports.includes(importName)) {
+                return interp.outputError(new InterpreterError('ImportError', `Import [${importName}] is already imported`, tokens, interp.interval, tokens[1].position));
+            }
+
+            interp.imports.push(importName);
+
+            let importData = Imports[importName];
+
+            importData.keywords.forEach(keyword => {
+                keyword.add()
+            });
+
+            importData.methods.forEach(method => {
+                method.add()
+            });
+
+            Token.generateSpecs();
+
+        }
+    }).add()
+
     const KEYWORD_CLEARTERMINAL = new Keyword('clearterminal', "basic", ['Keyword'], {
         post: (tokens, interp, keyword) => {
             terminal.innerHTML = "";
@@ -1984,9 +2116,97 @@ const load_function = () => {
     }, ["Number"]).add();
 }
 
+const defaultImportData = {
+    graphics: {
+        defaultBackgroundColor: "c15",
+        rendered: false,
+        maxWidth: 79,
+        maxHeight: 58,
+        width: undefined,
+        height: undefined,
+        backRenderStack: [],
+    }
+}
+
 const Imports = {
     graphics: {
-        keywords: [],
-        methods: [],
+        keywords: [
+            new Keyword("createscreen", "basic", ['Keyword', 'Number', "Number"], {
+                post: (tokens, interp, keyword) => {
+                    let givenWidth = tokens[1].value;
+                    let givenHeight = tokens[2].value;
+
+                    if(givenWidth > defaultImportData.graphics.maxWidth) {
+                        return interp.outputError(new InterpreterError('RangeError', `Width cannot be greater than ${defaultImportData.graphics.maxWidth}`, tokens, interp.interval, tokens[1].position));
+                    }
+                    if(givenWidth < 1) {
+                        return interp.outputError(new InterpreterError('RangeError', `Width cannot be less than 1`, tokens, interp.interval, tokens[1].position));
+                    }
+                    if(givenHeight > defaultImportData.graphics.maxHeight) {
+                        return interp.outputError(new InterpreterError('RangeError', `Height cannot be greater than ${defaultImportData.graphics.maxHeight}`, tokens, interp.interval, tokens[2].position));
+                    }
+                    if(givenHeight < 1) {
+                        return interp.outputError(new InterpreterError('RangeError', `Height cannot be less than 1`, tokens, interp.interval, tokens[2].position));
+                    }
+                    interp.importData.graphics.width = +givenWidth;
+                    interp.importData.graphics.height = +givenHeight;
+
+                    interp.importData.graphics.rendered = true;
+
+                    terminal.innerHTML = ""; // clear the terminal
+
+                    for(let i = 0; i < givenHeight; i++){
+                        let rowHtml = '';
+                        for(let j = 0; j < givenWidth; j++){
+                            let style = `"background-color: var(--${defaultImportData.graphics.defaultBackgroundColor}); color: var(--${defaultImportData.graphics.defaultBackgroundColor})"`;
+                            rowHtml += `<span id="screen-${config.programSession}-${i}-${j}" style=${style}>\u00A0</span>`;
+                        }
+                        let lineContainer = document.createElement('div');
+                        let terminalLine = document.createElement('div');
+                        lineContainer.classList.add('line-container');
+                        terminalLine.innerHTML = rowHtml;
+                        lineContainer.appendChild(terminalLine);
+                        terminal.appendChild(lineContainer);
+                    }
+                }
+            }),
+            new Keyword("rect", "assigner", ['Assigner', 'Assignee', 'Assignment', 'Array'], {
+                post: (tokens, interp, keyword) => {
+                    let array = tokens[3].value;
+
+                    if(array.length != 4){
+                        return interp.outputError(new InterpreterError('SyntaxError', `Rectangle must have 4 values`, tokens, interp.interval, tokens[3].position));
+                    }
+
+                    for(let i = 0; i < array.length; i++){
+                        if(array[i].type != "Number"){
+                            return interp.outputError(new InterpreterError('TypeError', `Rectangle values must be numbers`, tokens, interp.interval, array[i].position));
+                        }
+                    }
+
+                    let x = array[0].value;
+                    let y = array[1].value;
+                    let width = array[2].value;
+                    let height = array[3].value;
+
+                    let variableValue = {
+                        x: x,
+                        y: y,
+                        width: width,
+                        height: height,
+                    }
+
+                    interp.setVariable(tokens[1].value, variableValue, "Rectangle", true);
+                }
+            })
+        ],
+        methods: [
+            new Method("render", ["Rectangle"], (token, args) => {
+                let interp = Interpreter.interpreters[0];
+                interp.importData.graphics.backRenderStack.push(token);
+                interp.renderGraphics(["back"]);
+                return token;
+            }),
+        ],
     }
 }

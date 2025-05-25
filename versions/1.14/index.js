@@ -1144,7 +1144,6 @@ function sendCommand(command, args, createEditableLineAfter){
                     let macroAliases = macros.filter(macro => macro.properties.hidden == false && macro.properties.transparent == false);
                     macroAliases = macroAliases.map(macro => macro.data[0].startsWith("!") ? macro.data[0].slice(1) : "no alias");
 
-                    console.log(macroAliases);
                     createTerminalLine(macroList.map((macro, i) => `${macro.name} (${macroAliases[i]})`).join(", "), ">", {translate: false})
                 }
                 hadError = true;
@@ -2168,7 +2167,7 @@ sendCommand('[[BULLFROG]]validatelanguage', [], false);
 function ready(){
     document.getElementById("blackout").remove()
     sendCommand('[[BULLFROG]]greeting', []);
-    sendCommand('m', ['welcome!'], false);
+    sendCommand('st', ["test"]);
 }
 
 // literally all of this is just for the animation
