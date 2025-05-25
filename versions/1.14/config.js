@@ -881,7 +881,7 @@ const config = {
         "D:/Programs": [
             { name: "cli", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["str cli = 'this program is hardcoded into froggyOS'", "endprog"] },
             { name: "lilypad", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["str lilypad = 'this program is hardcoded into froggyOS'", "endprog"] },
-            { name: "kaerugotchi", properties: {transparent: false, read:true, write: true, hidden: false}, data: [ // kaerugotchi
+            { name: "kaerugotchi", properties: {transparent: false, read:true, write: true, hidden: false}, data: [
                 "func display_frog(head:S)",
                     "if head>eq('default')",
                         "out '  o..o'",
@@ -916,8 +916,15 @@ const config = {
             { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
                 "import 'graphics'",
                 "createscreen 79,58",
-                "rect meow = $4, 4, 20, 20$",
-                "-> meow>render",
+                "rect meow = $0, 0, 10, 10$",
+                "rect meow2 = $11, 0, 10, 10$",
+                ".meow>render",
+                ".meow2>render",
+                ".meow>size(30, 30)",
+                ".meow2>move(20, 20)",
+                ".meow>fill('c02')",
+                ".meow>stroke('c04')",
+                ".meow>remove",
             ] },
             { name: "test2", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
                 "arr meow = $4, 48$",

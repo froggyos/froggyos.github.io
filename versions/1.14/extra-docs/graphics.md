@@ -1,53 +1,74 @@
 # Info
-(0,0) is in the top left corner of the screen. Maximum displayable x is 78 and maximum displayable y is 57.
-
-# Methods
-## toRect
-Converts an array to a rectangle.
-```
-#$0, 0, 50, 50$>toRect
-```
-## toText
-Converts an array to a text object.
-```
-#$0, 0, 'Hello World'$>toText
-```
+(0,0) is in the top left corner of the screen. Maximum displayable x is 79 and maximum displayable y is 58.
 # Keywords
 ## createscreen
 Adds a screen to the terminal line.
 ```
-createscreen [width] [height]
-createscreen 78 57
+createscreen [width:N],[height:N]
+createscreen 78, 57
 ```
 ## rect
 Creates a variable of type Rect.
 ```
-rect [name] = $[x], [y], [width], [height]$
+rect [name] = $[x:N], [y:N], [width:N], [height:N]$
 
-rect rect = $0, 0, 50, 50$
+rect rectangle = $0, 0, 50, 50$
 ```
-## pixel
+# Rect
+## Methods
+### render
+Renders the object to the screen.
+```
+.rectangle>render
+```
+### remove
+Removes the object from the screen.
+```
+.rectangle>remove
+```
+### move
+Macro for `>x()>y()`.
+```
+>move([x], [y])
+
+.rectangle>move(10, 10)
+```
+### size
+Macro for `>width()>height()`.
+```
+>size([width], [height])
+
+.rectangle>size(10, 10)
+```
+## Getters and Setters
+* `>x` - x position of the rectangle
+* `>y` - y position of the rectangle
+* `>width` - width of the rectangle
+* `>height` - height of the rectangle
+* `>fill` - fill color of the rectangle
+* `>stroke` - stroke color of the rectangle
+<!-- ## pixel
 Creates a variable of type Pixel.
 ```
 pxl [name] = $[x], [y]$
 pxl pixel = $0, 0$
-```
-## text
+``` -->
+<!-- ## text
 Creates a variable of type Text. `x` and `y` is where the first character of the text will be drawn.
 ```
 text [name] = $[x], [y], [text]$
 
 text text = $0, 0, 'Hello World'$
-```
-## line
+``` -->
+<!-- ## line
 Creates a variable of type Line. `x1` and `y1` is the starting point of the line, and `x2` and `y2` is the ending point of the line.
 ```
 line [name] = $[x1], [y1], [x2], [y2]$
 
 line line = $0, 0, 50, 50$
-```
+``` -->
 
-# Rect
+<!-- # Rect
 ## Methods
 ### render
 Renders the rectangle to the screen.
@@ -195,4 +216,4 @@ getter/setters:
 >y1
 >x2
 >y2
-```
+``` -->

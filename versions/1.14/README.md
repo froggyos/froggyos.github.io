@@ -255,10 +255,9 @@ These are the valid operators in calculations:
 * ` >= ` - greater than or equal to
 The whitespace around the comparison operators is **required**.
 ## Oneliner Operator
-The `-> ` (oneliner) operator is used to perform methods without needing to use another keyword.
+The `.` (oneliner) operator is used to perform methods without needing to use another keyword.
 ```
 rect rectangle = $0, 0, 20, 20$
--> rectangle>render
 .rectangle>render
 ```
 ## Variables
@@ -438,7 +437,7 @@ prompt %output 0 $'hello', "world!", "I am froggy!"$
 ```
 ## Methods
 If no arguments are passed, you may omit the parentheses. Arguments are separated by `,`.
-### Multi-type
+### Multipule Types
 #### coerce
 Converts a variable to a different type. The type must be one of the following: `String`, `Number`, `Boolean`.
 ##### String → Number

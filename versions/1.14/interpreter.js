@@ -150,7 +150,7 @@ class Keyword {
 class Token {
     static specs = [];
 
-    static generateSpecs() {
+    static generate() {
         let basicKeywords = []
         let assignerKeywords = []
         for (const [keyword, scheme] of Object.entries(Keyword.schemes)) {
@@ -169,7 +169,7 @@ class Token {
             ['String', /'(?:\\'|[^'])*'|"(?:\\"|[^"])*"/],
             ['Array', /\$([^\$]+)\$/],
             ['Boolean', /\b(true|false)\b/],
-            ['Oneliner', /^-> /],
+            ['Oneliner', /^./],
             ['Identifier', /\b[a-zA-Z][a-zA-Z0-9_]*\b/],
             ['IdentifierReference', /%[a-zA-Z][a-zA-Z0-9_]*\b/],
             ["FunctionCall", /@[a-zA-Z][a-zA-Z0-9_]*(\(.*\))?/],
@@ -324,7 +324,7 @@ class Method {
 
 
 class Interpreter {
-    static interpreters = [];
+    static interpreters = {};
     static blockErrorOutput = false;
     /**
      * **IMPORTANT**: In order to load keywords and methods, it its best to do them in the load function. Example:
@@ -339,7 +339,7 @@ class Interpreter {
      * This must be done for every `Interpreter` instance.
      * The `onComplete` function is called when the interpreter has finished running. If it has an error, the `onError` function is called instead.
      */
-    constructor(input, programName, fileArguments) {
+    constructor(name, input, programName, fileArguments) {
         this.resetMemory();
         this.lines = input.map(line => line.trim()).filter(line => line.length > 0);
         this.variables = {
@@ -369,7 +369,8 @@ class Interpreter {
         this.data = {};
         this.realtimeMode = false;
         this.promptCount = 0;
-        Interpreter.interpreters.push(this);
+        this.name = name;
+        Interpreter.interpreters[name] = this;
         this.running = false
 
         for(let i = 0; i < fileArguments.length; i++) {
@@ -743,22 +744,16 @@ class Interpreter {
             }
         })
 
-        tokens.forEach((token, index) => {
-            if(token.type == "Oneliner"){
-                // get the the rest of the tokens after the pipe
-                let restTokens = tokens.slice(index + 1);
-                
-                let result = this.parseMethods(this.formatMethods(restTokens));
+        if(tokens[0].type == "Oneliner") {
+            let tokensToParse = tokens.slice(1);
 
-                if(result instanceof InterpreterError) {
-                    tokens.push(result);
-                    return tokens;
-                }
-                
+            let parsed = this.parseMethods(this.formatMethods(tokensToParse));
 
-                tokens = tokens.slice(0, index).concat(result);
+            if(parsed instanceof InterpreterError) {
+                tokens.push(parsed);
+                return tokens;
             }
-        })
+        }
 
         return tokens;
     }
@@ -959,7 +954,7 @@ class Interpreter {
 
     gotoNext() {
         if(this.paused) return;
-        Token.generateSpecs();
+        Token.generate();
         this.error = false;
 
         let line = this.lines[this.interval];
@@ -1039,7 +1034,7 @@ class Interpreter {
         if(this.running) return;
         this.running = true;
         Interpreter.blockErrorOutput = false;
-        Token.generateSpecs();
+        Token.generate();
         this.load();
         this.error = false;
         this.clock = setInterval(() => {
@@ -1066,7 +1061,6 @@ class Interpreter {
         this.interval = 0;
         this.iteration = 0;
         this.interval_length = 1;
-        Interpreter.interpreters = Interpreter.interpreters.filter(interp => interp !== this);
         this.running = false;
         this.lines = [];
         this.tokens = [];
@@ -1083,89 +1077,49 @@ class Interpreter {
         this.data = {};
     }
 
+    setPixelColor(pixel, color) {
+        if(!this.imports.includes("graphics")) return;
+        pixel.style.backgroundColor = `var(--${color})`;
+    }
+
     renderGraphics(scope){
+        if(!this.imports.includes("graphics")) return;
         let renderedBackPixels = document.querySelectorAll(`[data-render-back]`);
         let renderedFrontPixels = document.querySelectorAll(`[data-render-front]`);
 
         let backRenderStack = this.importData.graphics.backRenderStack;
 
-        console.log(renderedBackPixels, renderedFrontPixels, backRenderStack);
+        if(scope.includes("back")){
+            renderedBackPixels.forEach(pixel => {
+                pixel.style.backgroundColor = `var(--${this.importData.graphics.defaultBackgroundColor})`;
+                pixel.removeAttribute("data-render-back");
+            })
+            backRenderStack.forEach(obj => {
+                let name = obj.value.name;
+                let variable = this.getVariable(name);
+
+                if(variable.type == "Rectangle"){
+                    let rectX = +variable.value.x;
+                    let rectY = +variable.value.y;
+                    let rectWidth = +variable.value.width;
+                    let rectHeight = +variable.value.height;
+                    let rectFill = variable.value.fill;
+                    let rectStroke = variable.value.stroke;
+
+                    for(let i = rectY; i <= rectY + rectHeight; i++){
+                        for(let j = rectX; j <= rectX + rectWidth; j++){
+                            let pixel = document.getElementById(`screen-${config.programSession}-${i}-${j}`);
+                            if(pixel == null) continue;
+                            let color = rectFill;
+                            if(i == rectY || i == rectY + rectHeight || j == rectX || j == rectX + rectWidth) color = rectStroke;
+                            this.setPixelColor(pixel, color);
+                            pixel.setAttribute("data-render-back", name);
+                        }
+                    }
+                }
+            })
+        }
     }
-
-    // function renderGraphics(scope) {
-//     let renderedBackPixels = document.querySelectorAll(`[data-render-back]`);
-//     let renderedFrontPixels = document.querySelectorAll(`[data-render-front]`);
-
-//     let screenData = FroggyscriptMemory.importsData.graphics.screenData;
-
-//     if(scope.includes("back")){
-//         renderedBackPixels.forEach(pixel => {
-//             pixel.style.backgroundColor = `var(--${screenData.defaultBackgroundColor})`;
-//             pixel.removeAttribute("data-render-back");
-//         })
-
-//         FroggyscriptMemory.importsData.graphics.backRenderOrder.forEach(identifier => {
-//             let variable = FroggyscriptMemory.variables[identifier].value;
-//             if(variable == undefined) return;
-//             if(FroggyscriptMemory.variables[identifier].type == "Rect"){
-//                 let i_x = variable.x;
-//                 let i_y = variable.y;
-//                 let i_width = variable.width;
-//                 let i_height = variable.height;
-//                 let i_fill = variable.fill;
-//                 let i_stroke = variable.stroke;
-//                 for(let i = i_y; i <= i_y + i_height; i++){
-//                     for(let j = i_x; j <= i_x + i_width; j++){
-//                         let pixel = document.getElementById(`screen-${config.programSession}-${i}-${j}`);
-//                         if(pixel == null) continue;
-//                         let color = i_fill;
-//                         if(i == i_y || i == i_y + i_height || j == i_x || j == i_x + i_width) color = i_stroke;
-//                         setPixelColor(pixel, color);
-//                         pixel.setAttribute("data-render-back", identifier);
-//                     }
-//                 }
-//             } else if(FroggyscriptMemory.variables[identifier].type == "Line"){
-//                 let x1 = variable.x1;
-//                 let y1 = variable.y1;
-//                 let x2 = variable.x2;
-//                 let y2 = variable.y2;
-//                 let stroke = variable.stroke;
-//                 let color = variable.color;
-
-//                 const dx = Math.abs(x2 - x1);
-//                 const dy = Math.abs(y2 - y1);
-//                 const sx = x1 < x2 ? 1 : -1;
-//                 const sy = y1 < y2 ? 1 : -1;
-//                 let err = dx - dy;
-
-//                 let textIncrement = 0;
-            
-//                 while (true) {
-//                     let pixel = document.getElementById(`screen-${config.programSession}-${y1}-${x1}`);
-//                     if (pixel != null) {
-//                         setPixelColor(pixel, stroke);
-//                         pixel.setAttribute("data-render-back", identifier);
-                    
-//                         if (variable.text.length > 0 && textIncrement < variable.text.length) {
-//                             pixel.textContent = variable.text[textIncrement];
-//                             setPixelTextColor(pixel, color);
-//                             pixel.setAttribute("data-render-front", identifier);
-//                             textIncrement++;
-//                         } else {
-//                             pixel.textContent = "\u00A0"; // Clear text if not used
-//                             pixel.removeAttribute("data-render-front"); // Optional cleanup
-//                         }
-//                     }
-            
-//                     if (x1 === x2 && y1 === y2) break;
-//                     const e2 = 2 * err;
-//                     if (e2 > -dy) { err -= dy; x1 += sx; }
-//                     if (e2 < dx) { err += dx; y1 += sy; }
-//                 }
-//             }
-//         })
-//     }
-// }
 
     kill() {
         clearInterval(this.clock);
@@ -1196,9 +1150,6 @@ const load_function = () => {
             importData.methods.forEach(method => {
                 method.add()
             });
-
-            Token.generateSpecs();
-
         }
     }).add()
 
@@ -2119,6 +2070,7 @@ const load_function = () => {
 const defaultImportData = {
     graphics: {
         defaultBackgroundColor: "c15",
+        defaultStrokeColor: "c00",
         rendered: false,
         maxWidth: 79,
         maxHeight: 58,
@@ -2137,23 +2089,23 @@ const Imports = {
                     let givenHeight = tokens[2].value;
 
                     if(givenWidth > defaultImportData.graphics.maxWidth) {
-                        return interp.outputError(new InterpreterError('RangeError', `Width cannot be greater than ${defaultImportData.graphics.maxWidth}`, tokens, interp.interval, tokens[1].position));
+                        return new InterpreterError('RangeError', `Width cannot be greater than ${defaultImportData.graphics.maxWidth}`, tokens, interp.interval, tokens[1].position);
                     }
                     if(givenWidth < 1) {
-                        return interp.outputError(new InterpreterError('RangeError', `Width cannot be less than 1`, tokens, interp.interval, tokens[1].position));
+                        return new InterpreterError('RangeError', `Width cannot be less than 1`, tokens, interp.interval, tokens[1].position);
                     }
                     if(givenHeight > defaultImportData.graphics.maxHeight) {
-                        return interp.outputError(new InterpreterError('RangeError', `Height cannot be greater than ${defaultImportData.graphics.maxHeight}`, tokens, interp.interval, tokens[2].position));
+                        return new InterpreterError('RangeError', `Height cannot be greater than ${defaultImportData.graphics.maxHeight}`, tokens, interp.interval, tokens[2].position);
                     }
                     if(givenHeight < 1) {
-                        return interp.outputError(new InterpreterError('RangeError', `Height cannot be less than 1`, tokens, interp.interval, tokens[2].position));
+                        return new InterpreterError('RangeError', `Height cannot be less than 1`, tokens, interp.interval, tokens[2].position);
                     }
                     interp.importData.graphics.width = +givenWidth;
                     interp.importData.graphics.height = +givenHeight;
 
                     interp.importData.graphics.rendered = true;
 
-                    terminal.innerHTML = ""; // clear the terminal
+                    terminal.innerHTML = "";
 
                     for(let i = 0; i < givenHeight; i++){
                         let rowHtml = '';
@@ -2175,12 +2127,12 @@ const Imports = {
                     let array = tokens[3].value;
 
                     if(array.length != 4){
-                        return interp.outputError(new InterpreterError('SyntaxError', `Rectangle must have 4 values`, tokens, interp.interval, tokens[3].position));
+                        return new InterpreterError('SyntaxError', `Rectangle must have 4 values`, tokens, interp.interval, tokens[3].position);
                     }
 
                     for(let i = 0; i < array.length; i++){
                         if(array[i].type != "Number"){
-                            return interp.outputError(new InterpreterError('TypeError', `Rectangle values must be numbers`, tokens, interp.interval, array[i].position));
+                            return new InterpreterError('TypeError', `Rectangle values must be numbers`, tokens, interp.interval, array[i].position);
                         }
                     }
 
@@ -2194,6 +2146,9 @@ const Imports = {
                         y: y,
                         width: width,
                         height: height,
+                        name: tokens[1].value,
+                        fill: defaultImportData.graphics.defaultBackgroundColor,
+                        stroke: defaultImportData.graphics.defaultStrokeColor,
                     }
 
                     interp.setVariable(tokens[1].value, variableValue, "Rectangle", true);
@@ -2201,12 +2156,105 @@ const Imports = {
             })
         ],
         methods: [
-            new Method("render", ["Rectangle"], (token, args) => {
-                let interp = Interpreter.interpreters[0];
+            new Method("render", ["Rectangle"], (token, args, interp) => {
+                if(!interp.importData.graphics.rendered){
+                    return new InterpreterError('RuntimeError', `Screen not created. Use the [createscreen] keyword first`, token, interp.interval, token.position);
+                }
+                args;
+
                 interp.importData.graphics.backRenderStack.push(token);
                 interp.renderGraphics(["back"]);
                 return token;
             }),
+            new Method("remove", ["Rectangle"], (token, args, interp) => {
+                if(!interp.importData.graphics.rendered){
+                    return new InterpreterError('RuntimeError', `Screen not created. Use the [createscreen] keyword first`, token,  interp.interval, token.position);
+                }
+                args;
+                let variable = interp.variables[token.value.name];
+                if(variable == undefined) {
+                    return new InterpreterError('ReferenceError', `Variable [${token.value.name}] is not defined`, token, interp.interval, token.position);
+                }
+
+                // find it in the render stack and remove it
+                interp.importData.graphics.backRenderStack = interp.importData.graphics.backRenderStack.filter(t => t.value.name != token.value.name);
+
+                interp.renderGraphics(["back"]);
+                return token;
+            }),
+
+            new Method("x", ["Rectangle"], (token, args, interp) => {
+                if(args[0] == undefined) return new Token("Number", token.value.x, token.position, token.methods);
+                else {
+                    interp.variables[token.value.name].value.x = args[0].value;
+
+                    interp.renderGraphics(["back"]);
+                    return token;
+                }
+            }, ["Number?"]),
+            new Method("y", ["Rectangle"], (token, args, interp) => {
+                if(args[0] == undefined) return new Token("Number", token.value.y, token.position, token.methods);
+                else {
+                    interp.variables[token.value.name].value.y = args[0].value;
+
+                    interp.renderGraphics(["back"]);
+                    return token;
+                }
+            }, ["Number?"]),
+            new Method("move", ["Rectangle"], (token, args, interp) => {
+                let newX = args[0].value;
+                let newY = args[1].value;
+
+                interp.variables[token.value.name].value.x = newX;
+                interp.variables[token.value.name].value.y = newY;
+                interp.renderGraphics(["back"]);
+                return token;
+            }, ["Number", "Number"]),
+            new Method("width", ["Rectangle"], (token, args, interp) => {
+                if(args[0] == undefined) return new Token("Number", token.value.width, token.position, token.methods);
+                else {
+                    interp.variables[token.value.name].value.width = args[0].value;
+
+                    interp.renderGraphics(["back"]);
+                    return token;
+                }
+            }, ["Number?"]),
+            new Method("height", ["Rectangle"], (token, args, interp) => {
+                if(args[0] == undefined) return new Token("Number", token.value.height, token.position, token.methods);
+                else {
+                    interp.variables[token.value.name].value.height = args[0].value;
+
+                    interp.renderGraphics(["back"]);
+                    return token;
+                }
+            }, ["Number?"]),
+            new Method("size", ["Rectangle"], (token, args, interp) => {
+                let newWidth = args[0].value;
+                let newHeight = args[1].value;
+
+                interp.variables[token.value.name].value.width = newWidth;
+                interp.variables[token.value.name].value.height = newHeight;
+                interp.renderGraphics(["back"]);
+                return token;
+            }, ["Number", "Number"]),
+            new Method("fill", ["Rectangle"], (token, args, interp) => {
+                if(args[0] == undefined) return new Token("String", token.value.fill, token.position, token.methods);
+                else {
+                    interp.variables[token.value.name].value.fill = args[0].value;
+
+                    interp.renderGraphics(["back"]);
+                    return token;
+                }
+            }, ["String?"]),
+            new Method("stroke", ["Rectangle"], (token, args, interp) => {
+                if(args[0] == undefined) return new Token("String", token.value.stroke, token.position, token.methods);
+                else {
+                    interp.variables[token.value.name].value.stroke = args[0].value;
+
+                    interp.renderGraphics(["back"]);
+                    return token;
+                }
+            }, ["String?"]),
         ],
     }
 }

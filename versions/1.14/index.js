@@ -1484,7 +1484,7 @@ x
                 let fileArguments = args.slice(1).map(arg => arg.trim());
 
                 config.currentProgram = args[0];
-                let interpreter = new Interpreter(file.data, file.name, fileArguments);
+                let interpreter = new Interpreter("main", file.data, file.name, fileArguments);
                 interpreter.load = () => load_function();
                 interpreter.onComplete = () => {
                     if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
