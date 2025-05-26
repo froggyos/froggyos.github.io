@@ -1,4 +1,4 @@
-// new AllSniffer({timerOptions: {intervalIDsToExclude: [1,2,3,4]}});
+//new AllSniffer({});
 
 const screen = document.getElementById('screen');
 const terminal = document.getElementById('terminal');
@@ -81,7 +81,6 @@ const filePropertyDefaults = {
     transparent: false,
 }
 
-// FIX !! IS NOT WORKINGTON (add index to front)
 function set_fSDS(path, filename, key, value){
     let directory = config.fileSystem[path];
     if(directory == undefined) return false;
@@ -426,19 +425,6 @@ function updateDateTime() {
         })
     }
 }
-
-let configInterval = setInterval(() => {
-    setUserConfigFromFile()
-    programList()
-}, 1);
-
-let dateTimeInterval = setInterval(() => {
-    updateDateTime()
-}, 100);
-
-setUserConfigFromFile()
-programList();
-updateDateTime();
 
 // CSS STYLING ==============================================================================================
 function changeColorPalette(name){
@@ -2159,10 +2145,22 @@ function setTrustedFiles(){
 
 document.title = `froggyOS v. ${config.version}`;
 sendCommand('[[BULLFROG]]autoloadstate', [], false);
+setUserConfigFromFile()
+programList();
+updateDateTime();
 changeColorPalette(config.colorPalette);
 createColorTestBar();
 setTrustedFiles();
 sendCommand('[[BULLFROG]]validatelanguage', [], false);
+
+let configInterval = setInterval(() => {
+    setUserConfigFromFile()
+    programList()
+}, 1);
+
+let dateTimeInterval = setInterval(() => {
+    updateDateTime()
+}, 100);
 
 function ready(){
     document.getElementById("blackout").remove()
