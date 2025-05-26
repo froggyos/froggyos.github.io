@@ -107,6 +107,7 @@ function programList(){
     }
 }
 
+
 function parseTimeFormat(text){
     const now = new Date();
 

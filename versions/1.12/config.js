@@ -977,6 +977,7 @@ const config = {
                 "KEY Ribbit TYPE String VALUE woof END",
             ] },
         ],
+        
         "D:/Palettes": [
             // standard and revised palettes:  https://int10h.org/blog/2022/06/ibm-5153-color-true-cga-palette/
             { name: "standard", properties: {transparent: false, read: true, write: true, hidden: false}, data: [

@@ -548,6 +548,7 @@ function typeify(value) {
             }
         }
 
+        
         typeObj.origin = "Number";
     } else {
         if(methods.length != 0 && typeObj.type != "Function") {

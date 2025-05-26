@@ -131,6 +131,7 @@ function resetMemState() {
     delete FroggyscriptMemory.temporaryVariables;
     delete FroggyscriptMemory.tokens;
 
+    
     FroggyscriptMemory.variables = {};
     // initialize default variables
     Object.keys(defaultVariables).forEach(variableName => {

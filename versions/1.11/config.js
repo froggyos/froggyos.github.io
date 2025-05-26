@@ -960,6 +960,7 @@ const config = {
             { name: "set-US-time-format", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
                 "ft w. mn/d/y H:m:s a",
             ] },
+            
         ],
         "D:/Program-Data": [],
         "D:/Palettes": [
