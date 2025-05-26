@@ -1,4 +1,4 @@
-<style>
+<!-- <style>
     .trusted {
         color: red;
         font-weight: bold;
@@ -28,4 +28,4 @@ Config>oc_set('currentPath', 'C:/Random');
 Sets a user config value. Value input types will vary depending on the key.
 ```
 Config>uc_set('language', 'jpn');
-```
+``` -->

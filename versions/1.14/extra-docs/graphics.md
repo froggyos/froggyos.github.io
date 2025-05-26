@@ -14,11 +14,17 @@ rect [name] = $[x:N], [y:N], [width:N], [height:N]$
 
 rect rectangle = $0, 0, 50, 50$
 ```
-## txt
+## text
 Creates a variable of type Text. `x` and `y` is where the first character of the text will be drawn.
 ```
-txt [name] = $[x:N], [y:N], [text:S]$
-txt text = $0, 0, 'Hello World'$
+text [name] = $[x:N], [y:N], [text:S]$
+text txt = $0, 0, 'Hello World'$
+```
+## line
+Creates a variable of type Line. `x1` and `y1` is the starting point of the line, and `x2` and `y2` is the ending point of the line.
+```
+line [name] = $[x1:N], [y1:N], [x2:N], [y2:N]$
+line ln = $0, 0, 50, 50$
 ```
 # Methods
 ## rect
@@ -54,12 +60,12 @@ rect clone = rectangle>clone
 .clone>add>move(10, 10)
 ## does not affect the original rectangle object
 ```
-### intersects
-Checks if the rectangle intersects with another rectangle. Returns Boolean.
+### overlaps
+Checks if a rectangle overlaps with another rectangle. Returns Boolean.
 ```
-rect rectangle1 = $0, 0, 50, 50$
-rect rectangle2 = $10, 10, 50, 50$
-.rectangle1>intersects(rectangle2) ## true
+rect rectangle1 = $0, 0, 10, 10$
+rect rectangle2 = $5, 5, 10, 10$
+.rectangle1>overlaps(rectangle2) ## true
 ```
 ### Getters and Setters
 * `>x` - x position of the rectangle
@@ -68,29 +74,29 @@ rect rectangle2 = $10, 10, 50, 50$
 * `>height` - height of the rectangle
 * `>fill` - fill color of the rectangle
 * `>stroke` - stroke color of the rectangle
-## txt
+## text
 ### add
 Adds the object to the screen.
 ```
-.text>add
+.txt>add
 ```
 ### remove
 Removes the object from the screen.
 ```
-.text>remove
+.txt>remove
 ```
 ### move
 Macro for `>x()>y()`.
 ```
 >move([x], [y])
 
-.text>move(10, 10)
+.txt>move(10, 10)
 ```
 ### clone
 Creates a clone of the text object. The clone will have the same properties as the original text object, but will not be linked to it. This means that changes made to the clone will not affect the original text object, and vice versa. You still must use `>add` to add the clone to the screen.
 ```
-txt text = $0, 0, 'Hello World'$
-txt clone = text>clone
+text txt = $0, 0, 'Hello World'$
+text clone = txt>clone
 .clone>add>move(10, 10)
 ## does not affect the original text object
 ```
@@ -101,6 +107,32 @@ txt clone = text>clone
 * `>wrap` - whether the text should be wrapped or not (default: false)
 * `>color` - color of the text
 * `>text` - text to be displayed
+## line
+### add
+Adds the object to the screen.
+```
+.ln>add
+```
+### remove
+Removes the object from the screen.
+```
+.ln>remove
+```
+### cross
+Checks if the line crosses another line. Returns Boolean.
+```
+line line1 = $0, 10, 10, 0$
+line line2 = $0, 0, 10, 10$
+.out line1>cross(line2) ## true
+```
+### Getters and Setters
+* `>x1` - x position of the first point of the line
+* `>y1` - y position of the first point of the line
+* `>x2` - x position of the second point of the line
+* `>y2` - y position of the second point of the line
+* `>stroke` - stroke color of the line
+
+
 <!-- ## pixel
 Creates a variable of type Pixel.
 ```
@@ -133,45 +165,8 @@ pxl pixel = $0, 0$
 #pixel>is('c00')
 ```
 ## Getters and Setters
-* `>color` - color of the pixel
-
-# Text
-## Methods
-### render
-Renders the text to the screen.
-```
-text text = $0, 0, 'Hello World'$
-#text>render
-```
-### clear
-Clears the text from the screen.
-```
-text text = $0, 0, 'Hello World'$
-#text>clear
-```
-### move
-Moves the text to a new position on the screen. Alias of `>x()>y()`.
-```
-text text = $0, 0, 'Hello World'$
-#text>move(10;10) 
-```
-### clone
-Creates a clone of the text object. The clone will have the same properties as the original text object, but will not be linked to it. This means that changes made to the clone will not affect the original text object, and vice versa.
-```
-text text = $0, 0, 'Hello World'$
-
-text clone = text>clone
-#clone>render>move(10;10) 
--- does not affect the original text object
-```
-## Getters and Setters
-* `>x` - x position of the text
-* `>y` - y position of the text
-* `>width` - width of the text (only if wordwrap is true)
-* `>wrap` - whether the text should be wrapped or not (default: false)
-* `>color` - color of the text
-* `>text` - text to be displayed
-
+* `>color` - color of the pixel-->
+<!--
 # Line
 ## Methods
 ### render

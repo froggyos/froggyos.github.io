@@ -2144,9 +2144,9 @@ function setTrustedFiles(){
     }
 }
 
-document.title = `froggyOS v. ${config.version}`;
 sendCommand('[[BULLFROG]]autoloadstate', [], false);
 setUserConfigFromFile()
+document.title = `froggyOS v. ${config.version}`;
 programList();
 updateDateTime();
 changeColorPalette(config.colorPalette);
@@ -2166,6 +2166,7 @@ let dateTimeInterval = setInterval(() => {
 function ready(){
     document.getElementById("blackout").remove()
     sendCommand('[[BULLFROG]]greeting', []);
+    sendCommand("st", ["test"]);
 }
 
 // literally all of this is just for the animation

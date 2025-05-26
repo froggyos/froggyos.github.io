@@ -439,7 +439,6 @@ class Interpreter {
     }
 
     formattedOutput(value, format = []) {
-        console.log(format)
         createTerminalLine(value.value, "", {translate: false, formatting: format});
     }
 
@@ -572,6 +571,7 @@ class Interpreter {
         // for each token, if the type is METHOD_INITIATOR, if the next token is IDENTIFIER, change the type to METHOD
         for (let i = 0; i < tokens.length; i++) {
             if (tokens[i].type === 'MethodInitiator') {
+                if(tokens[i+1].type === "Assigner") tokens[i+1].type = "Identifier"
                 if (i + 1 < tokens.length && tokens[i + 1].type === 'Identifier') {
                     tokens[i + 1].type = 'Method';
                 } else {
@@ -1104,36 +1104,7 @@ class Interpreter {
 
         let graphicsData = this.importData.graphics;
 
-        if(scope.includes("back")){
-            renderedBackPixels.forEach(pixel => {
-                pixel.style.backgroundColor = `var(--${graphicsData.defaultBackgroundColor})`;
-                pixel.removeAttribute("data-render-back");
-            })
-            backRenderStack.forEach(obj => {
-                let name = obj.value.name;
-                let variable = this.getVariable(name);
-
-                if(variable.type == "Rectangle"){
-                    let rectX = +variable.value.x;
-                    let rectY = +variable.value.y;
-                    let rectWidth = +variable.value.width;
-                    let rectHeight = +variable.value.height;
-                    let rectFill = variable.value.fill;
-                    let rectStroke = variable.value.stroke;
-
-                    for(let i = rectY; i <= rectY + rectHeight; i++){
-                        for(let j = rectX; j <= rectX + rectWidth; j++){
-                            let pixel = document.getElementById(`screen-${config.programSession}-${i}-${j}`);
-                            if(pixel == null) continue;
-                            let color = rectFill;
-                            if(i == rectY || i == rectY + rectHeight || j == rectX || j == rectX + rectWidth) color = rectStroke;
-                            this.setPixelColor(pixel, color);
-                            pixel.setAttribute("data-render-back", name);
-                        }
-                    }
-                }
-            })
-        } else if(scope.includes("front")) {
+        if(scope.includes("front")) {
             renderedFrontPixels.forEach(pixel => {
                 pixel.style.color = `var(--${graphicsData.defaultTextClearColor})`;
                 pixel.textContent = '\u00A0';
@@ -1141,7 +1112,7 @@ class Interpreter {
             })
 
             frontRenderStack.forEach(obj => {
-                let name = obj.value.name;
+                let name = obj.name;
                 let variable = this.getVariable(name);
 
                 if(variable.type == "Text"){
@@ -1172,6 +1143,65 @@ class Interpreter {
                     }
                 }
             })
+        } else if(scope.includes("back")){
+            renderedBackPixels.forEach(pixel => {
+                pixel.style.backgroundColor = `var(--${graphicsData.defaultBackgroundColor})`;
+                pixel.removeAttribute("data-render-back");
+            })
+            backRenderStack.forEach(obj => {
+                let name = obj.name;
+                let variable = this.getVariable(name);
+
+                if(variable.type == "Rectangle"){
+                    let rectX = +variable.value.x;
+                    let rectY = +variable.value.y;
+                    let rectWidth = +variable.value.width;
+                    let rectHeight = +variable.value.height;
+                    let rectFill = variable.value.fill;
+                    let rectStroke = variable.value.stroke;
+
+                    for(let i = rectY; i <= rectY + rectHeight; i++){
+                        for(let j = rectX; j <= rectX + rectWidth; j++){
+                            let pixel = document.getElementById(`screen-${config.programSession}-${i}-${j}`);
+                            if(pixel == null) continue;
+                            let color = rectFill;
+                            if(i == rectY || i == rectY + rectHeight || j == rectX || j == rectX + rectWidth) color = rectStroke;
+                            this.setPixelColor(pixel, color);
+                            pixel.setAttribute("data-render-back", name);
+                        }
+                    }
+                } else if(variable.type == "Line"){
+                    let x1 = +variable.value.x1;
+                    let y1 = +variable.value.y1;
+                    let x2 = +variable.value.x2;
+                    let y2 = +variable.value.y2;
+
+                    let stroke = variable.value.stroke;
+                    let text = variable.value.text;
+                    let textColor = variable.value.textColor;
+
+                    const dx = Math.abs(x2 - x1);
+                    const dy = Math.abs(y2 - y1);
+                    const sx = x1 < x2 ? 1 : -1;
+                    const sy = y1 < y2 ? 1 : -1;
+                    let err = dx - dy;
+
+                    while (true){
+                        let pixel = document.getElementById(`screen-${config.programSession}-${y1}-${x1}`);
+                        if(pixel != null){
+                            this.setPixelColor(pixel, stroke);
+                            pixel.setAttribute("data-render-back", name);
+                        }
+
+                        if(x1 == x2 && y1 == y2) break;
+                        const e2 = 2 * err;
+                        if( e2 > -dy) { err -= dy; x1 += sx; }
+                        if( e2 < dx) { err += dx; y1 += sy; }
+                    }
+
+                }
+
+            })
         }
     }
 
@@ -1199,12 +1229,16 @@ const load_function = () => {
 
             let importData = Imports[importName];
 
-            importData.keywords.forEach(keyword => {
-                keyword.add()
+            importData.keywords.forEach((k, i) => {
+                if(!(k instanceof Keyword)) {
+                    return interp.outputError(new InterpreterError('StateError', `Imports.${importName}.keywords[${i}] is not of class Keyword`, tokens, interp.interval, tokens[1].position));
+                } else k.add()
             });
 
-            importData.methods.forEach(method => {
-                method.add()
+            importData.methods.forEach((m, i) => {
+                if(!(m instanceof Method)) {
+                    return interp.outputError(new InterpreterError('StateError', `Imports.${importName}.methods[${i}] is not of class Method`, tokens, interp.interval, tokens[1].position));
+                } else m.add()
             });
         }
     }).add()
@@ -1589,13 +1623,14 @@ const load_function = () => {
 
     const KEYWORD_FILEARG = new Keyword('filearg', "basic", ['Keyword', 'IdentifierReference'], {
         post: (tokens, interp, keyword) => {
-            if(interp.fileArgumentCount >= interp.fileArguments.length) {
-                return interp.outputError(new InterpreterError('StateError', `Expected ${interp.fileArguments.length} file argument${interp.fileArguments.length==1?"":"s"}, found ${interp.fileArgumentCount+1}`, tokens, interp.interval, tokens[0].position));
-            }
 
             let variableName = tokens[1].value
             let typeToCoerce = interp.getVariable(tokens[1].value).type;
             let value = interp.fileArguments[interp.fileArgumentCount];
+
+            if(value == undefined) {
+                return interp.outputError(new InterpreterError('StateError', `File argument [${interp.fileArgumentCount}] does not exist`, tokens, interp.interval, tokens[0].position));
+            }
 
             interp.lines[interp.interval] = `set ${variableName} = "${value}">coerce('${typeToCoerce}')`;
             interp.interval--
@@ -2015,12 +2050,18 @@ const load_function = () => {
     }, ["String"]).add();
 
     new Method("index", ["String", "Array"], (token, args) => {
-        let arg0 = args[0];
-        let indexValue = token.value[arg0.value]
-        if(indexValue == undefined) {
-            return new InterpreterError('RangeError', `Index out of range`, token, token.position, token.position);
+        let index = +args[0].value;
+        let value = token.value[index];
+
+        if(value == undefined) {
+            return new InterpreterError('RangeError', `Index [${index}] out of range for ${token.type} of length [${token.value.length}]`, token, token.position, token.position);
         }
-        return new Token("String", indexValue, token.position, token.methods);
+
+        if(token.type == "String"){
+            return new Token("String", value, token.position, token.methods);
+        } else if(token.type == "Array") {
+            return value;
+        }
     }, ["Number"]).add();
 
     // pure array
@@ -2183,6 +2224,48 @@ const Imports = {
                     }
                 }
             }),
+            new Keyword('line', "assigner", ['Assigner', 'Assignee', 'Assignment', 'Array'], {
+                post: (tokens, interp, keyword) => {
+                    let array = tokens[3].value;
+
+                    if(array.length != 4){
+                        return new InterpreterError('SyntaxError', `Line must have 4 values`, tokens, interp.interval, tokens[3].position);
+                    }
+
+                    for(let i = 0; i < array.length; i++){
+                        if(array[i].type != "Number"){
+                            return new InterpreterError('TypeError', `Line values must be numbers`, tokens, interp.interval, array[i].position);
+                        }
+                    }
+
+                    let x1 = array[0].value;
+                    let y1 = array[1].value;
+                    let x2 = array[2].value;
+                    let y2 = array[3].value;
+
+                    let variableValue = {
+                        x1: x1,
+                        y1: y1,
+                        x2: x2,
+                        y2: y2,
+                        name: tokens[1].value,
+                        stroke: defaultImportData.graphics.defaultStrokeColor,
+                        text: "",
+                        color: defaultImportData.graphics.defaultTextColor,
+                    }
+
+                    if(array[0].cloneInfo != undefined){
+                        variableValue.x1 = array[0].value;
+                        variableValue.y1 = array[1].value;
+                        variableValue.x2 = array[2].value;
+                        variableValue.y2 = array[3].value;
+
+                        variableValue.stroke = array[0].cloneInfo.stroke;
+                    }
+
+                    interp.setVariable(tokens[1].value, variableValue, "Line", true);
+                }
+            }),
             new Keyword("rect", "assigner", ['Assigner', 'Assignee', 'Assignment', 'Array'], {
                 post: (tokens, interp, keyword) => {
                     let array = tokens[3].value;
@@ -2225,7 +2308,7 @@ const Imports = {
                     interp.setVariable(tokens[1].value, variableValue, "Rectangle", true);
                 }
             }),
-            new Keyword("txt", "assigner", ['Assigner', 'Assignee', 'Assignment', 'Array'], {
+            new Keyword("text", "assigner", ['Assigner', 'Assignee', 'Assignment', 'Array'], {
                 post: (tokens, interp, keyword) => {
                     let array = tokens[3].value;
 
@@ -2273,30 +2356,186 @@ const Imports = {
             })
         ],
         methods: [
+            // line ============================================================================================
+            new Method("intersection", ["Line"], (token, args, interp) => {
+                let line1 = token.value;
+                let line2 = args[0].value;
+
+                let line1_x1 = +line1.x1;
+                let line1_y1 = +line1.y1;
+                let line1_x2 = +line1.x2;
+                let line1_y2 = +line1.y2;
+
+                let line2_x1 = +line2.x1;
+                let line2_y1 = +line2.y1;
+                let line2_x2 = +line2.x2;
+                let line2_y2 = +line2.y2;
+
+                function getLineIntersection(x1, y1, x2, y2, x3, y3, x4, y4) {
+                    // Calculate denominators
+                    let denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
+                    if (denom === 0) return null; // Lines are parallel or coincident
+
+                    // Calculate intersection point
+                    let px = ((x1*y2 - y1*x2)*(x3 - x4) - (x1 - x2)*(x3*y4 - y3*x4)) / denom;
+                    let py = ((x1*y2 - y1*x2)*(y3 - y4) - (y1 - y2)*(x3*y4 - y3*x4)) / denom;
+
+                    // Check if point is within both segments
+                    let within1 = Math.min(x1, x2) <= px && px <= Math.max(x1, x2) &&
+                                Math.min(y1, y2) <= py && py <= Math.max(y1, y2);
+                    let within2 = Math.min(x3, x4) <= px && px <= Math.max(x3, x4) &&
+                                Math.min(y3, y4) <= py && py <= Math.max(y3, y4);
+
+                    if (within1 && within2) {
+                        return { 
+                            x: Math.round(px), 
+                            y: Math.round(py)
+                        };
+                    }
+
+                    return null; // The intersection is outside the segments
+                }
+
+                let intersection = getLineIntersection(line1_x1, line1_y1, line1_x2, line1_y2, line2_x1, line2_y1, line2_x2, line2_y2);
+
+                if(intersection == null) return new Token("Boolean", "false", token.position, token.methods);
+                else {
+                    // turn this into a Pixel object
+                    let arrayValues = [
+                        new Token("Number", intersection.x.toString(), token.position, token.methods),
+                        new Token("Number", intersection.y.toString(), token.position, token.methods)
+                    ]
+
+                    let returnArray = new Token("Array", arrayValues, token.position, token.methods);
+
+                    return returnArray;
+                }
+
+            }, ["Line"]),
+
+            new Method("cross", ["Line"], (token, args, interp) => {
+                let line1 = token.value;
+                let line2 = args[0].value;
+
+                let line1_x1 = +line1.x1;
+                let line1_y1 = +line1.y1;
+                let line1_x2 = +line1.x2;
+                let line1_y2 = +line1.y2;
+
+                let line2_x1 = +line2.x1;
+                let line2_y1 = +line2.y1;
+                let line2_x2 = +line2.x2;
+                let line2_y2 = +line2.y2;
+
+                function ccw(ax, ay, bx, by, cx, cy) {
+                    return (cy - ay) * (bx - ax) > (by - ay) * (cx - ax);
+                }
+
+                function linesIntersect(x1, y1, x2, y2, x3, y3, x4, y4) {
+                    return ccw(x1, y1, x3, y3, x4, y4) !== ccw(x2, y2, x3, y3, x4, y4) &&
+                            ccw(x1, y1, x2, y2, x3, y3) !== ccw(x1, y1, x2, y2, x4, y4);
+                }
+
+                let intersects = linesIntersect(line1_x1, line1_y1, line1_x2, line1_y2, line2_x1, line2_y1, line2_x2, line2_y2);
+
+                return new Token("Boolean", intersects.toString(), token.position, token.methods);
+            }, ["Line"]),
+
+            new Method("add", ["Line"], (token, args, interp) => {
+                if(!interp.importData.graphics.rendered){
+                    return new InterpreterError('StateError', `Screen not created. Use the [createscreen] keyword first`, token, interp.interval, token.position);
+                }
+
+                interp.importData.graphics.backRenderStack.push(token.value);
+                interp.renderGraphics(["back"]);
+                return token;
+            }),
+
+            new Method("remove", ["Line"], (token, args, interp) => {
+                if(!interp.importData.graphics.rendered){
+                    return new InterpreterError('StateError', `Screen not created. Use the [createscreen] keyword first`, token, interp.interval, token.position);
+                }
+                let variable = interp.variables[token.value.name];
+                if(variable == undefined) {
+                    return new InterpreterError('ReferenceError', `Variable [${token.value.name}] is not defined`, token, interp.interval, token.position);
+                }
+                interp.importData.graphics.backRenderStack = interp.importData.graphics.backRenderStack.filter(t => t.name != token.value.name);
+                interp.renderGraphics(["back"]);
+                return token;
+            }),
+
+            new Method("x1", ["Line"], (token, args, interp) => {
+                if(args[0] == undefined) return new Token("Number", token.value.x1, token.position, token.methods);
+                else {
+                    interp.variables[token.value.name].value.x1 = args[0].value;
+                    interp.renderGraphics(["back"]);
+                    return token;
+                }
+            }, ["Number?"]),
+
+            new Method("y1", ["Line"], (token, args, interp) => {
+                if(args[0] == undefined) return new Token("Number", token.value.y1, token.position, token.methods);
+                else {
+                    interp.variables[token.value.name].value.y1 = args[0].value;
+                    interp.renderGraphics(["back"]);
+                    return token;
+                }
+            }, ["Number?"]),
+
+            new Method("x2", ["Line"], (token, args, interp) => {
+                if(args[0] == undefined) return new Token("Number", token.value.x2, token.position, token.methods);
+                else {
+                    interp.variables[token.value.name].value.x2 = args[0].value;
+                    interp.renderGraphics(["back"]);
+                    return token;
+                }
+            }, ["Number?"]),
+        
+            new Method("y2", ["Line"], (token, args, interp) => {
+                if(args[0] == undefined) return new Token("Number", token.value.y2, token.position, token.methods);
+                else {
+                    interp.variables[token.value.name].value.y2 = args[0].value;
+                    interp.renderGraphics(["back"]);
+                    return token;
+                }
+            }, ["Number?"]),
+
+            new Method("stroke", ["Line"], (token, args, interp) => {
+                if(args[0] == undefined) return new Token("String", token.value.stroke, token.position, token.methods);
+                else {
+                    interp.variables[token.value.name].value.stroke = args[0].value;
+                    interp.renderGraphics(["back"]);
+                    return token;
+                }
+            }, ["String?"]),
+
+
             // text ============================================================================================
             new Method("add", ["Text"], (token, args, interp) => {
                 if(!interp.importData.graphics.rendered){
                     return new InterpreterError('StateError', `Screen not created. Use the [createscreen] keyword first`, token, interp.interval, token.position);
                 }
-                args;
 
-                interp.importData.graphics.frontRenderStack.push(token);
+                interp.importData.graphics.frontRenderStack.push(token.value);
                 interp.renderGraphics(["front"]);
                 return token;
             }),
+
             new Method("remove", ["Text"], (token, args, interp) => {
                 if(!interp.importData.graphics.rendered){
                     return new InterpreterError('StateError', `Screen not created. Use the [createscreen] keyword first`, token, interp.interval, token.position);
                 }
-                args;
+
                 let variable = interp.variables[token.value.name];
                 if(variable == undefined) {
                     return new InterpreterError('ReferenceError', `Variable [${token.value.name}] is not defined`, token, interp.interval, token.position);
                 }
-                interp.importData.graphics.frontRenderStack = interp.importData.graphics.frontRenderStack.filter(t => t.value.name != token.value.name);
+
+                interp.importData.graphics.frontRenderStack = interp.importData.graphics.frontRenderStack.filter(t => t.name != token.value.name);
                 interp.renderGraphics(["front"]);
                 return token;
             }),
+
             new Method("x", ["Text"], (token, args, interp) => {
                 if(args[0] == undefined) return new Token("Number", token.value.x, token.position, token.methods);
                 else {
@@ -2305,6 +2544,7 @@ const Imports = {
                     return token;
                 }
             }, ["Number?"]),
+
             new Method("y", ["Text"], (token, args, interp) => {
                 if(args[0] == undefined) return new Token("Number", token.value.y, token.position, token.methods);
                 else {
@@ -2313,6 +2553,7 @@ const Imports = {
                     return token;
                 }
             }, ["Number?"]),
+
             new Method("move", ["Text"], (token, args, interp) => {
                 let newX = args[0].value;
                 let newY = args[1].value;
@@ -2373,22 +2614,24 @@ const Imports = {
             }, []),
 
             // rectangle =======================================================================================
-            new Method("intersects", ["Rectangle"], (token, args, interp) => {
-                let otherRect = args[0].value;
+            new Method("overlaps", ["Rectangle"], (token, args, interp) => {
+
                 let thisRect = token.value;
+                let otherRect = args[0].value;
 
                 // check if both are in the interp.importData.graphics.backRenderStack
                 if(!interp.importData.graphics.rendered){
                     return new InterpreterError('ReferenceError', `Screen not created. Use the [createscreen] keyword first`, token, interp.interval, token.position);
                 }
 
-                if(!interp.importData.graphics.backRenderStack.includes(token)){
-                    return new InterpreterError('ReferenceError', `Rectangle [${token.value.name}] is not added to the screen`, token, interp.interval, token.position);
+                if(interp.importData.graphics.backRenderStack.find(t => t.name == thisRect.name) == undefined){
+                    return new InterpreterError('StateError', `Cannot check for overlap because Rectangle [${thisRect.name}] has not been added to the screen`, token, interp.interval, token.position);
+                }
+                if(interp.importData.graphics.backRenderStack.find(t => t.name == otherRect.name) == undefined){
+                    return new InterpreterError('StateError', `Cannot check for overlap because Rectangle [${otherRect.name}] has not been added to the screen`, token, interp.interval, token.position);
                 }
 
-                if(!interp.importData.graphics.backRenderStack.includes(args[0])){
-                    return new InterpreterError('ReferenceError', `Rectangle [${args[0].value.name}] is not added to the screen`, args[0], interp.interval, args[0].position);
-                }
+
 
                 let thisX = +thisRect.x;
                 let thisY = +thisRect.y;
@@ -2400,12 +2643,12 @@ const Imports = {
                 let otherWidth = +otherRect.width;
                 let otherHeight = +otherRect.height;
 
-                let intersects = !(thisX + thisWidth < otherX ||
+                let overlaps = !(thisX + thisWidth < otherX ||
                     thisX > otherX + otherWidth ||
                     thisY + thisHeight < otherY ||
                     thisY > otherY + otherHeight);
 
-                return new Token("Boolean", intersects.toString(), token.position, token.methods);
+                return new Token("Boolean", overlaps.toString(), token.position, token.methods);
             }, ["Rectangle"]),
 
             new Method("clone", ["Rectangle"], (token, args, interp) => {
@@ -2430,7 +2673,7 @@ const Imports = {
                 }
                 args;
 
-                interp.importData.graphics.backRenderStack.push(token);
+                interp.importData.graphics.backRenderStack.push(token.value);
                 interp.renderGraphics(["back"]);
                 return token;
             }),
@@ -2444,8 +2687,7 @@ const Imports = {
                     return new InterpreterError('ReferenceError', `Variable [${token.value.name}] is not defined`, token, interp.interval, token.position);
                 }
 
-                // find it in the render stack and remove it
-                interp.importData.graphics.backRenderStack = interp.importData.graphics.backRenderStack.filter(t => t.value.name != token.value.name);
+                interp.importData.graphics.backRenderStack = interp.importData.graphics.backRenderStack.filter(t => t.name != token.value.name);
 
                 interp.renderGraphics(["back"]);
                 return token;

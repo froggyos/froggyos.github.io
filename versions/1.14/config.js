@@ -915,21 +915,25 @@ const config = {
                 "call @display_frog('sleepy')",
             ] },
             { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
-                // "import 'graphics'",
-                // "createscreen 79,58",
-                // "rect rect1 = $0, 0, 10, 10$",
-                // "rect rect2 = $5, 5, 10, 10$",
-                // ".rect1>add",
-                // ".rect2>add",
-                // "out rect1>intersects(rect2)",
-                "str name = ''",
-                "num age = 0",
-                'filearg %name',
-                'filearg %age',
-                'out "Hello my name is $|name| and I am $|age| years old."',
-                "out 10",
-                "out false",
-                "out 'meow!'"
+                "import 'graphics'",
+                "createscreen 79,58",
+                "line line1 = $0, 10, 10, 0$",
+                "line line2 = $0, 0, 10, 10$",
+                ".line1>add",
+                ".line2>add",
+                "arr intersect = line1>intersection(line2)",
+                "out intersect>index(0)",
+
+            
+
+                // "str name = ''",
+                // "num age = 0",
+                // 'filearg %name',
+                // 'filearg %age',
+                // 'out "Hello my name is $|name| and I am $|age| years old."',
+                // "out 10",
+                // "out false",
+                // "out 'meow!'"
 
             ] },
             { name: "test2", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
