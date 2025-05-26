@@ -1,1 +1,1 @@
-froggyOS is an Operating System simulation written entirely in the browser with JavaScript, HTML, and CSS. It is meant to be used as an educational tool to familiarize people with CLI based operating systems. To learn more, visit the README files of any version in the `versions` directory.
+froggyOS is an Operating System simulation written entirely in the browser with JavaScript, HTML, and CSS. It is meant to be used as an educational tool to familiarize people with CLI based operating systems. To learn more, visit the README file of any version in the `versions` directory.
