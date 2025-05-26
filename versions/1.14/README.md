@@ -189,6 +189,7 @@ Lilypad is the text editor in froggyOS. It has a few keybinds that you can use t
     * `U` - Undefined
 * error position is unreliable
 * error lines are not always accurate ??? whyyy idk 
+* After a keyword, you must used `,` to separate arguments. ex. `ask %name , "?"`. The whitespace around the comma is not required, but is recommended for readability.
 
 ## General Utilities
 ### Comments
@@ -331,13 +332,13 @@ out 1
 * index `0` is the 1st character.
 * There is less than normal error checking on formatting objects, so make sure they're correct.
 ```
-outf [format] [text]
+outf [format],[text]
 
-outf "t=c01" "this is blue text"
-outf "b=c00" "this is a black background"
-outf "t=c06, b=c01" "this is brown text on a blue background"
-outf "t=c01, tr=0-21" "from char 0 to char 21, the text will be blue" 
-outf "t=c01, tr=4-48 | b=c04, br=57-91" "from the char 4 to char 48, the text will be blue. AND from char 57 to char 91 the background will be red"
+outf "t=c01" , "this is blue text"
+outf "b=c00" , "this is a black background"
+outf "t=c06, b=c01" , "this is brown text on a blue background"
+outf "t=c01, tr=0-21" , "from char 0 to char 21, the text will be blue" 
+outf "t=c01, tr=4-48 | b=c04, br=57-91" , "from the char 4 to char 48, the text will be blue. AND from char 57 to char 91 the background will be red"
 ```
 #### Formatting
 * The first string is the format string.
@@ -375,22 +376,24 @@ C:/Home>
 ``` -->
 ## Input
 ### Define a File Argument
-File arguments are passed in the terminal when running the program. The `filearg` keyword will create an **immutable** variable in the format of `filearg_[variable name]` and cannot override other variable values, even if that variable is mutable. The order they are defined will determine the order that they are passed in the terminal. You cannot use spaces in file arguments.
+File arguments are passed in the terminal when running the program. The order they are defined will determine the order that they are passed in the terminal. You cannot use spaces in file arguments. The `filearg` keyword will replace itself with the line `set [variable name] = "[input]">coerce("[variable type]")` after the input is received.
 ```
-filearg [variable name:S] [type:S]
+filearg [variable name:R]
 
 ## default usage
-filearg "name" "String"
-filearg "age" "Number"
+str name = ""
+num age = 0
+filearg %name
+filearg %age
 out "hello I am $|Filearg_name| and I am $|Filearg_age| years old"
 
 ## when running the program
 C:/Home> st [program name] [arg1] [arg2]
-C:/Home> st about_froggy "froggy" 7
+C:/Home> st [program name] froggy 7
  hello I am froggy and I am 7 years old
 ```
 ### Typeable Input
-The `ask` keyword will not create a new variable and cannot overwrite other variable values, even if that variable is mutable. After input, the interpreter will replace the `ask` keyword line with `set [variable name] = "[input]">coerce([variable type])`. If you do not include the comma, you will recieve a `TypeError: Missing expected [type]` error. The whitespace around the comma is not required, but is recommended for readability.
+The `ask` keyword will not create a new variable and cannot overwrite other variable values, even if that variable is mutable. After input, the interpreter will replace the `ask` keyword line with `set [variable name] = "[input]">coerce("[variable type]")`.
 ```
 ask [variable:R],[prefix:S]
 
@@ -420,12 +423,11 @@ What is your name? Froggy
 ```
 
 ### Input with Navigable Options
-If you do not include the commas, you will recieve a `TypeError: Missing expected [type]` error. The whitespace around the commas are not required, but is recommended for readability.
 ```
 prompt [variable:R] , [default highlighted option:N] , [options:A]
 
 str output = ''
-prompt %output 0 $'hello', "world!", "I am froggy!"$
+prompt %output , 0 , $'hello', "world!", "I am froggy!"$
 ```
 ## Methods
 If no arguments are passed, you may omit the parentheses. Arguments are separated by `,`.
@@ -463,6 +465,9 @@ out 42>coerce("String")
 ```
 ##### Number → Boolean
 ```
+out 123>coerce("Boolean")
+## true
+
 out 1>coerce("Boolean")
 ## true
 
@@ -630,7 +635,7 @@ out 10>div(5)
 ## 2
 
 out 10>div(0)
-## DivisionByZeroError
+## Infinity
 ```
 ### Boolean
 #### flip
@@ -838,7 +843,6 @@ Along with the startup sequence, there are two intervals, `configInterval` and `
 * `TypeError` - The type of a variable is not what was expected.
 * `SyntaxError` - The syntax of the code is not valid.
 * `ReferenceError` - The thing that was referenced is not defined, not accessible, or cannot be changed.
-* `DivisionByZeroError` - Division by zero is not allowed.
 * `CalculationError` - The calculation could not be performed.
 * `EvaluationError` - The evaluation of a token failed.
 * `ImportError` - Import could not be loaded, or was already loaded.

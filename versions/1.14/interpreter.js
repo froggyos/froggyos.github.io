@@ -169,7 +169,7 @@ class Token {
             ['String', /'(?:\\'|[^'])*'|"(?:\\"|[^"])*"/],
             ['Array', /\$([^\$]+)\$/],
             ['Boolean', /\b(true|false)\b/],
-            ['Oneliner', /^./],
+            ['Oneliner', /^\./],
             ['Identifier', /\b[a-zA-Z][a-zA-Z0-9_]*\b/],
             ['IdentifierReference', /%[a-zA-Z][a-zA-Z0-9_]*\b/],
             ["FunctionCall", /@[a-zA-Z][a-zA-Z0-9_]*(\(.*\))?/],
@@ -352,7 +352,12 @@ class Interpreter {
                 type: "Number",
                 value: Math.PI.toString(),
                 mutable: false
-            }
+            },
+            "Infinity": {
+                type: "Number",
+                value: "Infinity",
+                mutable: false
+            },
         };
 
         this.temporaryVariables = {};
@@ -372,26 +377,6 @@ class Interpreter {
         this.name = name;
         Interpreter.interpreters[name] = this;
         this.running = false
-
-        for(let i = 0; i < fileArguments.length; i++) {
-            if(!isNaN(parseInt(fileArguments[i]))){
-                fileArguments[i] = {
-                    type: 'Number',
-                    value: fileArguments[i]
-                }
-            } else if(fileArguments[i] == "true" || fileArguments[i] == "false") {
-                fileArguments[i] = {
-                    type: 'Boolean',
-                    value: fileArguments[i] == "true"
-                }
-            } else if((fileArguments[i].startsWith('"') && fileArguments[i].endsWith('"')) || (fileArguments[i].startsWith("'") && fileArguments[i].endsWith("'"))) {
-                fileArguments[i] = {
-                    type: 'String',
-                    value: Interpreter.trimQuotes(fileArguments[i])
-                }
-            } 
-        }
-
         this.fileArguments = fileArguments;
         this.fileArgumentCount = 0;
         this.load = () => {};
@@ -441,8 +426,12 @@ class Interpreter {
             type: 'blanket',
             t: function(){
                 if(value.type == "String") {
-                    return "c02";
-                } else return "c09";
+                    return "froggyscript-string-color";
+                } else if(value.type == "Number") {
+                    return "froggyscript-number-color";
+                } else if(value.type == "Boolean") {
+                    return "froggyscript-boolean-color";
+                }
             }()
         };
 
@@ -617,6 +606,12 @@ class Interpreter {
 
                 if(endFound) {
                     let result = this.evaluateMathExpression(exprTokens);
+
+                    if(isNaN(result)) {
+                        tokens.push(new InterpreterError('CalculationError', `NaN is a forbidden value`, tokens, this.interval, token.position));
+                        return tokens;
+                    }
+
                     let resultType = (typeof result)[0].toUpperCase() + (typeof result).slice(1);
                     let resultToken = new Token(resultType, result.toString(), token.position);
                     tokens.splice(index, exprTokens.length + 2, resultToken);
@@ -1592,20 +1587,18 @@ const load_function = () => {
         }
     }).add()
 
-    const KEYWORD_FILEARG = new Keyword('filearg', "basic", ['Keyword', 'String', 'String'], {
+    const KEYWORD_FILEARG = new Keyword('filearg', "basic", ['Keyword', 'IdentifierReference'], {
         post: (tokens, interp, keyword) => {
-            let variableName = `Filearg_${tokens[1].value}`;
-            let variableType = tokens[2].value;
-
-            if(interp.fileArguments[interp.fileArgumentCount].type != variableType) {
-                return interp.outputError(new InterpreterError('TypeError', `Expected type [${variableType}] for Filearg [${interp.fileArgumentCount}], found type [${interp.fileArguments[interp.fileArgumentCount].type}]`, tokens, interp.interval, tokens[0].position));
+            if(interp.fileArgumentCount >= interp.fileArguments.length) {
+                return interp.outputError(new InterpreterError('StateError', `Expected ${interp.fileArguments.length} file argument${interp.fileArguments.length==1?"":"s"}, found ${interp.fileArgumentCount+1}`, tokens, interp.interval, tokens[0].position));
             }
 
-            if(interp.variables[variableName] != undefined) {
-                return interp.outputError(new InterpreterError('ReferenceError', `Filearg [${variableName}] is already defined`, tokens, interp.interval, tokens[0].position));
-            }
+            let variableName = tokens[1].value
+            let typeToCoerce = interp.getVariable(tokens[1].value).type;
+            let value = interp.fileArguments[interp.fileArgumentCount];
 
-            interp.setVariable(variableName, interp.fileArguments[interp.fileArgumentCount].value, variableType, false);
+            interp.lines[interp.interval] = `set ${variableName} = "${value}">coerce('${typeToCoerce}')`;
+            interp.interval--
 
             interp.fileArgumentCount++;
         }
@@ -2095,7 +2088,7 @@ const load_function = () => {
     new Method("mod", ["Number"], (token, args) => {
         let arg0 = args[0];
         if(arg0.value == 0) {
-            return new InterpreterError('DivisionByZeroError', `Cannot divide by zero`, token, token.position, token.position);
+            return new Token("Number", "Infinity", token.position, token.methods);
         }
         return new Token("Number", (token.value % arg0.value).toString(), token.position, token.methods);
     }).add();
@@ -2126,7 +2119,7 @@ const load_function = () => {
     new Method("div", ["Number"], (token, args) => {
         let arg0 = args[0];
         if(arg0.value == 0) {
-            return new InterpreterError('DivisionByZeroError', `Cannot divide by zero`, token, token.position, token.position);
+            return new Token("Number", "Infinity", token.position, token.methods);
         }
         return new Token("Number", (+token.value / +arg0.value).toString(), token.position, token.methods);
     }, ["Number"]).add();

@@ -915,13 +915,21 @@ const config = {
                 "call @display_frog('sleepy')",
             ] },
             { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
-                "import 'graphics'",
-                "createscreen 79,58",
-                "rect rect1 = $0, 0, 10, 10$",
-                "rect rect2 = $5, 5, 10, 10$",
-                ".rect1>add",
-                ".rect2>add",
-                "out rect1>intersects(rect2)",
+                // "import 'graphics'",
+                // "createscreen 79,58",
+                // "rect rect1 = $0, 0, 10, 10$",
+                // "rect rect2 = $5, 5, 10, 10$",
+                // ".rect1>add",
+                // ".rect2>add",
+                // "out rect1>intersects(rect2)",
+                "str name = ''",
+                "num age = 0",
+                'filearg %name',
+                'filearg %age',
+                'out "Hello my name is $|name| and I am $|age| years old."',
+                "out 10",
+                "out false",
+                "out 'meow!'"
 
             ] },
             { name: "test2", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
@@ -1027,7 +1035,10 @@ const config = {
                 "alert-background 03",
                 "error-text 15",
                 "prompt-selected-background 02",
-                "prompt-selected-text 15"
+                "prompt-selected-text 15",
+                "froggyscript-number-color 09",
+                "froggyscript-boolean-color 09",
+                "froggyscript-string-color 02",
             ] },
             { name: "revised", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
                 "000000",
@@ -1062,7 +1073,10 @@ const config = {
                 "alert-background 03",
                 "error-text 15",
                 "prompt-selected-background 02",
-                "prompt-selected-text 15"
+                "prompt-selected-text 15",
+                "froggyscript-number-color 09",
+                "froggyscript-boolean-color 09",
+                "froggyscript-string-color 02",
             ] },
             { name: "standard-dark", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
                 "000000", // 00 black (unchanged)
@@ -1097,7 +1111,10 @@ const config = {
                 "alert-background 03",
                 "error-text 15",
                 "prompt-selected-background 02",
-                "prompt-selected-text 15"
+                "prompt-selected-text 15",
+                "froggyscript-number-color 09",
+                "froggyscript-boolean-color 09",
+                "froggyscript-string-color 02",
             ] },
             { name: "cherry", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
                 "000000", 
@@ -1132,7 +1149,10 @@ const config = {
                 "alert-background 03",
                 "error-text 15",
                 "prompt-selected-background 02",
-                "prompt-selected-text 15"
+                "prompt-selected-text 15",
+                "froggyscript-number-color 09",
+                "froggyscript-boolean-color 09",
+                "froggyscript-string-color 02",
             ] },
             { name: "swamp", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
                 "000000",
@@ -1167,7 +1187,10 @@ const config = {
                 "alert-background 03",
                 "error-text 15",
                 "prompt-selected-background 02",
-                "prompt-selected-text 15"
+                "prompt-selected-text 15",
+                "froggyscript-number-color 01",
+                "froggyscript-boolean-color 01",
+                "froggyscript-string-color 02",
             ] },
             { name: "swamp-revised", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
                 "000000",// 00
@@ -1202,7 +1225,10 @@ const config = {
                 "alert-background 09",
                 "error-text 15",
                 "prompt-selected-background 02",
-                "prompt-selected-text 15"
+                "prompt-selected-text 15",
+                "froggyscript-number-color 01",
+                "froggyscript-boolean-color 01",
+                "froggyscript-string-color 02",
             ] },
             { name: "neon", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
                 "000000",
@@ -1237,7 +1263,10 @@ const config = {
                 "alert-background 03",
                 "error-text 15",
                 "prompt-selected-background 02",
-                "prompt-selected-text 15"
+                "prompt-selected-text 15",
+                "froggyscript-number-color 09",
+                "froggyscript-boolean-color 09",
+                "froggyscript-string-color 02",
             ] },
         ],
         "D:/Spinners": [
