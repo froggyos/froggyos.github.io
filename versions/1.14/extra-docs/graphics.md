@@ -125,6 +125,7 @@ line line1 = $0, 10, 10, 0$
 line line2 = $0, 0, 10, 10$
 .out line1>cross(line2) ## true
 ```
+### intersection
 ### Getters and Setters
 * `>x1` - x position of the first point of the line
 * `>y1` - y position of the first point of the line
