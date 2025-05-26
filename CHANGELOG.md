@@ -156,8 +156,8 @@ idk
 
 # 1.14
 ```
-~ rewrote FroggyScript again lmao
-    - read the documentation !!!
-~ finally made the macro list show aliases 😩🙏
+~ rewrote FroggyScript again
+    - read the documentation
+~ finally made the macro list show aliases
 + added new Lilypad keybinds
 ```
