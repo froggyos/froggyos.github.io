@@ -2130,6 +2130,7 @@ function createLilypadLine(path, linetype, filename){
 
     terminal.scrollTop = terminal.scrollHeight;
     terminalLine.focus();
+    updateLinePrefixes(linetype);
 }
 
 function setTrustedFiles(){
@@ -2165,8 +2166,6 @@ let dateTimeInterval = setInterval(() => {
 function ready(){
     document.getElementById("blackout").remove()
     sendCommand('[[BULLFROG]]greeting', []);
-    sendCommand('st', ["test", 'meow', '10']);
-    //sendCommand('st', ["test", '10']);
 }
 
 // literally all of this is just for the animation
