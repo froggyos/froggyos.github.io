@@ -855,4 +855,4 @@ overhaul inclusions in translation descriptors
 this allows for multiple inclusions per descriptor
 -->
 # Other
-If you have any questions, comments, or suggestions, email `froggyoscom+other@gmail.com`. If you have any concerns or found a bug, open an issue on the [GitHub repository](https://github.com/froggyos/froggyos.github.io).
+If you have any questions, comments, or suggestions, email `froggyoscom+other@gmail.com`. If you have any concerns or found a bug, [open an issue on the GitHub repository](https://github.com/froggyos/froggyos.github.io/issues).
