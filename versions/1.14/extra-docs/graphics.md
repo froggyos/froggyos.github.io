@@ -14,12 +14,18 @@ rect [name] = $[x:N], [y:N], [width:N], [height:N]$
 
 rect rectangle = $0, 0, 50, 50$
 ```
-# Rect
-## Methods
-### render
-Renders the object to the screen.
+## txt
+Creates a variable of type Text. `x` and `y` is where the first character of the text will be drawn.
 ```
-.rectangle>render
+txt [name] = $[x:N], [y:N], [text:S]$
+txt text = $0, 0, 'Hello World'$
+```
+# Methods
+## rect
+### add
+Adds the object to the screen.
+```
+.rectangle>add
 ```
 ### remove
 Removes the object from the screen.
@@ -40,13 +46,61 @@ Macro for `>width()>height()`.
 
 .rectangle>size(10, 10)
 ```
-## Getters and Setters
+### clone
+Creates a clone of the rectangle object. The clone will have the same properties as the original rectangle object, but will not be linked to it. This means that changes made to the clone will not affect the original rectangle object, and vice versa. You still must use `>add` to add the clone to the screen.
+```
+rect rectangle = $0, 0, 50, 50$
+rect clone = rectangle>clone
+.clone>add>move(10, 10)
+## does not affect the original rectangle object
+```
+### intersects
+Checks if the rectangle intersects with another rectangle. Returns Boolean.
+```
+rect rectangle1 = $0, 0, 50, 50$
+rect rectangle2 = $10, 10, 50, 50$
+.rectangle1>intersects(rectangle2) ## true
+```
+### Getters and Setters
 * `>x` - x position of the rectangle
 * `>y` - y position of the rectangle
 * `>width` - width of the rectangle
 * `>height` - height of the rectangle
 * `>fill` - fill color of the rectangle
 * `>stroke` - stroke color of the rectangle
+## txt
+### add
+Adds the object to the screen.
+```
+.text>add
+```
+### remove
+Removes the object from the screen.
+```
+.text>remove
+```
+### move
+Macro for `>x()>y()`.
+```
+>move([x], [y])
+
+.text>move(10, 10)
+```
+### clone
+Creates a clone of the text object. The clone will have the same properties as the original text object, but will not be linked to it. This means that changes made to the clone will not affect the original text object, and vice versa. You still must use `>add` to add the clone to the screen.
+```
+txt text = $0, 0, 'Hello World'$
+txt clone = text>clone
+.clone>add>move(10, 10)
+## does not affect the original text object
+```
+### Getters and Setters
+* `>x` - x position of the text
+* `>y` - y position of the text
+* `>width` - width of the text (only if wordwrap is true)
+* `>wrap` - whether the text should be wrapped or not (default: false)
+* `>color` - color of the text
+* `>text` - text to be displayed
 <!-- ## pixel
 Creates a variable of type Pixel.
 ```
@@ -68,49 +122,7 @@ line [name] = $[x1], [y1], [x2], [y2]$
 line line = $0, 0, 50, 50$
 ``` -->
 
-<!-- # Rect
-## Methods
-### render
-Renders the rectangle to the screen.
-```
-rect rectangle = $0, 0, 50, 50$
-#rectangle>render
-```
-### clear
-Clears the rectangle from the screen.
-```
-rect rectangle = $0, 0, 50, 50$
-#rectangle>clear
-```
-### move
-Moves the rectangle to a new position on the screen. Alias of `>x()>y()`.
-```
-rect rectangle = $0, 0, 50, 50$
-#rectangle>move(10;10)
-```
-### clone
-Creates a clone of the rectangle object. The clone will have the same properties as the original rectangle object, but will not be linked to it. This means that changes made to the clone will not affect the original rectangle object, and vice versa.
-```
-rect rectangle = $0, 0, 50, 50$
-rect clone = rectangle>clone
-#clone>render>move(10;10)
--- does not affect the original rectangle object
-```
-### intersects
-Checks if the rectangle intersects with another rectangle. Returns Boolean.
-```
-rect rectangle1 = $0, 0, 50, 50$
-rect rectangle2 = $10, 10, 50, 50$
-#rectangle1>intersects(rectangle2)
-```
-## Getters and Setters
-* `>x` - x position of the rectangle
-* `>y` - y position of the rectangle
-* `>width` - width of the rectangle
-* `>height` - height of the rectangle
-* `>fill` - fill color of the rectangle
-* `>stroke` - stroke color of the rectangle
-
+<!-- 
 # Pixel
 Manipulate individual pixels on the screen.
 ## Methods

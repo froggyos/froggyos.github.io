@@ -435,9 +435,23 @@ class Interpreter {
         this.load = () => interpreter2.load();
     }
 
-    output(value, format = []) {
+    output(value) {
         if(value == undefined) return;
-        createTerminalLine(value, "", {translate: false, formatting: format});
+        let formatting = {
+            type: 'blanket',
+            t: function(){
+                if(value.type == "String") {
+                    return "c02";
+                } else return "c09";
+            }()
+        };
+
+        createTerminalLine(value.value, "", {translate: false, formatting: [formatting]});
+    }
+
+    formattedOutput(value, format = []) {
+        console.log(format)
+        createTerminalLine(value.value, "", {translate: false, formatting: format});
     }
 
     /**
@@ -888,11 +902,7 @@ class Interpreter {
             let args = method.args.map(arg => {
                 if (arg.type === 'Identifier') {
                     return this.getVariable(arg.value);
-                } else if (['Number', 'String', 'Boolean', "Array"].includes(arg.type)) {
-                    return arg;
-                } else {
-                    return null;
-                }
+                } else return arg;
             });
 
             // Retrieve method definition
@@ -906,8 +916,10 @@ class Interpreter {
                 );
             }
 
-            if(!methodInstance.validateArgs(args).result) {
-                return new InterpreterError(methodInstance.validateArgs(args).type, methodInstance.validateArgs(args).message, token, this.interval, token.position);
+            let validation = methodInstance.validateArgs(args);
+
+            if(!validation.result) {
+                return new InterpreterError(validation.type, validation.message, token, this.interval, token.position);
             }
 
             // Execute method
@@ -1082,16 +1094,24 @@ class Interpreter {
         pixel.style.backgroundColor = `var(--${color})`;
     }
 
+    setPixelTextColor(pixel, color) {
+        if(!this.imports.includes("graphics")) return;
+        pixel.style.color = `var(--${color})`;
+    }
+
     renderGraphics(scope){
         if(!this.imports.includes("graphics")) return;
         let renderedBackPixels = document.querySelectorAll(`[data-render-back]`);
         let renderedFrontPixels = document.querySelectorAll(`[data-render-front]`);
 
         let backRenderStack = this.importData.graphics.backRenderStack;
+        let frontRenderStack = this.importData.graphics.frontRenderStack;
+
+        let graphicsData = this.importData.graphics;
 
         if(scope.includes("back")){
             renderedBackPixels.forEach(pixel => {
-                pixel.style.backgroundColor = `var(--${this.importData.graphics.defaultBackgroundColor})`;
+                pixel.style.backgroundColor = `var(--${graphicsData.defaultBackgroundColor})`;
                 pixel.removeAttribute("data-render-back");
             })
             backRenderStack.forEach(obj => {
@@ -1118,10 +1138,51 @@ class Interpreter {
                     }
                 }
             })
+        } else if(scope.includes("front")) {
+            renderedFrontPixels.forEach(pixel => {
+                pixel.style.color = `var(--${graphicsData.defaultTextClearColor})`;
+                pixel.textContent = '\u00A0';
+                pixel.removeAttribute("data-render-front");
+            })
+
+            frontRenderStack.forEach(obj => {
+                let name = obj.value.name;
+                let variable = this.getVariable(name);
+
+                if(variable.type == "Text"){
+                    let x = +variable.value.x - 1;
+                    let y = +variable.value.y;
+                    let text = variable.value.text;
+                    let width = +variable.value.width;
+                    let wrap = variable.value.wrap;
+
+                    let xLevel = x;
+                    let yLevel = y;
+
+                    for(let i = 0; i < text.length; i++){
+                        if(wrap){
+                            if(xLevel >= Math.min(x + width, graphicsData.width)){
+                                yLevel++;
+                                xLevel = x;
+                            }
+                        }
+                        xLevel += 1;
+
+                        let pixel = document.getElementById(`screen-${config.programSession}-${yLevel}-${xLevel}`);
+
+                        if(pixel == null) continue;
+                        pixel.textContent = text[i];
+                        this.setPixelTextColor(pixel, variable.value.color);
+                        pixel.setAttribute("data-render-front", name);
+                    }
+                }
+            })
         }
     }
 
     kill() {
+        this.running = false;
+        config.currentProgram = "cli";
         clearInterval(this.clock);
     }
 }
@@ -1304,7 +1365,7 @@ const load_function = () => {
     const KEYWORD_OUTF = new Keyword('outf', "basic", ['Keyword', "String", "String"], {
         post: (tokens, interp, keyword) => {
             let format = tokens[1].value;
-            let text = tokens[2].value;
+            let text = tokens[2];
             let formatArray = [];
 
             let formatting = format.split("|")
@@ -1399,7 +1460,7 @@ const load_function = () => {
             }
 
             if(tokenErrors.length > 0) interp.outputError(tokenErrors[0]);
-            else interp.output(text, formatArray);
+            else interp.formattedOutput(text, formatArray);
         }
     }).add()
 
@@ -1420,7 +1481,7 @@ const load_function = () => {
             let arrayOptions = values.map(v => v.value);
 
             if(selectedIndex < 0 || selectedIndex >= arrayOptions.length){
-                return interp.outputError(new InterpreterError('IndexError', `Index [${selectedIndex}] is out of bounds for array of length [${arrayOptions.length}]`, tokens, interp.interval, tokens[2].position));
+                return interp.outputError(new InterpreterError('RangeError', `Index [${selectedIndex}] is out of bounds for array of length [${arrayOptions.length}]`, tokens, interp.interval, tokens[2].position));
             }
             interp.promptCount++;
 
@@ -1628,7 +1689,7 @@ const load_function = () => {
     const KEYWORD_OUT = new Keyword('out', "basic", ['Keyword', 'String|Number|Boolean'], {
         post: (tokens, interp) => {
             let value = tokens[1];
-            interp.output(value.value);
+            interp.output(value);
         }
     }).add()
 
@@ -1915,6 +1976,10 @@ const load_function = () => {
         let currentType = token.type;
         let targetType = args[0].value;
 
+        if(!["String", "Number", "Boolean"].includes(targetType)) {
+            return new InterpreterError('TypeError', `Cannot coerce type ${currentType} to type ${targetType}`, token, token.position, token.position);
+        }
+
         switch(currentType){
             case "String": {
                 if(targetType == "Number") {
@@ -1977,16 +2042,16 @@ const load_function = () => {
     }, ["Array"]).add();
 
     new Method("length", ["Array"], (token, args) => {
-        return new Token("Number", token.value.length, token.position, token.methods);
+        return new Token("Number", token.value.length.toString(), token.position, token.methods);
     }, []).add();
 
     // pure string
     new Method("eq", ["String"], (token, args) => {
-        return new Token("Boolean", token.value == args[0].value, token.position, token.methods);
+        return new Token("Boolean", (token.value == args[0].value).toString(), token.position, token.methods);
     }, ["String"]).add();
 
     new Method("neq", ["String"], (token, args) => {
-        return new Token("Boolean", token.value != args[0].value, token.position, token.methods);
+        return new Token("Boolean", (token.value != args[0].value).toString(), token.position, token.methods);
     }, ["String"]).add();
 
     new Method("append", ["String"], (token, args) => {
@@ -1995,7 +2060,7 @@ const load_function = () => {
     }, ["String"]).add();
 
     new Method("length", ["String"], (token, args) => {
-        return new Token("Number", token.value.length, token.position, token.methods);
+        return new Token("Number", token.value.length.toString(), token.position, token.methods);
     }, []).add();
 
     new Method("repeat", ["String"], (token, args) => {
@@ -2005,12 +2070,12 @@ const load_function = () => {
 
     // pure boolean
     new Method("flip", ["Boolean"], (token, args) => {
-        return new Token("Boolean", !token.value+"", token.position, token.methods);
+        return new Token("Boolean", !token.value.toString(), token.position, token.methods);
     }, []).add();
 
     // pure number
     new Method("abs", ["Number"], (token, args) => {
-        return new Token("Number", Math.abs(token.value), token.position, token.methods);
+        return new Token("Number", Math.abs(token.value).toString(), token.position, token.methods);
     }, []).add();
     
     new Method("truncate", ["Number"], (token, args) => {
@@ -2030,7 +2095,7 @@ const load_function = () => {
     new Method("mod", ["Number"], (token, args) => {
         let arg0 = args[0];
         if(arg0.value == 0) {
-            return new InterpreterError('ZeroDivisionError', `Cannot divide by zero`, token, token.position, token.position);
+            return new InterpreterError('DivisionByZeroError', `Cannot divide by zero`, token, token.position, token.position);
         }
         return new Token("Number", (token.value % arg0.value).toString(), token.position, token.methods);
     }).add();
@@ -2061,7 +2126,7 @@ const load_function = () => {
     new Method("div", ["Number"], (token, args) => {
         let arg0 = args[0];
         if(arg0.value == 0) {
-            return new InterpreterError('ZeroDivisionError', `Cannot divide by zero`, token, token.position, token.position);
+            return new InterpreterError('DivisionByZeroError', `Cannot divide by zero`, token, token.position, token.position);
         }
         return new Token("Number", (+token.value / +arg0.value).toString(), token.position, token.methods);
     }, ["Number"]).add();
@@ -2070,6 +2135,8 @@ const load_function = () => {
 const defaultImportData = {
     graphics: {
         defaultBackgroundColor: "c15",
+        defaultTextColor: 'c02',
+        defaultTextClearColor: 'transparent',
         defaultStrokeColor: "c00",
         rendered: false,
         maxWidth: 79,
@@ -2077,6 +2144,7 @@ const defaultImportData = {
         width: undefined,
         height: undefined,
         backRenderStack: [],
+        frontRenderStack: [],
     }
 }
 
@@ -2151,14 +2219,221 @@ const Imports = {
                         stroke: defaultImportData.graphics.defaultStrokeColor,
                     }
 
+                    if(array[0].cloneInfo != undefined){
+                        variableValue.stroke = array[0].cloneInfo.stroke;
+                        variableValue.fill = array[0].cloneInfo.fill;
+
+                        variableValue.x = array[0].value;
+                        variableValue.y = array[1].value;
+                        variableValue.width = array[2].value;
+                        variableValue.height = array[3].value;
+                    }
+
                     interp.setVariable(tokens[1].value, variableValue, "Rectangle", true);
+                }
+            }),
+            new Keyword("txt", "assigner", ['Assigner', 'Assignee', 'Assignment', 'Array'], {
+                post: (tokens, interp, keyword) => {
+                    let array = tokens[3].value;
+
+                    if(array.length != 3){
+                        return new InterpreterError('SyntaxError', `Text must have 3 values`, tokens, interp.interval, tokens[3].position);
+                    }
+
+                    if(array[0].type != "Number"){
+                        return new InterpreterError('TypeError', `Text x value must be a number`, tokens, interp.interval, array[0].position);
+                    }
+
+                    if(array[1].type != "Number"){
+                        return new InterpreterError('TypeError', `Text y value must be a number`, tokens, interp.interval, array[1].position);
+                    }
+
+                    if(array[2].type != "String"){
+                        return new InterpreterError('TypeError', `Text value must be a string`, tokens, interp.interval, array[2].position);
+                    }
+
+                    let x = array[0].value;
+                    let y = array[1].value;
+                    let text = array[2].value;
+
+                    let variableValue = {
+                        x: x,
+                        y: y,
+                        text: text,
+                        width: Infinity,
+                        name: tokens[1].value,
+                        color: defaultImportData.graphics.defaultTextColor,
+                        wrap: false,
+                    }
+
+                    if(array[0].cloneInfo != undefined){
+                        variableValue.color = array[0].cloneInfo.color;
+                        variableValue.wrap = array[0].cloneInfo.wrap;
+                        variableValue.width = array[0].cloneInfo.width;
+                        variableValue.x = array[0].value;
+                        variableValue.y = array[1].value;
+                        variableValue.text = array[2].value;
+                    }
+
+                    interp.setVariable(tokens[1].value, variableValue, "Text", true);
                 }
             })
         ],
         methods: [
-            new Method("render", ["Rectangle"], (token, args, interp) => {
+            // text ============================================================================================
+            new Method("add", ["Text"], (token, args, interp) => {
                 if(!interp.importData.graphics.rendered){
-                    return new InterpreterError('RuntimeError', `Screen not created. Use the [createscreen] keyword first`, token, interp.interval, token.position);
+                    return new InterpreterError('StateError', `Screen not created. Use the [createscreen] keyword first`, token, interp.interval, token.position);
+                }
+                args;
+
+                interp.importData.graphics.frontRenderStack.push(token);
+                interp.renderGraphics(["front"]);
+                return token;
+            }),
+            new Method("remove", ["Text"], (token, args, interp) => {
+                if(!interp.importData.graphics.rendered){
+                    return new InterpreterError('StateError', `Screen not created. Use the [createscreen] keyword first`, token, interp.interval, token.position);
+                }
+                args;
+                let variable = interp.variables[token.value.name];
+                if(variable == undefined) {
+                    return new InterpreterError('ReferenceError', `Variable [${token.value.name}] is not defined`, token, interp.interval, token.position);
+                }
+                interp.importData.graphics.frontRenderStack = interp.importData.graphics.frontRenderStack.filter(t => t.value.name != token.value.name);
+                interp.renderGraphics(["front"]);
+                return token;
+            }),
+            new Method("x", ["Text"], (token, args, interp) => {
+                if(args[0] == undefined) return new Token("Number", token.value.x, token.position, token.methods);
+                else {
+                    interp.variables[token.value.name].value.x = args[0].value;
+                    interp.renderGraphics(["front"]);
+                    return token;
+                }
+            }, ["Number?"]),
+            new Method("y", ["Text"], (token, args, interp) => {
+                if(args[0] == undefined) return new Token("Number", token.value.y, token.position, token.methods);
+                else {
+                    interp.variables[token.value.name].value.y = args[0].value;
+                    interp.renderGraphics(["front"]);
+                    return token;
+                }
+            }, ["Number?"]),
+            new Method("move", ["Text"], (token, args, interp) => {
+                let newX = args[0].value;
+                let newY = args[1].value;
+                interp.variables[token.value.name].value.x = newX;
+                interp.variables[token.value.name].value.y = newY;
+                interp.renderGraphics(["front"]);
+                return token;
+            }, ["Number", "Number"]),
+
+            new Method("text", ["Text"], (token, args, interp) => {
+                if(args[0] == undefined) return new Token("String", token.value.text, token.position, token.methods);
+                else {
+                    interp.variables[token.value.name].value.text = args[0].value;
+                    interp.renderGraphics(["front"]);
+                    return token;
+                }
+            }, ["String?"]),
+
+            new Method("width", ["Text"], (token, args, interp) => {
+                if(args[0] == undefined) return new Token("Number", token.value.width, token.position, token.methods);
+                else {
+                    interp.variables[token.value.name].value.width = args[0].value;
+                    interp.renderGraphics(["front"]);
+                    return token;
+                }
+            }, ["Number?"]),
+
+            new Method("wrap", ["Text"], (token, args, interp) => {
+                if(args[0] == undefined) return new Token("Boolean", token.value.wrap, token.position, token.methods);
+                else {
+                    interp.variables[token.value.name].value.wrap = args[0].value;
+                    interp.renderGraphics(["front"]);
+                    return token;
+                }
+            }, ["Boolean?"]),
+
+            new Method("color", ["Text"], (token, args, interp) => {
+                if(args[0] == undefined) return new Token("String", token.value.color, token.position, token.methods);
+                else {
+                    interp.variables[token.value.name].value.color = args[0].value;
+                    interp.renderGraphics(["front"]);
+                    return token;
+                }
+            }, ["String?"]),
+
+            new Method("clone", ["Text"], (token, args, interp) => {
+                let finalToken = new Token("Array", [], token.position, token.methods);
+                finalToken.value.push(new Token("Number", token.value.x, token.position, token.methods));
+                finalToken.value.push(new Token("Number", token.value.y, token.position, token.methods));
+                finalToken.value.push(new Token("String", token.value.text, token.position, token.methods));
+
+                finalToken.value[0].cloneInfo = {
+                    color: token.value.color,
+                    wrap: token.value.wrap,
+                    width: token.value.width,
+                }
+                return finalToken;
+            }, []),
+
+            // rectangle =======================================================================================
+            new Method("intersects", ["Rectangle"], (token, args, interp) => {
+                let otherRect = args[0].value;
+                let thisRect = token.value;
+
+                // check if both are in the interp.importData.graphics.backRenderStack
+                if(!interp.importData.graphics.rendered){
+                    return new InterpreterError('ReferenceError', `Screen not created. Use the [createscreen] keyword first`, token, interp.interval, token.position);
+                }
+
+                if(!interp.importData.graphics.backRenderStack.includes(token)){
+                    return new InterpreterError('ReferenceError', `Rectangle [${token.value.name}] is not added to the screen`, token, interp.interval, token.position);
+                }
+
+                if(!interp.importData.graphics.backRenderStack.includes(args[0])){
+                    return new InterpreterError('ReferenceError', `Rectangle [${args[0].value.name}] is not added to the screen`, args[0], interp.interval, args[0].position);
+                }
+
+                let thisX = +thisRect.x;
+                let thisY = +thisRect.y;
+                let thisWidth = +thisRect.width;
+                let thisHeight = +thisRect.height;
+
+                let otherX = +otherRect.x;
+                let otherY = +otherRect.y;
+                let otherWidth = +otherRect.width;
+                let otherHeight = +otherRect.height;
+
+                let intersects = !(thisX + thisWidth < otherX ||
+                    thisX > otherX + otherWidth ||
+                    thisY + thisHeight < otherY ||
+                    thisY > otherY + otherHeight);
+
+                return new Token("Boolean", intersects.toString(), token.position, token.methods);
+            }, ["Rectangle"]),
+
+            new Method("clone", ["Rectangle"], (token, args, interp) => {
+                let finalToken = new Token("Array", [], token.position, token.methods);
+
+                finalToken.value.push(new Token("Number", token.value.x, token.position, token.methods));
+                finalToken.value.push(new Token("Number", token.value.y, token.position, token.methods));
+                finalToken.value.push(new Token("Number", token.value.width, token.position, token.methods));
+                finalToken.value.push(new Token("Number", token.value.height, token.position, token.methods));
+
+                finalToken.value[0].cloneInfo = {
+                    stroke: token.value.stroke,
+                    fill: token.value.fill,
+                }
+
+                return finalToken;
+            }, []),
+
+            new Method("add", ["Rectangle"], (token, args, interp) => {
+                if(!interp.importData.graphics.rendered){
+                    return new InterpreterError('ReferenceError', `Screen not created. Use the [createscreen] keyword first`, token, interp.interval, token.position);
                 }
                 args;
 
@@ -2168,7 +2443,7 @@ const Imports = {
             }),
             new Method("remove", ["Rectangle"], (token, args, interp) => {
                 if(!interp.importData.graphics.rendered){
-                    return new InterpreterError('RuntimeError', `Screen not created. Use the [createscreen] keyword first`, token,  interp.interval, token.position);
+                    return new InterpreterError('ReferenceError', `Screen not created. Use the [createscreen] keyword first`, token,  interp.interval, token.position);
                 }
                 args;
                 let variable = interp.variables[token.value.name];
@@ -2182,7 +2457,6 @@ const Imports = {
                 interp.renderGraphics(["back"]);
                 return token;
             }),
-
             new Method("x", ["Rectangle"], (token, args, interp) => {
                 if(args[0] == undefined) return new Token("Number", token.value.x, token.position, token.methods);
                 else {
