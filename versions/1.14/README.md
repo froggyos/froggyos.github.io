@@ -127,14 +127,6 @@ If you edit the `Settings:` drive directly, some settings won't apply until you 
 ## Trusting Programs
 To trust a program, you must add its file name in the `D:/trusted_files` file. This will allow the program to have extended control over the operating system. Trusted programs are refreshed **only** on hard restarts (reload the page).
 
-## Load Order
-1. Load OS state if it exists
-2. Change color palette
-3. Create the color palette bar
-4. Set trusted files
-5. Validate language files
-6. Initiate the command line with `[[BULLFROG]]greeting`
-
 ## froggyOS Structured Data Storage (fSDS)
 fSDS is a way to store key-value pairs in a file. A value can be one of four types: `String`, `Number`, `Boolean`, or `Array`. fSDS is most prominently used to store file data in the `Config:/program_data` directory, but may be used in other places as well. You cannot store arrays inside of arrays.
 ### Non-Array
@@ -230,7 +222,7 @@ Time_OSRuntime:N - OS uptime in milliseconds
 Time_ProgramRuntime:N - program uptime in milliseconds
 Undefined:U - undefined -->
 ## Identifier References
-To pass a reference to a variable, prefix the name with the `%` symbol. This is useful for getting variable names from users, like in the `ask` or `prompt` keywords. For error-checking purposes, the type of the variable is still kept as `IdentifierReference` while it's value is changed to to the variable name.
+To pass a reference to a variable, prefix the name with the `%` symbol. This is useful for getting variable names, like in the `ask` or `prompt` keywords.
 ## Calculation
 To perform mathematical operations, you must surround the expression with `{}`. You cannot perform string comparison using calculations, use the `>eq` method instead. You may use variables inside of calculations, but you cannot use methods.
 ```
@@ -254,11 +246,11 @@ These are the valid operators in calculations:
 * ` <= ` - less than or equal to
 * ` >= ` - greater than or equal to
 The whitespace around the comparison operators is **required**.
-## Oneliner Operator
+## Oneliners
 The `.` (oneliner) operator is used to perform methods without needing to use another keyword.
 ```
 rect rectangle = $0, 0, 20, 20$
-.rectangle>render
+do rectangle>render
 ```
 ## Variables
 ### Create a Variable
@@ -788,7 +780,6 @@ endloop
 
 #### Quickloop
 Quickloops are different from standard loops in that the entire loop is executed *almost instantly*, while standard loops are executed one line at a time.
-
 ```
 quickloop [condition:N|B]
     [code]
@@ -820,21 +811,48 @@ loaddata [variable] [key]
 ``` -->
 ## Imports
 Imports are a way to extend the functionality of FroggyScript.
-
-<!-- ### Import a Module
+### Import a Module
 ```
 import [import name:S]
 
 import "graphics"
-``` -->
+```
 ### Imports List & Documentation
 * [graphics](https://rus1130.github.io/projects/mdparser.html?url=https://froggyos.github.io/versions/1.14/extra-docs/graphics.md&toc=true)
 * [config](https://rus1130.github.io/projects/mdparser.html?url=https://froggyos.github.io/versions/1.14/extra-docs/config.md)
+### Publish an Import
+* To publish an import so every froggyOS user can use it, send an email to `froggyoscom+import@gmail.com` with a `.js` file of the import and a `.md` file with the documentation.
+# froggyOS Technical Information
+## Startup Sequence
+1. Load any state if it exists from `localStorage`
+2. Get the user config from `Config:/user`
+3. Set the program list
+4. Update date and time
+5. Change the color palette
+6. Create the color palette bar
+7. Set trusted files    
+8. Validate current language
+Along with the startup sequence, there are two intervals, `configInterval` and `dateTimeInterval`. The `configInterval` updates the user config and program list every 1 millisecond, while the `dateTimeInterval` updates the date and time every 100 milliseconds.
+## Types of Errors
+### In-Operating System Errors
+* `TypeError` - The type of a variable is not what was expected.
+* `SyntaxError` - The syntax of the code is not valid.
+* `ReferenceError` - The thing that was referenced is not defined, not accessible, or cannot be changed.
+* `DivisionByZeroError` - Division by zero is not allowed.
+* `CalculationError` - The calculation could not be performed.
+* `EvaluationError` - The evaluation of a token failed.
+* `ImportError` - Import could not be loaded, or was already loaded.
+* `RangeError` - The range of a value is out of its expected bounds.
+* `StateError` - The least specific error type. The program is not in a valid state to proceed.
+### Out-of-Operating System Errors
+These are errors that are caused by bad JavaScript introduced by the user.
+* `TokenizatorError` - The tokenizer could not tokenize. Most likely caused by no Keywords being found.
+* `MethodParseError` - Token is undefined after parsing methods. Most likely caused by a method having no return value.
 <!--
-literally fucking everything
-
 overhaul inclusions in translation descriptors
 [T#:{value}]
 # = number
 this allows for multiple inclusions per descriptor
 -->
+# Other
+If you have any questions, comments, or suggestions, email `froggyoscom+other@gmail.com`. If you have any concerns or found a bug, open an issue on the [GitHub repository](https://github.com/froggyos/froggyos.github.io).
