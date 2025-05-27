@@ -358,6 +358,11 @@ class Interpreter {
                 value: "Infinity",
                 mutable: false
             },
+            "EmptyLine": {
+                type: "String",
+                value: "{{{EMPTY LINE}}}",
+                mutable: false
+            }
         };
 
         this.temporaryVariables = {};
@@ -434,6 +439,14 @@ class Interpreter {
                 }
             }()
         };
+
+        if(value.type == "String" && value.value.length == 0){
+            value.value = "(Empty String)";
+        }
+
+        if(value.type == "String" && value.value == "{{{EMPTY LINE}}}") {
+            value.value = "";
+        }   
 
         createTerminalLine(value.value, "", {translate: false, formatting: [formatting]});
     }
@@ -1058,6 +1071,10 @@ class Interpreter {
         this.run();
     }
 
+    hasImport(name) {
+        return this.imports.includes(name);
+    }
+
     resetMemory() {
         this.variables = {};
         this.temporaryVariables = {};
@@ -1085,17 +1102,23 @@ class Interpreter {
     }
 
     setPixelColor(pixel, color) {
-        if(!this.imports.includes("graphics")) return;
+        if(!this.hasImport("graphics")) return;
         pixel.style.backgroundColor = `var(--${color})`;
     }
 
     setPixelTextColor(pixel, color) {
-        if(!this.imports.includes("graphics")) return;
+        if(!this.hasImport("graphics")) return;
         pixel.style.color = `var(--${color})`;
     }
 
+    getPixel(x, y) {
+        if(!this.hasImport("graphics")) return;
+        let pixel = document.getElementById(`screen-${config.programSession}-${y}-${x}`);
+        return pixel;
+    }
+
     renderGraphics(scope){
-        if(!this.imports.includes("graphics")) return;
+        if(!this.hasImport("graphics")) return;
         let renderedBackPixels = document.querySelectorAll(`[data-render-back]`);
         let renderedFrontPixels = document.querySelectorAll(`[data-render-front]`);
 
@@ -1134,7 +1157,7 @@ class Interpreter {
                         }
                         xLevel += 1;
 
-                        let pixel = document.getElementById(`screen-${config.programSession}-${yLevel}-${xLevel}`);
+                        let pixel = this.getPixel(xLevel, yLevel);
 
                         if(pixel == null) continue;
                         pixel.textContent = text[i];
@@ -1162,7 +1185,7 @@ class Interpreter {
 
                     for(let i = rectY; i <= rectY + rectHeight; i++){
                         for(let j = rectX; j <= rectX + rectWidth; j++){
-                            let pixel = document.getElementById(`screen-${config.programSession}-${i}-${j}`);
+                            let pixel = this.getPixel(j, i);
                             if(pixel == null) continue;
                             let color = rectFill;
                             if(i == rectY || i == rectY + rectHeight || j == rectX || j == rectX + rectWidth) color = rectStroke;
@@ -1187,7 +1210,7 @@ class Interpreter {
                     let err = dx - dy;
 
                     while (true){
-                        let pixel = document.getElementById(`screen-${config.programSession}-${y1}-${x1}`);
+                        let pixel = this.getPixel(x1, y1);
                         if(pixel != null){
                             this.setPixelColor(pixel, stroke);
                             pixel.setAttribute("data-render-back", name);
@@ -1221,7 +1244,7 @@ const load_function = () => {
                 return interp.outputError(new InterpreterError('ImportError', `Import [${importName}] is not defined`, tokens, interp.interval, tokens[1].position));
             }
 
-            if(interp.imports.includes(importName)) {
+            if(interp.hasImport(importName)) {
                 return interp.outputError(new InterpreterError('ImportError', `Import [${importName}] is already imported`, tokens, interp.interval, tokens[1].position));
             }
 
@@ -1996,56 +2019,52 @@ const load_function = () => {
     }).add();
 
     // Multi
-    new Method("type", ["String", "Number", "Boolean", "Array"], (token, args) => {
+    new Method("type", ["String", "Number", "Boolean", "Array", "Rectangle", "Line", "Text", "Pixel"], (token, args) => {
         return new Token("String", token.type, token.position, token.methods);
     }, []).add();
 
-    new Method("coerce", ["String", "Number", "Boolean"], (token, args) => {
+    new Method("coerce", ["String", "Number", "Boolean"], (token, args, interp) => {
         let currentType = token.type;
         let targetType = args[0].value;
 
-        if(!["String", "Number", "Boolean"].includes(targetType)) {
+        if(!["String", "Number", "Boolean", "Pixel"].includes(targetType)) {
             return new InterpreterError('TypeError', `Cannot coerce type ${currentType} to type ${targetType}`, token, token.position, token.position);
         }
 
-        switch(currentType){
-            case "String": {
-                if(targetType == "Number") {
-                    if(!isNaN(token.value)) {
-                        return new Token("Number", token.value, token.position, token.methods);
-                    } else {
-                        return new InterpreterError('TypeError', `Cannot coerce String [${token.value}] to Number`, token, token.position, token.position);
-                    }
-                } else if(targetType == "Boolean") {
-                    if(token.value == "true" || token.value == "false") {
-                        return new Token("Boolean", token.value, token.position, token.methods);
-                    } else {
-                        return new InterpreterError('TypeError', `Cannot coerce String [${token.value}] to Boolean`, token, token.position, token.position);
-                    }
-                } else if(targetType == "String") return new Token("String", token.value, token.position, token.methods);
-            } break;
-
-            case "Number": {
-                if(targetType == "String") {
-                    return new Token("String", token.value.toString(), token.position, token.methods);
-                } else if(targetType == "Boolean") {
-                    if(token.value > 0) return new Token("Boolean", "true", token.position, token.methods);
-                    else return new Token("Boolean", "false", token.position, token.methods);
-                } else if(targetType == "Number") return new Token("Number", token.value, token.position, token.methods);
-            } break;
-
-            case "Boolean": {
-                if(targetType == "String") {
-                    return new Token("String", token.value.toString(), token.position, token.methods);
-                } else if(targetType == "Number") {
-                    if(token.value == "true") return new Token("Number", 1, token.position, token.methods);
-                    else return new Token("Number", 0, token.position, token.methods);
-                } else if(targetType == "Boolean") return new Token("Boolean", token.value, token.position, token.methods);
-            } break;
-
-            default: {
-                return new InterpreterError('TypeError', `Cannot coerce type ${currentType} to type ${targetType}`, token, token.position, token.position);
-            };
+        if(currentType == "String"){
+            if(targetType == "Number") {
+                if(!isNaN(token.value)) {
+                    return new Token("Number", token.value, token.position, token.methods);
+                } else {
+                    return new InterpreterError('TypeError', `Cannot coerce String [${token.value}] to Number`, token, token.position, token.position);
+                }
+            } else if(targetType == "Boolean") {
+                if(token.value == "true" || token.value == "false") {
+                    return new Token("Boolean", token.value, token.position, token.methods);
+                } else {
+                    return new InterpreterError('TypeError', `Cannot coerce String [${token.value}] to Boolean`, token, token.position, token.position);
+                }
+            } else if(targetType == "String") return new Token("String", token.value, token.position, token.methods);
+        } else if(currentType == "Number") {
+            if(targetType == "String") {
+                return new Token("String", token.value.toString(), token.position, token.methods);
+            }
+            else if(targetType == "Boolean") {
+                if(token.value > 0) return new Token("Boolean", "true", token.position, token.methods);
+                else return new Token("Boolean", "false", token.position, token.methods);
+            }
+            else if(targetType == "Number") return new Token("Number", token.value, token.position, token.methods);
+        } else if(currentType == "Boolean") {
+            if(targetType == "String") {
+                return new Token("String", token.value.toString(), token.position, token.methods);
+            }
+            else if(targetType == "Number") {
+                if(token.value == "true") return new Token("Number", 1, token.position, token.methods);
+                else return new Token("Number", 0, token.position, token.methods);
+            }
+            else if(targetType == "Boolean") return new Token("Boolean", token.value, token.position, token.methods);
+        } else {
+            return new InterpreterError('TypeError', `Cannot coerce type ${currentType} to type ${targetType}`, token, token.position, token.position);
         }
     }, ["String"]).add();
 
@@ -2190,17 +2209,11 @@ const Imports = {
                     let givenWidth = tokens[1].value;
                     let givenHeight = tokens[2].value;
 
-                    if(givenWidth > defaultImportData.graphics.maxWidth) {
-                        return new InterpreterError('RangeError', `Width cannot be greater than ${defaultImportData.graphics.maxWidth}`, tokens, interp.interval, tokens[1].position);
+                    if(givenWidth < 1 || givenWidth > defaultImportData.graphics.maxWidth) {
+                        return interp.outputError(new InterpreterError('RangeError', `Width must be in range[0, ${defaultImportData.graphics.maxWidth}]`, tokens, interp.interval, tokens[1].position));
                     }
-                    if(givenWidth < 1) {
-                        return new InterpreterError('RangeError', `Width cannot be less than 1`, tokens, interp.interval, tokens[1].position);
-                    }
-                    if(givenHeight > defaultImportData.graphics.maxHeight) {
-                        return new InterpreterError('RangeError', `Height cannot be greater than ${defaultImportData.graphics.maxHeight}`, tokens, interp.interval, tokens[2].position);
-                    }
-                    if(givenHeight < 1) {
-                        return new InterpreterError('RangeError', `Height cannot be less than 1`, tokens, interp.interval, tokens[2].position);
+                    if(givenHeight < 1 || givenHeight > defaultImportData.graphics.maxHeight) {
+                        return interp.outputError(new InterpreterError('RangeError', `Height must be in range [1, ${defaultImportData.graphics.maxHeight}]`, tokens, interp.interval, tokens[2].position));
                     }
                     interp.importData.graphics.width = +givenWidth;
                     interp.importData.graphics.height = +givenHeight;
@@ -2353,9 +2366,105 @@ const Imports = {
 
                     interp.setVariable(tokens[1].value, variableValue, "Text", true);
                 }
-            })
+            }),
+            new Keyword("pxl", "assigner", ['Assigner', 'Assignee', 'Assignment', 'Array|Pixel'], {
+                post: (tokens, interp, keyword) => {
+                    if(tokens[3].type == "Array"){
+                        let array = tokens[3].value;
+
+                        if(array.length != 2){
+                            return new InterpreterError('SyntaxError', `Pixel must have 2 values`, tokens, interp.interval, tokens[3].position);
+                        }
+
+                        for(let i = 0; i < array.length; i++){
+                            if(array[i].type != "Number"){
+                                return new InterpreterError('TypeError', `Pixel values must be numbers`, tokens, interp.interval, array[i].position);
+                            }
+                        }
+
+                        let x = +array[0].value;
+                        let y = +array[1].value;
+
+                        let variableValue = {
+                            x: x.toString(),
+                            y: y.toString(),
+                            name: tokens[1].value,
+                        }
+
+                        interp.setVariable(tokens[1].value, variableValue, "Pixel", true);
+                    } else {
+                        let value = {
+                            x: tokens[3].value.x,
+                            y: tokens[3].value.y,
+                            name: tokens[1].value,
+                        }
+                        interp.setVariable(tokens[1].value, value, "Pixel", true);
+                    }
+
+                }
+            }),
         ],
         methods: [
+            // pixel ===========================================================================================
+            new Method("toString", ["Pixel"], (token, args) => {
+                return new Token("String", `(${token.value.x},${token.value.y})`, token.position, token.methods);
+            }, []),
+
+            new Method("x", ["Pixel"], (token, args, interp) => {
+                return new Token("Number", token.value.x, token.position, token.methods);
+            }),
+
+            new Method("y", ["Pixel"], (token, args, interp) => {
+                return new Token("Number", token.value.y, token.position, token.methods);
+            }),
+
+            new Method("back", ["Pixel"], (token, args, interp) => {
+                if(!interp.importData.graphics.rendered){
+                    return new InterpreterError('StateError', `Screen not created. Use the [createscreen] keyword first`, token, interp.interval, token.position);
+                }
+                let x = token.value.x;
+                let y = token.value.y;
+                let pixel = interp.getPixel(x, y);
+
+                if(!pixel) {
+                    return new InterpreterError('RangeError', `Pixel (${x}, ${y}) is out of range`, token, interp.interval, token.position);
+                }
+
+                return new Token("String", pixel.style.backgroundColor.match(/--(c\d\d)/)[1], token.position, token.methods);
+            }),
+
+            new Method("front", ["Pixel"], (token, args, interp) => {
+                if(!interp.importData.graphics.rendered){
+                    return new InterpreterError('StateError', `Screen not created. Use the [createscreen] keyword first`, token, interp.interval, token.position);
+                }
+                let x = token.value.x;
+                let y = token.value.y;
+                let pixel = interp.getPixel(x, y);
+
+                if(!pixel) {
+                    return new InterpreterError('RangeError', `Pixel (${x}, ${y}) is out of range`, token, interp.interval, token.position);
+                }
+
+                return new Token("String", pixel.style.color.match(/--(c\d\d)/)[1], token.position, token.methods);
+            }),
+
+            new Method("value", ["Pixel"], (token, args, interp) => {
+                if(!interp.importData.graphics.rendered){
+                    return new InterpreterError('StateError', `Screen not created. Use the [createscreen] keyword first`, token, interp.interval, token.position);
+                }
+                let x = token.value.x;
+                let y = token.value.y;
+                let pixel = interp.getPixel(x, y);
+
+                if(!pixel) {
+                    return new InterpreterError('RangeError', `Pixel (${x}, ${y}) is out of range`, token, interp.interval, token.position);
+                }
+
+                return new Token("String", pixel.textContent.trim(), token.position, token.methods);
+            }, []),
+
+
+
             // line ============================================================================================
             new Method("intersection", ["Line"], (token, args, interp) => {
                 let line1 = token.value;
@@ -2401,14 +2510,13 @@ const Imports = {
                 if(intersection == null) return new Token("Boolean", "false", token.position, token.methods);
                 else {
                     // turn this into a Pixel object
-                    let arrayValues = [
-                        new Token("Number", intersection.x.toString(), token.position, token.methods),
-                        new Token("Number", intersection.y.toString(), token.position, token.methods)
-                    ]
 
-                    let returnArray = new Token("Array", arrayValues, token.position, token.methods);
+                    let pixel = new Token("Pixel", {
+                        x: intersection.x.toString(),
+                        y: intersection.y.toString(),
+                    }, token.position, token.methods);
 
-                    return returnArray;
+                    return pixel;
                 }
 
             }, ["Line"]),

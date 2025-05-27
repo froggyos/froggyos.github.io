@@ -12,19 +12,35 @@ Creates a variable of type Rect.
 ```
 rect [name] = $[x:N], [y:N], [width:N], [height:N]$
 
-rect rectangle = $0, 0, 50, 50$
+rect rectangle = $0, 0, 20, 20$
 ```
 ## text
 Creates a variable of type Text. `x` and `y` is where the first character of the text will be drawn.
 ```
 text [name] = $[x:N], [y:N], [text:S]$
+
 text txt = $0, 0, 'Hello World'$
 ```
 ## line
 Creates a variable of type Line. `x1` and `y1` is the starting point of the line, and `x2` and `y2` is the ending point of the line.
 ```
 line [name] = $[x1:N], [y1:N], [x2:N], [y2:N]$
-line ln = $0, 0, 50, 50$
+
+line ln = $0, 0, 20, 20$
+```
+## pixel
+Creates a variable of type Pixel, which is a reference to a specific pixel on the screen. `x` and `y` is the position of the pixel.
+```
+pxl [name] = $[x:N], [y:N]$
+
+pxl pixel = $0, 0$
+```
+You can also set `pxl` to another pixel, instead of an array.
+```
+line line1 = $0, 0, 10, 10$
+line line2 = $0, 10, 10, 0$
+pxl pixel = line1>intersection(line2)
+out pixel>toString ## '(5,5)'
 ```
 # Methods
 ## rect
@@ -126,6 +142,13 @@ line line2 = $0, 0, 10, 10$
 .out line1>cross(line2) ## true
 ```
 ### intersection
+Calculates the intersection point of two lines. Returns a Pixel object.
+```
+line line1 = $0, 0, 50, 50$
+line line2 = $10, 10, 50, 50$
+pxl intersection = line1>intersection(line2)
+out intersection>toString ## '(10,10)'
+```
 ### Getters and Setters
 * `>x1` - x position of the first point of the line
 * `>y1` - y position of the first point of the line
@@ -133,7 +156,43 @@ line line2 = $0, 0, 10, 10$
 * `>y2` - y position of the second point of the line
 * `>stroke` - stroke color of the line
 
-
+## pixel
+### x
+Gets the x position of the pixel.
+```
+pxl pixel = $0, 0$
+out pixel>x ## 0
+```
+### y
+Gets the y position of the pixel.
+```
+pxl pixel = $0, 0$
+out pixel>y ## 0
+```
+### back
+Gets the back color of the pixel.
+```
+pxl pixel = $0, 0$
+out pixel>back ## 'c00'
+```
+### front
+Gets the front color of the pixel.
+```
+pxl pixel = $0, 0$
+out pixel>front ## 'c02'
+```
+### value
+Gets the text value of the pixel. Values are a single character.
+```
+pxl pixel = $0, 0$
+out pixel>value ## 'A'
+```
+### toString
+Converts the pixel to a string representation.
+```
+pxl pixel = $0, 0$
+out pixel>toString ## '(0,0)'
+```
 <!-- ## pixel
 Creates a variable of type Pixel.
 ```

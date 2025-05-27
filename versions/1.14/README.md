@@ -320,17 +320,23 @@ free %test
 ## Output
 ### Basic Output
 ```
-out [argument]
+out [argument:S|B|N]
 
 out variable_name
 out "text"
 out "more text"
 out 1
+out false
+```
+Outputting a string with length 0 will result in `(Empty String)` being outputted. To output a blank line, use `out EmptyLine`.
+```
+out "" ## outputs (Empty String)
+out EmptyLine ## outputs a blank line
 ```
 ### Formatted Output
 #### General
 * index `0` is the 1st character.
-* There is less than normal error checking on formatting objects, so make sure they're correct.
+* There is less than normal error checking on formatting, so make sure it's correct.
 ```
 outf [format],[text]
 
@@ -341,7 +347,6 @@ outf "t=c01, tr=0-21" , "from char 0 to char 21, the text will be blue"
 outf "t=c01, tr=4-48 | b=c04, br=57-91" , "from the char 4 to char 48, the text will be blue. AND from char 57 to char 91 the background will be red"
 ```
 #### Formatting
-* The first string is the format string.
 * **rules** are delimited by the pipe operator: `{[property]=[value] | [property]=[value], [property]=[value]}`
 * **subrules** are delimited by the comma operator, and occur inside of **rules**: `{[property]=[value],[property]=[value]}`
     * If a range is not specified, it will apply to the entire string
