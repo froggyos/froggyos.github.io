@@ -151,14 +151,17 @@ Lilypad is the text editor in froggyOS. It has a few keybinds that you can use t
 * `ArrowUp` - move cursor up one line
 * `ArrowDown` - move cursor down one line
 
+* `Shift + ArrowUp` - move cursor to end of previous line
+* `Shift + ArrowDown` - move cursor to beginning of next line
+
 * `CTRL + ArrowUp` - Move to first line
 * `CTRL + ArrowDown` - Move to last line
 
-* `CTRL + Q` - Move to beginning of current line
-* `CTRL + E` - Move to end of current line
-
 * `ALT + ArrowUp` - Move current line up one line
 * `ALT + ArrowDown` - Move current line down one line
+
+* `CTRL + Q` - Move to beginning of current line
+* `CTRL + E` - Move to end of current line
 
 ## Selection
 * `Shift + ArrowLeft` - select one character to the left
@@ -169,11 +172,14 @@ Lilypad is the text editor in froggyOS. It has a few keybinds that you can use t
 
 * `CTRL + A` - select all text on the current line
 
+## Creation
+* `Enter` - insert a new line at the current cursor position
+* `Shift + Enter` - create a new line below the current line
+* `DEL` - delete current line
 ## Other
 * `CTRL + C` - copy selected text
 * `CTRL + X` - cut selected text
 * `CTRL + V` - paste text from clipboard
-* `DEL` - delete current line
 
 # FroggyScript Documentation
 ## Notes

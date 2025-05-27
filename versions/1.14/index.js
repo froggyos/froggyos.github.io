@@ -1937,6 +1937,12 @@ function createLilypadLine(path, linetype, filename){
             updateLinePrefixes(linetype);
         }
 
+        if(keybindCondition("Enter", { shiftKey: true })){
+            e.preventDefault();
+            createLilypadLine("", linetype, filename);
+            updateLinePrefixes(linetype);
+        }
+
         if(keybindCondition("Backspace")){
             let selection = window.getSelection();
 
@@ -1990,6 +1996,24 @@ function createLilypadLine(path, linetype, filename){
             };
         };
 
+        if(keybindCondition("ArrowUp", { shiftKey: true })){
+            e.preventDefault();
+
+            let previousLine = lines[currentLineIndex - 1];
+            if(previousLine != undefined){
+                moveCaretToPosition(previousLine, previousLine.textContent.length);
+            }
+        }
+
+        if(keybindCondition("ArrowDown", { shiftKey: true })){
+            e.preventDefault();
+
+            let nextLine = lines[currentLineIndex + 1];
+            if(nextLine != undefined){
+                moveCaretToPosition(nextLine, nextLine.textContent.length);
+            }
+        }
+
         if(keybindCondition("ArrowUp", { ctrlKey: true })){
             e.preventDefault();
 
@@ -2041,12 +2065,12 @@ function createLilypadLine(path, linetype, filename){
             }
         }
 
-        if(keybindCondition("q", { ctrlKey: true })){
+        if(keybindCondition("ArrowLeft", { ctrlKey: true })){
             e.preventDefault();
             moveCaretToPosition(line, 0);
         };
 
-        if(keybindCondition("e", { ctrlKey: true })){
+        if(keybindCondition("ArrowRight", { ctrlKey: true })){
             e.preventDefault();
             moveCaretToPosition(line, line.textContent.length);
         }
@@ -2166,7 +2190,7 @@ let dateTimeInterval = setInterval(() => {
 function ready(){
     document.getElementById("blackout").remove()
     sendCommand('[[BULLFROG]]greeting', []);
-    sendCommand("st", ["test"]);
+    sendCommand("/", ["e", "test"]);
 }
 
 // literally all of this is just for the animation
