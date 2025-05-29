@@ -39,11 +39,16 @@ class Keyword {
      *     }
      * });
      */
+    #id;
     constructor(keyword, type, scheme, options = {}) {
         this.keyword = keyword;
         this.scheme = scheme;
         this.type = type;
         this.args = null;
+
+        this.#id = murmurhash3_32_gc(`${keyword}-${type}-${scheme.join('-')}`,`${keyword}-${type}-${scheme.join('-')}`);
+
+        this.getId = () => this.#id;
 
         const { post, pre, dud } = options;
 
@@ -256,7 +261,7 @@ class Method {
     /**
      * @param {string} name - Method name.
      * @param {string[]} type - Token type this method is for.    
-     * @param {function(Token, Token[], Interpreter): Token} fn - The method logic. return a new Token.
+     * @param {function(Token, Token[], Interpreter, Method): Token} fn - The method logic. return a new Token.
      * @param {string[]} [args=[]] - Arg types, with optional ones like 'String?'.
      */
     constructor(name, type, fn, args = []) {
@@ -937,7 +942,7 @@ class Interpreter {
             }
 
             // Execute method
-            const result = methodInstance.fn(token, args, this);
+            const result = methodInstance.fn(token, args, this, methodInstance);
 
             if(result instanceof InterpreterError) {
                 this.outputError(result);
@@ -2042,11 +2047,11 @@ const load_function = () => {
     }).add();
 
     // Multi
-    new Method("type", ["String", "Number", "Boolean", "Array", "Rectangle", "Line", "Text", "Pixel"], (token, args) => {
+    new Method("type", ["String", "Number", "Boolean", "Array", "Rectangle", "Line", "Text", "Pixel"], (token, args, interp, method) => {
         return new Token("String", token.type, token.position, token.methods);
     }, []).add();
 
-    new Method("coerce", ["String", "Number", "Boolean"], (token, args, interp) => {
+    new Method("coerce", ["String", "Number", "Boolean"], (token, args, interp, method) => {
         let currentType = token.type;
         let targetType = args[0].value;
 
@@ -2091,7 +2096,7 @@ const load_function = () => {
         }
     }, ["String"]).add();
 
-    new Method("index", ["String", "Array"], (token, args) => {
+    new Method("index", ["String", "Array"], (token, args, interp, method) => {
         let index = +args[0].value;
         let value = token.value[index];
 
@@ -2107,54 +2112,54 @@ const load_function = () => {
     }, ["Number"]).add();
 
     // pure array
-    new Method("join", ["Array"], (token, args) => {
+    new Method("join", ["Array"], (token, args, interp, method) => {
         let arg0 = args[0]?.value || ","
         return new Token("String", token.value.map(t => t.value).join(arg0), token.position, token.methods);
     }, ["String?"]).add();
 
-    new Method("append", ["Array"], (token, args) => {
+    new Method("append", ["Array"], (token, args, interp, method) => {
         let arg0 = args[0];
         return new Token("Array", [...token.value, ...arg0.value], token.position, token.methods);
     }, ["Array"]).add();
 
-    new Method("length", ["Array"], (token, args) => {
+    new Method("length", ["Array"], (token, args, interp, method) => {
         return new Token("Number", token.value.length.toString(), token.position, token.methods);
     }, []).add();
 
     // pure string
-    new Method("eq", ["String"], (token, args) => {
+    new Method("eq", ["String"], (token, args, interp, method) => {
         return new Token("Boolean", (token.value == args[0].value).toString(), token.position, token.methods);
     }, ["String"]).add();
 
-    new Method("neq", ["String"], (token, args) => {
+    new Method("neq", ["String"], (token, args, interp, method) => {
         return new Token("Boolean", (token.value != args[0].value).toString(), token.position, token.methods);
     }, ["String"]).add();
 
-    new Method("append", ["String"], (token, args) => {
+    new Method("append", ["String"], (token, args, interp, method) => {
         let arg0 = args[0];
         return new Token("String", token.value + arg0.value, token.position, token.methods);
     }, ["String"]).add();
 
-    new Method("length", ["String"], (token, args) => {
+    new Method("length", ["String"], (token, args, interp, method) => {
         return new Token("Number", token.value.length.toString(), token.position, token.methods);
     }, []).add();
 
-    new Method("repeat", ["String"], (token, args) => {
+    new Method("repeat", ["String"], (token, args, interp, method) => {
         let arg0 = args[0];
         return new Token("String", token.value.repeat(arg0.value), token.position, token.methods);
     }, ["Number"]).add();
 
     // pure boolean
-    new Method("flip", ["Boolean"], (token, args) => {
+    new Method("flip", ["Boolean"], (token, args, interp, method) => {
         return new Token("Boolean", !token.value.toString(), token.position, token.methods);
     }, []).add();
 
     // pure number
-    new Method("abs", ["Number"], (token, args) => {
+    new Method("abs", ["Number"], (token, args, interp, method) => {
         return new Token("Number", Math.abs(token.value).toString(), token.position, token.methods);
     }, []).add();
     
-    new Method("truncate", ["Number"], (token, args) => {
+    new Method("truncate", ["Number"], (token, args, interp, method) => {
         let precision = +args[0]?.value || 0;
         if(precision < 0) return new InterpreterError('RangeError', `Cannot round to negative precision`, token, token.position, token.position);
 
@@ -2164,11 +2169,11 @@ const load_function = () => {
         return new Token("Number", result.toString(), token.position, token.methods);
     }, ["Number?"]).add();
 
-    new Method("round", ["Number"], (token, args) => {
+    new Method("round", ["Number"], (token, args, interp, method) => {
         return new Token("Number", Math.round(token.value).toString(), token.position, token.methods);
     }, []).add();
 
-    new Method("mod", ["Number"], (token, args) => {
+    new Method("mod", ["Number"], (token, args, interp, method) => {
         let arg0 = args[0];
         if(arg0.value == 0) {
             return new Token("Number", "Infinity", token.position, token.methods);
@@ -2176,30 +2181,31 @@ const load_function = () => {
         return new Token("Number", (token.value % arg0.value).toString(), token.position, token.methods);
     }).add();
 
-    new Method("inc", ["Number"], (token, args) => {
+    new Method("inc", ["Number"], (token, args, interp, method) => {
+        console.log(FroggyFileSystem.getFile("C:/Home/welcome!"))
         return new Token("Number", (+token.value + 1).toString(), token.position, token.methods);
     }, []).add();
 
-    new Method("dec", ["Number"], (token, args) => {
+    new Method("dec", ["Number"], (token, args, interp, method) => {
         return new Token("Number", (+token.value - 1).toString(), token.position, token.methods);
     }, []).add();
 
-    new Method("add", ["Number"], (token, args) => {
+    new Method("add", ["Number"], (token, args, interp, method) => {
         let arg0 = args[0];
         return new Token("Number", (+token.value + +arg0.value).toString(), token.position, token.methods);
     }, ["Number"]).add();
 
-    new Method("sub", ["Number"], (token, args) => {
+    new Method("sub", ["Number"], (token, args, interp, method) => {
         let arg0 = args[0];
         return new Token("Number", (+token.value - +arg0.value).toString(), token.position, token.methods);
     }, ["Number"]).add();
 
-    new Method("mul", ["Number"], (token, args) => {
+    new Method("mul", ["Number"], (token, args, interp, method) => {
         let arg0 = args[0];
         return new Token("Number", (+token.value * +arg0.value).toString(), token.position, token.methods);
     }, ["Number"]).add();
 
-    new Method("div", ["Number"], (token, args) => {
+    new Method("div", ["Number"], (token, args, interp, method) => {
         let arg0 = args[0];
         if(arg0.value == 0) {
             return new Token("Number", "Infinity", token.position, token.methods);
@@ -2435,19 +2441,19 @@ const Imports = {
         ],
         methods: [
             // pixel ===========================================================================================
-            new Method("toString", ["Pixel"], (token, args) => {
+            new Method("toString", ["Pixel"], (token, args, interp, method) => {
                 return new Token("String", `(${token.value.x},${token.value.y})`, token.position, token.methods);
             }, []),
 
-            new Method("x", ["Pixel"], (token, args, interp) => {
+            new Method("x", ["Pixel"], (token, args, interp, method) => {
                 return new Token("Number", token.value.x, token.position, token.methods);
             }),
 
-            new Method("y", ["Pixel"], (token, args, interp) => {
+            new Method("y", ["Pixel"], (token, args, interp, method) => {
                 return new Token("Number", token.value.y, token.position, token.methods);
             }),
 
-            new Method("back", ["Pixel"], (token, args, interp) => {
+            new Method("back", ["Pixel"], (token, args, interp, method) => {
                 if(!interp.importData.graphics.rendered){
                     return new InterpreterError('StateError', `Screen not created. Use the [createscreen] keyword first`, token, interp.interval, token.position);
                 }
@@ -2462,7 +2468,7 @@ const Imports = {
                 return new Token("String", pixel.style.backgroundColor.match(/--(c\d\d)/)[1], token.position, token.methods);
             }),
 
-            new Method("front", ["Pixel"], (token, args, interp) => {
+            new Method("front", ["Pixel"], (token, args, interp, method) => {
                 if(!interp.importData.graphics.rendered){
                     return new InterpreterError('StateError', `Screen not created. Use the [createscreen] keyword first`, token, interp.interval, token.position);
                 }
@@ -2477,7 +2483,7 @@ const Imports = {
                 return new Token("String", pixel.style.color.match(/--(c\d\d)/)[1], token.position, token.methods);
             }),
 
-            new Method("value", ["Pixel"], (token, args, interp) => {
+            new Method("value", ["Pixel"], (token, args, interp, method) => {
                 if(!interp.importData.graphics.rendered){
                     return new InterpreterError('StateError', `Screen not created. Use the [createscreen] keyword first`, token, interp.interval, token.position);
                 }
@@ -2495,7 +2501,7 @@ const Imports = {
 
 
             // line ============================================================================================
-            new Method("intersection", ["Line"], (token, args, interp) => {
+            new Method("intersection", ["Line"], (token, args, interp, method) => {
                 let line1 = token.value;
                 let line2 = args[0].value;
 
@@ -2550,7 +2556,7 @@ const Imports = {
 
             }, ["Line"]),
 
-            new Method("cross", ["Line"], (token, args, interp) => {
+            new Method("cross", ["Line"], (token, args, interp, method) => {
                 let line1 = token.value;
                 let line2 = args[0].value;
 
@@ -2578,7 +2584,7 @@ const Imports = {
                 return new Token("Boolean", intersects.toString(), token.position, token.methods);
             }, ["Line"]),
 
-            new Method("add", ["Line"], (token, args, interp) => {
+            new Method("add", ["Line"], (token, args, interp, method) => {
                 if(!interp.importData.graphics.rendered){
                     return new InterpreterError('StateError', `Screen not created. Use the [createscreen] keyword first`, token, interp.interval, token.position);
                 }
@@ -2588,7 +2594,7 @@ const Imports = {
                 return token;
             }),
 
-            new Method("remove", ["Line"], (token, args, interp) => {
+            new Method("remove", ["Line"], (token, args, interp, method) => {
                 if(!interp.importData.graphics.rendered){
                     return new InterpreterError('StateError', `Screen not created. Use the [createscreen] keyword first`, token, interp.interval, token.position);
                 }
@@ -2601,7 +2607,7 @@ const Imports = {
                 return token;
             }),
 
-            new Method("x1", ["Line"], (token, args, interp) => {
+            new Method("x1", ["Line"], (token, args, interp, method) => {
                 if(args[0] == undefined) return new Token("Number", token.value.x1, token.position, token.methods);
                 else {
                     interp.variables[token.value.name].value.x1 = args[0].value;
@@ -2610,7 +2616,7 @@ const Imports = {
                 }
             }, ["Number?"]),
 
-            new Method("y1", ["Line"], (token, args, interp) => {
+            new Method("y1", ["Line"], (token, args, interp, method) => {
                 if(args[0] == undefined) return new Token("Number", token.value.y1, token.position, token.methods);
                 else {
                     interp.variables[token.value.name].value.y1 = args[0].value;
@@ -2619,7 +2625,7 @@ const Imports = {
                 }
             }, ["Number?"]),
 
-            new Method("x2", ["Line"], (token, args, interp) => {
+            new Method("x2", ["Line"], (token, args, interp, method) => {
                 if(args[0] == undefined) return new Token("Number", token.value.x2, token.position, token.methods);
                 else {
                     interp.variables[token.value.name].value.x2 = args[0].value;
@@ -2628,7 +2634,7 @@ const Imports = {
                 }
             }, ["Number?"]),
         
-            new Method("y2", ["Line"], (token, args, interp) => {
+            new Method("y2", ["Line"], (token, args, interp, method) => {
                 if(args[0] == undefined) return new Token("Number", token.value.y2, token.position, token.methods);
                 else {
                     interp.variables[token.value.name].value.y2 = args[0].value;
@@ -2637,7 +2643,7 @@ const Imports = {
                 }
             }, ["Number?"]),
 
-            new Method("stroke", ["Line"], (token, args, interp) => {
+            new Method("stroke", ["Line"], (token, args, interp, method) => {
                 if(args[0] == undefined) return new Token("String", token.value.stroke, token.position, token.methods);
                 else {
                     interp.variables[token.value.name].value.stroke = args[0].value;
@@ -2648,7 +2654,7 @@ const Imports = {
 
 
             // text ============================================================================================
-            new Method("add", ["Text"], (token, args, interp) => {
+            new Method("add", ["Text"], (token, args, interp, method) => {
                 if(!interp.importData.graphics.rendered){
                     return new InterpreterError('StateError', `Screen not created. Use the [createscreen] keyword first`, token, interp.interval, token.position);
                 }
@@ -2658,7 +2664,7 @@ const Imports = {
                 return token;
             }),
 
-            new Method("remove", ["Text"], (token, args, interp) => {
+            new Method("remove", ["Text"], (token, args, interp, method) => {
                 if(!interp.importData.graphics.rendered){
                     return new InterpreterError('StateError', `Screen not created. Use the [createscreen] keyword first`, token, interp.interval, token.position);
                 }
@@ -2673,7 +2679,7 @@ const Imports = {
                 return token;
             }),
 
-            new Method("x", ["Text"], (token, args, interp) => {
+            new Method("x", ["Text"], (token, args, interp, method) => {
                 if(args[0] == undefined) return new Token("Number", token.value.x, token.position, token.methods);
                 else {
                     interp.variables[token.value.name].value.x = args[0].value;
@@ -2682,7 +2688,7 @@ const Imports = {
                 }
             }, ["Number?"]),
 
-            new Method("y", ["Text"], (token, args, interp) => {
+            new Method("y", ["Text"], (token, args, interp, method) => {
                 if(args[0] == undefined) return new Token("Number", token.value.y, token.position, token.methods);
                 else {
                     interp.variables[token.value.name].value.y = args[0].value;
@@ -2691,7 +2697,7 @@ const Imports = {
                 }
             }, ["Number?"]),
 
-            new Method("move", ["Text"], (token, args, interp) => {
+            new Method("move", ["Text"], (token, args, interp, method) => {
                 let newX = args[0].value;
                 let newY = args[1].value;
                 interp.variables[token.value.name].value.x = newX;
@@ -2700,7 +2706,7 @@ const Imports = {
                 return token;
             }, ["Number", "Number"]),
 
-            new Method("text", ["Text"], (token, args, interp) => {
+            new Method("text", ["Text"], (token, args, interp, method) => {
                 if(args[0] == undefined) return new Token("String", token.value.text, token.position, token.methods);
                 else {
                     interp.variables[token.value.name].value.text = args[0].value;
@@ -2709,7 +2715,7 @@ const Imports = {
                 }
             }, ["String?"]),
 
-            new Method("width", ["Text"], (token, args, interp) => {
+            new Method("width", ["Text"], (token, args, interp, method) => {
                 if(args[0] == undefined) return new Token("Number", token.value.width, token.position, token.methods);
                 else {
                     interp.variables[token.value.name].value.width = args[0].value;
@@ -2718,7 +2724,7 @@ const Imports = {
                 }
             }, ["Number?"]),
 
-            new Method("wrap", ["Text"], (token, args, interp) => {
+            new Method("wrap", ["Text"], (token, args, interp, method) => {
                 if(args[0] == undefined) return new Token("Boolean", token.value.wrap, token.position, token.methods);
                 else {
                     interp.variables[token.value.name].value.wrap = args[0].value;
@@ -2727,7 +2733,7 @@ const Imports = {
                 }
             }, ["Boolean?"]),
 
-            new Method("color", ["Text"], (token, args, interp) => {
+            new Method("color", ["Text"], (token, args, interp, method) => {
                 if(args[0] == undefined) return new Token("String", token.value.color, token.position, token.methods);
                 else {
                     interp.variables[token.value.name].value.color = args[0].value;
@@ -2736,7 +2742,7 @@ const Imports = {
                 }
             }, ["String?"]),
 
-            new Method("clone", ["Text"], (token, args, interp) => {
+            new Method("clone", ["Text"], (token, args, interp, method) => {
                 let finalToken = new Token("Array", [], token.position, token.methods);
                 finalToken.value.push(new Token("Number", token.value.x, token.position, token.methods));
                 finalToken.value.push(new Token("Number", token.value.y, token.position, token.methods));
@@ -2751,7 +2757,7 @@ const Imports = {
             }, []),
 
             // rectangle =======================================================================================
-            new Method("overlaps", ["Rectangle"], (token, args, interp) => {
+            new Method("overlaps", ["Rectangle"], (token, args, interp, method) => {
 
                 let thisRect = token.value;
                 let otherRect = args[0].value;
@@ -2788,7 +2794,7 @@ const Imports = {
                 return new Token("Boolean", overlaps.toString(), token.position, token.methods);
             }, ["Rectangle"]),
 
-            new Method("clone", ["Rectangle"], (token, args, interp) => {
+            new Method("clone", ["Rectangle"], (token, args, interp, method) => {
                 let finalToken = new Token("Array", [], token.position, token.methods);
 
                 finalToken.value.push(new Token("Number", token.value.x, token.position, token.methods));
@@ -2804,7 +2810,7 @@ const Imports = {
                 return finalToken;
             }, []),
 
-            new Method("add", ["Rectangle"], (token, args, interp) => {
+            new Method("add", ["Rectangle"], (token, args, interp, method) => {
                 if(!interp.importData.graphics.rendered){
                     return new InterpreterError('ReferenceError', `Screen not created. Use the [createscreen] keyword first`, token, interp.interval, token.position);
                 }
@@ -2814,7 +2820,7 @@ const Imports = {
                 interp.renderGraphics(["back"]);
                 return token;
             }),
-            new Method("remove", ["Rectangle"], (token, args, interp) => {
+            new Method("remove", ["Rectangle"], (token, args, interp, method) => {
                 if(!interp.importData.graphics.rendered){
                     return new InterpreterError('ReferenceError', `Screen not created. Use the [createscreen] keyword first`, token,  interp.interval, token.position);
                 }
@@ -2829,7 +2835,7 @@ const Imports = {
                 interp.renderGraphics(["back"]);
                 return token;
             }),
-            new Method("x", ["Rectangle"], (token, args, interp) => {
+            new Method("x", ["Rectangle"], (token, args, interp, method) => {
                 if(args[0] == undefined) return new Token("Number", token.value.x, token.position, token.methods);
                 else {
                     interp.variables[token.value.name].value.x = args[0].value;
@@ -2838,7 +2844,7 @@ const Imports = {
                     return token;
                 }
             }, ["Number?"]),
-            new Method("y", ["Rectangle"], (token, args, interp) => {
+            new Method("y", ["Rectangle"], (token, args, interp, method) => {
                 if(args[0] == undefined) return new Token("Number", token.value.y, token.position, token.methods);
                 else {
                     interp.variables[token.value.name].value.y = args[0].value;
@@ -2847,7 +2853,7 @@ const Imports = {
                     return token;
                 }
             }, ["Number?"]),
-            new Method("move", ["Rectangle"], (token, args, interp) => {
+            new Method("move", ["Rectangle"], (token, args, interp, method) => {
                 let newX = args[0].value;
                 let newY = args[1].value;
 
@@ -2856,7 +2862,7 @@ const Imports = {
                 interp.renderGraphics(["back"]);
                 return token;
             }, ["Number", "Number"]),
-            new Method("width", ["Rectangle"], (token, args, interp) => {
+            new Method("width", ["Rectangle"], (token, args, interp, method) => {
                 if(args[0] == undefined) return new Token("Number", token.value.width, token.position, token.methods);
                 else {
                     interp.variables[token.value.name].value.width = args[0].value;
@@ -2865,7 +2871,7 @@ const Imports = {
                     return token;
                 }
             }, ["Number?"]),
-            new Method("height", ["Rectangle"], (token, args, interp) => {
+            new Method("height", ["Rectangle"], (token, args, interp, method) => {
                 if(args[0] == undefined) return new Token("Number", token.value.height, token.position, token.methods);
                 else {
                     interp.variables[token.value.name].value.height = args[0].value;
@@ -2874,7 +2880,7 @@ const Imports = {
                     return token;
                 }
             }, ["Number?"]),
-            new Method("size", ["Rectangle"], (token, args, interp) => {
+            new Method("size", ["Rectangle"], (token, args, interp, method) => {
                 let newWidth = args[0].value;
                 let newHeight = args[1].value;
 
@@ -2883,7 +2889,7 @@ const Imports = {
                 interp.renderGraphics(["back"]);
                 return token;
             }, ["Number", "Number"]),
-            new Method("fill", ["Rectangle"], (token, args, interp) => {
+            new Method("fill", ["Rectangle"], (token, args, interp, method) => {
                 if(args[0] == undefined) return new Token("String", token.value.fill, token.position, token.methods);
                 else {
                     interp.variables[token.value.name].value.fill = args[0].value;
@@ -2892,7 +2898,7 @@ const Imports = {
                     return token;
                 }
             }, ["String?"]),
-            new Method("stroke", ["Rectangle"], (token, args, interp) => {
+            new Method("stroke", ["Rectangle"], (token, args, interp, method) => {
                 if(args[0] == undefined) return new Token("String", token.value.stroke, token.position, token.methods);
                 else {
                     interp.variables[token.value.name].value.stroke = args[0].value;

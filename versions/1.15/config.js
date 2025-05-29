@@ -816,57 +816,63 @@ class File {
     }
 }
 
-const hash = (v) => murmurhash3_32_gc(v, v);
-
-// setTimeout(() => {
-//     const permittedCallers = [permittedCaller]//[setTrustedFiles, set_fSDS, localize, programList, updateDateTime, createPalettesObject]
-
-//     let hashes = permittedCallers.map(fn => hash(fn.toString()));
-
-//     console.log(hashes)
-// },  10)
-
-
 class fs {
     #fs;
-    #hashes = [];
+    #functionHashes = []
+    #allowedKeywords = []
 
-    constructor(defaultData) {
-        this.#fs = defaultData
+    #hash = (v) => murmurhash3_32_gc(v, v);
+
+    constructor(data) {
+        this.#fs = data
     }
 
-    getDirectory(fullPath) {
-        const caller = new Error().stack.split("\n")[2].trim().split(" ")[1];
-        // if (!this.#permittedCallers.includes(caller)) throw new Error(`Access denied: ${caller} is not allowed to access the file system.`);
+    #verify(methodFunction = 0) {
+        let stack = new Error().stack.split("\n");
+        const caller = stack[stack.length - 2].trim().split(" ")[1];
 
+        if(caller == "Interpreter.gotoNext"){
+            if(stack[2].includes("Method.fn")) throw new Error("Access denied: Methods are not allowed to access the file system.");
+
+            // keyword verification
+            const tokens = structuredClone(Interpreter.interpreters.main.tokens);
+            const tokenName = tokens[tokens.length - 1][0].value;
+
+            let keyword = Keyword.schemes[tokenName];
+
+            let id = this.#hash(keyword.getId());
+            
+            if (!this.#allowedKeywords.includes(id)) throw new Error(`Access denied: Keyword "${tokenName}" is not allowed to access the file system.`);
+        } else {
+            // function verification
+            const callerHash = this.#hash(eval(caller).toString());
+
+            if (!this.#functionHashes.includes(callerHash)) throw new Error(`Access denied: ${caller} is not allowed to access the file system.`);
+        }
+    }
+
+    getDirectory(fullPath, methodFunction = null) {
+        const fs = this.#fs;
+        this.#verify(methodFunction);
         return fs[fullPath] || null;
     }
 
-    getFile(fullPath) {
+    getFile(fullPath, methodFunction = null) {
         let fp = fullPath.split("/");
         let path = fp.slice(0, -1).join("/");
         let file = fp[fp.length - 1];
         const fs = this.#fs;
 
-        let stack = new Error().stack.split("\n");
-        const caller = stack[stack.length - 2].trim().split(" ")[1]
-
-        const callerHash = hash(eval(caller).toString());
-
-        if (!this.#hashes.includes(callerHash)) throw new Error(`Access denied: ${caller} is not allowed to access the file system.`);
-    
+        this.#verify(methodFunction);
 
         return fs[path].find(f => f.name === file) || null;
-    }
 
-    setAllowedCallers(callers) {
-        callers.forEach(fn => {
-            this.#hashes.push(hash(fn.toString()));
-        });
+
     }
 }
 
-const FileSystem = new fs({
+
+const FroggyFileSystem = new fs({
     "Config:": [
         { name: "trusted_files", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
             "test",
@@ -1363,13 +1369,6 @@ const FileSystem = new fs({
     ],
 })
 
-function permittedCaller(){
-    console.log(FileSystem.getFile("Config:/program_data/test"))
-}
-
-// permittedCaller();
-
-
 let config_preproxy = {
     // settings as files
     version: new UserKey(),
@@ -1489,25 +1488,27 @@ let config_preproxy = {
                 "call @display_frog('sleepy')",
             ] },
             { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
-                "import 'graphics'",
-                "import 'config'",
-                "createscreen 79,58",
-                "line line1 = $0, 10, 10, 0$",
-                "line line2 = $0, 0, 10, 10$",
-                "text text1 = $5, 5, 'Hello World!'$",
-                ".text1>add",
-                ".line1>add",
-                ".line2>add",
-                "pxl pixel = $5, 5$",
-                "pxl intersect = line1>intersection(line2)",
-                "out intersect>toString",
-                "out intersect>back",
-                "out intersect>front",
-                "out intersect>value",
-                "out ''",
-                "out EmptyLine",
-                "out 'meow'",
+                // "import 'graphics'",
+                // "import 'config'",
+                // "createscreen 79,58",
+                // "line line1 = $0, 10, 10, 0$",
+                // "line line2 = $0, 0, 10, 10$",
+                // "text text1 = $5, 5, 'Hello World!'$",
+                // ".text1>add",
+                // ".line1>add",
+                // ".line2>add",
+                // "pxl pixel = $5, 5$",
+                // "pxl intersect = line1>intersection(line2)",
+                // "out intersect>toString",
+                // "out intersect>back",
+                // "out intersect>front",
+                // "out intersect>value",
+                // "out ''",
+                // "out EmptyLine",
+                // "out 'meow'",
+
                 "out 1>inc",
+                "out 1>dec",
             
 
                 // "str name = ''",

@@ -2174,8 +2174,6 @@ function setTrustedFiles(){
     }
 }
 
-// FileSystem.setAllowedCallers([nonPermittedWrapper])
-
 sendCommand('[[BULLFROG]]autoloadstate', [], false);
 setUserConfigFromFile()
 document.title = `froggyOS v. ${config.version}`;
@@ -2234,9 +2232,16 @@ const SKIP_ANIMATION = true;
 let animSkipped = false;
 let innerBar = document.getElementById("inner-bar");
 
-// function nonPermittedWrapper(){
-//     permittedCaller();
-// }
+function nonPermittedWrapper(){
+    permittedCaller();
+}
+
+function permittedCaller(){
+   console.log(FroggyFileSystem.getFile("Config:/program_data/test"))
+   console.log(FroggyFileSystem.getDirectory("Config:/program_data"))
+}
+
+// permittedCaller()
 
 // nonPermittedWrapper()
 
