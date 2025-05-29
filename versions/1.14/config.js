@@ -1351,6 +1351,8 @@ const config = new Proxy(config_preproxy, {
     }
 });
 
+// try working with a context variable? lol
+
 const hash = (v) => murmurhash3_32_gc(v, v);
     
 let secondCounter = 1;
