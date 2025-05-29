@@ -2198,7 +2198,6 @@ let dateTimeInterval = setInterval(() => {
 function ready(){
     document.getElementById("blackout").remove()
     sendCommand('[[BULLFROG]]greeting', []);
-    sendCommand("st", ["test"]);
 }
 
 // literally all of this is just for the animation
@@ -2229,7 +2228,7 @@ let getTimings = (i) => {
     }]
 }
 
-const SKIP_ANIMATION = true;
+const SKIP_ANIMATION = false;
 
 let animSkipped = false;
 let innerBar = document.getElementById("inner-bar");
