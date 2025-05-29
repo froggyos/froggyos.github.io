@@ -277,6 +277,12 @@ function localize(descriptor, TRANSLATE_TEXT){
     }
 }
 
+// function notPermittedCaller(){
+//     FileSystem.get("Config:/program_data/test")
+// }
+
+// notPermittedCaller()
+
 function programList(){
     let files = [];
     for(let directory of config.allowedProgramDirectories){
@@ -1797,8 +1803,6 @@ function createEditableTerminalLine(path){
         }
     });
 
-    console.log("outside of keyword", config.fileSystem)
-
     terminalLine.addEventListener('keyup', function(e){
         let userInput = terminalLine.textContent;
 
@@ -2170,6 +2174,8 @@ function setTrustedFiles(){
     }
 }
 
+// FileSystem.setAllowedCallers([nonPermittedWrapper])
+
 sendCommand('[[BULLFROG]]autoloadstate', [], false);
 setUserConfigFromFile()
 document.title = `froggyOS v. ${config.version}`;
@@ -2227,6 +2233,12 @@ const SKIP_ANIMATION = true;
 
 let animSkipped = false;
 let innerBar = document.getElementById("inner-bar");
+
+// function nonPermittedWrapper(){
+//     permittedCaller();
+// }
+
+// nonPermittedWrapper()
 
 if(!SKIP_ANIMATION) {
     innerBar.animate(...getTimings(0)).onfinish = () => {

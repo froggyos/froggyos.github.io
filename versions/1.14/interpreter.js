@@ -72,7 +72,6 @@ class Keyword {
                 }
             }
 
-            localStorage.setItem("StartTime", "0");
             if (typeof post === 'function') {
                 post(args, interp, this);
                 this.args = null;
@@ -130,7 +129,6 @@ class Keyword {
             if(typeof pre === 'function') {
                 pre(this.args, interp, this)
             }
-            localStorage.setItem("StartTime", startTime); 
         }     
     }
 
@@ -238,6 +236,20 @@ class InterpreterError {
     }
 }
 
+class ThrownInterpreterError {
+    constructor(type, message) {
+        this.error = type;
+        this.message = message;
+
+        createTerminalLine("", config.programErrorText.replace("{{}}", type), {translate: false});
+        createTerminalLine(" ", "", {translate: false});
+        createTerminalLine(message, "", {translate: false});
+        createEditableTerminalLine(config.currentPath + ">");
+        Interpreter.interpreters.main.kill()
+    }
+}
+
+
 class Method {
     static registry = new Map(); // Map<type, Map<methodName, Method>>
 
@@ -255,23 +267,15 @@ class Method {
             type: arg.replace(/\?$/, ''),
             optional: arg.endsWith('?')
         }));
-
-        // const types = Array.isArray(type) ? type : [type];
-
-        // // Register this method for each provided type
-        // types.forEach(t => {
-        //     if (!Method.registry.has(t)) {
-        //         Method.registry.set(t, new Map());
-        //     }
-        //     Method.registry.get(t).set(name, this);
-        // });
     }
 
     add() {
         const types = Array.isArray(this.type) ? this.type : [this.type];
 
-        // Register this method for each provided type
         types.forEach(t => {
+            if (Method.registry.has(t) && Method.registry.get(t).has(this.name)) {
+                new ThrownInterpreterError("MethodParseError",`Cannot override method [${this.name}]`)
+            }
             if (!Method.registry.has(t)) {
                 Method.registry.set(t, new Map());
             }
@@ -1240,7 +1244,6 @@ class Interpreter {
 const load_function = () => {
     const KEYWORD_IMPORT = new Keyword('import', "basic", ['Keyword', "String"], {
         post: (tokens, interp, keyword) => {
-            console.log("inside of keyword", config.fileSystem);
             let importName = tokens[1].value;
 
             if(Imports[importName] == undefined) {

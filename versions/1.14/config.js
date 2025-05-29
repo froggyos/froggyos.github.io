@@ -1,3 +1,5 @@
+// @ts-ignore
+
 const presetLanguagesMap = {
     // general stuff ==========================
     "T_froggy_doesnt_like": {
@@ -796,9 +798,577 @@ const presetLanguagesMap = {
 
 };
 
-class UserKey {
-    constructor() {};
+class UserKey { constructor() {} };
+
+class File {
+    constructor(name, properties, data) {
+        this._name = name;
+        this._properties = properties || {transparent: false, read: true, write: true, hidden: false};
+        this._data = data || [];
+    }
+
+    set name(name) {
+        this._name = name;
+    }
+
+    get name() {
+        return this._name;
+    }
 }
+
+const hash = (v) => murmurhash3_32_gc(v, v);
+
+// setTimeout(() => {
+//     const permittedCallers = [permittedCaller]//[setTrustedFiles, set_fSDS, localize, programList, updateDateTime, createPalettesObject]
+
+//     let hashes = permittedCallers.map(fn => hash(fn.toString()));
+
+//     console.log(hashes)
+// },  10)
+
+
+class fs {
+    #fs;
+    #hashes = [];
+
+    constructor(defaultData) {
+        this.#fs = defaultData
+    }
+
+    getDirectory(fullPath) {
+        const caller = new Error().stack.split("\n")[2].trim().split(" ")[1];
+        // if (!this.#permittedCallers.includes(caller)) throw new Error(`Access denied: ${caller} is not allowed to access the file system.`);
+
+        return fs[fullPath] || null;
+    }
+
+    getFile(fullPath) {
+        let fp = fullPath.split("/");
+        let path = fp.slice(0, -1).join("/");
+        let file = fp[fp.length - 1];
+        const fs = this.#fs;
+
+        let stack = new Error().stack.split("\n");
+        const caller = stack[stack.length - 2].trim().split(" ")[1]
+
+        const callerHash = hash(eval(caller).toString());
+
+        if (!this.#hashes.includes(callerHash)) throw new Error(`Access denied: ${caller} is not allowed to access the file system.`);
+    
+
+        return fs[path].find(f => f.name === file) || null;
+    }
+
+    setAllowedCallers(callers) {
+        callers.forEach(fn => {
+            this.#hashes.push(hash(fn.toString()));
+        });
+    }
+}
+
+const FileSystem = new fs({
+    "Config:": [
+        { name: "trusted_files", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
+            "test",
+        ] },
+        { name: "user", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
+            "KEY language TYPE String VALUE eng END",
+            "KEY debugMode TYPE Boolean VALUE false END",
+            "KEY colorPalette TYPE String VALUE standard END",
+            "KEY version TYPE String VALUE 1.14-indev END",
+            "KEY showSpinner TYPE Boolean VALUE false END",
+            "KEY currentSpinner TYPE String VALUE default END",
+            "KEY defaultSpinner TYPE String VALUE default END",
+            "KEY timeFormat TYPE String VALUE w. y/mn/d h:m:s END",
+            "KEY updateStatBar TYPE Boolean VALUE true END",
+            "KEY allowedProgramDirectories TYPE Array START",
+            "0 TYPE String VALUE D:/Programs",
+            "KEY allowedProgramDirectories TYPE Array END",
+            "KEY dissallowSubdirectoriesIn TYPE Array START",
+            "0 TYPE String VALUE D:/Programs",
+            "1 TYPE String VALUE D:/Macros",
+            "2 TYPE String VALUE D:/Program-Data",
+            "3 TYPE String VALUE D:/Palettes",
+            "4 TYPE String VALUE D:/Spinners",
+            "KEY dissallowSubdirectoriesIn TYPE Array END",
+            "KEY validateLanguageOnStartup TYPE Boolean VALUE true END",
+        ] },
+    ],
+    "Config:/langs": [
+        { name: "lbh", properties: {transparent: true, read: true, write: false, hidden: false}, data: ["!LANGNAME: language build helper"] },
+        { name: "eng", properties: {transparent: false, read: true, write: true, hidden: false}, data: ["!LANGNAME: English"] },
+        { name: "nmt", properties: {transparent: false, read: true, write: true, hidden: false}, data: ["!LANGNAME: ngimëte"] },
+        { name: "jpn", properties: {transparent: false, read: true, write: true, hidden: false}, data: ["!LANGNAME: Japanese"] },
+    ],
+    "Config:/program_data": [
+        { name: "test", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
+            "KEY meow!! TYPE Array START",
+            "0 TYPE String VALUE Meow!",
+            "1 TYPE String VALUE Ribbit!",
+            "2 TYPE Number VALUE 7.201",
+            "KEY meow!! TYPE Array END",
+            "KEY Ribbit TYPE String VALUE woof END",
+            "KEY shit TYPE Number VALUE 1.2 END"
+        ] },
+    ],  "C:": [],
+    "C:/Home": [
+        { name: "welcome!", properties: {transparent: false, read: true, write: true, hidden: false}, data: ['Hello!', "Welcome to FroggyOS.", "Type 'help' for a list of commands.", "Have fun! ^v^"] },
+    ],
+    "C:/Docs": [],
+    "D:": [], 
+    "D:/Programs": [
+        { name: "cli", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["str cli = 'this program is hardcoded into froggyOS'", "endprog"] },
+        { name: "lilypad", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["str lilypad = 'this program is hardcoded into froggyOS'", "endprog"] },
+        { name: "kaerugotchi", properties: {transparent: false, read:true, write: true, hidden: false}, data: [
+            "func display_frog(head:S)",
+                "if head>eq('default')",
+                    "out '  o..o'",
+                "endif",
+                "if head>eq('drowsy')",
+                    "out '  =..='",
+                "endif",
+                "if head>eq('sleepy')",
+                    "out '  _.._ .zZ'",
+                "endif",
+                "if head>eq('happy')",
+                    "out '  ^..^'",
+                "endif",
+                "if head>eq('confused')",
+                    "out '  @..@'",
+                "endif",
+                "if head>eq('angry')",
+                    "out '  >..<'",
+                "endif",
+                "if head>eq('sad')",
+                    "out '  q..q'",
+                "endif",
+                "if head>eq('unamused')",
+                    "out '  -..-'",
+                "endif",
+                "out ' (----)'",
+                "out '(>____<)'",
+                "out ' ^^~~^^'",
+            "endfunc",
+            "call @display_frog('sleepy')",
+        ] },
+        { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
+            "import 'graphics'",
+            "import 'config'",
+            "createscreen 79,58",
+            "line line1 = $0, 10, 10, 0$",
+            "line line2 = $0, 0, 10, 10$",
+            "text text1 = $5, 5, 'Hello World!'$",
+            ".text1>add",
+            ".line1>add",
+            ".line2>add",
+            "pxl pixel = $5, 5$",
+            "pxl intersect = line1>intersection(line2)",
+            "out intersect>toString",
+            "out intersect>back",
+            "out intersect>front",
+            "out intersect>value",
+            "out ''",
+            "out EmptyLine",
+            "out 'meow'",
+            "out 1>inc",
+        
+
+            // "str name = ''",
+            // "num age = 0",
+            // 'filearg %name',
+            // 'filearg %age',
+            // 'out "Hello my name is $|name| and I am $|age| years old."',
+            // "out 10",
+            // "out false",
+            // "out 'meow!'"
+
+        ] },
+        { name: "test2", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
+            "arr meow = $4, 48$",
+            'outf "t=c01,i=1" , "this is blue text"',
+            'outf "b=c00" , "this is a black background"',
+            'outf "t=c06, b=c01" , "this is brown text on a blue background"',
+            'outf "t=c01, tr=0-21" , "from char 0 to char 21, the text will be blue" ',
+            'outf "t=c01, tr=meow>index(0)-meow>index(1) | b=c04, br=57-91" , "from the char 4 to char 48, the text will be blue. AND from char 57 to char 91 the background will be red" ',
+            "clearterminal",
+        ] },
+        { name: "fibonacci", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
+            "num i = 0",
+            "num amount = 0",
+            "num nOne = 0",
+            "num nTwo = 1",
+            "num sum = 0",
+            "out 'How many fibonacci numbers do you want to generate?'",
+            "ask %amount , '?'",
+            "loop {i < amount}",
+            "<%i>inc",
+            "set sum = {nOne + nTwo}",
+            "out '#$|i|: $|sum|'",
+            "set nTwo = nOne",
+            "set nOne = sum",
+            "endloop",
+        ] },
+    ],
+    "D:/Macros": [
+        { name: "meow", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
+            "ribbit Meow! ^v^",
+        ] },
+        { name: "create-program", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
+            "!c",
+            "h D:/Programs",
+            "ch $1",
+            "m $1"
+        ] },
+        { name: "edit-program", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
+            "!e",
+            "h D:/Programs",
+            "m $1"
+        ] },
+        { name: "reload", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
+            "!r",
+            "[[BULLFROG]]urgentsavestate",
+            "[[BULLFROG]]urgentloadstate",
+            "[[BULLFROG]]urgentclearstate",
+            "clear",
+            "ribbit OS state reloaded",
+            "[[BULLFROG]]changepath C:/Home"
+        ] },
+        { name: "edit-settings", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
+            "!es",
+            "h Config:",
+            "m $1",
+        ] },
+        { name: "edit-palette", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
+            "!ep",
+            "h D:/Palettes",
+            "m $1",
+        ] },
+        { name: "debug", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
+            "!d",
+            "[[BULLFROG]]debugmode 1",
+        ] },
+        { name: "set-US-time-format", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
+            "ft w. mn/d/y H:m:s a",
+        ] },
+    ],
+    "D:/Palettes": [
+        // standard and revised palettes:  https://int10h.org/blog/2022/06/ibm-5153-color-true-cga-palette/
+        { name: "standard", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
+            "000000", // 00 black
+            "0000AA", // 01 blue
+            "00AA00", // 02 green
+            "00AAAA", // 03 cyan
+            "AA0000", // 04 red
+            "AA00AA", // 05 magenta
+            "AA5500", // 06 brown
+            "AAAAAA", // 07 light grey
+            "555555", // 08 dark grey
+            "5555FF", // 09 light blue
+            "55FF55", // 10 light green
+            "55FFFF", // 11 light cyan
+            "FF5555", // 12 light red
+            "FF55FF", // 13 light magenta
+            "FFFF55", // 14 yellow
+            "FFFFFF", // 15 white
+            "void-space 00",
+            "bar-background 01",
+            "bar-text 15",
+            "terminal-background 15",
+            "terminal-line-background 15",
+            "terminal-line-highlighted-background 14",
+            "terminal-line-text 02",
+            "terminal-line-selection-background 02",
+            "terminal-line-selection-text 15",
+            "error-background 12",
+            "translation-error-backgroud 05",
+            "translation-warning-backgroud 06",
+            "program-error-background 04",
+            "alert-background 03",
+            "error-text 15",
+            "prompt-selected-background 02",
+            "prompt-selected-text 15",
+            "froggyscript-number-color 09",
+            "froggyscript-boolean-color 09",
+            "froggyscript-string-color 02",
+        ] },
+        { name: "revised", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
+            "000000",
+            "0000C4",
+            "00C400",
+            "00C4C4",
+            "C40000",
+            "C400C4",
+            "C47E00",
+            "C4C4C4",
+            "4E4E4E",
+            "4E4EDC",
+            "4EDC4E",
+            "4EF3F3",
+            "DC4E4E",
+            "F34EF3",
+            "F3F34E",
+            "FFFFFF",
+            "void-space 00",
+            "bar-background 01",
+            "bar-text 15",
+            "terminal-background 15",
+            "terminal-line-background 15",
+            "terminal-line-highlighted-background 14",
+            "terminal-line-text 02",
+            "terminal-line-selection-background 02",
+            "terminal-line-selection-text 15",
+            "error-background 12",
+            "translation-error-backgroud 05",
+            "translation-warning-backgroud 06",
+            "program-error-background 04",
+            "alert-background 03",
+            "error-text 15",
+            "prompt-selected-background 02",
+            "prompt-selected-text 15",
+            "froggyscript-number-color 09",
+            "froggyscript-boolean-color 09",
+            "froggyscript-string-color 02",
+        ] },
+        { name: "standard-dark", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
+            "000000", // 00 black (unchanged)
+            "000066", // 01 dark blue
+            "006600", // 02 dark green
+            "006666", // 03 dark cyan
+            "660000", // 04 dark red
+            "660066", // 05 dark magenta
+            "664400", // 06 dark brown
+            "666666", // 07 grey
+            "222222", // 08 darker grey
+            "222288", // 09 deep blue
+            "228822", // 10 deep green
+            "228888", // 11 deep cyan
+            "882222", // 12 deep red
+            "882288", // 13 deep magenta
+            "888822", // 14 deep yellow
+            "AAAAAA", // 15 light grey (less bright than white)
+            "void-space 00",
+            "bar-background 01",
+            "bar-text 15",
+            "terminal-background 15",
+            "terminal-line-background 15",
+            "terminal-line-highlighted-background 14",
+            "terminal-line-text 02",
+            "terminal-line-selection-background 02",
+            "terminal-line-selection-text 15",
+            "error-background 12",
+            "translation-error-backgroud 05",
+            "translation-warning-backgroud 06",
+            "program-error-background 04",
+            "alert-background 03",
+            "error-text 15",
+            "prompt-selected-background 02",
+            "prompt-selected-text 15",
+            "froggyscript-number-color 09",
+            "froggyscript-boolean-color 09",
+            "froggyscript-string-color 02",
+        ] },
+        { name: "cherry", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
+            "000000", 
+            "1C219F", 
+            "289E42", 
+            "17ABAE", 
+            "831326", 
+            "980C6C", 
+            "BC3517", 
+            "C2C5C6", 
+            "464C50", 
+            "5790E4", 
+            "B7EA8A", 
+            "68DCCD", 
+            "E48579", 
+            "D97BC7", 
+            "FF9F58", 
+            "FFFFFF", 
+            "void-space 00",
+            "bar-background 01",
+            "bar-text 15",
+            "terminal-background 15",
+            "terminal-line-background 15",
+            "terminal-line-highlighted-background 10",
+            "terminal-line-text 02",
+            "terminal-line-selection-background 02",
+            "terminal-line-selection-text 15",
+            "error-background 12",
+            "translation-error-backgroud 05",
+            "translation-warning-backgroud 06",
+            "program-error-background 04",
+            "alert-background 03",
+            "error-text 15",
+            "prompt-selected-background 02",
+            "prompt-selected-text 15",
+            "froggyscript-number-color 09",
+            "froggyscript-boolean-color 09",
+            "froggyscript-string-color 02",
+        ] },
+        { name: "swamp", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
+            "000000",
+            "4B71AF",
+            "3F9A44",
+            "3B9994",
+            "984547",
+            "9A3F95",
+            "C27E4B",
+            "B2B2B2",
+            "6C6C6C",
+            "96A2CF",
+            "93C495",
+            "AECFCD",
+            "DEA4A5",
+            "D7ABD4",
+            "D6B87B",
+            "FFFFFF",
+            "void-space 00",
+            "bar-background 01",
+            "bar-text 15",
+            "terminal-background 15",
+            "terminal-line-background 15",
+            "terminal-line-highlighted-background 10",
+            "terminal-line-text 02",
+            "terminal-line-selection-background 02",
+            "terminal-line-selection-text 15",
+            "error-background 12",
+            "translation-error-backgroud 05",
+            "translation-warning-backgroud 06",
+            "program-error-background 04",
+            "alert-background 03",
+            "error-text 15",
+            "prompt-selected-background 02",
+            "prompt-selected-text 15",
+            "froggyscript-number-color 01",
+            "froggyscript-boolean-color 01",
+            "froggyscript-string-color 02",
+        ] },
+        { name: "swamp-revised", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
+            "000000",// 00
+            "31618D",// 01
+            "298B27",// 02
+            "268B67",// 03
+            "753B29",// 04
+            "773669",// 05
+            "BF833A",// 06
+            "97A791",// 07
+            "465C3F",// 08
+            "8DBDD5",// 09
+            "81CB7D",// 10
+            "91C9B9",// 11
+            "D3977F",// 12
+            "CBA9DB",// 13
+            "D7D357",// 14
+            "FFFFFF",// 15
+            "void-space 00",
+            "bar-background 01",
+            "bar-text 15",
+            "terminal-background 15",
+            "terminal-line-background 15",
+            "terminal-line-highlighted-background 14",
+            "terminal-line-text 02",
+            "terminal-line-selection-background 02",
+            "terminal-line-selection-text 15",
+            "error-background 12",
+            "translation-error-backgroud 05",
+            "translation-warning-backgroud 06",
+            "program-error-background 04",
+            "alert-background 09",
+            "error-text 15",
+            "prompt-selected-background 02",
+            "prompt-selected-text 15",
+            "froggyscript-number-color 01",
+            "froggyscript-boolean-color 01",
+            "froggyscript-string-color 02",
+        ] },
+        { name: "neon", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
+            "000000",
+            "0000FF",
+            "00FF00",
+            "00FFFF",
+            "FF0000",
+            "FF00FF",
+            "FFA500",
+            "ABABAB",
+            "757575",
+            "5555FF",
+            "55FF55",
+            "55FFFF",
+            "FF5555",
+            "FF55FF",
+            "FFFF55",
+            "FFFFFF",
+            "void-space 00",
+            "bar-background 01",
+            "bar-text 15",
+            "terminal-background 15",
+            "terminal-line-background 15",
+            "terminal-line-highlighted-background 14",
+            "terminal-line-text 02",
+            "terminal-line-selection-background 02",
+            "terminal-line-selection-text 15",
+            "error-background 12",
+            "translation-error-backgroud 05",
+            "translation-warning-backgroud 06",
+            "program-error-background 04",
+            "alert-background 03",
+            "error-text 15",
+            "prompt-selected-background 02",
+            "prompt-selected-text 15",
+            "froggyscript-number-color 09",
+            "froggyscript-boolean-color 09",
+            "froggyscript-string-color 02",
+        ] },
+    ],
+    "D:/Spinners": [
+        { name: "default", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
+            '-', '\\', '|', '/'
+        ] },
+        { name: "dots", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
+            ".", ":", "¨", ":"
+        ] },
+        { name: "circles", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
+            ".", "o", "O", "°", "O", "o"
+        ] },
+        { name: "cross", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
+            "×", "+"
+        ] },
+        { name: "wave", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
+            "~", "–"
+        ] },
+        { name: "arrows", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
+            "<", "^", ">", "v"
+        ] },
+        { name: "shade", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
+            "·", ":", "!", "+", "x", "%", "#", "%", "x", "+", "!", ":"
+        ] },
+        { name: "spring", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
+            "-", "=", "Ξ", "="
+        ] },
+        { name: "fire", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
+            "s", "§", "¿"
+        ] },
+        { name: "quickloop-in-progress", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
+            "Q"
+        ] },
+        { name: "ask-in-progress", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
+            "?"
+        ] },
+        { name: "prompt-in-progress", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
+            "¶"
+        ] },
+        { name: "securing-in-progress", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
+            "§"
+        ] }
+    ],
+})
+
+function permittedCaller(){
+    console.log(FileSystem.getFile("Config:/program_data/test"))
+}
+
+// permittedCaller();
+
 
 let config_preproxy = {
     // settings as files
@@ -817,9 +1387,9 @@ let config_preproxy = {
     // immutable settings
     trustedFiles: [],
     stepThroughProgram: false,
-    currentPath: 'C:/Home',
+    currentPath: "C:/Home",
     commandHistory: [],
-    commandHistoryIndex: -1,
+    commandHistoryIndex: 0,
     spinnerIndex: 0,
     osTime: 0,
     currentProgram: "cli",
@@ -828,7 +1398,7 @@ let config_preproxy = {
     errorText: "<span class='error'><span class='error-text'>!!ERROR!!</span> -</span>",
     translationErrorText: "<span class='error'><span class='t-error-text'>!!TRANSLATION ERROR!!</span> -</span>",
     translationWarningText: "<span class='error'><span class='t-warning-text'>!TRANSLATION WARNING!</span> -</span>",
-    alertText: "<span class='error'><span class='alert-text'>ALERT</span> -</span>",
+    alertText: ("<span class='error'><span class='alert-text'>ALERT</span> -</span>"),
     programErrorText: " -- <span class='error'><span class='program-error-text'>!! -> {{}} <- !!</span></span> --",
 
     // filesystem
@@ -937,6 +1507,7 @@ let config_preproxy = {
                 "out ''",
                 "out EmptyLine",
                 "out 'meow'",
+                "out 1>inc",
             
 
                 // "str name = ''",
@@ -1336,11 +1907,12 @@ const diagnostic = {
     configSetPerSecond: 0,
     configGetPerSecond: 0,
     runtime: 0,
+    startTime: Date.now(),
+    counter: 0,
 }
 
 const config = new Proxy(config_preproxy, {
     get: (target, prop) => {
-        //if(startTime != localStorage.getItem("StartTime")) return;
         diagnostic.configGet++;
         return target[prop];
     },
@@ -1351,24 +1923,10 @@ const config = new Proxy(config_preproxy, {
     }
 });
 
-// try working with a context variable? lol
-
-const hash = (v) => murmurhash3_32_gc(v, v);
-    
-let secondCounter = 1;
-const startTime = Date.now();
-
-const secondInterval = setInterval(() => secondCounter++, 1000);
-
-localStorage.setItem("StartTime", startTime)
-
-// console.log(hash(startTime, startTime))
-
 const diagnosticInterval = setInterval(() => {
-    diagnostic.configGetPerSecond = Math.ceil(diagnostic.configGet / secondCounter);
-    diagnostic.configSetPerSecond = Math.ceil(diagnostic.configSet / secondCounter);
-    if(localStorage.getItem("StartTime") == null) localStorage.setItem("StartTime", startTime);
-    diagnostic.runtime = Date.now() - startTime;
+    diagnostic.configGetPerSecond = Math.ceil(diagnostic.configGet / diagnostic.counter);
+    diagnostic.configSetPerSecond = Math.ceil(diagnostic.configSet / diagnostic.counter);
+    diagnostic.runtime = Date.now() - diagnostic.startTime;
 }, 1);
 
 const user_config_keys = Object.keys(config_preproxy).filter(key => config_preproxy[key] instanceof UserKey);
