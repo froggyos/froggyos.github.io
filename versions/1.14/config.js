@@ -796,19 +796,23 @@ const presetLanguagesMap = {
 
 };
 
-const config = {
+class UserKey {
+    constructor() {};
+}
+
+let config_preproxy = {
     // settings as files
-    version: null,
-    colorPalette: null,
-    showSpinner: null,
-    currentSpinner: null,
-    defaultSpinner: null,
-    timeFormat: null,
-    updateStatBar: null,
-    allowedProgramDirectories: null,
-    dissallowSubdirectoriesIn: null,
-    language: null,
-    validateLanguageOnStartup: null,
+    version: new UserKey(),
+    colorPalette: new UserKey(),
+    showSpinner: new UserKey(),
+    currentSpinner: new UserKey(),
+    defaultSpinner: new UserKey(),
+    timeFormat: new UserKey(),
+    updateStatBar: new UserKey(),
+    allowedProgramDirectories: new UserKey(),
+    dissallowSubdirectoriesIn: new UserKey(),
+    language: new UserKey(),
+    validateLanguageOnStartup: new UserKey(),
 
     // immutable settings
     trustedFiles: [],
@@ -916,6 +920,7 @@ const config = {
             ] },
             { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
                 "import 'graphics'",
+                "import 'config'",
                 "createscreen 79,58",
                 "line line1 = $0, 10, 10, 0$",
                 "line line2 = $0, 0, 10, 10$",
@@ -1318,12 +1323,54 @@ const config = {
             { name: "prompt-in-progress", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
                 "¶"
             ] },
+            { name: "securing-in-progress", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
+                "§"
+            ] }
         ],
     }
 }
 
-const user_config_keys = Object.keys(structuredClone(config)).filter(key => structuredClone(config)[key] === null);
-const os_config_keys = Object.keys(structuredClone(config)).filter(key => structuredClone(config)[key] !== null).filter(key => !["fileSystem", "trustedFiles"].includes(key));
+const diagnostic = {
+    configGet: 0,
+    configSet: 0,
+    configSetPerSecond: 0,
+    configGetPerSecond: 0,
+    runtime: 0,
+}
+
+const config = new Proxy(config_preproxy, {
+    get: (target, prop) => {
+        //if(startTime != localStorage.getItem("StartTime")) return;
+        diagnostic.configGet++;
+        return target[prop];
+    },
+    set: (target, prop, value) => {
+        diagnostic.configSet++;
+        target[prop] = value;
+        return true;
+    }
+});
+
+const hash = (v) => murmurhash3_32_gc(v, v);
+    
+let secondCounter = 1;
+const startTime = Date.now();
+
+const secondInterval = setInterval(() => secondCounter++, 1000);
+
+localStorage.setItem("StartTime", startTime)
+
+// console.log(hash(startTime, startTime))
+
+const diagnosticInterval = setInterval(() => {
+    diagnostic.configGetPerSecond = Math.ceil(diagnostic.configGet / secondCounter);
+    diagnostic.configSetPerSecond = Math.ceil(diagnostic.configSet / secondCounter);
+    if(localStorage.getItem("StartTime") == null) localStorage.setItem("StartTime", startTime);
+    diagnostic.runtime = Date.now() - startTime;
+}, 1);
+
+const user_config_keys = Object.keys(config_preproxy).filter(key => config_preproxy[key] instanceof UserKey);
+const os_config_keys = Object.keys(config_preproxy).filter(key => !(config_preproxy[key] instanceof UserKey)).filter(key => !["fileSystem", "trustedFiles"].includes(key));
 
 Object.keys(presetLanguagesMap).forEach((key, i) => {
     config.fileSystem["Config:/langs"][0].data.push(Object.keys(presetLanguagesMap)[i])

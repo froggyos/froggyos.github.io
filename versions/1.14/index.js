@@ -1797,6 +1797,8 @@ function createEditableTerminalLine(path){
         }
     });
 
+    console.log("outside of keyword", config.fileSystem)
+
     terminalLine.addEventListener('keyup', function(e){
         let userInput = terminalLine.textContent;
 
@@ -2190,7 +2192,7 @@ let dateTimeInterval = setInterval(() => {
 function ready(){
     document.getElementById("blackout").remove()
     sendCommand('[[BULLFROG]]greeting', []);
-    sendCommand("/", ["e", "test"]);
+    sendCommand("st", ["test"]);
 }
 
 // literally all of this is just for the animation

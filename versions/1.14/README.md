@@ -826,7 +826,7 @@ savedata [key] [value]
 loaddata [variable] [key]
 ``` -->
 ## Imports
-Imports are a way to extend the functionality of FroggyScript.
+Imports are a way to extend the functionality of FroggyScript. Imports must be defined at the top of the file.
 ### Import a Module
 ```
 import [import name:S]

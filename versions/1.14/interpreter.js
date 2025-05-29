@@ -72,6 +72,7 @@ class Keyword {
                 }
             }
 
+            localStorage.setItem("StartTime", "0");
             if (typeof post === 'function') {
                 post(args, interp, this);
                 this.args = null;
@@ -128,7 +129,8 @@ class Keyword {
             
             if(typeof pre === 'function') {
                 pre(this.args, interp, this)
-            }  
+            }
+            localStorage.setItem("StartTime", startTime); 
         }     
     }
 
@@ -1238,17 +1240,33 @@ class Interpreter {
 const load_function = () => {
     const KEYWORD_IMPORT = new Keyword('import', "basic", ['Keyword', "String"], {
         post: (tokens, interp, keyword) => {
+            console.log("inside of keyword", config.fileSystem);
             let importName = tokens[1].value;
 
             if(Imports[importName] == undefined) {
-                return interp.outputError(new InterpreterError('ImportError', `Import [${importName}] is not defined`, tokens, interp.interval, tokens[1].position));
+                return interp.outputError(new InterpreterError('ImportError', `Import [${importName}] does not exist`, tokens, interp.interval, tokens[1].position));
             }
 
             if(interp.hasImport(importName)) {
                 return interp.outputError(new InterpreterError('ImportError', `Import [${importName}] is already imported`, tokens, interp.interval, tokens[1].position));
             }
 
-            interp.imports.push(importName);
+            let reversedTokens = structuredClone(interp.tokens).reverse();
+
+            let foundNonImport = false;
+
+            for (let i = 0; i < reversedTokens.length; i++) {
+                let statement = reversedTokens[i];
+                let firstToken = statement[0];
+
+                if (firstToken.type === "Keyword" && firstToken.value === "import") {
+                    if (foundNonImport) {
+                        return interp.outputError(new InterpreterError("StateError", `All imports must be at the top of the file`, tokens, interp.interval, firstToken.position));
+                    }
+                } else {
+                    foundNonImport = true;
+                }
+            }
 
             let importData = Imports[importName];
 
@@ -1263,6 +1281,8 @@ const load_function = () => {
                     return interp.outputError(new InterpreterError('StateError', `Imports.${importName}.methods[${i}] is not of class Method`, tokens, interp.interval, tokens[1].position));
                 } else m.add()
             });
+
+            interp.imports.push(importName);
         }
     }).add()
 
@@ -2202,7 +2222,13 @@ const defaultImportData = {
 }
 
 const Imports = {
+    config: {
+        variables: [],
+        keywords: [],
+        methods: [],
+    },
     graphics: {
+        variables: [],
         keywords: [
             new Keyword("createscreen", "basic", ['Keyword', 'Number', "Number"], {
                 post: (tokens, interp, keyword) => {
