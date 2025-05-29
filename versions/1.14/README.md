@@ -835,7 +835,7 @@ import "graphics"
 ```
 ### Imports List & Documentation
 * [graphics](https://rus1130.github.io/projects/mdparser.html?url=https://froggyos.github.io/versions/1.14/extra-docs/graphics.md&toc=true)
-* [config](https://rus1130.github.io/projects/mdparser.html?url=https://froggyos.github.io/versions/1.14/extra-docs/config.md)
+* [config](https://rus1130.github.io/projects/mdparser.html?url=https://froggyos.github.io/versions/1.14/extra-docs/config.md) (currently not implemented)
 ### Publish an Import
 * To publish an import so every froggyOS user can use it, send an email to `froggyoscom+import@gmail.com` with a `.js` file of the import and a `.md` file with the documentation.
 # froggyOS Technical Information
