@@ -858,11 +858,13 @@ class fs {
             }
         } else {
             // function verification
+            // if any index of the stack has <anonymous> in it, it means the function is anonymous and we should not allow file system access
+            if (stack.some(line => line.includes("at <anonymous>"))) throw new Error(`HAHA! NICE TRY! No.`);
             if(eval(caller) === undefined && caller.startsWith("fs.")) return;
 
-            try { eval(caller) } catch (e) { throw new Error(`Access denied: file system access must be done through a non-anonymous function.`) }
+            try { eval(caller) } catch (e) { throw new Error(`Access denied: You may not access the file system through an anonymous arrow function.`) }
 
-            if(eval(caller) == undefined) throw new Error(`Access denied: file system access must be done through a non-anonymous function. (found ${caller})`);
+            if(eval(caller) == undefined) throw new Error(`Access denied: You may not access the file system through an anonymous arrow function.`);
 
             const callerHash = this.#cache.get(eval(caller).toString()) || this.hash(eval(caller).toString());
 
