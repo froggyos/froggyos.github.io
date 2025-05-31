@@ -823,7 +823,6 @@ class fs {
     }
 
     constructor(data) {
-
         for(let directoryName in data){
             let dir = data[directoryName];
             dir.forEach((file, i) => {
@@ -859,7 +858,6 @@ class fs {
             }
         } else {
             // function verification
-
             if(eval(caller) === undefined && caller.startsWith("fs.")) return;
 
             try { eval(caller) } catch (e) { throw new Error(`Access denied: file system access must be done through a non-anonymous function.`) }
