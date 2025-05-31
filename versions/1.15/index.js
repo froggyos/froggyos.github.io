@@ -82,13 +82,13 @@ const filePropertyDefaults = {
 }
 
 function set_fSDS(path, filename, key, value){
-    let directory = config.fileSystem[path];
-    if(directory == undefined) return false;
-    let file = directory.find(file => file.name == filename);
+    let file = FroggyFileSystem.getFile(`${path}/${filename}`);
     if(file == undefined) return false;
 
-    let fsds = parse_fSDS(file.data);
+    let fsds = parse_fSDS(file.getData());
     if(fsds.error) return false;
+
+    let newData = file.getData();
 
     if(fsds[key] == undefined) {
         let isArray = Array.isArray(value);
@@ -101,23 +101,23 @@ function set_fSDS(path, filename, key, value){
                 // index number needs to go here
                 array_fsds.push(`${i} TYPE ${type} VALUE ${value[i]}`);
             }
-            file.data.push(`KEY ${key} TYPE Array START`);
-            file.data.push(...array_fsds);
-            file.data.push(`KEY ${key} TYPE Array END`);
+            newData.push(`KEY ${key} TYPE Array START`);
+            newData.push(...array_fsds);
+            newData.push(`KEY ${key} TYPE Array END`);
             
         } else {
             let type = typeof value;
             type = type[0] + type.slice(1);
 
 
-            file.data.push(`KEY ${key} TYPE ${type} VALUE ${value} END`);
+            newData.push(`KEY ${key} TYPE ${type} VALUE ${value} END`);
         }
     } else {
         let isArray = Array.isArray(value);
 
         if(isArray){
-            let keyStart = file.data.findIndex(line => line.includes(`KEY ${key} TYPE Array START`));
-            let keyEnd = file.data.findIndex(line => line.includes(`KEY ${key} TYPE Array END`));
+            let keyStart = newData.findIndex(line => line.includes(`KEY ${key} TYPE Array START`));
+            let keyEnd = newData.findIndex(line => line.includes(`KEY ${key} TYPE Array END`));
 
             let array_fsds = [];
 
@@ -126,17 +126,19 @@ function set_fSDS(path, filename, key, value){
                 // index number needs to go here
                 array_fsds.push(`${i} TYPE ${type} VALUE ${value[i]}`);
             }
-            file.data.splice(keyStart + 1, keyEnd - keyStart - 1);
-            file.data.splice(keyStart + 1, 0, ...array_fsds);
+            newData.splice(keyStart + 1, keyEnd - keyStart - 1);
+            newData.splice(keyStart + 1, 0, ...array_fsds);
         } else {
             let type = (typeof value)[0].toUpperCase() + (typeof value).slice(1);
             
             let keyRegex = new RegExp(`KEY ${key} TYPE ${type} VALUE (.+?) END`);
-            let keyIndex = file.data.findIndex(line => line.match(keyRegex));
+            let keyIndex = newData.findIndex(line => line.match(keyRegex));
 
-            file.data[keyIndex] = file.data[keyIndex].replace(keyRegex, `KEY ${key} TYPE ${type} VALUE ${value} END`);
+            newData[keyIndex] = newData[keyIndex].replace(keyRegex, `KEY ${key} TYPE ${type} VALUE ${value} END`);
         }
     }
+
+    file.write(newData);
 }
 
 function parse_fSDS(inputFile){
@@ -253,8 +255,8 @@ function localize(descriptor, TRANSLATE_TEXT){
         descriptor = descriptor.replaceAll(`|||[${replacementData}]|||`, "|||[]|||");
     }
 
-    let translationMap = config.fileSystem["Config:/langs"].find(translation => translation.name == "lbh").data;
-    let languageMap = config.fileSystem["Config:/langs"].find(translation => translation.name == config.language).data;
+    let translationMap = FroggyFileSystem.getFile("Config:/langs/lbh").getData();
+    let languageMap = FroggyFileSystem.getFile(`Config:/langs/${config.language}`).getData();
 
     let englishData = translationMap.indexOf(descriptor);
     let translation = languageMap[englishData];
@@ -283,25 +285,24 @@ function localize(descriptor, TRANSLATE_TEXT){
 
 // notPermittedCaller()
 
-function programList(){
+function updateProgramList(){
     let files = [];
-    for(let directory of config.allowedProgramDirectories){
-        if(config.fileSystem[directory] == undefined) continue;
-        if(config.fileSystem[directory].length == files.length && config.fileSystem[directory].every((file, index) => file.name == files[index])) continue;
+    for(let directory of config.allowedProgramDirectories) {
+        let dir = FroggyFileSystem.getDirectory(directory);
+        if(dir == undefined) continue;
+        if(dir.length == files.length && dir.every((file, index) => file.getName() == files[index])) continue;
 
-        files = files.concat(config.fileSystem[directory]);
+        files = files.concat(dir);
     }
-    files = files.map(file => file.name);
+
+    files = files.map(file => file.getName());
     config.programList = files;
 
     // for all the programs, if there is not a corresponding file in the D:Program-Data directory, create one
     for(let program of config.programList){
         if(getFileWithName("Config:/program_data", program) == undefined){
-            config.fileSystem["Config:/program_data"].push({
-                name: program,
-                properties: { ...filePropertyDefaults },
-                data: []
-            });
+            let newFile = new FroggyFile(program);
+            FroggyFileSystem.addFileToDirectory("Config:/program_data", newFile);
         }
     }
 }
@@ -411,7 +412,7 @@ function updateDateTime() {
 
     barText.textContent = dateString;
     if(config.showSpinner == true) {
-        let spinnerFrames = config.fileSystem["D:/Spinners"].find(spinner => spinner.name == config.currentSpinner).data;
+        let spinnerFrames = FroggyFileSystem.getFile(`D:/Spinners/${config.currentSpinner}`).getData();
         spinnerText.textContent = spinnerFrames[config.spinnerIndex % spinnerFrames.length];
         config.spinnerIndex++;
     } else {
@@ -526,17 +527,17 @@ function createColorTestBar(){
 
 // helper functions
 function createPalettesObject(){
-    let paletteDir = config.fileSystem["D:/Palettes"];
+    let paletteDir = FroggyFileSystem.getDirectory("D:/Palettes");
     let palettes = {};
 
     const colorArray = ["c00", "c01", "c02", "c03", "c04", "c05", "c06", "c07", "c08", "c09", "c10", "c11", "c12", "c13", "c14", "c15"];
 
     try {
         for(let palette of paletteDir){
-            if(palette.properties.hidden == true) continue;
-            palettes[palette.name] = {};
+            if(palette.getProperty('hidden')) continue;
+            palettes[palette.getName()] = {};
             for(let i = 0; i < colorArray.length; i++){
-                palettes[palette.name][colorArray[i]] = "#"+palette.data[i];
+                palettes[palette.getName()][colorArray[i]] = "#"+palette.getData()[i];
             }
         }
     } catch (err) {
@@ -713,10 +714,16 @@ function createTerminalLine(text, path, other){
     terminal.scrollTop = terminal.scrollHeight;
 }
 
+/**
+ * @description You should use FroggyFileSystem.getFile() instead
+ * @param {*} path 
+ * @param {*} name 
+ * @returns 
+ */
 function getFileWithName(path, name){
-    let file = config.fileSystem[path];
+    let file = FroggyFileSystem.getFile(`${path}/${name}`);
     if(file == undefined) return undefined;
-    return file.find(file => file.name == name);
+    return { name: file.getName(), properties: file.getProperties(), data: file.getData() };
 }
 
 function updateLineHighlighting() {
@@ -731,14 +738,14 @@ function updateLineHighlighting() {
 }
 
 function validateLanguageFile(code){
-    let langFile = config.fileSystem["Config:/langs"].find(file => file.name == code)
+    let langFile = FroggyFileSystem.getFile(`Config:/langs/${code}`);
     if(langFile == undefined) return false;
 
-    let langData = langFile.data;
-    let translation_map = config.fileSystem["Config:/langs"].find(file => file.name == "lbh").data;
+    let langData = langFile.getData();
+    let translation_map = FroggyFileSystem.getFile("Config:/langs/lbh").getData();
     
     if(langData.length != translation_map.length) return false;
-    if(langFile.properties.hidden == true) return false;
+    if(langFile.getProperty('hidden')) return false;
 
     let identifierLine = langData[0];
     return /^!LANGNAME: (.*?)$/g.test(identifierLine);
@@ -763,21 +770,22 @@ function sendCommand(command, args, createEditableLineAfter){
         // change language
         case "lang":
         case "changelanguage": {
-            let langCodes = config.fileSystem["Config:/langs"].map(file => file.name);
+            let langCodes = FroggyFileSystem.getDirectory("Config:/langs").map(file => file.getName())
 
             function getDisplayCodes(){ 
                 let arr = [];
-                let displayCodes = config.fileSystem["Config:/langs"]
+                let displayCodes = FroggyFileSystem.getDirectory("Config:/langs")
                     .filter(file => {
-                        if(file.properties.hidden == true) return false;
-                        if(file.properties.transparent == true) return false;
-                        if(file.name.length != 3) return false;
+                        if(file.getProperty('hidden') == true) return false;
+                        if(file.getProperty('transparent') == true) return false;
+                        if(file.getName().length != 3) return false;
                         else return true;
-                    }).map(file => file.name);
+                    }
+                ).map(file => file.getName());
                 
                 for(let i = 0; i < displayCodes.length; i++){
                     let code = displayCodes[i];
-                    let langName = config.fileSystem["Config:/langs"].find(file => file.name == displayCodes[i]).data[0].match(/^!LANGNAME: (.*?)$/)[1];
+                    let langName = FroggyFileSystem.getFile(`Config:/langs/${code}`).getData()[0].match(/^!LANGNAME: (.*?)$/)[1];
                     arr.push(`${displayCodes[i]} (${validateLanguageFile(code) ? langName : localize("T_invalid_lang")})`);
                 }
                 return arr.join(", ");
@@ -821,13 +829,14 @@ function sendCommand(command, args, createEditableLineAfter){
         case "changepalette": {
             let colorPalettes = createPalettesObject();
             function getDisplayPalettes(){
-                let palettes = config.fileSystem["D:/Palettes"];
-                let displayPalettes = palettes.filter(palette => {
-                    if(palette.properties.hidden == true) return false;
-                    if(palette.properties.transparent == true) return false;
-                    else return true;
-                })
-                return displayPalettes.map(palette => palette.name).join(", ");
+                let palettes = FroggyFileSystem.getDirectory("D:/Palettes")
+                    .filter(palette => {
+                        if(palette.getProperty('hidden') == true) return false;
+                        if(palette.getProperty('transparent') == true) return false;
+                        else return true;
+                    }
+                    ).map(palette => palette.getName());
+                return palettes.join(", ");
             }
 
             if(args.length == 0){
@@ -840,6 +849,8 @@ function sendCommand(command, args, createEditableLineAfter){
             }
             if(colorPalettes[args[0]] == undefined){
                 createTerminalLine("T_color_palette_does_not_exist", config.errorText);
+                createTerminalLine(`T_available_color_palettes`, "");
+                createTerminalLine(getDisplayPalettes(), ">", {translate: false});
                 hadError = true;
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
@@ -857,13 +868,14 @@ function sendCommand(command, args, createEditableLineAfter){
         // clear froggyOS state
         case "cls":
         case "clearstate":
-            localStorage.removeItem(`froggyOS-state-${config.version}`);
+            localStorage.removeItem(`froggyOS-state-${config.version}-config`);
+            localStorage.removeItem(`froggyOS-state-${config.version}-fs`);
             createTerminalLine("T_state_cleared", ">")
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
 
         // copy files
-        case "clone":
+        case "clone": {
             if(args.length == 0){
                 createTerminalLine("T_provide_file_name", config.errorText);
                 hadError = true;
@@ -871,7 +883,13 @@ function sendCommand(command, args, createEditableLineAfter){
                 break;
             }
             
-            let fileToClone = config.fileSystem[config.currentPath].find(file => file.name == args[0] && file.properties.hidden == false);
+            let fileToClone = FroggyFileSystem.getFile(`${config.currentPath}/${args[0]}`);
+            if(fileToClone == undefined || fileToClone.getProperty('hidden') == true){
+                createTerminalLine("T_file_does_not_exist", config.errorText);
+                hadError = true;
+                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                break;
+            }
 
             if(fileToClone == undefined){
                 createTerminalLine("T_file_does_not_exist", config.errorText);
@@ -880,69 +898,63 @@ function sendCommand(command, args, createEditableLineAfter){
                 break;
             }
 
-            if(fileToClone.properties.read == false){
+            if(fileToClone.getProperty('read') == false){
                 createTerminalLine("T_no_permission_to_clone", config.errorText);
                 hadError = true;
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
 
-            let cloned = JSON.parse(JSON.stringify(fileToClone));
+            let cloned = new FroggyFile(fileToClone.getName(), fileToClone.getProperties(), fileToClone.getData());
 
-            cloned.name = "clone_of_" + cloned.name;
-            cloned.properties.read = true;
-            cloned.properties.write = true;
-            cloned.properties.transparent = false;
+            cloned.rename(`clone_of_${cloned.getName()}`);
+            cloned.setProperty('read', true);
+            cloned.setProperty('write', true);
+            cloned.setProperty('transparent', false);
+            cloned.setProperty('hidden', false);
 
-            config.fileSystem[config.currentPath].push(cloned);
+            FroggyFileSystem.addFileToDirectory(config.currentPath, cloned);
 
-            createTerminalLine(`T_file_cloned |||[${fileToClone.name}]|||`, ">")
+            createTerminalLine(`T_file_cloned |||[${fileToClone.getName()}]|||`, ">")
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
-        break;
+        } break;
 
         // delete files
         case "c":
-        case "croak":
+        case "croak": {
             if(args.length == 0){
                 createTerminalLine("T_provide_file_name", config.errorText);
                 hadError = true;
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
-            file = config.fileSystem[config.currentPath];
-            if(file == undefined){
+            let file = FroggyFileSystem.getFile(`${config.currentPath}/${args[0]}`);
+            if(file == undefined || file.getProperty('hidden') == true){
                 createTerminalLine("T_file_does_not_exist", config.errorText);
                 hadError = true;
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
-            file = file.find(file => file.name == args[0]);
-            if(file == undefined){
-                createTerminalLine("T_file_does_not_exist", config.errorText);
-                hadError = true;
-                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
-                break;
-            }
-            if(file.properties.write == false){
+
+            if(file.getProperty('write') == false){
                 createTerminalLine("T_no_permission_to_delete_file", config.errorText);
                 hadError = true;
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
             // if we are in the Config: directory, do not allow the user to delete the file
-            if(config.currentPath.split(":")[0] == "Settings"){
+            if(config.currentPath.split(":")[0] == "Config"){
                 createTerminalLine("T_cannot_delete_file", config.errorText);
                 hadError = true;
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
-            let fileIndex = config.fileSystem[config.currentPath].findIndex(file => file.name == args[0]);
-            delete config.fileSystem[config.currentPath][fileIndex];
-            config.fileSystem[config.currentPath] = config.fileSystem[config.currentPath].filter(file => file != undefined);
+
+            FroggyFileSystem.deleteFile(`${config.currentPath}/${file.getName()}`);
 
             createTerminalLine("T_file_deleted", ">")
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
-        break;
+        } break;
 
         case "ft":
         case "formattime": {
@@ -965,19 +977,19 @@ function sendCommand(command, args, createEditableLineAfter){
 
         // make files
         case "ch":
-        case "hatch":
+        case "hatch": {
             if(args.length == 0){
                 createTerminalLine("T_provide_file_name", config.errorText);
                 hadError = true;
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
-            if(config.fileSystem[config.currentPath] == undefined){
+            if(FroggyFileSystem.getDirectory(`${config.currentPath}`) == undefined){
                 createTerminalLine("T_directory_does_not_exist", config.errorText);
                 hadError = true;
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
             }
-            if(config.fileSystem[config.currentPath].find(file => file.name == args[0]) != undefined){
+            if(FroggyFileSystem.getFile(`${config.currentPath}/${args[0]}`) != undefined){
                 createTerminalLine("T_file_already_exists", config.errorText);
                 hadError = true;
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
@@ -990,14 +1002,10 @@ function sendCommand(command, args, createEditableLineAfter){
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
-            config.fileSystem[config.currentPath].push({
-                name: args[0],
-                properties: { ...filePropertyDefaults },
-                data: [""]
-            });
+            FroggyFileSystem.addFileToDirectory(config.currentPath, new FroggyFile(args[0]));
             createTerminalLine("T_file_created", ">")
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
-        break;
+        } break;
 
         case "hello":
             createTerminalLine("T_hello_froggy", ">");
@@ -1050,7 +1058,7 @@ function sendCommand(command, args, createEditableLineAfter){
             if(directory == "~") directory = config.currentPath.split("/")[0];
             if(directory == "-") directory = config.currentPath.split("/").slice(0, -1).join("/");
 
-            if(config.fileSystem[directory] == undefined){
+            if(FroggyFileSystem.getDirectory(directory) == undefined){
                 createTerminalLine("T_directory_does_not_exist", config.errorText);
                 hadError = true;
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
@@ -1066,15 +1074,15 @@ function sendCommand(command, args, createEditableLineAfter){
             let currentPathWithSlash = config.currentPath.endsWith('/') ? config.currentPath : config.currentPath + '/';
 
             // Get subdirectory names under the currentPath
-            let subdirectoryNames = Object.keys(config.fileSystem)
+            let subdirectoryNames = Object.keys(FroggyFileSystem.getRoot())
                 .filter(path => path.startsWith(currentPathWithSlash) && path !== config.currentPath && !path.slice(currentPathWithSlash.length).includes('/'))
                 .map(path => path.slice(currentPathWithSlash.length)); // Extract only the subdirectory name
 
-            let files = config.fileSystem[config.currentPath];
+            let files = FroggyFileSystem.getDirectory(config.currentPath)
             if(files == undefined) files = [];
             files = files.filter(file => {
-                if(file.properties.hidden == true) return false;
-                if(file.properties.transparent == true) return false;
+                if(file.getProperty('hidden') == true) return false;
+                if(file.getProperty('transparent') == true) return false;
                 else return true;
             });
 
@@ -1087,14 +1095,14 @@ function sendCommand(command, args, createEditableLineAfter){
                 createTerminalLine(` [DIR] ${subdirectory}`, ">", {translate: false})
             });
             files.forEach(file => {
-                createTerminalLine(`       ${file.name}`, ">", {translate: false})
+                createTerminalLine(`       ${file.getName()}`, ">", {translate: false})
             });
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
 
         case "ld":
         case "listdrives": {
-            let drives = Object.keys(config.fileSystem).map(drive => drive.split(":"))
+            let drives = Object.keys(FroggyFileSystem.getRoot()).map(drive => drive.split(":"))
             drives = [...new Set(drives.filter(drive => drive.length == 2).map(drive => drive[0]))].map(drive => drive + ":");
 
             drives.forEach(drive => {
@@ -1106,16 +1114,19 @@ function sendCommand(command, args, createEditableLineAfter){
         // load state
         case "lds":
         case "loadstate":
-            let state = localStorage.getItem(`froggyOS-state-${config.version}`);
-            if(state == null){
+            let foundConfig = localStorage.getItem(`froggyOS-state-${config.version}-config`);
+            let foundFs = localStorage.getItem(`froggyOS-state-${config.version}-fs`);
+            if(foundConfig == null || foundFs == null){
                 createTerminalLine("T_no_state_found", config.errorText);
                 hadError = true;
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
-            for(let key in JSON.parse(state)){
-                config[key] = JSON.parse(state)[key];
+            for(let key in JSON.parse(foundConfig)){
+                config[key] = JSON.parse(foundConfig)[key];
             }
+
+            FroggyFileSystem.loadFromString(foundFs);
 
             changeColorPalette(config.colorPalette);
 
@@ -1128,40 +1139,39 @@ function sendCommand(command, args, createEditableLineAfter){
             if(args.length == 0){
                 createTerminalLine("T_provide_macro_name", config.errorText);
                 createTerminalLine(`T_available_macros`, "");
-                let macros = config.fileSystem["D:/Macros"]
+                let macros = FroggyFileSystem.getDirectory("D:/Macros")
                 if(macros == undefined){
                     createTerminalLine("T_no_macros_found", config.errorText);
                 } else {
-                    let macroList = macros.filter(macro => macro.properties.hidden == false && macro.properties.transparent == false);
-                    let macroAliases = macros.filter(macro => macro.properties.hidden == false && macro.properties.transparent == false);
-                    macroAliases = macroAliases.map(macro => macro.data[0].startsWith("!") ? macro.data[0].slice(1) : "no alias");
-
-                    createTerminalLine(macroList.map((macro, i) => `${macro.name} (${macroAliases[i]})`).join(", "), ">", {translate: false})
+                    let macroList = macros.filter(macro => macro.getProperty('transparent') == false);
+                    let macroAliases = macros.filter(macro => macro.getProperty('transparent') == false).map(macro => macro.getData()[0].startsWith("!") ? macro.getData()[0].slice(1) : "no alias");
+                    createTerminalLine(macroList.map((macro, i) => `${macro.getName()} (${macroAliases[i]})`).join(", "), ">", {translate: false});
+                    hadError = true;
+                    if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                    break;
                 }
-                hadError = true;
-                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
-                break;
             }
 
             let macro = getFileWithName("D:/Macros", args[0]);
 
-            config.fileSystem["D:/Macros"].forEach(_macro => {
-                if(_macro.data[0].startsWith("!") && _macro.data[0].slice(1).trim() == args[0]){
+            FroggyFileSystem.getDirectory("D:/Macros").forEach(_macro => {
+                if(_macro.getData()[0].startsWith("!") && _macro.getData()[0].slice(1).trim() == args[0]){
                     macro = _macro;
                 }
             });
             
-            if(macro == undefined || macro.properties.hidden == true){
+            if(macro == undefined){
                 createTerminalLine("T_macro_does_not_exist", config.errorText);
                 hadError = true;
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
 
-            macro = JSON.parse(JSON.stringify(macro));
+
+            let macroData = JSON.parse(JSON.stringify(macro.getData()));
             let totalFileArguments = 0;
 
-            macro.data.forEach(line => {
+            macroData.forEach(line => {
                 if(line.includes("$")){
                     // if the number behind $ is greater than the totalFileArguments, set totalFileArguments to that number
                     let fileArgument = parseInt(line.split("$")[1].split(" ")[0]);
@@ -1183,16 +1193,18 @@ function sendCommand(command, args, createEditableLineAfter){
             }
 
             // go through each line, replace the file arguments
-            macro.data = macro.data.map(line => {
+            macroData = macroData.map(line => {
                 for(let fileArgument in fileArguments){
                     line = line.replaceAll(fileArgument, fileArguments[fileArgument]);
                 }
                 return line;
             });
 
-            if(macro.data[0].startsWith("!")) macro.data.shift();
+            console.log(macroData)
 
-            macro.data.forEach(line => {
+            if(macroData[0].startsWith("!")) macroData.shift();
+
+            macroData.forEach(line => {
                 let cmd = line.split(" ")[0];
                 let args = line.split(" ").slice(1);
 
@@ -1211,7 +1223,7 @@ function sendCommand(command, args, createEditableLineAfter){
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
-            let directory = config.fileSystem[config.currentPath];
+            let directory = FroggyFileSystem.getDirectory(config.currentPath);
             if(directory == undefined){
                 createTerminalLine("T_file_does_not_exist", config.errorText);
                 hadError = true;
@@ -1219,30 +1231,28 @@ function sendCommand(command, args, createEditableLineAfter){
                 break;
             }
 
-            directory = directory.filter(file => file.properties.hidden == false);
+            let file = FroggyFileSystem.getFile(`${config.currentPath}/${args[0]}`);
 
-            let file = directory.find(file => file.name == args[0]);
             if(file == undefined){
                 createTerminalLine("T_file_does_not_exist", config.errorText);
                 hadError = true;
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
-            if(file.properties.write == false){
+            if(file.getProperty('write') == false){
                 createTerminalLine("T_no_permission_to_edit_file", config.errorText);
                 hadError = true;
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
-            createTerminalLine("T_lilypad_save_exit", "");
-            for(let i = 0; i < file.data.length; i++){
+            for(let i = 0; i < file.getData().length; i++){
                 if(config.allowedProgramDirectories.includes(config.currentPath)){
-                    createLilypadLine(String(i+1).padStart(3, "0"), "code", file.name);
+                    createLilypadLine(String(i+1).padStart(3, "0"), "code", file.getName());
                 } else if (config.currentPath == "D:/Palettes") {
-                    createLilypadLine(String(i).padStart(2, "0"), "palette", file.name);
-                } else createLilypadLine(">", undefined, file.name);
+                    createLilypadLine(String(i).padStart(2, "0"), "palette", file.getName());
+                } else createLilypadLine(">", undefined, file.getName());
                 let lines = document.querySelectorAll(`[data-program='lilypad-session-${config.programSession}']`);
-                lines[i].textContent = file.data[i];
+                lines[i].textContent = file.getData()[i];
                 moveCaretToEnd(lines[i]);
             }
         } break;
@@ -1291,7 +1301,7 @@ function sendCommand(command, args, createEditableLineAfter){
 
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
-x
+
         case "docs":
         case "opendocumentation": {
 
@@ -1306,7 +1316,7 @@ x
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         } break;
 
-        case "rename":
+        case "rename": {
             if(args.length < 2){
                 createTerminalLine("T_provide_file_name_and_new", config.errorText);
                 hadError = true;
@@ -1317,7 +1327,7 @@ x
             let fileName = args[0];
             let newName = args[1];
 
-            file = config.fileSystem[config.currentPath].find(file => file.name == fileName && file.properties.hidden == false);
+            let file = FroggyFileSystem.getFile(`${config.currentPath}/${fileName}`);
 
             if(file == undefined){
                 createTerminalLine("T_file_does_not_exist", config.errorText);
@@ -1326,29 +1336,31 @@ x
                 break;
             }
 
-            if(file.properties.write == false || file.properties.read == false){
+            if(file.getProperty('write') == false){
                 createTerminalLine("T_no_permission_to_rename_file", config.errorText);
                 hadError = true;
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
-            if(config.fileSystem[config.currentPath].find(file => file.name == newName) != undefined){
+
+            if(FroggyFileSystem.getFile(`${config.currentPath}/${newName}`) != undefined){
                 createTerminalLine("T_file_name_already_exists", config.errorText);
                 hadError = true;
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
-            if(fileName.length != 3 && config.currentPath == "Config:/langs"){
+
+            if(newName.length != 3 && config.currentPath == "Config:/langs"){
                 createTerminalLine("T_file_name_not_3_char", config.errorText);
                 hadError = true;
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
 
-            file.name = newName;
+            file.rename(newName);
             createTerminalLine(`T_file_renamed`, ">");
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
-        break;
+        } break;
         case "ribbit":
             if(args.length == 0){
                 createTerminalLine("T_provide_text_to_display", config.errorText);
@@ -1363,7 +1375,8 @@ x
         // save state
         case "svs":
         case "savestate":
-            localStorage.setItem(`froggyOS-state-${config.version}`, JSON.stringify(config));
+            localStorage.setItem(`froggyOS-state-${config.version}-config`, JSON.stringify(config));
+            localStorage.setItem(`froggyOS-state-${config.version}-fs`, FroggyFileSystem.stringify());
             createTerminalLine("T_state_saved", ">")
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
@@ -1385,13 +1398,13 @@ x
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
-            if(config.fileSystem[directory] != undefined){
+            if(FroggyFileSystem.getDirectory(directory) != undefined){
                 createTerminalLine("T_directory_already_exists", config.errorText);
                 hadError = true;
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
-            config.fileSystem[directory] = [];
+            FroggyFileSystem.createDirectory(directory);
             createTerminalLine("T_directory_created", ">");
             sendCommand("[[BULLFROG]]changepath", [directory], createEditableLineAfter);
         break;
@@ -1404,20 +1417,20 @@ x
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
-            file = config.fileSystem[config.currentPath]?.find(file => file.name == args[0]);
+            file = FroggyFileSystem.getFile(`${config.currentPath}/${args[0]}`);
             if(file == undefined){
                 createTerminalLine("T_file_does_not_exist", config.errorText);
                 hadError = true;
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
-            if(file.properties.read == false){
+            if(file.getProperty('hidden') == true || file.getProperty('read') == false){
                 createTerminalLine("T_no_permission_to_read_file", config.errorText);
                 hadError = true;
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
-            file.data.forEach(line => {
+            file.getData().forEach(line => {
                 createTerminalLine(line, ">", {translate: false})
             });
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
@@ -1428,14 +1441,15 @@ x
             function getProgramList(){
                 let programList = [];
                 for(let directory of config.allowedProgramDirectories){
-                    programList = programList.concat(config.fileSystem[directory]?.filter(file => {
-                        if(file.properties.hidden == true) return false
-                        if(file.properties.transparent == true) return false;
-                        else return true;
-                    }).map(file => file.name));
+                    let dir = FroggyFileSystem.getDirectory(directory);
+                    dir.forEach(file => {
+                        if(file.getProperty("hidden") || file.getProperty("transparent")) return;
+                        programList.push(file.getName());
+                    })
                 }
                 return programList;
             }
+
             if(!config.programList.includes(args[0])){
                 createTerminalLine("T_provide_valid_program", config.errorText);
                 createTerminalLine("T_available_programs", "");
@@ -1454,19 +1468,19 @@ x
             } else {
                 let file;
                 for(let directory of config.allowedProgramDirectories){
-                    file = getFileWithName(directory, args[0]);
+                    file = FroggyFileSystem.getFile(`${directory}/${args[0]}`);
                     if(file != undefined) break;
                 }
-                if(file.properties.read == false){
-                    createTerminalLine("T_no_permission_to_run_program", config.errorText);
+                if(file.getProperty('hidden') == true){
+                    createTerminalLine("T_provide_valid_program", config.errorText);
+                    createTerminalLine("T_available_programs", "");
+                    createTerminalLine(getProgramList().join(", "), ">", {translate: false});
                     hadError = true;
                     if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                     break;
                 }
-                if(file.properties.hidden == true){
-                    createTerminalLine("T_provide_valid_program", config.errorText);
-                    createTerminalLine("T_available_programs", "");
-                    createTerminalLine(getProgramList().join(", "), ">", {translate: false});
+                if(file.getProperty('read') == false){
+                    createTerminalLine("T_no_permission_to_run_program", config.errorText);
                     hadError = true;
                     if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                     break;
@@ -1476,7 +1490,7 @@ x
                 let fileArguments = args.slice(1).map(arg => arg.trim());
 
                 config.currentProgram = args[0];
-                let interpreter = new Interpreter("main", file.data, file.name, fileArguments);
+                let interpreter = new Interpreter("main", file.getData(), file.getName(), fileArguments);
                 interpreter.load = () => load_function();
                 interpreter.onComplete = () => {
                     if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
@@ -1501,7 +1515,7 @@ x
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
-            config.currentPath = args.join(" ");
+            config.currentPath = args.join("");
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
 
@@ -1634,13 +1648,12 @@ x
 
         case "[[BULLFROG]]setspinner": {
             let spinner = args[0];
-            // check if spinner is a valid spinner
-            let validSpinners = config.fileSystem["D:/Spinners"].filter(x => x.properties.hidden == false)
-            if(validSpinners.find(spinner_ => spinner_.name == spinner) == undefined){
+            let validSpinners = FroggyFileSystem.getDirectory("D:/Spinners");
+            if(validSpinners.find(s => s.getName() == spinner) == undefined){
                 createTerminalLine("T_spinner_does_not_exist", config.errorText);
                 createTerminalLine(`T_available_spinners`, "");
 
-                createTerminalLine(validSpinners.filter(spinner_ => spinner_.properties.transparent == false).map(spinner_ => spinner_.name).join(", "), ">", {translate: false});
+                createTerminalLine(validSpinners.filter(s => s.getProperty('transparent') !== true).map(s => s.getName()).join(", "), ">", {translate: false});
 
                 hadError = true;
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
@@ -1653,42 +1666,50 @@ x
         } break;
 
         case "[[BULLFROG]]urgentsavestate": {
-            localStorage.setItem("froggyOS-urgent-state", JSON.stringify(config));
+            localStorage.setItem("froggyOS-urgent-state-config", JSON.stringify(config));
+            localStorage.setItem("froggyOS-urgent-state-fs", FroggyFileSystem.stringify());
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         } break;
 
         case "[[BULLFROG]]urgentloadstate": {
-            let state = localStorage.getItem("froggyOS-urgent-state");
-            if(state == null){
+            let configState = localStorage.getItem("froggyOS-urgent-state");
+            let fsState = localStorage.getItem("froggyOS-urgent-state-fs");
+
+            if(configState == null || fsState == null){
                 createTerminalLine("T_no_urgent_state_found", config.errorText);
                 hadError = true;
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
 
-            for(let key in JSON.parse(state)){
-                config[key] = JSON.parse(state)[key];
+            for(let key in JSON.parse(configState)){
+                config[key] = JSON.parse(configState)[key];
             }
 
+            FroggyFileSystem.loadFromString(fsState);
             changeColorPalette(config.colorPalette);
 
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         } break;
 
         case "[[BULLFROG]]urgentclearstate": {
-            localStorage.removeItem("froggyOS-urgent-state");
+            localStorage.removeItem("froggyOS-urgent-state-config");
+            localStorage.removeItem("froggyOS-urgent-state-fs");
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         } break;
 
         case "[[BULLFROG]]autoloadstate": {
-            let state = localStorage.getItem(`froggyOS-state-${config.version}`);
-            if(state != null){
+            let state = localStorage.getItem(`froggyOS-state-${config.version}-config`);
+            let fsState = localStorage.getItem(`froggyOS-state-${config.version}-fs`);
+
+
+            if(state != null && fsState != null){
                 for(let key in JSON.parse(state)){
                     config[key] = JSON.parse(state)[key];
                 }
+                FroggyFileSystem.loadFromString(fsState);
                 changeColorPalette(config.colorPalette);
-                // translate
-                createTerminalLine("Loaded froggyOS config from memory.", config.alertText, {translate: false});
+                createTerminalLine("Loaded froggyOS from memory.", config.alertText, {translate: false});
             }
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         } break;
@@ -1699,9 +1720,10 @@ x
                 return;
             }
             // get every language file except for TRANSLATION_MAP and the current language
-            let languageFiles = config.fileSystem["Config:/langs"].map(file => file.name).filter(name => name != "lbh" && name != config.language);
+            let languageFiles = FroggyFileSystem.getDirectory("Config:/langs").filter(file => file.getName() != "lbh" && file.getName() != config.language)
 
-            languageFiles.forEach(name => {
+            languageFiles.forEach(file => {
+                let name = file.getName();
                 if(validateLanguageFile(name) == false){
                     createTerminalLine(`T_invalid_lang_file |||[${name}]|||`, config.translationWarningText);
                 }
@@ -1715,21 +1737,23 @@ x
         } break;
 
         case "[[BULLFROG]]translations": {
-            let translationFiles = config.fileSystem["Config:/langs"].filter(file => file.name != "lbh");
+            let translationFiles = FroggyFileSystem.getDirectory("Config:/langs").filter(file => file.getName() != "lbh");
 
-            let lbh = config.fileSystem["Config:/langs"].find(file => file.name == "lbh").data;
+            let lbh = FroggyFileSystem.getFile("Config:/langs/lbh").getData();
 
             let linesNotTranslated = {};
 
             translationFiles.forEach((file, i) => {
                 let linesTranslated = 0;
-                linesNotTranslated[file.name] = [];
-                for(let i = 1; i < file.data.length; i++){
-                    if(file.data[i] != lbh[i]) linesTranslated++;
-                    if(file.data[i] == lbh[i]) linesNotTranslated[file.name].push(file.data[i]);
+                let fileName = file.getName();
+                let fileData = file.getData();
+                linesNotTranslated[fileName] = [];
+                for(let i = 1; i < fileData.length; i++){
+                    if(fileData[i] != lbh[i]) linesTranslated++;
+                    if(fileData[i] == lbh[i]) linesNotTranslated[fileName].push(fileData[i]);
                 }
                 let percent = linesTranslated / (lbh.length-1) * 100;
-                createTerminalLine(`${file.name}: ${percent.toFixed(2)}%`, ">", {translate: false});
+                createTerminalLine(`${fileName}: ${percent.toFixed(2)}%`, ">", {translate: false});
             })
             createTerminalLine("* descriptors not translated *", "", {translate: false});
             for(let i in linesNotTranslated){
@@ -1895,7 +1919,7 @@ function createLilypadLine(path, linetype, filename){
         })
     }
 
-    function terminalLineKeydownHandler(e){
+    window.terminalLineKeydownHandler = (e) => {
         function keybindCondition(key, meta = { shiftKey: false, ctrlKey: false, altKey: false }){
             meta.shiftKey = meta.shiftKey || false;
             meta.ctrlKey = meta.ctrlKey || false;
@@ -2102,14 +2126,12 @@ function createLilypadLine(path, linetype, filename){
             config.currentProgram = "cli";
             clearInterval(highlightedLineUpdater);
 
-            let file = {
-                name: null,
-                properties: { ...filePropertyDefaults },
-                data: []
-            };
+            let currentFile = FroggyFileSystem.getFile(`${config.currentPath}/${filename}`);
+
+            let dataToWrite = [];
 
             for(let i = 0; i < lines.length; i++){
-                file.data.push(lines[i].textContent);
+                dataToWrite.push(lines[i].textContent);
                 lines[i].setAttribute('contenteditable', 'false');
                 lines[i].classList.remove("highlighted-line");
                 lines[i].removeEventListener('keydown', terminalLineKeydownHandler);
@@ -2124,16 +2146,14 @@ function createLilypadLine(path, linetype, filename){
 
                     let dataLength = 0;
     
-                    file.data.forEach(line => {
+                    dataToWrite.forEach(line => {
                         dataLength += line.length;
                     });
                     
                     setSetting("showSpinner", true)
                     setTimeout(function(){
-    
-                        file.name = filename;
-                        let fileIndex = config.fileSystem[config.currentPath].findIndex(file => file.name == filename);
-                        config.fileSystem[config.currentPath][fileIndex].data = file.data;
+
+                        currentFile.write(dataToWrite);
     
                         setSetting("showSpinner", false)
                         createTerminalLine(`T_saving_done`, ">");
@@ -2166,7 +2186,7 @@ function createLilypadLine(path, linetype, filename){
 function setTrustedFiles(){
     let trustedFiles = getFileWithName("Config:", "trusted_files").data;
     for(let directory of config.allowedProgramDirectories){
-        for(let file of config.fileSystem[directory]){
+        for(let file of FroggyFileSystem.getDirectory(directory)){
             if(trustedFiles.includes(file.name) && !config.trustedFiles.includes(`${directory}/${file.name}`)) {
                 config.trustedFiles.push(`${directory}/${file.name}`);
             }
@@ -2174,10 +2194,10 @@ function setTrustedFiles(){
     }
 }
 
-sendCommand('[[BULLFROG]]autoloadstate', [], false);
 setUserConfigFromFile()
+sendCommand('[[BULLFROG]]autoloadstate', [], false);
 document.title = `froggyOS v. ${config.version}`;
-programList();
+updateProgramList();
 updateDateTime();
 changeColorPalette(config.colorPalette);
 createColorTestBar();
@@ -2186,17 +2206,21 @@ sendCommand('[[BULLFROG]]validatelanguage', [], false);
 
 let configInterval = setInterval(() => {
     setUserConfigFromFile()
-    programList()
-}, 1);
+    updateProgramList()
+}, 250);
 
 let dateTimeInterval = setInterval(() => {
     updateDateTime()
 }, 100);
 
+const onStart = () => {
+    sendCommand("rename", ["welcome!", "woof"]);
+}
+
 function ready(){
     document.getElementById("blackout").remove()
     sendCommand('[[BULLFROG]]greeting', []);
-    sendCommand("st", ["test"]);
+    onStart();
 }
 
 // literally all of this is just for the animation
@@ -2231,19 +2255,6 @@ const SKIP_ANIMATION = true;
 
 let animSkipped = false;
 let innerBar = document.getElementById("inner-bar");
-
-function nonPermittedWrapper(){
-    permittedCaller();
-}
-
-function permittedCaller(){
-   console.log(FroggyFileSystem.getFile("Config:/program_data/test"))
-   console.log(FroggyFileSystem.getDirectory("Config:/program_data"))
-}
-
-// permittedCaller()
-
-// nonPermittedWrapper()
 
 if(!SKIP_ANIMATION) {
     innerBar.animate(...getTimings(0)).onfinish = () => {

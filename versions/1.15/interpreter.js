@@ -46,7 +46,7 @@ class Keyword {
         this.type = type;
         this.args = null;
 
-        this.#id = murmurhash3_32_gc(`${keyword}-${type}-${scheme.join('-')}`,`${keyword}-${type}-${scheme.join('-')}`);
+        this.#id = FroggyFileSystem.hash(`${keyword}-${type}-${scheme.join('-')}`);
 
         this.getId = () => this.#id;
 
@@ -274,6 +274,8 @@ class Method {
         }));
     }
 
+    getId = () => FroggyFileSystem.hash(this.fn.toString());
+
     add() {
         const types = Array.isArray(this.type) ? this.type : [this.type];
 
@@ -309,6 +311,16 @@ class Method {
 
     static list(type) {
         return [...(Method.registry.get(type)?.keys() ?? [])];
+    }
+
+    static getAllOfName(name) {
+        const methods = [];
+        for (const [type, methodsMap] of Method.registry.entries()) {
+            if (methodsMap.has(name)) {
+                methods.push(methodsMap.get(name));
+            }
+        }
+        return methods;
     }
 
     /**
@@ -386,6 +398,7 @@ class Interpreter {
         this.interval_length = 1;
         this.tokens = [];
         this.imports = [];
+        this.subInterpreters = {};
         this.importData = defaultImportData;
         this.data = {};
         this.realtimeMode = false;
@@ -422,6 +435,33 @@ class Interpreter {
 
     static trimQuotes(value) {
         return typeof value === 'string' ? value.replace(/^['"]|['"]$/g, '') : value;
+    }
+
+    createSubInterpreter(body){
+        this.pause();
+        let subInterp = new Interpreter(`sub-${Object.keys(this.subInterpreters).length}`, body, this.fileArguments)
+        subInterp.inhereit(this);
+
+        subInterp.onComplete = () => {
+            let functionTokens = subInterp.tokens;
+            for(let j = 0; j < functionTokens.length; j++) {
+                let functionToken = functionTokens[j];
+                if(functionToken[0].type == "Keyword" && functionToken[0].value == "return"){
+                    let valueToReturn = functionToken.slice(1);
+                    valueToReturn = this.parseMethods(this.formatMethods(this.groupByCommas(valueToReturn)[0]));
+                    if(valueToReturn instanceof InterpreterError) {
+                        return this.outputError(valueToReturn);
+                    }
+                    this.functions[functionName].returnValue = valueToReturn;
+                }
+            }
+            this.resume();
+            delete this.subInterpreters[subInterp.name];
+        }
+        subInterp.onError = (error) => {
+            delete this.subInterpreters[subInterp.name];
+        }
+        subInterp.run();
     }
 
     inhereit(interpreter2){
@@ -1104,6 +1144,7 @@ class Interpreter {
         this.importData = {
             graphics: defaultImportData.graphics,
         };
+        this.subInterpreters = {};
         this.fileArgumentCount = 0;
         this.realtimeMode = false;
         Keyword.schemes = {};
@@ -1390,8 +1431,6 @@ const load_function = () => {
 
     const KEYWORD_CALL = new Keyword('call', "basic", ['Keyword', "FunctionCall"], {
         post: (tokens, interp, keyword) => {
-            interp.pause();
-
             let functionName = tokens[1].value.split("(")[0].slice(1);
             let args = interp.groupByCommas(interp.tokenize(tokens[1].value.split("(")[1].slice(0, -1)))
 
@@ -1421,24 +1460,7 @@ const load_function = () => {
                 }
             })
 
-            let subInterpreter = new Interpreter(func.body, func.name, interp.fileArguments);
-            subInterpreter.onComplete = () => {
-                let functionTokens = subInterpreter.tokens;
-                for(let j = 0; j < functionTokens.length; j++) {
-                    let functionToken = functionTokens[j];
-                    if(functionToken[0].type == "Keyword" && functionToken[0].value == "return"){
-                        let valueToReturn = functionToken.slice(1);
-                        valueToReturn = interp.parseMethods(interp.formatMethods(interp.groupByCommas(valueToReturn)[0]));
-                        if(valueToReturn instanceof InterpreterError) {
-                            return interp.outputError(valueToReturn);
-                        }
-                        interp.functions[functionName].returnValue = valueToReturn;
-                    }
-                }
-                interp.resume();
-            }
-            subInterpreter.inhereit(interp)
-            subInterpreter.run();
+            interp.createSubInterpreter(func.body);
         }
     }).add()
 
@@ -2182,7 +2204,7 @@ const load_function = () => {
     }).add();
 
     new Method("inc", ["Number"], (token, args, interp, method) => {
-        console.log(FroggyFileSystem.getFile("C:/Home/welcome!"))
+        //console.log(FroggyFileSystem.getFile("C:/Home/welcome!", "meow"))
         return new Token("Number", (+token.value + 1).toString(), token.position, token.methods);
     }, []).add();
 
