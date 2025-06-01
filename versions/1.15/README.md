@@ -1,11 +1,18 @@
 # froggyOS Documentation
 
+## Info
 * in paths, `.` will be replaced with the current directory
 * programs can *only* be written in designated directories
 * you can press the `DEL` key to escape programs (ex. an infinite loop)
 * if a FroggyScript program exits with an error, the command `[[BULLFROG]]gotoprogramline [program] [line with error]` will be put into your command history
 * file types are inferred based on file location
 * For whatever reason, if there is no typeable line in the terminal, press `SHIFT + ENTER` to create a typeable line
+### Paths
+Paths have three parts, the drive, the directory, and the file name.
+```
+Example: C:/Home/welcome!
+Full path - C:/Home/welcome!
+```
 
 ## Palette Conventions
 There are no set colors that you must have, but these are the color conventions.

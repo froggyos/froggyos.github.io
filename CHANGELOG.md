@@ -158,6 +158,12 @@ idk
 ```
 ~ rewrote FroggyScript again
     - read the documentation
+    - debugging is broken :p
 ~ finally made the macro list show aliases
 + added new Lilypad keybinds
+```
+
+# 1.15
+```
+~ migrated from config.fileSystem to FroggyFileSystem
 ```
