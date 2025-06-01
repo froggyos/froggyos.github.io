@@ -129,9 +129,6 @@ Properties:
 ## Settings Directory
 If you edit the `Settings:` drive directly, some settings won't apply until you reload the froggyOS state. An easy way to do this would be to run the `reload` macro.
 
-## Bugs
-* parsing is broken in the prefunction lol
-
 ## Trusting Programs
 To trust a program, you must add its file name in the `D:/trusted_files` file. This will allow the program to have extended control over the operating system. Trusted programs are refreshed **only** on hard restarts (reload the page).
 
