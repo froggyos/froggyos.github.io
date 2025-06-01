@@ -812,7 +812,7 @@ function killAndOutputError(message) {
 
 class fs {
     #fs;
-    #functionHashes = ['d3396c0bd3fbee7b', 'db27f8a3fb2ffdeb', '1bd973c83ffd73fa', '82d4b690dbd7fed8', '2dd95c38effddd7d', 'a50c94d5ed5cb6d7', '3c5121f5fe5dfbf5', 'a7fef5f4f7fffff4', 'df38f27fdf39f77f', '39136641fb3ffff', 'c8908b36fc9dfbb7', '265c76422eff7e7a']
+    #functionHashes = ['d3396c0bd3fbee7b', 'db27f8a3fb2ffdeb', '1bd973c83ffd73fa', '82d4b690dbd7fed8', '2dd95c38effddd7d', 'a50c94d5ed5cb6d7', '3c5121f5fe5dfbf5', 'a3dfd1f1f3ffd7fd', 'df38f27fdf39f77f', 'eb126488fb1ff488', 'c8908b36fc9dfbb7', '265c76422eff7e7a']
     #keywordHashes = []
     #methodHashes = []
 
@@ -833,29 +833,29 @@ class fs {
         this.#fs = data
     }
 
-    #verify(method = null) {
+    verifyMethod(method) {
+        let stack = new Error().stack.split("\n");
+        if(!stack[2].trim().startsWith("at Method.ffsProxy")) throw new Error(`You may not use verifyMethod() directly. You must use method.ffsProxy() instead.`); 
+        let id = method.getId();
+
+        if (!this.#methodHashes.includes(id)) throw new Error(`Access denied: Method "${method.name}" is not allowed to access the file system.`);
+        return this;
+    }
+
+    #verify() {
         let stack = new Error().stack.split("\n");
         const caller = stack[stack.length - 2].trim().split(" ")[1];
 
         if(caller == "Interpreter.gotoNext"){
-            if(stack[3].includes("Method.fn")) {
-                // method verification
-                if(!(method instanceof Method)) {
-                    throw killAndOutputError("Access denied: Method verification failed. You must provide a Method object.");
-                }
+            // keyword verification
+            const tokens = structuredClone(Interpreter.interpreters.main.tokens);
+            const tokenName = tokens[tokens.length - 1][0].value;
 
-                if (!this.#methodHashes.includes(method.getId())) throw new Error(`Access denied: Method "${method.name}" is not allowed to access the file system.`);
-            } else {
-                // keyword verification
-                const tokens = structuredClone(Interpreter.interpreters.main.tokens);
-                const tokenName = tokens[tokens.length - 1][0].value;
+            let keyword = Keyword.schemes[tokenName];
 
-                let keyword = Keyword.schemes[tokenName];
+            let id = keyword.getId();
 
-                let id = keyword.getId();
-
-                if (!this.#keywordHashes.includes(id)) throw new Error(`Access denied: Keyword "${tokenName}" is not allowed to access the file system.`);
-            }
+            if (!this.#keywordHashes.includes(id)) throw new Error(`Access denied: Keyword "${tokenName}" is not allowed to access the file system.`);
         } else {
             // function verification
             // if any index of the stack has <anonymous> in it, it means the function is anonymous and we should not allow file system access
@@ -874,42 +874,43 @@ class fs {
         }
     }
 
-    getDirectory(fullPath, method = null) {
-        this.#verify(method);
+    getDirectory(fullPath) {
+        this.#verify();
         const fs = this.#fs;
-        return fs[fullPath].filter(f => f.getProperty("hidden") !== true) || undefined;
+
+        return fs[fullPath]?.filter(f => f.getProperty("hidden") !== true) || undefined;
     }
 
-    getFile(fullPath, method = null) {
-        this.#verify(method);
+    getFile(fullPath) {
+        this.#verify();
 
         let fp = fullPath.split("/");
         let path = fp.slice(0, -1).join("/");
         let file = fp[fp.length - 1];
         const fs = this.#fs;
 
-        let retrievedFile = fs[path].find(f => f.getName() === file);
+        let retrievedFile = fs[path]?.find(f => f.getName() === file);
         if(retrievedFile === undefined) return undefined;
         if(retrievedFile.getProperty("hidden") === true) return undefined;
         return retrievedFile;
     }
 
-    addFileToDirectory(fullPath, file, method = null) {
-        this.#verify(method);
+    addFileToDirectory(fullPath, file) {
+        this.#verify();
         const fs = this.#fs;
 
         if(fs[fullPath] === undefined) return undefined;
-        if(fs[fullPath].find(f => f.getName() === file.getName())) return undefined;
+        if(fs[fullPath]?.find(f => f.getName() === file.getName())) return undefined;
         this.#fs[fullPath].push(file);
     }
 
-    getRoot(method = null) {
-        this.#verify(method);
+    getRoot() {
+        this.#verify();
         return this.#fs;
     }
 
-    deleteFile(fullPath, method = null) {
-        this.#verify(method);
+    deleteFile(fullPath) {
+        this.#verify();
         let fp = fullPath.split("/");
         let path = fp.slice(0, -1).join("/");
         let file = fp[fp.length - 1];
@@ -917,14 +918,14 @@ class fs {
 
         if(fs[path] === undefined) return undefined;
 
-        let index = fs[path].findIndex(f => f.getName() === file);
-        if(index === -1) return undefined;
+        let index = fs[path]?.findIndex(f => f.getName() === file);
+        if(index === -1 || index == undefined) return undefined;
 
         fs[path].splice(index, 1);
     }
 
-    createDirectory(location, method = null) {
-        this.#verify(method);
+    createDirectory(location) {
+        this.#verify();
         if(this.#fs[location] !== undefined) return undefined;
 
         this.#fs[location] = [];

@@ -906,7 +906,7 @@ function sendCommand(command, args, createEditableLineAfter){
             }
 
             let cloned = new FroggyFile(`clone_of_`+fileToClone.getName(), fileToClone.getProperties(), fileToClone.getData());
-            
+
             cloned.setProperty('read', true);
             cloned.setProperty('write', true);
             cloned.setProperty('transparent', false);
@@ -2203,17 +2203,17 @@ createColorTestBar();
 setTrustedFiles();
 sendCommand('[[BULLFROG]]validatelanguage', [], false);
 
-// let configInterval = setInterval(() => {
-//     setUserConfigFromFile()
-//     updateProgramList()
-// }, 250);
+let configInterval = setInterval(() => {
+    setUserConfigFromFile()
+    updateProgramList()
+}, 250);
 
-// let dateTimeInterval = setInterval(() => {
-//     updateDateTime()
-// }, 100);
+let dateTimeInterval = setInterval(() => {
+    updateDateTime()
+}, 100);
 
 const onStart = () => {
-    //sendCommand("rename", ["welcome!", "woof"]);
+    
 }
 
 function ready(){

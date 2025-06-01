@@ -276,6 +276,10 @@ class Method {
 
     getId = () => FroggyFileSystem.hash(this.fn.toString());
 
+    ffsProxy() {
+        return FroggyFileSystem.verifyMethod(this);
+    }
+
     add() {
         const types = Array.isArray(this.type) ? this.type : [this.type];
 
@@ -2204,7 +2208,6 @@ const load_function = () => {
     }).add();
 
     new Method("inc", ["Number"], (token, args, interp, method) => {
-        //console.log(FroggyFileSystem.getFile("C:/Home/welcome!", "meow"))
         return new Token("Number", (+token.value + 1).toString(), token.position, token.methods);
     }, []).add();
 
