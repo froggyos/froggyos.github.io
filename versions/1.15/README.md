@@ -10,8 +10,9 @@
 ### Paths
 Paths have three parts, the drive, the directory, and the file name.
 ```
-Example: C:/Home/welcome!
-Full path - C:/Home/welcome!
+┌───────────Full Path──────────┐
+├─────Location─────┐           │
+[drive]:/[directory]/[file name]
 ```
 
 ## Palette Conventions

@@ -874,11 +874,11 @@ class fs {
         }
     }
 
-    getDirectory(fullPath) {
+    getDirectory(location) {
         this.#verify();
         const fs = this.#fs;
 
-        return fs[fullPath]?.filter(f => f.getProperty("hidden") !== true) || undefined;
+        return fs[location]?.filter(f => f.getProperty("hidden") !== true) || undefined;
     }
 
     getFile(fullPath) {
@@ -895,13 +895,13 @@ class fs {
         return retrievedFile;
     }
 
-    addFileToDirectory(fullPath, file) {
+    addFileToDirectory(location, file) {
         this.#verify();
         const fs = this.#fs;
 
-        if(fs[fullPath] === undefined) return undefined;
-        if(fs[fullPath]?.find(f => f.getName() === file.getName())) return undefined;
-        this.#fs[fullPath].push(file);
+        if(fs[location] === undefined) return undefined;
+        if(fs[location]?.find(f => f.getName() === file.getName())) return undefined;
+        this.#fs[location].push(file);
     }
 
     getRoot() {
