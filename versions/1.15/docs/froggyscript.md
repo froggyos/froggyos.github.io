@@ -182,7 +182,6 @@ outf "t=c01, tr=4-48 | b=c04, br=57-91" , "from the char 4 to char 48, the text 
     * `tr` - text color range
     * `br` - background color range
     * `ir` - italic range
-<!-- 
 ### Errors
 Errors do not end the program early, follow with the `endprog` keyword to do so.
 #### Basic Error
@@ -202,7 +201,7 @@ C:/Home> st [program name]
 !!ERROR!! - this is an error message
 hello world!
 C:/Home>
-``` -->
+```
 ## Input
 ### Define a File Argument
 File arguments are passed in the terminal when running the program. The order they are defined will determine the order that they are passed in the terminal. You cannot use spaces in file arguments. The `filearg` keyword will replace itself with the line `set [variable name] = "[input]">coerce("[variable type]")` after the input is received.

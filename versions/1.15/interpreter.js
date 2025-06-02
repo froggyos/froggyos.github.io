@@ -1292,6 +1292,11 @@ class Interpreter {
 }
 
 const load_function = () => {
+    const KEYWORD_ERROR = new Keyword('error', "basic", ['Keyword', "String"], {
+        post: (tokens, interp, keyword) => {
+            createTerminalLine(tokens[1].value, config.errorText, {translate: false});
+        }
+    }).add()
     const KEYWORD_IMPORT = new Keyword('import', "basic", ['Keyword', "String"], {
         post: (tokens, interp, keyword) => {
             let importName = tokens[1].value;
@@ -1334,6 +1339,21 @@ const load_function = () => {
                     return interp.outputError(new InterpreterError('StateError', `Imports.${importName}.methods[${i}] is not of class Method`, tokens, interp.interval, tokens[1].position));
                 } else m.add()
             });
+
+            importData.variables.forEach((v, i) => {
+                if(v.name == undefined) return interp.outputError(new InterpreterError('StateError', `Imports.${importName}.variables[${i}].name is not defined`, tokens, interp.interval, tokens[1].position));
+
+                if(v.type == undefined) return interp.outputError(new InterpreterError('StateError', `Imports.${importName}.variables[${i}].type is not defined`, tokens, interp.interval, tokens[1].position));
+
+                if(v.value == undefined) return interp.outputError(new InterpreterError('StateError', `Imports.${importName}.variables[${i}].value is not defined`, tokens, interp.interval, tokens[1].position));
+
+                if(v.mutable == undefined) v.mutable = true;
+                if(interp.variables[v.name] != undefined) {
+                    return interp.outputError(new InterpreterError('ReferenceError', `Variable [${v.name}] is already defined`, tokens, interp.interval, tokens[1].position));
+                }
+
+                interp.setVariable(v.name, v.value, v.type, v.mutable);
+            })
 
             interp.imports.push(importName);
         }
@@ -2256,13 +2276,27 @@ const defaultImportData = {
 }
 
 const Imports = {
-    config: {
+    math: {
         variables: [],
         keywords: [],
         methods: [],
     },
+    config: {
+        variables: [
+            {
+                name: "Config",
+                type: "Config",
+                value: "Config",
+                mutable: false,
+            }
+        ],
+        keywords: [],
+        methods: [],
+    },
     graphics: {
-        variables: [],
+        variables: [
+            {}
+        ],
         keywords: [
             new Keyword("createscreen", "basic", ['Keyword', 'Number', "Number"], {
                 post: (tokens, interp, keyword) => {
