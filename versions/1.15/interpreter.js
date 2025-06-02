@@ -71,7 +71,7 @@ class Keyword {
                 if (!new RegExp(args[i].type).test(this.scheme[i])) {
                     if(scheme[i] == "Assignment"){
                         return interp.outputError(new InterpreterError('SyntaxError', `Expected variable assignment, found ${args[i].type}`, args, interp.interval, args[i].position));
-                    } else {
+                    } else if(this.scheme[i] != "*") {
                         return interp.outputError(new InterpreterError('TypeError', `Expected type ${this.scheme[i]}, found type ${args[i].type}`, args, interp.interval, args[i].position));
                     }
                 }
@@ -172,6 +172,7 @@ class Token {
             ['Assigner', new RegExp(`\\b(${assignerKeywords.join('|')})\\b`)],
             ['Number', /-?\b\d+(\.\d+)?\b/],
             ['String', /'(?:\\'|[^'])*'|"(?:\\"|[^"])*"/],
+            ['Empty', / _/],
             ['Array', /\$([^\$]+)\$/],
             ['Boolean', /\b(true|false)\b/],
             ['Oneliner', /^\./],
@@ -349,7 +350,6 @@ class Method {
     }
 }
 
-
 class Interpreter {
     static interpreters = {};
     static blockErrorOutput = false;
@@ -434,6 +434,45 @@ class Interpreter {
             }
         }.bind(this);
 
+
+        if(!this.name.startsWith("sub-")) {
+            const fsds = {};
+            let fileData = FroggyFileSystem.getFile(`Config:/program_data/${programName}`).getData();
+            for(let i = 0; i < fileData.length; i++){
+                let dataLine = fileData[i].trim();
+                let nonArrayMatch = dataLine.match(/^KEY (.*?) TYPE (String|Number|Boolean) VALUE (.*?) END$/)
+                if(nonArrayMatch){
+                    fsds[nonArrayMatch[1]] = {
+                        type: nonArrayMatch[2],
+                        value: nonArrayMatch[3],
+                    }
+                }
+
+                let arrayMatchStart = dataLine.match(/^KEY (.*?) TYPE Array START$/)
+                if(arrayMatchStart){
+                    let arrayName = arrayMatchStart[1];
+                    fsds[arrayName] = {
+                        value: [],
+                        type: "Array",
+                    }
+                    for(let j = i + 1; j < fileData.length; j++){
+                        if(fileData[j].match(new RegExp(`^KEY ${arrayName} TYPE Array END$`))){
+                            break;
+                        }
+
+                        let arrayIndexMatch = fileData[j].trim().match(new RegExp(`^${(j - i) -1} TYPE (String|Number|Boolean) VALUE (.*?)$`));
+                        fsds[arrayName].value.push({
+                            type: arrayIndexMatch[1],
+                            value: arrayIndexMatch[2],
+                        });
+                    } 
+                }
+            }
+
+            this.savedData = fsds;
+        }
+
+
         window.addEventListener('keydown', killFunction);
     }
 
@@ -477,6 +516,7 @@ class Interpreter {
         this.importData = structuredClone(interpreter2.importData);
         this.interval_length = structuredClone(interpreter2.interval_length);
         this.realtimeMode = structuredClone(interpreter2.realtimeMode);
+        this.fileArguments = structuredClone(interpreter2.fileArguments);
         this.load = () => interpreter2.load();
     }
 
@@ -1292,6 +1332,44 @@ class Interpreter {
 }
 
 const load_function = () => {
+    const KEYWORD_LOADDATA = new Keyword('loaddata', "basic", ['Keyword', "String", "IdentifierReference"], {
+        post: (tokens, interp, keyword) => {
+            let key = tokens[1].value;
+            let variableName = tokens[2].value;
+
+            let value = '';
+            if(interp.savedData[key].type != "Array"){
+                value = `'${interp.savedData[key].value}'>coerce('${interp.savedData[key].type}')`
+            } else {
+                value = "$"+interp.savedData[key].value.map(x => `'${x.value}'>coerce('${x.type}')`).join(", ")+"$"
+            }
+
+            let line = `set ${variableName} = ${value}`;
+
+            interp.lines[interp.interval] = line;
+            interp.gotoIndex(interp.interval - 1);
+        }
+    }).add()
+    const KEYWORD_SAVEDATA = new Keyword('savedata', "basic", ['Keyword', "String", "IdentifierReference"], {
+        post: (tokens, interp, keyword) => {
+            let value = tokens[2].value;
+            const small_coerce = (v) => {
+                if(v.type == "Number") return +v.value;
+                else if(v.type == "Boolean") return v.value === "true";
+                else if(v.type == "String") return v.value;
+                else return v;
+            }
+            let variable = interp.getVariable(tokens[2].value)
+            value = small_coerce(variable);
+
+            if(variable.type == "Array"){
+                value = variable.value.map(v => small_coerce(v));
+            }
+
+            set_fSDS("Config:/program_data", config.currentProgram, tokens[1].value, value)
+        }
+    }).add()
+
     const KEYWORD_ERROR = new Keyword('error', "basic", ['Keyword', "String"], {
         post: (tokens, interp, keyword) => {
             createTerminalLine(tokens[1].value, config.errorText, {translate: false});
@@ -1796,18 +1874,18 @@ const load_function = () => {
     const KEYWORD_BLN = new Keyword('bln', "assigner", ['Assigner', 'Assignee', 'Assignment', 'Boolean'], {
         post: (tokens, interp) => {
             let identifier = tokens[1];
-            let value = tokens[3];
+            let value = tokens[3].value;
 
-            interp.setVariable(identifier.value, value.value, 'Boolean', true);
+            interp.setVariable(identifier.value, value, 'Boolean', true);
         }
     }).add()
 
     const KEYWORD_CBLN = new Keyword('cbln', "assigner", ['Assigner', 'Assignee', 'Assignment', 'Boolean'], {
         post: (tokens, interp) => {
             let identifier = tokens[1];
-            let value = tokens[3];
+            let value = tokens[3].value;
 
-            interp.setVariable(identifier.value, value.value, 'Boolean', false);
+            interp.setVariable(identifier.value, value, 'Boolean', false);
         }
     }).add()
 
@@ -1837,21 +1915,25 @@ const load_function = () => {
         }
     }).add()
 
-    const KEYWORD_ARR = new Keyword('arr', "assigner", ['Assigner', 'Assignee', 'Assignment', 'Array'], {
+    const KEYWORD_ARR = new Keyword('arr', "assigner", ['Assigner', 'Assignee', 'Assignment', 'Array|Empty'], {
         post: (tokens, interp) => {
             let identifier = tokens[1];
             let token = tokens[3];
 
-            interp.setVariable(identifier.value, token.value, 'Array', true);
+            let value = token.type == "Empty" ? [] : token.value;
+
+            interp.setVariable(identifier.value, value, 'Array', true);
         }
     }).add()
 
-    const KEYWORD_CARR = new Keyword('carr', "assigner", ['Assigner', 'Assignee', 'Assignment', 'Array'], {
+    const KEYWORD_CARR = new Keyword('carr', "assigner", ['Assigner', 'Assignee', 'Assignment', 'Array|Empty'], {
         post: (tokens, interp) => {
             let identifier = tokens[1];
             let token = tokens[3];
 
-            interp.setVariable(identifier.value, token.value, 'Array', false);
+            let value = token.type == "Empty" ? [] : token.value;
+
+            interp.setVariable(identifier.value, value, 'Array', false);
         }
     }).add()
 

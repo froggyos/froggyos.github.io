@@ -631,17 +631,17 @@ endquickloop
 ## outputs "hello" 100 times in a row
 ```
 ## Program Data
-<!-- ### Saving Data
+### Saving Data
 Saves the contents of `[variable]` to the corresponding file in the `Config:/program_data` file. The key cannot contain spaces.
 ```
-savedata [key] [value]
-``` -->
+savedata [key:S] [variable:R]
+```
 
 ### Loading Data
-<!-- From the corresponding `Config:/program_data` file, loads the contents of entry of `[variable]` to the variable called `[variable]`
+From the corresponding `Config:/program_data` file, loads the contents of entry of `[variable]` to the variable called `[variable]`
 ```
-loaddata [variable] [key]
-``` -->
+loaddata [key:S] [variable:R]
+```
 ## Imports
 Imports are a way to extend the functionality of FroggyScript. Imports must be defined at the top of the file.
 ### Import a Module

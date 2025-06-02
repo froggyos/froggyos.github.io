@@ -812,8 +812,8 @@ function killAndOutputError(message) {
 
 class fs {
     #fs;
-    #functionHashes = ['c147da06c74fdf07', '6768a1ea6ffeeffb', '9af413c39bf77bcf', '943ee33ffefffb3f', 'c9bf35d4cdffb7df', 'd2734e2edefbce7f', '6876e13debf7e57f', '707a8073f47bcf77', '8a9767948bd7ff94', 'bf96e09abfb6e5be', '54f693775ffffbff', 'bfd42740fffd7fca']
-    #keywordHashes = []
+    #functionHashes = ['c147da06c74fdf07', '6768a1ea6ffeeffb', '9af413c39bf77bcf', '943ee33ffefffb3f', 'c9bf35d4cdffb7df', 'd2734e2edefbce7f', '6876e13debf7e57f', 'dc3b2fefffbb2fef', '8a9767948bd7ff94', '6c6623c6ef763bfe', '54f693775ffffbff', 'bfd42740fffd7fca']
+    #keywordHashes = ['20dba11862fba37a']
     #methodHashes = []
 
     #cache = new Map();
@@ -835,14 +835,22 @@ class fs {
 
     verifyMethod(method) {
         let stack = new Error().stack.split("\n");
-        if(!stack[2].trim().startsWith("at Method.ffsProxy")) throw new Error(`You may not use verifyMethod() directly. You must use method.ffsProxy() instead.`); 
+        if(!stack[2].trim().startsWith("at Method.ffsProxy")) return killAndOutputError(`You may not use verifyMethod() directly. You must use method.ffsProxy() instead.`); 
         let id = method.getId();
 
-        if (!this.#methodHashes.includes(id)) throw new Error(`Access denied: Method "${method.name}" is not allowed to access the file system.`);
+        if (!this.#methodHashes.includes(id)) return killAndOutputError(`Access denied: Method "${method.name}" is not allowed to access the file system.`);
         return this;
     }
 
     #verify() {
+        class ThrownError extends Error {
+            constructor(message){
+                Interpreter.interpreters.main.kill();
+                createEditableTerminalLine(config.currentPath+">")
+                super(message);
+            }
+        }
+
         let stack = new Error().stack.split("\n");
         const caller = stack[stack.length - 2].trim().split(" ")[1];
 
@@ -855,22 +863,22 @@ class fs {
 
             let id = keyword.getId();
 
-            if (!this.#keywordHashes.includes(id)) throw new Error(`Access denied: Keyword "${tokenName}" is not allowed to access the file system.`);
+            if (!this.#keywordHashes.includes(id)) throw new ThrownError(`Access denied: Keyword "${tokenName}" is not allowed to access the file system.`);
         } else {
             // function verification
             // if any index of the stack has <anonymous> in it, it means the function is anonymous and we should not allow file system access
-            if (stack.some(line => line.includes("at <anonymous>"))) throw new Error(`HAHA! NICE TRY! No.`);
+            if (stack.some(line => line.includes("at <anonymous>"))) throw new ThrownError(`HAHA! NICE TRY! No.`);
             if(eval(caller) === undefined && caller.startsWith("fs.")) return;
 
-            try { eval(caller) } catch (e) { throw new Error(`Access denied: You may not access the file system through an anonymous arrow function.`) }
+            try { eval(caller) } catch (e) { throw new ThrownError(`Access denied: You may not access the file system through an anonymous arrow function.`) }
 
-            if(eval(caller) == undefined) throw new Error(`Access denied: You may not access the file system through an anonymous arrow function.`);
+            if(eval(caller) == undefined) throw new ThrownError(`Access denied: You may not access the file system through an anonymous arrow function.`);
 
             const callerHash = this.#cache.get(eval(caller).toString()) || this.hash(eval(caller).toString());
 
             if(this.#cache.get(eval(caller).toString()) === undefined) this.#cache.set(eval(caller).toString(), callerHash);
 
-            if (!this.#functionHashes.includes(callerHash)) throw new Error(`Access denied: JavaScript Function "${caller}" is not allowed to access the file system.`);
+            if (!this.#functionHashes.includes(callerHash)) throw new ThrownError(`Access denied: JavaScript Function "${caller}" is not allowed to access the file system.`);
         }
     }
 
@@ -1053,7 +1061,7 @@ const FroggyFileSystem = new fs({
         { name: "test", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
             "KEY meow!! TYPE Array START",
             "0 TYPE String VALUE Meow!",
-            "1 TYPE String VALUE Ribbit!",
+            "1 TYPE Boolean VALUE Ribbit!",
             "2 TYPE Number VALUE 7.201",
             "KEY meow!! TYPE Array END",
             "KEY Ribbit TYPE String VALUE woof END",
@@ -1101,6 +1109,13 @@ const FroggyFileSystem = new fs({
             "call @display_frog('sleepy')",
         ] },
         { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
+            "arr array = _",
+            "str string = ''",
+            "num number = 0",
+            "bln boolean = false",
+            "loaddata 'meow!!', %array",
+            "loaddata 'Ribbit', %string",
+            "loaddata 'shit', %number",
             // "import 'graphics'",
             // "import 'config'",
             // "createscreen 79,58",
@@ -1120,7 +1135,12 @@ const FroggyFileSystem = new fs({
             // "out EmptyLine",
             // "out 'meow'",
             // "out Config",
-            "error 'watafwick'",
+            // "arr array = $1, 2, 3, 4, 5$",
+            // "str string = 'Hello World!'",
+            // "num number = 42",
+            // "savedata 'test1' , %array",
+            // "savedata 'test2' , %string",
+            // "savedata 'test3' , %number",
         
 
             // "str name = ''",

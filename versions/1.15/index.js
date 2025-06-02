@@ -106,9 +106,8 @@ function set_fSDS(path, filename, key, value){
             newData.push(`KEY ${key} TYPE Array END`);
             
         } else {
-            let type = typeof value;
+            let type = ((typeof value)[0].toUpperCase() + (typeof value).slice(1));
             type = type[0] + type.slice(1);
-
 
             newData.push(`KEY ${key} TYPE ${type} VALUE ${value} END`);
         }
@@ -1495,7 +1494,7 @@ function sendCommand(command, args, createEditableLineAfter){
                     if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 }
                 interpreter.onError = (error) => {
-                    addToCommandHistory(`[[BULLFROG]]gotoprogramline ${file.name} ${error.line}`);
+                    addToCommandHistory(`[[BULLFROG]]gotoprogramline ${file.getName()} ${error.line}`);
                     if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 }
 
