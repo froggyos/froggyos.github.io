@@ -5,17 +5,17 @@ const presetLanguagesMap = {
     "!LANGNAME: language build helper": {
         eng: "!LANGNAME: English",
         nmt: "!LANGNAME: ngimëte",
-        jpn: "!LANGNAME: Japanese",
+        //jpn: "!LANGNAME: Japanese",
     },
     "T_froggy_doesnt_like": {
         eng: "Froggy doesn't like that. >:(",
         nmt: "Froggy gehana ilu >:(",
         jpn: "フロッギーはそれが気に入らないよ >:("
     },
-    "T_doesnt_know |||[]|||": {
-        eng: `Froggy doesn't know "|||[]|||", sorry.`,
-        nmt: `Froggy gepele "|||[]|||", mbayu`,
-        jpn: "フロッギーは「|||[]|||」がわかりません、ごめんなさい"
+    "T_doesnt_know {{}}": {
+        eng: `Froggy doesn't know "{{}}", sorry.`,
+        nmt: `Froggy gepele "{{}}", mbayu`,
+        jpn: "フロッギーは「{{}}」がわかりません、ごめんなさい"
     },
     "T_hello_froggy": {
         eng: "Hello, I'm Froggy! ^v^",
@@ -27,10 +27,10 @@ const presetLanguagesMap = {
         nmt: "nenta ‘help’ mbo süm fesúāte kole komandda me, nam giwa 'ata",
         jpn: "コマンドやナビゲーションのサポートを受けるには、「help」と入力してください"
     },
-    "T_greeting_2 |||[]|||": {
-        eng: "* Welcome to froggyOS, version |||[]||| *",
-        nmt: "* wulë froggyOS, kekyene |||[]||| *",
-        jpn: "* froggyOSへようこそ！バージョン|||[]||| *"
+    "T_greeting_2 {{}}": {
+        eng: "* Welcome to froggyOS, version {{}} *",
+        nmt: "* wulë froggyOS, kekyene {{}} *",
+        jpn: "* froggyOSへようこそ！バージョン{{}} *"
     },
 
     // basic command help ====================
@@ -262,10 +262,10 @@ const presetLanguagesMap = {
         nmt: "fiyala mbeno mana",
         jpn: "ファイルを作成しました"
     },
-    "T_file_cloned |||[]|||": {
-        eng: `File "|||[]|||" cloned.`,
-        nmt: `fiyala "|||[]|||" mafu mana'a`,
-        jpn: "ファイル「|||[]|||」がクローンされました"
+    "T_file_cloned {{}}": {
+        eng: `File "{{}}" cloned.`,
+        nmt: `fiyala "{{}}" mafu mana'a`,
+        jpn: "ファイル「{{}}」がクローンされました"
     },
     "T_file_renamed": {
         eng: "File renamed.",
@@ -328,10 +328,10 @@ const presetLanguagesMap = {
         nmt: "pesezte paleta getsefese",
         jpn: "カラーパレットは存在しません"
     },
-    "T_palette_error_invalid_hex |||[]|||": {
-        eng: "PaletteError: |||[]||| is an invalid hex color.",
-        nmt: "PaletaGogowa: |||[]||| wa sepu hex pesezte",
-        jpn: "パレットエラー: |||[]|||は無効な16進カラーコードです"
+    "T_palette_error_invalid_hex {{}}": {
+        eng: "PaletteError: {{}} is an invalid hex color.",
+        nmt: "PaletaGogowa: {{}} wa sepu hex pesezte",
+        jpn: "パレットエラー: {{}}は無効な16進カラーコードです"
     },
     "T_could_not_create_palette": {
         eng: "Could not create palette.",
@@ -401,15 +401,15 @@ const presetLanguagesMap = {
         nmt: "apelelala som mëzte koda",
         jpn: "言語のコードを入力してください"
     },
-    "T_lang_does_not_exist |||[]|||": {
-        eng: `Language with code "|||[]|||" does not exist.`,
-        nmt: `mëzte kole "|||[]|||" getsefese`,
-        jpn: "コード「|||[]|||」の言語が存在しません"
+    "T_lang_does_not_exist {{}}": {
+        eng: `Language with code "{{}}" does not exist.`,
+        nmt: `mëzte kole "{{}}" getsefese`,
+        jpn: "コード「{{}}」の言語が存在しません"
     },
-    "T_invalid_lang_file |||[]|||": {
-        eng: `Invalid language file with code "|||[]|||".`,
-        nmt: `sepu mëzte fiyala kole koda "|||[]|||"`,
-        jpn: "コード「|||[]|||」の言語ファイルは無効です"
+    "T_invalid_lang_file {{}}": {
+        eng: `Invalid language file with code "{{}}".`,
+        nmt: `sepu mëzte fiyala kole koda "{{}}"`,
+        jpn: "コード「{{}}」の言語ファイルは無効です"
     },
     "T_current_lang_invalid": {
         eng: `Current language file is INVALID! Switching to "lbh".`,
@@ -523,6 +523,18 @@ const presetLanguagesMap = {
         eng: "Please provide a valid translation descriptor.",
         nmt: "apelelala som apeya mëmëzte dësikipita",
         jpn: "有効な翻訳ディスクリプターを入力してください"
+    },
+
+    "T_missing_key_config_user {{}}": {
+        eng: "Missing key {{}} in Config:/user",
+        nmt: "ndaní koda {{}} kene Config:/user",
+        jpn: "T_missing_key_config_user"
+    },
+
+    "T_error_reading_config_file": {
+        eng: "Error reading config file.",
+        nmt: "gogowa sanwa känfikya fiyala",
+        jpn: "T_error_reading_config_file"
     },
 
     // bullfrog commands =========================
@@ -810,10 +822,21 @@ function killAndOutputError(message) {
     throw new Error(message);
 }
 
+class ThrownError extends Error {
+    constructor(message){
+        if(Interpreter.interpreters?.main){
+            Interpreter.interpreters.main.kill();
+            createTerminalLine(message, createErrorText(6, "Critical Error"), {translate: false});
+            createEditableTerminalLine(config.currentPath+">")
+        }
+        super(message);
+    }
+}
+
 class fs {
     #fs;
-    #functionHashes = ['c147da06c74fdf07', '6768a1ea6ffeeffb', '9af413c39bf77bcf', '943ee33ffefffb3f', 'c9bf35d4cdffb7df', 'd2734e2edefbce7f', '6876e13debf7e57f', 'dc3b2fefffbb2fef', '8a9767948bd7ff94', '6c6623c6ef763bfe', '54f693775ffffbff', 'bfd42740fffd7fca']
-    #keywordHashes = ['20dba11862fba37a']
+    #functionHashes = ['c147da06c74fdf07', '63f33591efffbfb3', '9af413c39bf77bcf', '943ee33ffefffb3f', 'c9bf35d4cdffb7df', 'd2734e2edefbce7f', 'c7e06200e7e4fa7e', 'f5db2cc1f7fb2cf', '8a9767948bd7ff94', '6c6623c6ef763bfe', '54f693775ffffbff', 'bfd42740fffd7fca', '63f33591efffbfb3', '1838f0a69c3bf1af']
+    #keywordHashes = ['eb6ebeffebfebfff']
     #methodHashes = []
 
     #cache = new Map();
@@ -835,22 +858,15 @@ class fs {
 
     verifyMethod(method) {
         let stack = new Error().stack.split("\n");
-        if(!stack[2].trim().startsWith("at Method.ffsProxy")) return killAndOutputError(`You may not use verifyMethod() directly. You must use method.ffsProxy() instead.`); 
+        if(!stack[2].trim().startsWith("at Method.ffsProxy")) throw new ThrownError(`You may not use verifyMethod() directly. You must use method.ffsProxy() instead.`); 
         let id = method.getId();
 
-        if (!this.#methodHashes.includes(id)) return killAndOutputError(`Access denied: Method "${method.name}" is not allowed to access the file system.`);
+        if (!this.#methodHashes.includes(id)) throw new ThrownError(`Access denied: Method "${method.name}" is not allowed to access the file system.`);
         return this;
     }
 
     #verify() {
-        class ThrownError extends Error {
-            constructor(message){
-                Interpreter.interpreters.main.kill();
-                createEditableTerminalLine(config.currentPath+">")
-                super(message);
-            }
-        }
-
+        return;
         let stack = new Error().stack.split("\n");
         const caller = stack[stack.length - 2].trim().split(" ")[1];
 
@@ -992,10 +1008,12 @@ class FroggyFile {
 
 
     rename(newName){
+        if(this.#name === "trusted_programs") throw new Error("You may not rename the 'trusted_programs' file.");
         this.#name = newName;
     }
 
     write(data) {
+    if(this.#name === "trusted_programs") throw new Error("You may not write to the 'trusted_programs' file.");
         this.#data = data;
     }
 
@@ -1016,6 +1034,7 @@ class FroggyFile {
     }
 
     setProperty(name, value) {
+        if(this.#name === "trusted_programs") throw new Error("You may not set properties on the 'trusted_programs' file.");
         if (this.#properties[name] !== undefined) {
             this.#properties[name] = value;
         } else return undefined;
@@ -1025,7 +1044,7 @@ class FroggyFile {
 
 const FroggyFileSystem = new fs({
     "Config:": [
-        { name: "trusted_files", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
+        { name: "trusted_programs", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
             "test",
         ] },
         { name: "user", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
@@ -1108,52 +1127,21 @@ const FroggyFileSystem = new fs({
             "endfunc",
             "call @display_frog('sleepy')",
         ] },
-        { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
-            "arr array = _",
-            "str string = ''",
-            "num number = 0",
-            "bln boolean = false",
-            "loaddata 'meow!!', %array",
-            "loaddata 'Ribbit', %string",
-            "loaddata 'shit', %number",
-            // "import 'graphics'",
-            // "import 'config'",
-            // "createscreen 79,58",
-            // "line line1 = $0, 10, 10, 0$",
-            // "line line2 = $0, 0, 10, 10$",
-            // "text text1 = $5, 5, 'Hello World!'$",
-            // ".text1>add",
-            // ".line1>add",
-            // ".line2>add",
-            // "pxl pixel = $5, 5$",
-            // "pxl intersect = line1>intersection(line2)",
-            // "out intersect>toString",
-            // "out intersect>back",
-            // "out intersect>front",
-            // "out intersect>value",
-            // "out ''",
-            // "out EmptyLine",
-            // "out 'meow'",
-            // "out Config",
-            // "arr array = $1, 2, 3, 4, 5$",
-            // "str string = 'Hello World!'",
-            // "num number = 42",
-            // "savedata 'test1' , %array",
-            // "savedata 'test2' , %string",
-            // "savedata 'test3' , %number",
-        
-
-            // "str name = ''",
-            // "num age = 0",
-            // 'filearg %name',
-            // 'filearg %age',
-            // 'out "Hello my name is $|name| and I am $|age| years old."',
-            // "out 10",
-            // "out false",
-            // "out 'meow!'"
-
+        { name: "test", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
+            "out 'a short line'",
+            "out 'a very long line with many characters in it, this line is so long that it will wrap around to the next line. If it hasnt wrapped already, then it shouldve wrapped by now. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.'",
+            "out 'another short line :)'",
         ] },
-        { name: "test2", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
+        { name: "errors", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
+            "error 0, 'alert', 'hey look here! read me!'",
+            "error 1, 'warning', 'something might be wrong'",
+            "error 2, 'error', 'something went wrong'",
+            "error 3, 'important warning', 'something is wrong but its not too bad'",
+            "error 4, 'important error', 'something is wrong and it is bad'",
+            "error 5, 'critical error', 'something is wrong and it is very bad'",
+            "error 6, 'fatal error', 'the frog is dead'",
+        ] },
+        { name: "outf-test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
             "arr meow = $4, 48$",
             'outf "t=c01,i=1" , "this is blue text"',
             'outf "b=c00" , "this is a black background"',
@@ -1249,11 +1237,13 @@ const FroggyFileSystem = new fs({
             "terminal-line-text 02",
             "terminal-line-selection-background 02",
             "terminal-line-selection-text 15",
-            "error-background 12",
-            "translation-error-backgroud 05",
-            "translation-warning-backgroud 06",
-            "program-error-background 04",
-            "alert-background 03",
+            "error-severity-0 03",
+            "error-severity-1 13",
+            "error-severity-2 12",
+            "error-severity-3 05",
+            "error-severity-4 06",
+            "error-severity-5 04",
+            "error-severity-6 08",
             "error-text 15",
             "prompt-selected-background 02",
             "prompt-selected-text 15",
@@ -1287,12 +1277,13 @@ const FroggyFileSystem = new fs({
             "terminal-line-text 02",
             "terminal-line-selection-background 02",
             "terminal-line-selection-text 15",
-            "error-background 12",
-            "translation-error-backgroud 05",
-            "translation-warning-backgroud 06",
-            "program-error-background 04",
-            "alert-background 03",
-            "error-text 15",
+            "error-severity-0 03",
+            "error-severity-1 13",
+            "error-severity-2 12",
+            "error-severity-3 05",
+            "error-severity-4 06",
+            "error-severity-5 04",
+            "error-severity-6 08",
             "prompt-selected-background 02",
             "prompt-selected-text 15",
             "froggyscript-number-color 09",
@@ -1325,11 +1316,13 @@ const FroggyFileSystem = new fs({
             "terminal-line-text 02",
             "terminal-line-selection-background 02",
             "terminal-line-selection-text 15",
-            "error-background 12",
-            "translation-error-backgroud 05",
-            "translation-warning-backgroud 06",
-            "program-error-background 04",
-            "alert-background 03",
+            "error-severity-0 03",
+            "error-severity-1 13",
+            "error-severity-2 12",
+            "error-severity-3 05",
+            "error-severity-4 06",
+            "error-severity-5 04",
+            "error-severity-6 08",
             "error-text 15",
             "prompt-selected-background 02",
             "prompt-selected-text 15",
@@ -1363,11 +1356,13 @@ const FroggyFileSystem = new fs({
             "terminal-line-text 02",
             "terminal-line-selection-background 02",
             "terminal-line-selection-text 15",
-            "error-background 12",
-            "translation-error-backgroud 05",
-            "translation-warning-backgroud 06",
-            "program-error-background 04",
-            "alert-background 03",
+            "error-severity-0 03",
+            "error-severity-1 13",
+            "error-severity-2 12",
+            "error-severity-3 05",
+            "error-severity-4 06",
+            "error-severity-5 04",
+            "error-severity-6 08",
             "error-text 15",
             "prompt-selected-background 02",
             "prompt-selected-text 15",
@@ -1401,11 +1396,13 @@ const FroggyFileSystem = new fs({
             "terminal-line-text 02",
             "terminal-line-selection-background 02",
             "terminal-line-selection-text 15",
-            "error-background 12",
-            "translation-error-backgroud 05",
-            "translation-warning-backgroud 06",
-            "program-error-background 04",
-            "alert-background 03",
+            "error-severity-0 03",
+            "error-severity-1 13",
+            "error-severity-2 12",
+            "error-severity-3 05",
+            "error-severity-4 06",
+            "error-severity-5 04",
+            "error-severity-6 08",
             "error-text 15",
             "prompt-selected-background 02",
             "prompt-selected-text 15",
@@ -1439,11 +1436,13 @@ const FroggyFileSystem = new fs({
             "terminal-line-text 02",
             "terminal-line-selection-background 02",
             "terminal-line-selection-text 15",
-            "error-background 12",
-            "translation-error-backgroud 05",
-            "translation-warning-backgroud 06",
-            "program-error-background 04",
-            "alert-background 09",
+            "error-severity-0 03",
+            "error-severity-1 13",
+            "error-severity-2 12",
+            "error-severity-3 05",
+            "error-severity-4 06",
+            "error-severity-5 04",
+            "error-severity-6 08",
             "error-text 15",
             "prompt-selected-background 02",
             "prompt-selected-text 15",
@@ -1477,11 +1476,13 @@ const FroggyFileSystem = new fs({
             "terminal-line-text 02",
             "terminal-line-selection-background 02",
             "terminal-line-selection-text 15",
-            "error-background 12",
-            "translation-error-backgroud 05",
-            "translation-warning-backgroud 06",
-            "program-error-background 04",
-            "alert-background 03",
+            "error-severity-0 03",
+            "error-severity-1 13",
+            "error-severity-2 12",
+            "error-severity-3 05",
+            "error-severity-4 06",
+            "error-severity-5 04",
+            "error-severity-6 08",
             "error-text 15",
             "prompt-selected-background 02",
             "prompt-selected-text 15",
@@ -1548,7 +1549,7 @@ let config_preproxy = {
     validateLanguageOnStartup: new UserKey(),
 
     // immutable settings
-    trustedFiles: [],
+    trustedPrograms: [],
     stepThroughProgram: false,
     currentPath: "C:/Home",
     commandHistory: [],
@@ -1558,11 +1559,12 @@ let config_preproxy = {
     currentProgram: "cli",
     programList: ["cli", "lilypad"],
     programSession: 0,
-    errorText: "<span class='error'><span class='error-text'>!!ERROR!!</span> -</span>",
-    translationErrorText: "<span class='error'><span class='t-error-text'>!!TRANSLATION ERROR!!</span> -</span>",
-    translationWarningText: "<span class='error'><span class='t-warning-text'>!TRANSLATION WARNING!</span> -</span>",
-    alertText: ("<span class='error'><span class='alert-text'>ALERT</span> -</span>"),
-    programErrorText: " -- <span class='error'><span class='program-error-text'>!! -> {{}} <- !!</span></span> --",
+    errorText: createErrorText(2, "!!ERROR!!"),
+    translationErrorText: createErrorText(4, "Translation Error"),
+    translationWarningText: createErrorText(3, "Translation Warning"),
+    alertText: createErrorText(0, "ALERT"),
+    programErrorText: " -- <span class='error'><span class='error-severity-5'>!! -> {{}} <- !!</span></span> --",
+    fatalErrorText: createErrorText(6, "Fatal Error"),
 }
 
 const diagnostic = {
@@ -1580,23 +1582,32 @@ const diagnostic = {
 }
 
 const config = new Proxy(config_preproxy, {
-    get: (target, prop) => {
+    get: (target, prop, value) => {
         diagnostic.total.configGet++;
         return target[prop];
     },
     set: (target, prop, value) => {
         diagnostic.total.configSet++;
+        let stack = new Error().stack.split("\n").slice(2).map(line => line.trim());
+        if(stack.some(line => line.includes("at #verify"))) {
+            return true;
+        }
+        if(stack.some(line => line.includes("at Keyword.fn") || line.includes('at Keyword.prefn') || line.includes("at Method.fn"))) throw new ThrownError(`Access denied: You may not set the config object from within a keyword function. Use the 'config' keyword instead.`);
         target[prop] = value;
         return true;
     }
 });
+
+function createErrorText(severity, message){
+    return `<span class='error'><span class='error-severity-${severity}'>${message}</span> -</span>`
+}
 
 const diagnosticInterval = setInterval(() => {
     diagnostic.perSecond.configGet = Math.ceil(diagnostic.total.configGet / diagnostic.counter);
     diagnostic.perSecond.configSet = Math.ceil(diagnostic.total.configSet / diagnostic.counter);
     diagnostic.runtime = Date.now() - diagnostic.startTime;
     diagnostic.counter++;
-}, 1);
+}, 1000);
 
 const user_config_keys = Object.keys(config_preproxy).filter(key => config_preproxy[key] instanceof UserKey);
 const os_config_keys = Object.keys(config_preproxy).filter(key => !(config_preproxy[key] instanceof UserKey)).filter(key => !["trustedFiles"].includes(key));
@@ -1608,9 +1619,9 @@ const setLanguageFiles = () => {
     });
     Object.keys(presetLanguagesMap).forEach((key, i) => {
         langs.lbh.push(key);
-        langs.eng.push(presetLanguagesMap[key].eng || key);
-        langs.nmt.push(presetLanguagesMap[key].nmt || key);
-        langs.jpn.push(presetLanguagesMap[key].jpn || key);
+        if(presetLanguagesMap[key]?.eng) langs.eng.push(presetLanguagesMap[key].eng);
+        if(presetLanguagesMap[key]?.nmt) langs.nmt.push(presetLanguagesMap[key].nmt);
+        if(presetLanguagesMap[key]?.jpn) langs.jpn.push(presetLanguagesMap[key].jpn);
     })
     FroggyFileSystem.getDirectory("Config:/langs").forEach(file => {
         file.write(langs[file.getName()])
@@ -1618,3 +1629,10 @@ const setLanguageFiles = () => {
 }
 
 setLanguageFiles();
+
+/*
+change the hash cache to a set bc its faster
+work on the config proxy object verification
+
+
+*/

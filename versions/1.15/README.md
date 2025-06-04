@@ -71,7 +71,27 @@ There are no set colors that you must have, but these are the color conventions.
 * The **name declaration** must be the first line of the file, and must be in the format `!LANGNAME: [language name]`. For example, the name declaration for the `eng` file is `!LANGNAME: English`.
 * If the default language is invalid, froggyOS will automatically revert to the `lbh` language file.
 * If a text results in `Index Missing! -> [translation descriptor]`, this means that the translation descriptor is missing from the language file.
-* Some translation descriptors include `|||[]|||` in it. This must be included in order to reference the descriptor. This is because between the `[]` a string can be placed that will show in the final translation. For example, if you used `T_greeting_2 |||[3 million]|||`, it would return in the `eng` translation as `* Welcome to froggyOS, version 3 million *`. You can use only one of these per descriptor.
+* Some translation descriptors include `{{}}` in it. These are called **inclusions**. Inclusions allow translations to include dynamic text. For example, if you used `T_greeting_2 {{3 million}}`, it would return in the `eng` translation as `* Welcome to froggyOS, version 3 million *`. You can use as many inclusions as you want. You can also use multiple inclusions in a single translation descriptor, as long as the descriptor can handle that amount of inclusions.
+
+## Bugs
+### 1
+* error text color does not save properly when running `svs`.
+* example program:
+```
+error 0, 'alert', 'hey look here! read me!'
+error 1, 'warning', 'something might be wrong'
+error 2, 'error', 'something IS wrong'
+error 3, 'important warning', 'something is wrong but its not too bad'
+error 4, 'important error', 'something is wrong and it is bad'
+error 5, 'critical error', 'something is wrong and it is very bad'
+error 6, 'fatal error', 'you curbstomped froggyOS and it is now dead'
+```
+* steps to reproduce:
+    1. run the example program
+    2. run `changepalette (any palette)`
+    3. run `svs`
+    4. reload the page
+    5. Result -> text color of the error text should be the same as the normal text color
 
 ## Command Help
 ### formattime

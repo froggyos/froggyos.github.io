@@ -182,23 +182,21 @@ outf "t=c01, tr=4-48 | b=c04, br=57-91" , "from the char 4 to char 48, the text 
     * `tr` - text color range
     * `br` - background color range
     * `ir` - italic range
-### Errors
-Errors do not end the program early, follow with the `endprog` keyword to do so.
-#### Basic Error
+### Error
+Errors do not end the program early, follow with the `endprog` keyword to do so. Severy is a number from `0` to `6`, with `0` being the least severe and `6` being the most severe. The text appears in the path section of the terminal line, and the message appears in the text section of the terminal line.
 ```
-error [error message]
+error [severity:N] [text:S] [message:S]
 
-error "this is an error message"
+error 0 , "error", "this is an error message"
 
 -- test program
-error "this is an error message"
-str test = "hello world!"
-out test
+error 0 , "error", "this is an error message"
+out "hello world!"
 endprog
 
 -- when ran
 C:/Home> st [program name]
-!!ERROR!! - this is an error message
+error - this is an error message
 hello world!
 C:/Home>
 ```

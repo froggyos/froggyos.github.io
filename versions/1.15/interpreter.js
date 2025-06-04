@@ -1370,9 +1370,17 @@ const load_function = () => {
         }
     }).add()
 
-    const KEYWORD_ERROR = new Keyword('error', "basic", ['Keyword', "String"], {
+    const KEYWORD_ERROR = new Keyword('error', "basic", ['Keyword', "Number", "String", "String"], {
         post: (tokens, interp, keyword) => {
-            createTerminalLine(tokens[1].value, config.errorText, {translate: false});
+            let severity = tokens[1].value;
+            let errorText = tokens[2].value;
+            let errorMessage = tokens[3].value;
+
+            if(+severity < 0 || +severity > 6) {
+                return interp.outputError(new InterpreterError('RangeError', `Severity must be between 0 and 6`, tokens, interp.interval, tokens[1].position));
+            }
+            
+            createTerminalLine(errorMessage, createErrorText(severity, errorText), {translate: false});
         }
     }).add()
     const KEYWORD_IMPORT = new Keyword('import', "basic", ['Keyword', "String"], {

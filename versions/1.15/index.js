@@ -1,5 +1,4 @@
 //new AllSniffer({});
-
 const screen = document.getElementById('screen');
 const terminal = document.getElementById('terminal');
 const bar = document.getElementById('bar');
@@ -39,8 +38,10 @@ function addToCommandHistory(string){
 function setUserConfigFromFile(){
     let fsds = parse_fSDS(getFileWithName("Config:", "user").data);
     if(fsds.error) {
-        alert(`OS ERROR!: ${fsds.message}\nthis may brick froggyOS\ncancelling config check`);
         clearInterval(configInterval);
+        terminal.innerHTML = "";
+        createTerminalLine("T_error_reading_config_file", config.fatalErrorText);
+        return;
     }
     
     config.debugMode = getSetting("debugMode")
@@ -49,29 +50,13 @@ function setUserConfigFromFile(){
     config.showSpinner = getSetting("showSpinner");
     config.currentSpinner = getSetting("currentSpinner");
     config.defaultSpinner = getSetting("defaultSpinner");
-    config.timeFormat = getSetting("timeFormat").slice(0, 78);
+    config.timeFormat = getSetting("timeFormat")?.slice(0, 78);
     config.updateStatBar = getSetting("updateStatBar")
     config.allowedProgramDirectories = getSetting("allowedProgramDirectories");
     // add other settings for macros, palettes, etc.
     config.dissallowSubdirectoriesIn = getSetting("dissallowSubdirectoriesIn");
     config.language = getSetting("language");
     config.validateLanguageOnStartup = getSetting("validateLanguageOnStartup");
-
-    let badConfig = false;
-    let badKey = '';
-    for (let key of user_config_keys) {
-        if(getSetting(key) == undefined){
-            badConfig = true;
-            badKey = key;
-            break;
-        }
-    }
-
-    if(badConfig) {
-        alert(`OS ERROR!: missing key ${badKey} in Config:/user\nthis may brick froggyOS\ncancelling config check`);
-        clearInterval(configInterval);
-        return;
-    }
 }
 
 const filePropertyDefaults = {
@@ -243,15 +228,18 @@ function smallParse(input){
 }
 
 function localize(descriptor, TRANSLATE_TEXT){
-    let replacementData;
+    let replacementData = [];
 
     if (TRANSLATE_TEXT == undefined) TRANSLATE_TEXT = true;
 
     if(TRANSLATE_TEXT == false) return descriptor;
 
-    if(descriptor.includes("|||[")){
-        replacementData = descriptor.split("|||[")[1].split("]|||")[0];
-        descriptor = descriptor.replaceAll(`|||[${replacementData}]|||`, "|||[]|||");
+    if(descriptor.match(/\{\{(.*?)\}\}/)){
+        let match = descriptor.match(/\{\{(.*?)\}\}/g).map(m => m.replace(/\{\{|\}\}/g, "").trim());
+        match.forEach(m => {
+            replacementData.push(m);
+            descriptor = descriptor.replace(`{{${m}}}`, "{{}}");
+        })
     }
 
     let translationMap = FroggyFileSystem.getFile("Config:/langs/lbh").getData();
@@ -262,7 +250,11 @@ function localize(descriptor, TRANSLATE_TEXT){
 
     if(translation == undefined) return null;
     else {
-        translation = translation.replaceAll("|||[]|||", replacementData)
+        if(translation.includes("{{}}")) {
+            for(let i = 0; i < replacementData.length; i++){
+                translation = translation.replace("{{}}", replacementData[i]);
+            }
+        }
         if(config.language == "nmt") translation = translation.replaceAll("ə", "ә")
 
         let spaceMatches = translation.match(/:sp\d+:/g);
@@ -480,7 +472,7 @@ function createColorTestBar(){
     document.getElementById('color-test-bar').innerHTML = "";
     function getContrastYIQ(hexColor) {
         if (!/^#([0-9A-F]{3}|[0-9A-F]{6}|[0-9A-F]{8})$/i.test(hexColor)) {
-            createTerminalLine(`T_palette_error_invalid_hex |||[${hexColor}]|||`, config.errorText);
+            createTerminalLine(`T_palette_error_invalid_hex {{${hexColor}}}`, config.errorText);
             return 
         }
         
@@ -725,16 +717,26 @@ function getFileWithName(path, name){
     return { name: file.getName(), properties: file.getProperties(), data: file.getData() };
 }
 
-function updateLineHighlighting() {
-    let lines = document.querySelectorAll(`[data-program='lilypad-session-${config.programSession}']`);
-    lines.forEach(line => {
-        if (document.activeElement === line) {
-            line.classList.add("highlighted-line");
-        } else {
-            line.classList.remove("highlighted-line");
-        }
-    });
-}
+
+// function updateLineHighlighting() {
+//     let lines = document.querySelectorAll(`[data-program='lilypad-session-${config.programSession}']`);
+
+//     let currentLine = document.activeElement;
+//     let previousLine = document.activeElement.parentElement.previousElementSibling.children[1];
+//     let nextLine = document.activeElement.parentElement.nextElementSibling.children[1];
+
+//     console.log(previousLine, currentLine, nextLine);
+
+//     previousLine.classList.remove("highlighted-line");
+
+//     lines.forEach(line => {
+//         if (document.activeElement === line) {
+//             line.classList.add("highlighted-line");
+//         } else {
+//             line.classList.remove("highlighted-line");
+//         }
+//     });
+// }
 
 function validateLanguageFile(code){
     let langFile = FroggyFileSystem.getFile(`Config:/langs/${code}`);
@@ -799,7 +801,7 @@ function sendCommand(command, args, createEditableLineAfter){
                 break;
             } else {
                 if(!langCodes.includes(args[0])){
-                    createTerminalLine(`T_lang_does_not_exist |||[${args[0]}]|||`, config.errorText);
+                    createTerminalLine(`T_lang_does_not_exist {{${args[0]}}}`, config.errorText);
                     createTerminalLine(`T_available_langs`, "");
                     createTerminalLine(getDisplayCodes(), ">", {translate: false});
                     hadError = true;
@@ -810,7 +812,7 @@ function sendCommand(command, args, createEditableLineAfter){
 
             let code = args[0];
             if(validateLanguageFile(code) == false){
-                createTerminalLine(`T_invalid_lang_file |||[${code}]|||`, config.errorText);
+                createTerminalLine(`T_invalid_lang_file {{${code}}}`, config.errorText);
                 hadError = true;
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
@@ -913,7 +915,7 @@ function sendCommand(command, args, createEditableLineAfter){
 
             FroggyFileSystem.addFileToDirectory(config.currentPath, cloned);
 
-            createTerminalLine(`T_file_cloned |||[${fileToClone.getName()}]|||`, ">")
+            createTerminalLine(`T_file_cloned {{${fileToClone.getName()}}}`, ">")
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         } break;
 
@@ -1198,8 +1200,6 @@ function sendCommand(command, args, createEditableLineAfter){
                 return line;
             });
 
-            console.log(macroData)
-
             if(macroData[0].startsWith("!")) macroData.shift();
 
             macroData.forEach(line => {
@@ -1253,6 +1253,10 @@ function sendCommand(command, args, createEditableLineAfter){
                 lines[i].textContent = file.getData()[i];
                 moveCaretToEnd(lines[i]);
             }
+
+            // get the last lilypad line and highlight it
+            let lines = document.querySelectorAll(`[data-program='lilypad-session-${config.programSession}']`)
+            lines[lines.length - 1].classList.add("highlighted-line");
         } break;
 
         // edit file properties
@@ -1547,7 +1551,7 @@ function sendCommand(command, args, createEditableLineAfter){
 
         case '[[BULLFROG]]greeting': {
             createTerminalLine("T_greeting_1", "");
-            createTerminalLine(`T_greeting_2 |||[${config.version}]|||` , "");
+            createTerminalLine(`T_greeting_2 {{${config.version}}}` , "");
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         } break;
 
@@ -1723,7 +1727,7 @@ function sendCommand(command, args, createEditableLineAfter){
             languageFiles.forEach(file => {
                 let name = file.getName();
                 if(validateLanguageFile(name) == false){
-                    createTerminalLine(`T_invalid_lang_file |||[${name}]|||`, config.translationWarningText);
+                    createTerminalLine(`T_invalid_lang_file {{${name}}}`, config.translationWarningText);
                 }
             })
 
@@ -1790,7 +1794,7 @@ function sendCommand(command, args, createEditableLineAfter){
         } break;
 
         default:
-            createTerminalLine(`T_doesnt_know |||[${command}]|||`, ">");
+            createTerminalLine(`T_doesnt_know {{${command}}}`, ">");
             hadError = true;
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
@@ -1895,11 +1899,22 @@ function createLilypadLine(path, linetype, filename){
     terminalLine.setAttribute('data-program', `lilypad-session-${config.programSession}`);
     terminalLine.setAttribute('data-filename', filename);
     terminalLine.setAttribute('spellcheck', 'false');
+    terminalLine.style.wordBreak = "break-all";
 
     terminalPath.textContent = path;
     terminalLine.textContent = "";
 
-    let highlightedLineUpdater = setInterval(updateLineHighlighting, 1);
+    function highlight(e){
+            let highlightedLines = document.querySelectorAll('.highlighted-line');
+        highlightedLines.forEach(line => {
+            unhilight(line);
+        });
+        e.classList.add('highlighted-line');
+    }
+
+    function unhilight(e){
+        e.classList.remove('highlighted-line');
+    }
 
     function updateLinePrefixes(linetype){
         let lines = document.querySelectorAll(`[data-program='lilypad-session-${config.programSession}']`);
@@ -1963,6 +1978,7 @@ function createLilypadLine(path, linetype, filename){
             let newFocus = document.activeElement;
             newFocus.textContent = textAfterCursor;
             updateLinePrefixes(linetype);
+            highlight(newFocus);
         }
 
         if(keybindCondition("Enter", { shiftKey: true })){
@@ -1991,7 +2007,7 @@ function createLilypadLine(path, linetype, filename){
 
                 moveCaretToPosition(previousLine, previousLineLength);
                 parent.remove();
-                clearInterval(highlightedLineUpdater);
+                highlight(previousLine);
                 updateLinePrefixes(linetype);
             }
         };
@@ -1999,6 +2015,8 @@ function createLilypadLine(path, linetype, filename){
         
         if(keybindCondition("ArrowUp")){
             e.preventDefault();
+
+            // max characters per line = element.clientWidth / 8 - 0.5
             if(currentLineIndex > 0){
                 let newLine = lines[currentLineIndex - 1]
 
@@ -2007,6 +2025,7 @@ function createLilypadLine(path, linetype, filename){
                 : getCaretPosition(line);
 
                 moveCaretToPosition(newLine, caretPosition);
+                highlight(newLine);
             };
         };
 
@@ -2021,6 +2040,7 @@ function createLilypadLine(path, linetype, filename){
                     : getCaretPosition(line);
 
                 moveCaretToPosition(newLine, caretPosition);
+                highlight(newLine);
             };
         };
 
@@ -2030,6 +2050,7 @@ function createLilypadLine(path, linetype, filename){
             let previousLine = lines[currentLineIndex - 1];
             if(previousLine != undefined){
                 moveCaretToPosition(previousLine, previousLine.textContent.length);
+                highlight(previousLine);
             }
         }
 
@@ -2039,6 +2060,7 @@ function createLilypadLine(path, linetype, filename){
             let nextLine = lines[currentLineIndex + 1];
             if(nextLine != undefined){
                 moveCaretToPosition(nextLine, nextLine.textContent.length);
+                highlight(nextLine);
             }
         }
 
@@ -2051,6 +2073,7 @@ function createLilypadLine(path, linetype, filename){
                 : firstLine.textContent.length
 
             moveCaretToPosition(firstLine, caretPosition);
+            highlight(firstLine);
         };
 
         if(keybindCondition("ArrowDown", { ctrlKey: true })){
@@ -2063,6 +2086,7 @@ function createLilypadLine(path, linetype, filename){
                 : lastLine.textContent.length;
 
             moveCaretToPosition(lastLine, caretPosition);
+            highlight(lastLine);
         };
 
         if(keybindCondition("ArrowUp", { altKey: true })){
@@ -2075,6 +2099,7 @@ function createLilypadLine(path, linetype, filename){
             if(previousLine != undefined){
                 swapElements(previousLine, currentLine);
                 moveCaretToPosition(currentLine, cursorPosition);
+                highlight(currentLine);
                 updateLinePrefixes(linetype);
             }
         }
@@ -2089,6 +2114,7 @@ function createLilypadLine(path, linetype, filename){
             if(nextLine != undefined){
                 swapElements(currentLine, nextLine);
                 moveCaretToPosition(currentLine, cursorPosition);
+                highlight(currentLine);
                 updateLinePrefixes(linetype);
             }
         }
@@ -2112,7 +2138,7 @@ function createLilypadLine(path, linetype, filename){
 
                 line.parentElement.remove();
 
-                clearInterval(highlightedLineUpdater);
+                highlight(previousLine);
                 updateLinePrefixes(linetype);
             }   
         }
@@ -2122,7 +2148,7 @@ function createLilypadLine(path, linetype, filename){
         if(e.key == "Escape"){
             e.preventDefault();
             config.currentProgram = "cli";
-            clearInterval(highlightedLineUpdater);
+            //clearInterval(highlightedLineUpdater);
 
             let currentFile = FroggyFileSystem.getFile(`${config.currentPath}/${filename}`);
 
@@ -2182,14 +2208,7 @@ function createLilypadLine(path, linetype, filename){
 }
 
 function setTrustedFiles(){
-    let trustedFiles = getFileWithName("Config:", "trusted_files").data;
-    for(let directory of config.allowedProgramDirectories){
-        for(let file of FroggyFileSystem.getDirectory(directory)){
-            if(trustedFiles.includes(file.name) && !config.trustedFiles.includes(`${directory}/${file.name}`)) {
-                config.trustedFiles.push(`${directory}/${file.name}`);
-            }
-        }
-    }
+    config.trustedFiles = FroggyFileSystem.getFile("Config:/trusted_programs").getData();
 }
 
 setUserConfigFromFile()
@@ -2205,6 +2224,24 @@ sendCommand('[[BULLFROG]]validatelanguage', [], false);
 let configInterval = setInterval(() => {
     setUserConfigFromFile()
     updateProgramList()
+
+    let badConfig = false;
+    let badKey = '';
+    for (let key of user_config_keys) {
+        if(getSetting(key) == undefined){
+            badConfig = true;
+            badKey = key;
+            break;
+        }
+    }
+
+    if(badConfig) {
+        terminal.lastElementChild.lastElementChild.contentEditable = false;
+        createTerminalLine(`T_missing_key_config_user {{${badKey}}}`, config.fatalErrorText);
+        clearInterval(configInterval);
+        clearInterval(dateTimeInterval);
+        return;
+    }
 }, 250);
 
 let dateTimeInterval = setInterval(() => {
@@ -2212,7 +2249,7 @@ let dateTimeInterval = setInterval(() => {
 }, 100);
 
 const onStart = () => {
-    sendCommand("st", ['test'])
+    sendCommand("/", ['e', 'test'])
 }
 
 function ready(){
