@@ -166,4 +166,6 @@ idk
 # 1.15
 ```
 ~ migrated from config.fileSystem to FroggyFileSystem
+~ changed the error system (colors show severity instead of type)
+~ changed translation inclusions
 ```

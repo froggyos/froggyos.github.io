@@ -92,7 +92,14 @@ error 6, 'fatal error', 'you curbstomped froggyOS and it is now dead'
     3. run `svs`
     4. reload the page
     5. Result -> text color of the error text should be the same as the normal text color
-
+### 2
+* In froggyScript
+* In string inclusions, you can sometimes return `undefined` if you mess up syntax inside of the inclusion.
+* example program:
+```
+out 10>repeat('meow')
+## will return undefined
+```
 ## Command Help
 ### formattime
 The all instances of the following characters (or character sequences) will be replaced with their respective values. Place a `!` before the character to escape it.

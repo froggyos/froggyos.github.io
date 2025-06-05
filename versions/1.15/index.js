@@ -1,4 +1,3 @@
-//new AllSniffer({});
 const screen = document.getElementById('screen');
 const terminal = document.getElementById('terminal');
 const bar = document.getElementById('bar');
@@ -582,8 +581,11 @@ function moveCaretToPosition(element, pos) {
     const selection = window.getSelection();
     const maxPos = textNode.length;
 
-    range.setStart(textNode, Math.min(pos, maxPos));
-    range.collapse(true);
+    try {
+        range.setStart(textNode, Math.min(pos, maxPos));
+        range.collapse(true);
+    } catch (e) { }
+
 
     selection.removeAllRanges();
     selection.addRange(range);
@@ -1811,6 +1813,9 @@ PROGRAM SPECIFIC: for program CLI ==============================================
 */
 function createEditableTerminalLine(path){
     config.programSession++;
+    for(let interpreter in Interpreter.interpreters){
+        clearInterval(Interpreter.interpreters[interpreter].clock)
+    }
     let lineContainer = document.createElement('div');
     let terminalPath = document.createElement('span');
     let terminalLine = document.createElement('div');
@@ -1962,7 +1967,6 @@ function createLilypadLine(path, linetype, filename){
                 aParent.appendChild(b);
             }
         }
-
         let line = document.activeElement;
         let cursorPosition = getCaretPosition(line);
         let lines = document.querySelectorAll(`[data-program='lilypad-session-${config.programSession}']`);
@@ -2012,6 +2016,7 @@ function createLilypadLine(path, linetype, filename){
             }
         };
 
+        // either add sublines for multiline or add ctrl + shift + up/down
         
         if(keybindCondition("ArrowUp")){
             e.preventDefault();
@@ -2043,7 +2048,7 @@ function createLilypadLine(path, linetype, filename){
                 highlight(newLine);
             };
         };
-
+        
         if(keybindCondition("ArrowUp", { shiftKey: true })){
             e.preventDefault();
 
@@ -2249,7 +2254,7 @@ let dateTimeInterval = setInterval(() => {
 }, 100);
 
 const onStart = () => {
-    sendCommand("/", ['e', 'test'])
+    sendCommand("st", ['test'])
 }
 
 function ready(){

@@ -495,6 +495,21 @@ class Interpreter {
                     if(valueToReturn instanceof InterpreterError) {
                         return this.outputError(valueToReturn);
                     }
+                    // find this function name
+                    function arrayIsEqual(a, b){
+                        if(a.length != b.length) return false;
+                        for(let i = 0; i < a.length; i++){
+                            if(a[i].type != b[i].type || a[i].value != b[i].value) return false;
+                        }
+                        return true;
+                    }
+                    let functionName;
+                    for (const [key, value] of Object.entries(this.functions)) {
+                        if (arrayIsEqual(value.body, body)) {
+                            functionName = key;
+                            break;
+                        }
+                    }
                     this.functions[functionName].returnValue = valueToReturn;
                 }
             }
@@ -503,6 +518,7 @@ class Interpreter {
         }
         subInterp.onError = (error) => {
             delete this.subInterpreters[subInterp.name];
+            createEditableTerminalLine(config.currentPath + ">");
         }
         subInterp.run();
     }
@@ -861,7 +877,7 @@ class Interpreter {
             }
         })
 
-        if(tokens[0].type == "Oneliner") {
+        if(tokens[0]?.type == "Oneliner") {
             let tokensToParse = tokens.slice(1);
 
             let parsed = this.parseMethods(this.formatMethods(tokensToParse));
@@ -2076,7 +2092,7 @@ const load_function = () => {
 
     const KEYWORD_ELSE = new Keyword('else', "basic", ['Keyword', 'Number'], {
         post: (tokens, interp, keyword) => {
-            interp.interval = tokens[1].value
+            interp.gotoIndex(tokens[1].value - 1);
         }
     }).add();
 

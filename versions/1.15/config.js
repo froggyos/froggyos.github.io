@@ -1,11 +1,11 @@
-// @ts-ignore
+// new AllSniffer({});
 
 const presetLanguagesMap = {
     // general stuff ==========================
     "!LANGNAME: language build helper": {
         eng: "!LANGNAME: English",
         nmt: "!LANGNAME: ngimëte",
-        //jpn: "!LANGNAME: Japanese",
+        jpn: "!LANGNAME: Japanese",
     },
     "T_froggy_doesnt_like": {
         eng: "Froggy doesn't like that. >:(",
@@ -41,12 +41,12 @@ const presetLanguagesMap = {
     },
     "T_basic_commands_lang": {
         eng: "changelanguage [code]. . . . . . . Changes the current language.",
-        nmt: "changelanguage [koda]. . .. . . . . lohi mëzte",
+        nmt: "changelanguage [koda] . . . . . . . lohi mëzte",
         jpn: "changelanguage [code] . . 現在の言語を変更する"
     },
     "T_basic_commands_palette": {
         eng: "changepalette [palette]. . . . . . Changes the color palette.",
-        nmt: "changepalette [paleta] . .. . . . . lohi pesezte paleta",
+        nmt: "changepalette [paleta].  . . . . . . lohi pesezte paleta",
         jpn: "changepalette [palette] . . カラーパレットを変更する"
     },
     "T_basic_commands_clear": {
@@ -825,7 +825,9 @@ function killAndOutputError(message) {
 class ThrownError extends Error {
     constructor(message){
         if(Interpreter.interpreters?.main){
-            Interpreter.interpreters.main.kill();
+            for(let interpreter in Interpreter.interpreters){
+                Interpreter.interpreters[interpreter].kill()
+            }
             createTerminalLine(message, createErrorText(6, "Critical Error"), {translate: false});
             createEditableTerminalLine(config.currentPath+">")
         }
@@ -1100,6 +1102,9 @@ const FroggyFileSystem = new fs({
                 "if head>eq('default')",
                     "out '  o..o'",
                 "endif",
+                "if head>eq('hungry')",
+                    "out '  o..o'",
+                "endif",
                 "if head>eq('drowsy')",
                     "out '  =..='",
                 "endif",
@@ -1121,16 +1126,40 @@ const FroggyFileSystem = new fs({
                 "if head>eq('unamused')",
                     "out '  -..-'",
                 "endif",
-                "out ' (----)'",
+                "if head>eq('hungry')",
+                    "out ' (~~~~)'",
+                "else",
+                    "out ' (----)'",
+                "endif",
                 "out '(>____<)'",
                 "out ' ^^~~^^'",
             "endfunc",
-            "call @display_frog('sleepy')",
+            "num coin = 60",
+            "num energy = 60",
+            "num hunger = 30",
+            "num happiness = 1",
+            "str currentMood = 'sleepy'",
+            "func outputStatus()",
+                `outf 't=c06', '     Coin: $|coin|'`,
+                `outf 'b=c09, br=11-70|t=c09' , '   Energy: $|"#">repeat(energy)|'`,
+                `outf 'b=c12, br=11-70|t=c12' , '   Hunger: $|"#">repeat(hunger)|'`,
+                `outf 'b=c13, br=11-70|t=c13' , 'Happiness: $|"#">repeat(happiness)|'`,
+            "endfunc",
+            "call @outputStatus()",
+            "call @display_frog(currentMood)",
         ] },
         { name: "test", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
-            "out 'a short line'",
-            "out 'a very long line with many characters in it, this line is so long that it will wrap around to the next line. If it hasnt wrapped already, then it shouldve wrapped by now. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.'",
-            "out 'another short line :)'",
+            // "out 'a short line. just kidding! its longer lol. lol. lol. lol. lol. lol. lol. lol. lol. lol. lol. lol. lol. lol. lol.'",
+            // "out 'a very long line with many characters in it, this line is so long that it will wrap around to the next line. If it hasnt wrapped already, then it shouldve wrapped by now. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.'",
+            // "out 'another short line :)'",
+            "func returnFunction(integer:N)",
+            "if {integer > 10}",
+            "return 'greater than 10'",
+            "else",
+            "return 'less than or equal to 10'",
+            "endfunc",
+            "call @returnFunction(10)",
+            "out !returnFunction()",
         ] },
         { name: "errors", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
             "error 0, 'alert', 'hey look here! read me!'",
@@ -1592,7 +1621,6 @@ const config = new Proxy(config_preproxy, {
         if(stack.some(line => line.includes("at #verify"))) {
             return true;
         }
-        if(stack.some(line => line.includes("at Keyword.fn") || line.includes('at Keyword.prefn') || line.includes("at Method.fn"))) throw new ThrownError(`Access denied: You may not set the config object from within a keyword function. Use the 'config' keyword instead.`);
         target[prop] = value;
         return true;
     }

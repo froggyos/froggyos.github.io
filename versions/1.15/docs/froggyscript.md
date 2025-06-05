@@ -90,6 +90,8 @@ str test = "multiple words"
 
 -- string literals
 num age = 20
+
+## string inclusion
 str output = "i am $|age| years old"
 ```
 #### Number
@@ -171,7 +173,7 @@ outf "t=c01, tr=0-21" , "from char 0 to char 21, the text will be blue"
 outf "t=c01, tr=4-48 | b=c04, br=57-91" , "from the char 4 to char 48, the text will be blue. AND from char 57 to char 91 the background will be red"
 ```
 #### Formatting
-* **rules** are delimited by the pipe operator: `{[property]=[value] | [property]=[value], [property]=[value]}`
+* **rules** are delimited by the pipe operator: `[property]=[value] | [property]=[value], [property]=[value]`
 * **subrules** are delimited by the comma operator, and occur inside of **rules**: `{[property]=[value],[property]=[value]}`
     * If a range is not specified, it will apply to the entire string
     * The value for Italic is `1` to be enabled, and `0` to be disabled
@@ -575,6 +577,7 @@ else
     out "something else"
 endif
 ```
+Note: the `else` keyword works by having a mandatory argument of type Number to which the interpreter will jump to if the condition is false. This is not intended to be used by the user, but it can be used in advanced code. If the provided argument is <0 or greater than the number of lines in the program, it will end with a Critical Error.
 
 ### Loops
 #### Standard Loop
