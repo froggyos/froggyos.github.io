@@ -100,6 +100,32 @@ error 6, 'fatal error', 'you curbstomped froggyOS and it is now dead'
 out 10>repeat('meow')
 ## will return undefined
 ```
+### 3
+* Prompts inside of loops dont work the way they should.
+* given an infinite loop, the prompt should be displayed every time the loop runs, but it only displays once.
+* example program:
+```
+str promptVariable = ''
+loop true
+    out "this will output every loop, but the prompt will only show once"
+    prompt %promptVariable, 0, $'hello','goodbye'$
+endloop
+```
+### 4
+* example program:
+```
+str promptVariable = ''
+loop true
+    out "this will output every loop, but the prompt will only show once"
+    prompt %promptVariable, 0, $'hello','goodbye'$
+endloop
+```
+* how to reproduce:
+    1. run the example program
+    2. interrupt the program with `DEL` and do not complete the prompt
+    3. Run the program again, every single method will throw `MethodParseError` and loop will continue without user being able to interrupt
+* possible reason:
+    * the `load_function()` is not being called properly, or is being wiped
 ## Command Help
 ### formattime
 The all instances of the following characters (or character sequences) will be replaced with their respective values. Place a `!` before the character to escape it.

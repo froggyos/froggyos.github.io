@@ -2254,7 +2254,7 @@ let dateTimeInterval = setInterval(() => {
 }, 100);
 
 const onStart = () => {
-    sendCommand("st", ['test'])
+    //sendCommand("st", ['test'])
 }
 
 function ready(){

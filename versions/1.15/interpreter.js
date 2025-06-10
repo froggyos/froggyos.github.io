@@ -1721,6 +1721,9 @@ const load_function = () => {
 
             lineContainer.appendChild(prefixElement);
 
+            // scroll to the bottom of the terminal
+
+
             for(let i = 0; i < arrayOptions.length; i++){
                 let option = document.createElement('span');
                 option.setAttribute("data-program", `cli-session-${config.programSession}-${interp.promptCount}`);
@@ -1763,6 +1766,7 @@ const load_function = () => {
             }
 
             terminal.appendChild(lineContainer);
+            terminal.scrollTop = terminal.scrollHeight;
             document.body.addEventListener("keyup", promptHandler)
         }
     }).add();
@@ -1962,7 +1966,7 @@ const load_function = () => {
     }).add()
 
     const KEYWORD_LOOP = new Keyword('loop', "basic", ['Keyword', 'Number|Boolean'], {
-        pre: (tokens, interp, keyword) => {
+        post: (tokens, interp, keyword) => {
             let depth = 1;
             let endLoopIndex = -1;
 
@@ -2019,7 +2023,7 @@ const load_function = () => {
     }).add();
 
     const KEYWORD_ENDLOOP = new Keyword('endloop', "basic", ['Keyword'], { 
-        pre: (tokens, interp, keyword) => {
+        post: (tokens, interp, keyword) => {
             // find the matching 'loop' keyword
             let depth = 1;
             let startLoopIndex = -1;
@@ -2035,10 +2039,12 @@ const load_function = () => {
                     }
                 }
             }
+
             if(startLoopIndex == -1) {
                 return interp.outputError(new InterpreterError('SyntaxError', `Missing matching [loop]`, tokens, interp.interval, tokens[0].position));
             }
-            interp.interval = startLoopIndex - 1;
+
+            interp.gotoIndex(startLoopIndex - 1);
         }
     }).add();
 
