@@ -720,27 +720,6 @@ function getFileWithName(path, name){
     return { name: file.getName(), properties: file.getProperties(), data: file.getData() };
 }
 
-
-// function updateLineHighlighting() {
-//     let lines = document.querySelectorAll(`[data-program='lilypad-session-${config.programSession}']`);
-
-//     let currentLine = document.activeElement;
-//     let previousLine = document.activeElement.parentElement.previousElementSibling.children[1];
-//     let nextLine = document.activeElement.parentElement.nextElementSibling.children[1];
-
-//     console.log(previousLine, currentLine, nextLine);
-
-//     previousLine.classList.remove("highlighted-line");
-
-//     lines.forEach(line => {
-//         if (document.activeElement === line) {
-//             line.classList.add("highlighted-line");
-//         } else {
-//             line.classList.remove("highlighted-line");
-//         }
-//     });
-// }
-
 function validateLanguageFile(code){
     let langFile = FroggyFileSystem.getFile(`Config:/langs/${code}`);
     if(langFile == undefined) return false;
@@ -1495,20 +1474,44 @@ function sendCommand(command, args, createEditableLineAfter){
                 let fileArguments = args.slice(1).map(arg => arg.trim());
 
                 config.currentProgram = args[0];
-                let interpreter = new Interpreter("main", file.getData(), file.getName(), fileArguments);
-                interpreter.load = () => load_function();
-                interpreter.onComplete = () => {
-                    if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
-                }
-                interpreter.onError = (error) => {
-                    addToCommandHistory(`[[BULLFROG]]gotoprogramline ${file.getName()} ${error.line}`);
-                    if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
-                }
 
-                interpreter.run();
+                const fs3 = new FroggyScript3({
+                    out: (text) => {
+                        createTerminalLine(text, ">", {translate: false});
+                    },
+                    errout: (err) => {;
+                        createTerminalLine("", config.programErrorText.replace("{{}}", err.type), {translate: false});
+                        createTerminalLine(" ", "", {translate: false});
+                        createTerminalLine(err.message, "", {translate: false});
+                        createTerminalLine(`\u00A0in line: ${err.line}`, "", {translate: false})
+                        createTerminalLine(`\u00A0at position: ${err.col}`, "", {translate: false})
+                    },
 
-                window.toggleInterpreterRealtime = () => interpreter.realtimeMode = !interpreter.realtimeMode;
-                window.stepInterpreter = () => interpreter.step();
+                    smallerrout: (text) => {
+                        createTerminalLine(text, config.errorText, {translate: false});
+                    },
+
+                    smallwarnout: (text) => {
+                        createTerminalLine(text, createErrorText(3, "Warning"), {translate: false});
+                    },
+
+                    warnout: (warn) => {
+                        createTerminalLine(warn.message, createErrorText(3, "Warning"), {translate: false});
+                        createTerminalLine(`\u00A0in line: ${warn.line}`, "", {translate: false})
+                        createTerminalLine(`\u00A0at position: ${warn.col}`, "", {translate: false});
+                    },
+
+                    onComplete: () => {
+                        if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                    },
+
+                    onError: (error) => {
+                        if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                    }
+                })
+
+                fs3.interpret(file.getData())
+                // let interpreter = new Interpreter("main", file.getData(), file.getName(), fileArguments);
             }
         break;
 
@@ -1814,9 +1817,6 @@ PROGRAM SPECIFIC: for program CLI ==============================================
 */
 function createEditableTerminalLine(path){
     config.programSession++;
-    for(let interpreter in Interpreter.interpreters){
-        clearInterval(Interpreter.interpreters[interpreter].clock)
-    }
     let lineContainer = document.createElement('div');
     let terminalPath = document.createElement('span');
     let terminalLine = document.createElement('div');

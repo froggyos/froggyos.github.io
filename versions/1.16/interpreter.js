@@ -1,3083 +1,1435 @@
-/**
- * Represents a language keyword in the interpreter.
- * Each keyword has a type, a parsing scheme, and optional pre- and post-processing functions.
- */
-class Keyword {
-    /**
-     * A mapping of all registered keywords to their corresponding Keyword instances.
-     * @type {Object.<string, Keyword>}
-     */
-    static schemes = {};
-
-    /**
-     * Constructs a new Keyword and registers it in the static schemes map.
-     *
-     * @param {string} keyword - The literal keyword string (e.g., 'str', 'out').
-     * @param {string} type - The type of keyword (e.g., 'basic', 'assigner').
-     * @param {string[]} scheme - An array describing the expected token types.
-     * @param {Object} [options] - Optional settings for the keyword.
-     * @param {function(Token[], Interpreter, Keyword): void} [post] - A function called after validation to execute keyword logic.
-     * @param {function(Token[], Interpreter, Keyword): void} [pre] - A function called before validation, allows modification of the keyword. To modify the tokens, return an array of tokens. The `pre` function is where functions are parsed.
-     * @example
-     * let KEYWORD_STR = new Keyword('str', "assigner", ['Assigner', 'Assignee', 'Assignment', 'String'], {
-     *     post: (tokens, interp, keyword) => {
-     *         let identifier = tokens[1];
-     *         let value = tokens[3];
-     *         interp.setVariable(identifier.value, value.value, 'String', true);
-     *     }
-     * });
-     * @example
-     * const KEYWORD_SET = new Keyword('set', "assigner", ['Assigner', 'Assignee', 'Assignment', '*'], {
-     *     pre: (tokens, interp, keyword) => {
-     *         keyword.scheme[3] = interp.getVariable(tokens[1].value).type;
-     *     },
-     *     post: (tokens, interp, keyword) => {
-     *         let identifier = tokens[1];
-     *         let value = tokens[3];
-     * 
-     *         interp.setVariable(identifier.value, value.value, interp.getVariable(tokens[1].value).type, true);
-     *     }
-     * });
-     */
-    #id;
-    constructor(keyword, type, scheme, options = {}) {
-        this.keyword = keyword;
-        this.scheme = scheme;
+class FS3Error {
+    constructor(type, message, line, col, errLine){
         this.type = type;
-        this.args = null;
-
-        this.#id = FroggyFileSystem.hash(`${keyword}-${type}-${scheme.join('-')}`);
-
-        this.getId = () => this.#id;
-
-        const { post, pre, dud } = options;
-
-        /**
-         * The function executed after token validation.
-         * @type {function(Token[], Interpreter): void}
-         */
-        this.fn = (args, interp) => {
-            if(dud) return;
-            if(this.args) args = this.args;
-            for(let i = 0; i < this.scheme.length; i++) {
-                if(!args[i]) {
-                    let position = 0;
-                    for(let j = 0; j < args.length - 1; j++) {
-                        position += args[j].value.length;
-                    }
-                    return interp.outputError(new InterpreterError('TypeError', `Missing expected ${this.scheme[i]} for keyword [${args[0].value}]`, args, interp.interval, position));
-                }
-
-                if (!new RegExp(args[i].type).test(this.scheme[i])) {
-                    if(scheme[i] == "Assignment"){
-                        return interp.outputError(new InterpreterError('SyntaxError', `Expected variable assignment, found ${args[i].type}`, args, interp.interval, args[i].position));
-                    } else if(this.scheme[i] != "*") {
-                        return interp.outputError(new InterpreterError('TypeError', `Expected type ${this.scheme[i]}, found type ${args[i].type}`, args, interp.interval, args[i].position));
-                    }
-                }
-            }
-
-            if (typeof post === 'function') {
-                post(args, interp, this);
-                this.args = null;
-            }
-        };
-
-        /**
-         * The function executed before token validation.
-         * @type {function(Token[], Interpreter, Keyword): void}
-         */
-        this.prefn = (args, interp) => {
-            if(dud) return;
-            if(this.type == "assigner") {
-                let startingTokens = structuredClone(args.slice(0, 3));
-                args = args.slice(3);
-                let parsedMethods = interp.parseMethods(interp.formatMethods(interp.groupByCommas(args)[0]));
-                
-                if(parsedMethods instanceof InterpreterError) return interp.outputError(parsedMethods);
-                else {
-                    startingTokens.forEach((token, i) => {
-                        startingTokens[i] = new Token(token.type, token.value, token.position);
-                    });
-                    this.args = [...startingTokens, parsedMethods];
-                }
-            } else if(this.type == "basic") {
-                let tokens = [];
-
-                if(args[0].type == "Keyword") {
-                    if(args[0].value == "func") {
-                        this.args = args;
-                    } else {
-                        tokens = structuredClone(args.slice(0, 1));
-                        args = args.slice(1);
-
-                        let grouped = interp.groupByCommas(args);
-                        grouped.forEach((group, i) => {
-                            let formatted = interp.formatMethods(group);
-                            let parsed = interp.parseMethods(formatted);
-                            if(parsed instanceof InterpreterError) return interp.outputError(parsed);
-                            else tokens.push(parsed);
-                        })
-
-                        tokens.forEach((token, i) => {
-                            if(!(token instanceof Token)) {
-                                tokens[i] = new Token(token.type, token.value, token.position);
-                            }
-                        })
-
-
-                        this.args = tokens;
-                    }
-                }
-            }
-            
-            if(typeof pre === 'function') {
-                pre(this.args, interp, this)
-            }
-        }     
-    }
-
-    add = () => Keyword.schemes[this.keyword] = this;
-    rescind = () => {
-        if (Keyword.schemes[this.keyword]) {
-            delete Keyword.schemes[this.keyword];
-        } else {
-            throw new Error(`Keyword [${this.keyword}] does not exist`);
-        }
-    }
-}
-
-/**
- * Represents a token in the interpreter.
- * Each token has a type, value, position, and optional methods.
- * The token type can be a keyword, number, string, array, etc.
- */
-class Token {
-    static specs = [];
-
-    static generate() {
-        let basicKeywords = []
-        let assignerKeywords = []
-        for (const [keyword, scheme] of Object.entries(Keyword.schemes)) {
-            if (scheme.type === 'basic') {
-                basicKeywords.push(keyword);
-            } else if (scheme.type === 'assigner') {
-                assignerKeywords.push(keyword);
-            }
-        }
-        
-        Token.specs = [
-            ['Comment', /##(.+)$/],
-            ['Keyword', new RegExp(`\\b(${basicKeywords.join('|')})\\b`)],
-            ['Assigner', new RegExp(`\\b(${assignerKeywords.join('|')})\\b`)],
-            ['Number', /-?\b\d+(\.\d+)?\b/],
-            ['String', /'(?:\\'|[^'])*'|"(?:\\"|[^"])*"/],
-            ['Empty', / _/],
-            ['Array', /\$([^\$]+)\$/],
-            ['Boolean', /\b(true|false)\b/],
-            ['Oneliner', /^\./],
-            ['Identifier', /\b[a-zA-Z][a-zA-Z0-9_]*\b/],
-            ['IdentifierReference', /%[a-zA-Z][a-zA-Z0-9_]*\b/],
-            ["FunctionCall", /@[a-zA-Z][a-zA-Z0-9_]*(\(.*\))?/],
-            ['FunctionReturn', /![a-zA-Z][a-zA-Z0-9_]*/],
-            ['Calculation_Equals', / == /],
-            ['Calculation_Nequals', / != /],
-            ['Calculation_LessThan', / < /],
-            ['Calculation_GreaterThan', / > /],
-            ['Calculation_LessThanEquals', / <= /],
-            ['Calculation_GreaterThanEquals', / >= /],
-            ['MethodInitiator', />/],
-            ['Reflexive', /</],
-            ['Assignment', /=/],
-            ["Comma", /,/],
-            ['Operator', /[+-/\*\^]/],
-            ['Whitespace', /[ \t]+/],
-            ["LeftParenthesis", /\(/],
-            ["RightParenthesis", /\)/],
-            ["CalculateStart", /{/],
-            ["CalculateEnd", /}/],
-            ["Escape", /\\/],
-            ["TypeDef", /:/],
-        ]
-    }
-
-    static createNewTokenType(name, regex) {
-        if (Token.specs.some(([type]) => type === name)) {
-            throw new Error(`Token type [${name}] already exists`);
-        }
-        Token.specs.push([name, regex]);
-    }
-
-    /**
-     * Creates a new token.
-     * @param {string} type - The type of the token (e.g., 'Keyword', 'Number', 'String').
-     * @param {string} value - The value of the token (e.g., 'if', '123', 'hello').
-     * @param {number} position - The position of the token in the input string.
-     * @param {Method[]} [methods=[]] - An array of methods associated with the token.
-     */
-    constructor(type, value, position, methods = []) {
-        this.type = type;
-        this.value = value;
-        this.position = position;
-
-        this.methods = methods;
-    }
-  
-    toString() {
-        return Interpreter.trimQuotes(this.value);
-    }
-}
-
-class InterpreterError {
-    constructor(type, message, tokens, line = null, pos = null) {
-        this.error = type;
         this.message = message;
-        this.tokens = tokens;
         this.line = line;
-        this.pos = pos;
-    }
-
-    toString() {
-        return `${this.error}\n\n${this.message}\n\u00A0in line: ${this.line+1}\n\u00A0at position: ${this.pos}`;
+        this.col = col;
+        this.errLine = errLine;
     }
 }
 
-class ThrownInterpreterError {
-    constructor(type, message) {
-        this.error = type;
+class FS3Warn {
+    constructor(type, message, line, col){
+        this.type = type;
         this.message = message;
-
-        createTerminalLine("", config.programErrorText.replace("{{}}", type), {translate: false});
-        createTerminalLine(" ", "", {translate: false});
-        createTerminalLine(message, "", {translate: false});
-        createEditableTerminalLine(config.currentPath + ">");
-        Interpreter.interpreters.main.kill()
+        this.line = line;
+        this.col = col;
     }
 }
-
 
 class Method {
-    static registry = new Map(); // Map<type, Map<methodName, Method>>
-
-    /**
-     * @param {string} name - Method name.
-     * @param {string[]} type - Token type this method is for.    
-     * @param {function(Token, Token[], Interpreter, Method): Token} fn - The method logic. return a new Token.
-     * @param {string[]} [args=[]] - Arg types, with optional ones like 'String?'.
-     */
-    constructor(name, type, fn, args = []) {
-        this.name = name;
-        this.type = type;
+    static table = {};
+    constructor(name, parentTypes, args, fn, defaultMethod = true){
+        this.parentTypes = parentTypes;
+        this.args = args;
         this.fn = fn;
-        this.args = args.map(arg => ({
-            type: arg.replace(/\?$/, ''),
-            optional: arg.endsWith('?')
-        }));
+        this.defaultMethod = defaultMethod;
+
+        Method.table[name] = this;
     }
 
-    getId = () => FroggyFileSystem.hash(this.fn.toString());
-
-    ffsProxy() {
-        return FroggyFileSystem.verifyMethod(this);
-    }
-
-    add() {
-        const types = Array.isArray(this.type) ? this.type : [this.type];
-
-        types.forEach(t => {
-            if (Method.registry.has(t) && Method.registry.get(t).has(this.name)) {
-                new ThrownInterpreterError("MethodParseError",`Cannot override method [${this.name}]`)
-            }
-            if (!Method.registry.has(t)) {
-                Method.registry.set(t, new Map());
-            }
-            Method.registry.get(t).set(this.name, this);
-        });
-    }
-
-    rescind() {
-        const types = Array.isArray(this.type) ? this.type : [this.type];
-        // Remove this method from each type's registry
-        types.forEach(t => {
-            if (Method.registry.has(t)) {
-                Method.registry.get(t).delete(this.name);
-                if (Method.registry.get(t).size === 0) {
-                    Method.registry.delete(t);
-                }
-            } else {
-                throw new Error(`Method [${this.name}] does not exist for type [${t}]`);
-            }
-        });
-    }
-
-    static get(type, name) {
-        return Method.registry.get(type)?.get(name) ?? null;
-    }
-
-    static list(type) {
-        return [...(Method.registry.get(type)?.keys() ?? [])];
-    }
-
-    static getAllOfName(name) {
-        const methods = [];
-        for (const [type, methodsMap] of Method.registry.entries()) {
-            if (methodsMap.has(name)) {
-                methods.push(methodsMap.get(name));
-            }
-        }
-        return methods;
-    }
-
-    /**
-     * Validates token argument types against the required signature.
-     * @param {Token[]} args 
-     * @returns {boolean}
-     */
-    validateArgs(args) {
-        for (let i = 0; i < this.args.length; i++) {
-            const expected = this.args[i];
-            const actual = args[i];
-
-            if (!actual) {
-                if (!expected.optional) return {result: false, type: "SyntaxError", message: `Missing argument ${i}`};
-                continue;
-            }
-
-            if (actual.type !== expected.type) return { result: false, type: "TypeError", message: `Expected type ${expected.type}, found type ${actual.type} at argument ${i} of method [${this.name}]`};
-        }
-
-        return { result: true };
+    static get(name){
+        return Method.table[name] || null;
     }
 }
 
-class Interpreter {
-    static interpreters = {};
-    static blockErrorOutput = false;
-    /**
-     * **IMPORTANT**: In order to load keywords and methods, it its best to do them in the load function. Example:
-     * ```js
-     * let interpreter = new Interpreter(input);
-     * interpreter.load = () => {
-     *     // define keywords, methods, etc. here
-     * }
-     * interpreter.run();
-     * ```
-     * #
-     * This must be done for every `Interpreter` instance.
-     * The `onComplete` function is called when the interpreter has finished running. If it has an error, the `onError` function is called instead.
-     */
-    constructor(name, input, programName, fileArguments) {
-        this.resetMemory();
-        this.lines = input.map(line => line.trim()).filter(line => line.length > 0);
-        this.variables = {
-            "ProgramName": {
-                type: "String",
-                value: programName,
-                mutable: false
-            },
-            "Pi": {
-                type: "Number",
-                value: Math.PI.toString(),
-                mutable: false
-            },
-            "Infinity": {
-                type: "Number",
-                value: "Infinity",
-                mutable: false
-            },
-            "EmptyLine": {
-                type: "String",
-                value: "{{{EMPTY LINE}}}",
-                mutable: false
-            }
-        };
+class Keyword {
+    static table = {};
+    constructor(name, scheme, fn){
+        this.scheme = scheme;
+        this.fn = fn;
+        Keyword.table[name] = this;
+    }
 
-        this.temporaryVariables = {};
-        this.savedData = {};
-        this.functions = {};
-        this.paused = false;
-        this.clock = null;
-        this.interval = 0;
-        this.iteration = 0;
-        this.interval_length = 1;
-        this.tokens = [];
-        this.imports = [];
-        this.subInterpreters = {};
-        this.importData = defaultImportData;
-        this.data = {};
-        this.realtimeMode = false;
-        this.promptCount = 0;
-        this.name = name;
-        Interpreter.interpreters[name] = this;
-        this.running = false
-        this.fileArguments = fileArguments;
-        this.fileArgumentCount = 0;
-        this.load = () => {};
-        this.onComplete = () => {};
-        this.onError = (error) => {};
+    static get(name){
+        return Keyword.table[name] || null;
+    }
+}
 
-        let killFunction = function(e) {
-            if (!this.running) {
-                window.removeEventListener('keydown', killFunction);
-                return;
-            }
+// {type: ['number'], optional: false}
+new Method('concat', ['string'], [{type: ['string'], optional: false}], (parent, args, interpreter) => {
+    parent.value = parent.value + args[0].value;
+    return parent;
+});
 
-            if (e.key === "Delete" && this.running) {
-                this.outputError(new InterpreterError(
-                    'Interrupt',
-                    'Program was interrupted by user',
-                    null, NaN, NaN
-                ));
-                setSetting("currentSpinner", getSetting("defaultSpinner"));
-                setSetting("showSpinner", false);
-                window.removeEventListener('keydown', killFunction);
-            }
-        }.bind(this);
+new Method("eq", ["string"], [{type: ["string"], optional: false}], (parent, args, interpreter) => {
+    let parentValue = parent.value;
+    let argValue = args[0].value;
+
+    return {
+        type: "condition_statement",
+        value: `<<${parentValue === argValue ? 1 : 0}>>`,
+        line: parent.line,
+        col: parent.col,
+        methods: parent.methods
+    }
+});
+
+new Method("neq", ["string"], [{type: ["string"], optional: false}], (parent, args, interpreter) => {
+    let parentValue = parent.value;
+    let argValue = args[0].value;
+
+    return {
+        type: "condition_statement",
+        value: `<<${parentValue !== argValue ? 1 : 0}>>`,
+        line: parent.line,
+        col: parent.col,
+        methods: parent.methods
+    }
+});
+
+new Method("type", ["string", "number", "array"], [], (parent, args, interpreter) => {
+    let type = structuredClone(parent.type);
+    
+    parent.value = type;
+    parent.type = "string";
+
+    return parent;
+});
+
+new Method("length", ["string", "array"], [], (parent, args, interpreter) => {
+    parent.value = parent.value.length;
+    parent.type = "number";
+    return parent;
+});
+
+new Method("inc", ["number"], [], (parent, args, interpreter) => {
+    parent.value = parent.value + 1;
+    return parent;
+});
+
+new Method("dec", ["number"], [], (parent, args, interpreter) => {
+    parent.value = parent.value - 1;
+    return parent;
+});
+
+new Method("add", ["number"], [{type: ["number"], optional: false}], (parent, args, interpreter) => {
+    parent.value = parent.value + args[0].value;
+    return parent;
+});
+
+new Method("sub", ["number"], [{type: ["number"], optional: false}], (parent, args, interpreter) => {
+    parent.value = parent.value - args[0].value;
+    return parent;
+});
+
+new Method("mul", ["number"], [{type: ["number"], optional: false}], (parent, args, interpreter) => {
+    parent.value = parent.value * args[0].value;
+    return parent;
+});
+
+new Method("div", ["number"], [{type: ["number"], optional: false}], (parent, args, interpreter) => {
+    if(args[0].value === 0){
+        throw new FS3Error("MathError", "Division by zero is not permitted", args[0].line, args[0].col, args);
+    }
+    parent.value = parent.value / args[0].value;
+    return parent;
+});
 
 
-        if(!this.name.startsWith("sub-")) {
-            const fsds = {};
-            let fileData = FroggyFileSystem.getFile(`Config:/program_data/${programName}`).getData();
-            for(let i = 0; i < fileData.length; i++){
-                let dataLine = fileData[i].trim();
-                let nonArrayMatch = dataLine.match(/^KEY (.*?) TYPE (String|Number|Boolean) VALUE (.*?) END$/)
-                if(nonArrayMatch){
-                    fsds[nonArrayMatch[1]] = {
-                        type: nonArrayMatch[2],
-                        value: nonArrayMatch[3],
-                    }
-                }
-
-                let arrayMatchStart = dataLine.match(/^KEY (.*?) TYPE Array START$/)
-                if(arrayMatchStart){
-                    let arrayName = arrayMatchStart[1];
-                    fsds[arrayName] = {
-                        value: [],
-                        type: "Array",
-                    }
-                    for(let j = i + 1; j < fileData.length; j++){
-                        if(fileData[j].match(new RegExp(`^KEY ${arrayName} TYPE Array END$`))){
-                            break;
-                        }
-
-                        let arrayIndexMatch = fileData[j].trim().match(new RegExp(`^${(j - i) -1} TYPE (String|Number|Boolean) VALUE (.*?)$`));
-                        fsds[arrayName].value.push({
-                            type: arrayIndexMatch[1],
-                            value: arrayIndexMatch[2],
-                        });
-                    } 
-                }
-            }
-
-            this.savedData = fsds;
+new Method("index", ["array", "string"], [{type: ["number"], optional: false}], (parent, args, interpreter) => {
+    if(parent.type === "array"){
+        let index = args[0].value;
+        if(index < 0 || index >= parent.value.length){
+            throw new FS3Error("RangeError", `Index [${index}] is out of bounds for array of length [${parent.value.length}]`, args[0].line, args[0].col, args);
         }
 
-
-        window.addEventListener('keydown', killFunction);
-    }
-
-    static trimQuotes(value) {
-        return typeof value === 'string' ? value.replace(/^['"]|['"]$/g, '') : value;
-    }
-
-    createSubInterpreter(body){
-        this.pause();
-        let subInterp = new Interpreter(`sub-${Object.keys(this.subInterpreters).length}`, body, this.fileArguments)
-        subInterp.inhereit(this);
-
-        subInterp.onComplete = () => {
-            let functionTokens = subInterp.tokens;
-            for(let j = 0; j < functionTokens.length; j++) {
-                let functionToken = functionTokens[j];
-                if(functionToken[0].type == "Keyword" && functionToken[0].value == "return"){
-                    let valueToReturn = functionToken.slice(1);
-                    valueToReturn = this.parseMethods(this.formatMethods(this.groupByCommas(valueToReturn)[0]));
-                    if(valueToReturn instanceof InterpreterError) {
-                        return this.outputError(valueToReturn);
-                    }
-                    // find this function name
-                    function arrayIsEqual(a, b){
-                        if(a.length != b.length) return false;
-                        for(let i = 0; i < a.length; i++){
-                            if(a[i].type != b[i].type || a[i].value != b[i].value) return false;
-                        }
-                        return true;
-                    }
-                    let functionName;
-                    for (const [key, value] of Object.entries(this.functions)) {
-                        if (arrayIsEqual(value.body, body)) {
-                            functionName = key;
-                            break;
-                        }
-                    }
-                    this.functions[functionName].returnValue = valueToReturn;
-                }
-            }
-            this.resume();
-            delete this.subInterpreters[subInterp.name];
-        }
-        subInterp.onError = (error) => {
-            delete this.subInterpreters[subInterp.name];
-            createEditableTerminalLine(config.currentPath + ">");
-        }
-        subInterp.run();
-    }
-
-    inhereit(interpreter2){
-        this.variables = structuredClone(interpreter2.variables);
-        this.temporaryVariables = structuredClone(interpreter2.temporaryVariables);
-        this.functions = structuredClone(interpreter2.functions);
-        this.savedData = structuredClone(interpreter2.savedData);
-        this.imports = structuredClone(interpreter2.imports);
-        this.importData = structuredClone(interpreter2.importData);
-        this.interval_length = structuredClone(interpreter2.interval_length);
-        this.realtimeMode = structuredClone(interpreter2.realtimeMode);
-        this.fileArguments = structuredClone(interpreter2.fileArguments);
-        this.load = () => interpreter2.load();
-    }
-
-    output(value) {
-        if(value == undefined) return;
-        let formatting = {
-            type: 'blanket',
-            t: function(){
-                if(value.type == "String") {
-                    return "froggyscript-string-color";
-                } else if(value.type == "Number") {
-                    return "froggyscript-number-color";
-                } else if(value.type == "Boolean") {
-                    return "froggyscript-boolean-color";
-                }
-            }()
-        };
-
-        if(value.type == "String" && value.value.length == 0){
-            value.value = "(Empty String)";
+        return parent.value[index]
+    } else {
+        let str = parent.value;
+        let index = args[0].value;
+        if(index < 0 || index >= str.length){
+            throw new FS3Error("RangeError", `Index [${index}] is out of bounds for string of length [${str.length}]`, args[0].line, args[0].col, args);
         }
 
-        if(value.type == "String" && value.value == "{{{EMPTY LINE}}}") {
-            value.value = "";
-        }   
-
-        createTerminalLine(value.value, "", {translate: false, formatting: [formatting]});
-    }
-
-    formattedOutput(value, format = []) {
-        createTerminalLine(value.value, "", {translate: false, formatting: format});
-    }
-
-    /**
-     * Outputs an error message to the console and kills the interpreter.
-     * @param {InterpreterError} error 
-     * @returns 
-     */
-    outputError(error) {
-        if(Interpreter.blockErrorOutput) return;
-        Interpreter.blockErrorOutput = true;
-        createTerminalLine("", config.programErrorText.replace("{{}}", error.error), {translate: false});
-        createTerminalLine(" ", "", {translate: false});
-        createTerminalLine(error.message, "", {translate: false});
-        createTerminalLine(`\u00A0in line: ${error.line+1}`, "", {translate: false})
-        createTerminalLine(`\u00A0at position: ${error.pos}`, "", {translate: false})
-
-        config.currentProgram = "cli";
-        
-        this.onError(error);
-        this.kill();
-    }
-
-    setLines(lines){
-        this.lines = lines.map(line => line.trim()).filter(line => line.length > 0);
-    }
-
-    evaluateMathExpression(tokens) {
-        let expr = '';
-
-        for (let token of tokens) {
-            if (["Number", "Operator"].includes(token.type) || token.type.startsWith("Calculation_")) {
-                expr += token.value;
-            } else if (token.type === 'LeftParenthesis') {
-                expr += '(';
-            } else if (token.type === 'RightParenthesis') {
-                expr += ')';
-            } else {
-                if(token.type === 'Identifier') {
-                    let variable = this.getVariable(token.value);
-                    if(variable == false){
-                        return this.outputError(new InterpreterError('ReferenceError', `Variable [${token.value}] is not defined`, tokens, this.interval, token.position));
-                    } else if(variable.type != "Number") {
-                        return this.outputError(new InterpreterError('TypeError', `Expected type Number, found type ${variable.type} in Expression`, tokens, this.interval, token.position));
-                    }
-                    expr += variable.value;
-                } else return this.outputError(new InterpreterError('CalculationError', `Unexpected token of type ${token.type} in Expression`, tokens, this.interval, token.position));
-            }
-        }
-
-        try {
-            return math.evaluate(expr);
-        } catch (err) {
-            return this.outputError(new InterpreterError('CalculationError', `Expression evaluation failed: ${expr}`, tokens, this.interval, tokens[0].position));
+        return {
+            type: "string",
+            value: str.charAt(index),
+            line: parent.line,
+            col: parent.col,
+            methods: []
         }
     }
+});
 
-    getVariable(name) {
-        if(this.temporaryVariables[name]) {
-            return this.temporaryVariables[name];
-        } else if(this.variables[name]) {
-            return this.variables[name];
+new Method("join", ["array"], [{type: ["string"], optional: true}], (parent, args, interpreter) => {
+    let separator = args[0] ? args[0].value : ",";
+
+    parent.value = parent.value.map(el => {
+        if(Array.isArray(el)) throw new FS3Error("TypeError", "Nested arrays are not supported in join()", el[0]?.line, el[0]?.col, el);
+        return String(el.value);
+    }).join(separator);
+    parent.type = "string";
+    return parent;
+});
+
+new Keyword("set", ["variable_reference", "assignment", "string|number|array"], (args, interpreter) => {
+    let variableName = args[0].value;
+    let variableValue = args[2].value;
+
+    if(!interpreter.variables[variableName]){
+        throw new FS3Error("ReferenceError", `Variable [${variableName}] is not defined`, args[0].line, args[0].col, args);
+    } 
+
+    if(interpreter.variables[variableName].type !== args[2].type){
+        throw new FS3Error("TypeError", `Cannot set variable [${variableName}] of type [${interpreter.variables[variableName].type}] to value of type [${args[2].type}]`, args[0].line, args[0].col, args);
+    }
+
+    if(!interpreter.variables[variableName].mut){
+        throw new FS3Error("AccessError", `Variable [${variableName}] is immutable and cannot be changed`, args[0].line, args[0].col, args);
+    }
+    
+    interpreter.variables[variableName].value = variableValue;
+});
+
+// ["string", "string|number", "any?"]
+new Keyword("out", ["string|number"], (args, interpreter) => {
+    interpreter.out(args[0].value);
+});
+
+new Keyword("warn", ["string"], (args, interpreter) => {
+    interpreter.smallwarnout(args[0].value);
+});
+
+new Keyword("error", ["string"], (args, interpreter) => {
+    interpreter.smallerrout(args[0].value);
+});
+
+new Keyword("longwarn", ["string", "string"], (args, interpreter) => {
+    let warningName = args[0].value;
+    let warningMessage = args[1].value;
+    interpreter.warnout(new FS3Warn(warningName, warningMessage, args[0].line, args[0].col));
+});
+
+new Keyword("longerr", ["string", "string"], (args, interpreter) => {
+    let errorName = args[0].value; 
+    let errorMessage = args[1].value;
+    interpreter.errout(new FS3Error(errorName, errorMessage, args[1].line, args[1].col, args));
+});
+
+new Keyword("kill", [], (args, interpreter, keywordInfo) => {
+    throw new FS3Error("RuntimeError", "Program terminated with [kill] keyword", keywordInfo[0].line, keywordInfo[0].col, args);
+});
+
+new Keyword("quietkill", [], (args, interpreter) => {
+    throw new FS3Error("quietKill", "", -1, -1, args);
+});
+
+new Keyword("func", ["function_reference", "block"], (args, interpreter) => {
+    let functionName = args[0].value;
+    let functionBody = args[1].body;
+
+    if(interpreter.functions[functionName]){
+        throw new FS3Error("ReferenceError", `Function [${functionName}] is already defined`, args[0].line, args[0].col, args);
+    }
+    interpreter.functions[functionName] = functionBody;
+})
+
+new Keyword("pfunc", ["function_reference", "array", "block"], (args, interpreter) => {
+    let functionName = args[0].value;
+    let functionParams = args[1].value.flat();
+    let functionBody = args[2].body;
+
+    let params = [];
+
+    functionParams.forEach(p => {
+        if(p.type != "string"){
+            throw new FS3Error("TypeError", `Parameter declaration [${p.value}] in function [${functionName}] must be a string`, p.line, p.col, args);
+        }
+
+        let value = p.value.split(":")[0];
+        let type = p.value.split(":")[1];
+
+        if(type == "S") type = "string";
+        else if(type == "N") type = "number";
+        else if(type == "A") type = "array";
+        else if(type == "" || type == undefined){
+            throw new FS3Error("SyntaxError", `Parameter [${value}] in function [${functionName}] is missing a type declaration. Must be S (string), N (number), or A (array)`, p.line, p.col, args);
         } else {
-            return false;
+            throw new FS3Error("TypeError", `Invalid parameter type [${type}] for parameter [${value}] in function [${functionName}]. Must be S (string), N (number), or A (array)`, p.line, p.col, args);
         }
+
+        params.push({value, type});
+    });
+
+
+    if(interpreter.functions[functionName]){
+        throw new FS3Error("ReferenceError", `Function [${functionName}] is already defined`, args[0].line, args[0].col, args);
     }
 
-    setVariable(name, value, type, mutable) {
-        if(this.variables[name] == undefined) {
-            this.variables[name] = {
-                type: type,
-                value: value,
-                mutable: mutable
-            }
-        } else if(this.variables[name] && this.variables[name].mutable) {
-            this.variables[name].value = value;
-            this.variables[name].type = type;
-            this.variables[name].mutable = mutable;
-        }
+    interpreter.functions[functionName] = {
+        body: functionBody,
+        params: params.flat()
+    };
+});
+
+new Keyword("pcall", ["function_reference", "array"], async (args, interpreter) => {
+    let functionName = args[0].value;
+    let functionArgs = args[1].value;
+    
+    if(!interpreter.functions[functionName]){
+        throw new FS3Error("ReferenceError", `Function [${functionName}] is not defined`, args[0].line, args[0].col, args);
     }
 
-    evaluate(token) {
-        try {
-            return math.evaluate(token.value);
-        } catch (err) {
-            this.outputError(new InterpreterError('EvaluationError', `Evaluation failed: ${token.value}`, token, this.interval, token.position));
-        }
+    if(!interpreter.functions[functionName].body){
+        throw new FS3Error("AccessError", `Function [${functionName}] is not a parameterized function and must be called with the [call] keyword`, args[0].line, args[0].col, args);
     }
 
-    tokenize(line, getVariables = true) {
-        let tokens = [];
-        let pos = 0;
+    let expectedFunctionArgs = interpreter.functions[functionName].params;
+    let functionBody = interpreter.functions[functionName].body;
 
-        let iterations = 0;
-    
-        while (pos < line.length) {
-            let matched = false;
-
-            if (iterations++ > 10000) {
-                tokens.push(new InterpreterError('TokenizationError', `Malformed Tokens.\nPossible issues:\n No keywords in [Keyword] class?\n\n`, tokens, this.interval, pos));
-                break;
-            }
-    
-            for (const [type, baseRegex] of Token.specs) {
-                const regex = new RegExp(baseRegex.source, 'y'); // sticky match
-                regex.lastIndex = pos;
-    
-                const match = regex.exec(line);
-    
-                if (match) {
-                    if (type !== 'Whitespace') {
-                        tokens.push(new Token(type, match[0], pos));
-                    }
-                    pos += match[0].length;
-                    matched = true;
-                    break;
-                }
-            }
-    
-            if (!matched) {
-                tokens.push(new InterpreterError('SyntaxError', `Unexpected [${line[pos]}]`, tokens, this.interval, pos));
-            }
-
-            if(tokens[tokens.length - 1] instanceof InterpreterError) {
-                break;
-            }
+    expectedFunctionArgs.forEach((param, idx) => {
+        let arg = functionArgs[idx];
+        if(!arg){
+            throw new FS3Error("ArgumentError", `Missing argument [${param.value}] of type [${param.type}] for function [${functionName}]`, args[0].line, args[0].col, args);
         }
-
-        // define mutations here
-        // for each token, if the type is METHOD_INITIATOR, if the next token is IDENTIFIER, change the type to METHOD
-        for (let i = 0; i < tokens.length; i++) {
-            if (tokens[i].type === 'MethodInitiator') {
-                if(tokens[i+1].type === "Assigner") tokens[i+1].type = "Identifier"
-                if (i + 1 < tokens.length && tokens[i + 1].type === 'Identifier') {
-                    tokens[i + 1].type = 'Method';
-                } else {
-                    tokens.push(new InterpreterError('SyntaxError', `Expected Method after MethodInitiator not found`, tokens, this.interval, tokens[i].position));
-                    return tokens;
-                }
-            }
+        if(arg.type !== param.type){
+            throw new FS3Error("TypeError", `Invalid type for argument [${param.value}] in function [${functionName}]: expected [${param.type}], got [${arg.type}]`, arg.line, arg.col, args);
         }
-
-        for (let i = 0; i < tokens.length; i++) {
-            if (tokens[i].type === 'Identifier') {
-                if(i - 1 >= 0 && tokens[i - 1].type === 'Assigner' && tokens[i + 1].type === 'Assignment') {
-                    tokens[i].type = 'Assignee';
-                }
-            }
+        // create a temporary variable for this arg
+        if(interpreter.variables[param.value]){
+            throw new FS3Error("ReferenceError", `Cannot use parameter name [${param.value}] for function [${functionName}] because a variable with that name already exists`, arg.line, arg.col, args);
         }
-        
+        interpreter.variables[param.value] = {
+            value: arg.value,
+            type: arg.type,
+            mut: false,
+            freeable: false
+        }
+    });
 
-        // parse methods here depending on the type of token, make a Methods class and such
-        tokens.forEach((token, index) => {
-            if (token.type === 'CalculateStart') {
-                let exprTokens = [];
-                let endFound = false;
-                for(let j = index + 1; j < tokens.length; j++) {
-                    if (tokens[j].type === 'CalculateEnd') {
-                        endFound = true;
-                        break;
-                    }
+    await interpreter.executeBlock(functionBody)
+});
 
-                    exprTokens.push(tokens[j]);
-                }
+new Keyword("wait", ["number"], async (args, interpreter) => {
+    let duration = args[0].value;
 
-                if(endFound) {
-                    let result = this.evaluateMathExpression(exprTokens);
+    if(duration < 0){
+        throw new FS3Error("RangeError", `Cannot wait for a negative duration`, args[0].line, args[0].col, args);
+    }
+    await new Promise((resolve, reject) => {
+        // Start the timer
+        const id = setTimeout(() => {
+            // When timer finishes, check for interrupt
+            if (interpreter.interrupted) {
+                reject(new FS3Error("RuntimeError", "Program interrupted by user", -1, -1, args));
+            } else {
+                resolve();
+            }
+        }, duration);
 
-                    if(isNaN(result)) {
-                        tokens.push(new InterpreterError('CalculationError', `NaN is a forbidden value`, tokens, this.interval, token.position));
-                        return tokens;
-                    }
+        // If user interrupts DURING the wait, clear the timeout and reject immediately
+        const interruptCheck = () => {
+            clearTimeout(id);
+            reject(new FS3Error("RuntimeError", "Program interrupted by user", -1, -1, args));
+        };
 
-                    let resultType = (typeof result)[0].toUpperCase() + (typeof result).slice(1);
-                    let resultToken = new Token(resultType, result.toString(), token.position);
-                    tokens.splice(index, exprTokens.length + 2, resultToken);
-                } else {
-                    tokens.push(new InterpreterError('SyntaxError', `Expected closing [}] for calculation statement not found`, tokens, this.interval, token.position));
-                    return tokens;
-                }
+        // Register a hook
+        interpreter._onInterrupt = interruptCheck;
+    }).finally(() => {
+        // Cleanup hook so future waits aren't affected
+        if (interpreter._onInterrupt) {
+            interpreter._onInterrupt = null;
+        }
+    });
+});
+
+
+new Keyword("call", ["function_reference"], async (args, interpreter) => {
+    let functionName = args[0].value;
+    let functionBody = interpreter.functions[functionName];
+
+    if(!functionBody){
+        throw new FS3Error("ReferenceError", `Function [${functionName}] is not defined`, args[0].line, args[0].col, args);
+    }
+    if(functionBody.body){
+        throw new FS3Error("AccessError", `Function [${functionName}] is a parameterized function and must be called with the [pcall] keyword`, args[0].line, args[0].col, args);
+    }
+
+    await interpreter.executeBlock(functionBody);
+})
+
+new Keyword("var", ["variable_reference", "assignment", "string|number|array"], (args, interpreter) => {
+    let name = args[0].value;
+    let value = args[2].value;
+    let type = args[2].type;
+
+    if(interpreter.variables[name]){
+        throw new FS3Error("ReferenceError", `Variable [${name}] is already defined`, args[0].line, args[0].col, args);
+    }
+
+    interpreter.variables[name] = {
+        value: value,
+        type: type,
+        mut: true,
+        freeable: true
+    }
+})
+
+// variable name, input type (string or number)
+new Keyword("ask", ["string"], async (args, interpreter) => {
+    let variableName = args[0].value;
+
+    if (!interpreter.variables[variableName]) {
+        throw new FS3Error("ReferenceError", `Variable [${variableName}] is not defined`, args[0].line, args[0].col, args);
+    }
+
+    if (!interpreter.variables[variableName].mut) {
+        throw new FS3Error("AccessError", `Variable [${variableName}] is immutable and cannot be changed`, args[0].line, args[0].col, args);
+    }
+
+    if(interpreter.variables[variableName].type !== "string"){
+        throw new FS3Error("TypeError", `Variable [${variableName}] must be of type [string] to store user input`, args[0].line, args[0].col, args);
+    }
+
+    const textinput = document.createElement("textarea");
+    textinput.style.position = "fixed";
+    textinput.style.top = "25%";
+    textinput.style.width = "50%";
+    textinput.style.height = "50%";
+    textinput.style.left = "25%";
+    document.body.appendChild(textinput);
+
+    textinput.focus();
+
+    return new Promise((resolve, reject) => {
+        const cleanup = () => {
+            if (document.body.contains(textinput)) {
+                document.body.removeChild(textinput);
+            }
+            if (interpreter._onInterrupt === interruptCheck) {
+                interpreter._onInterrupt = null;
+            }
+        };
+
+        const finish = (value) => {
+            interpreter.variables[variableName].value = value;
+            interpreter.variables[variableName].type = "string";
+            cleanup();
+            resolve();
+        };
+
+        const interruptCheck = () => {
+            cleanup();
+            reject(new FS3Error("RuntimeError", "Program interrupted by user", -1, -1, args));
+        };
+
+        // hook for interrupt
+        interpreter._onInterrupt = interruptCheck;
+
+        textinput.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                finish(textinput.value.trim());
             }
         });
+    });
+});
 
-        if(tokens[0]?.type == "Keyword" && tokens[0]?.value == "func") return tokens;
-        
-        if(getVariables) tokens.forEach((token, index) => {
-            if(token.type == "Identifier") {
-                let variable = this.getVariable(token.value);
+new Keyword("cvar", ["variable_reference", "assignment", "string|number|array"], (args, interpreter) => {
+    let name = args[0].value;
+    let value = args[2].value;
+    let type = args[2].type;
 
-                if(variable == false){
-                    tokens.push(new InterpreterError('ReferenceError', `Variable [${token.value}] is not defined`, tokens, this.interval, token.position));
-                    return tokens;
+    if(interpreter.variables[name]) throw new FS3Error("ReferenceError", `Variable [${name}] is already defined`, args[0].line, args[0].col, args);
+
+    interpreter.variables[name] = {
+        value: value,
+        type: type,
+        mut: false,
+        freeable: true
+    }
+})
+
+new Keyword("free", ["variable_reference"], (args, interpreter) => {
+    let name = args[0].value;
+    let variable = interpreter.variables[name];
+    if(!variable){
+        throw new FS3Error("ReferenceError", `Variable [${name}] is not defined`, args[0].line, args[0].col, args);
+    }
+    if(!variable.freeable){
+        throw new FS3Error("AccessError", `Variable [${name}] cannot be freed`, args[0].line, args[0].col, args);
+    }
+    if(!variable.mut){
+        throw new FS3Error("AccessError", `Variable [${name}] is immutable and cannot be freed`, args[0].line, args[0].col, args);
+    }
+    delete interpreter.variables[name];
+});
+
+new Keyword("return", ["string|number|array"], (args, interpreter) => {
+    interpreter.variables["fReturn"].value = args[0].value;
+    interpreter.variables["fReturn"].type = args[0].type;
+});
+
+
+new Keyword("if", ["condition_statement", "block"], async (args, interpreter) => {
+    let conditionResult = interpreter.evaluateMathExpression(args[0].value)
+
+    if(conditionResult){
+        await interpreter.executeBlock(args[1].body);
+        interpreter.lastIfExecuted = true;
+    } else {
+        interpreter.lastIfExecuted = false;
+    }
+});
+
+new Keyword("else", ["block"], async (args, interpreter) => {
+    if(!interpreter.lastIfExecuted){
+        await interpreter.executeBlock(args[0].body);
+    }
+    interpreter.lastIfExecuted = false;
+});
+
+new Keyword("loop", ["number|condition_statement", "block"], async (args, interpreter) => {
+    let cond = args[0];
+    let block = args[1].body;
+
+    if(cond.type === "number"){
+        let count = cond.value;
+        for(let i = 0; i < count; i++){
+            let blockCopy = structuredClone(block);
+            await interpreter.executeBlock(blockCopy);
+        }
+    } else if(cond.type === "condition_statement"){
+        let breaker = interpreter.variables["MAX_LOOP_ITERATIONS"].value;
+        let i = 0;
+
+        while(interpreter.evaluateMathExpression(cond.value)){
+            let blockCopy = structuredClone(block);
+            await interpreter.executeBlock(blockCopy);
+            i++;
+
+            if(i >= breaker){
+                // error not closing program
+                throw new FS3Error("RuntimeError", `Possible infinite loop detected after ${breaker} iterations.`, cond.line, cond.col, args);
+            }
+        }
+    }
+});
+
+class FroggyScript3 {
+    static matches = [
+        ["comment", /# .*/],
+        ["number", /[0-9]+(?:\.[0-9]+)?/],
+        ["variable", /[A-Za-z_][A-Za-z0-9_]*/],
+        ["function_reference", /@[A-Za-z_][A-Za-z0-9_]*/],
+        ["variable_reference", /\$[A-Za-z_][A-Za-z0-9_]*/],
+        ["string", /"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'/],
+        ["condition_statement", /<<[^\r\n]*?>>/],
+        ["block_start", /\{/],
+        ["block_end", /\}/],
+        ["paren_start", /\(/],
+        ["paren_end", /\)/],
+        ["assignment", / = /],
+        ["comma", /,/],
+        ["method_indicator", />/],
+        ["whitespace", /\s+/],
+        ["array_start", /\[/],
+        ["array_end", /\]/],
+    ];
+    
+    constructor(options) {
+        options = options || {};
+        this.setOutputFunction(options.out);
+        this.setErrorOutputFunction(options.errout);
+        this.setWarnOutputFunction(options.warnout);
+        this.setSmallWarnOutputFunction(options.smallwarnout);
+        this.setSmallErrorOutputFunction(options.smallerrout);
+        this.setOnComplete(options.onComplete);
+        this.setOnError(options.onError);
+
+        /*
+            scope: {
+                name: {
+                    value: ...,
+                    type: "num" | "str" | "arr",
+                    mutable: true | false
+                }
+            } 
+        */
+        this.variables = {
+            "true": { value: 1, type: "number", mut: false, freeable: false },
+            "false": { value: 0, type: "number", mut: false, freeable: false },
+            "fReturn": { value: "", type: "string", mut: true, freeable: false },
+            "MAX_LOOP_ITERATIONS": { value: 10000, type: "number", mut: true, freeable: false },
+        };
+        this.temporaryVariables = {};
+        this.functions = {};
+        this.debug = false;
+        this.lastIfExecuted = false;
+        this._interrupt = false;
+        this.clockLengthMs = 1;
+        this._onInterrupt = null;
+    }
+
+    clockLength(ms){
+        this.clockLengthMs = ms;
+    }
+
+    interrupt(){
+        this._interrupt = true;
+        if (typeof this._onInterrupt === "function") {
+            this._onInterrupt();
+        }
+    }
+
+    checkInterrupt(){
+        if(this._interrupt){
+            throw new FS3Error("RuntimeError", "Program interrupted by user", -1, -1);
+        }
+    }
+
+    evaluateMathExpression(expression){
+        expression = expression.slice(2, -2).trim();
+
+        let scope = {};
+        for(const [key, val] of Object.entries(this.variables)){
+            if(val.type === "number"){
+                scope[key] = val.value;
+            }
+        }
+
+        try {
+            let result = math.evaluate(expression, scope);
+            if(typeof result === "boolean"){
+                result = result ? 1 : 0;
+            } else if(typeof result !== "number"){
+                throw new FS3Error("MathError", `Math expression did not evaluate to a number`, -1, -1);
+            }
+            return result;
+        } catch (e) {
+            throw new FS3Error("MathError", `Error evaluating math expression: ${e.message}`, -1, -1);
+        }
+    }
+
+    setOutputFunction(fn) {
+        this.out = fn || console.log;
+    }
+
+    setErrorOutputFunction(fn) {
+        this.errout = fn || console.error;
+    }
+
+    setWarnOutputFunction(fn) {
+        this.warnout = fn || console.warn;
+    }
+
+    setSmallWarnOutputFunction(fn) {
+        this.smallwarnout = fn || console.warn;
+    }
+
+    setSmallErrorOutputFunction(fn) {
+        this.smallerrout = fn || console.error;
+    }
+
+    setOnComplete(fn) {
+        this.onComplete = fn || function() {};
+    }
+
+    setOnError(fn) {
+        this.onError = fn || function() {};
+    }
+
+    /**
+     * 
+     * @param {Boolean} value 
+     */
+    setDebug(value){
+        this.debug = value;
+    }
+
+    walkMethods(node, callback) {
+        // If this node is a list of arguments (array), walk each element.
+        if (Array.isArray(node)) {
+            for (const arg of node) {
+                const err = this.walkMethods(arg, callback);
+                if (err instanceof FS3Error) return err;
+            }
+            return null;
+        }
+
+        // Visit this node’s methods if it has any.
+        if (node && node.methods && node.methods.length) {
+            for (const m of node.methods) {
+                // Run the callback for this method.
+                const result = callback(m, node);
+                if (result instanceof FS3Error) return result;
+
+                // Walk each argument of the method recursively.
+                for (const arg of m.args) {
+                    const err = this.walkMethods(arg, callback);
+                    if (err instanceof FS3Error) return err;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    async executeBlock(block){
+        for(let i = 0; i < block.length; i++){
+            this.checkInterrupt();
+            const line = block[i];
+
+
+            const compacted = this.compact(line);
+            const resolvedMethods = this.methodResolver(compacted);
+
+            await this.keywordExecutor(resolvedMethods);
+        }
+    }
+
+    resolveExpressions(node) {
+        if (Array.isArray(node)) {
+            return node.map(n => this.resolveExpressions(n));
+        }
+
+        if (!node || typeof node !== "object") return node;
+
+        // Recurse into method args
+        if (node.methods && node.methods.length) {
+            node.methods = node.methods.map(m => {
+                m.args = m.args.map(arg => this.resolveExpressions(arg));
+                return m;
+            });
+        }
+
+        // Recurse into array elements
+        if (node.type === "array" && Array.isArray(node.value)) {
+            node.value = node.value.map(el => this.resolveExpressions(el));
+        }
+
+        // Recurse into blocks
+        if (node.type === "block" && Array.isArray(node.body)) {
+            node.body = node.body.map(line => this.resolveExpressions(line));
+        }
+
+        return node;
+    }
+
+    mergeDanglingBlocks(lines) {
+        for (let i = 0; i < lines.length; i++) {
+            let line = lines[i];
+
+            // Recurse into blocks inside the line
+            for (let token of line) {
+                if (token.type === "block" && Array.isArray(token.body)) {
+                    token.body = this.mergeDanglingBlocks(token.body);
+                }
+            }
+
+            // If this line is just a block, attach it to the end of the previous line
+            if (line.length === 1 && line[0].type === "block" && i > 0) {
+                lines[i - 1].push(line[0]);
+                lines.splice(i, 1);
+                i--; // recheck this index after splice
+            }
+        }
+        return lines;
+    }
+
+    async interpret(code) {
+        this._interrupt = false;
+        for(let method in Method.table){
+            let def = Method.table[method];
+            if(!def.defaultMethod) delete Method.table[method];
+        }
+        try {
+            let tokens = this.tokenize(code);
+            let lines = tokens.map(line => [{ type: "start_of_line", value: "" }, ...line]);
+            let flattened = lines.flat();
+
+            // Collapse array literals and resolve their methods once
+            for (let i = 0; i < flattened.length; i++) {
+                const token = flattened[i];
+                if (token.type === "array_start") {
+                    let depth = 1;
+                    let arrayTokens = [];
+                    let j = i + 1;
+
+                    while (j < flattened.length && depth > 0) {
+                        const t = flattened[j];
+                        if (t.type === "array_start") depth++;
+                        else if (t.type === "array_end") depth--;
+                        if (depth > 0) arrayTokens.push(t);
+                        j++;
+                    }
+
+                    if (depth !== 0) {
+                        throw new FS3Error("SyntaxError", "Unclosed array literal", token.line, token.col, flattened);
+                    }
+
+                    // Split into elements by commas at top level
+                    let elements = [];
+                    let current = [];
+                    let elDepth = 0;
+                    for (let k = 0; k < arrayTokens.length; k++) {
+                        const t = arrayTokens[k];
+                        if (t.type === "array_start") elDepth++;
+                        if (t.type === "array_end") elDepth--;
+                        if (t.type === "comma" && elDepth === 0) {
+                            elements.push(current);
+                            current = [];
+                        } else current.push(t);
+                    }
+                    if (current.length) elements.push(current);
+
+                    // Compact and resolve methods for each element just once
+                    elements = elements.map(el => {
+                        const compacted = this.compact(el);
+                        let resolved = this.methodResolver(compacted);
+                        if (Array.isArray(resolved) && resolved.length === 1) resolved = resolved[0];
+                        return resolved;
+                    });
+
+                    // Replace tokens with a single array token
+                    flattened.splice(i, j - i, {
+                        type: "array",
+                        value: elements, // final token objects
+                        line: token.line,
+                        col: token.col,
+                        methods: []
+                    });
+                }
+            }
+
+            // Compress blocks after arrays are collapsed
+            let compressed = this.blockCompressor(flattened);
+
+            // Execute each line
+            for (let i = 0; i < compressed.length; i++) {
+                const line = compressed[i];
+
+                // Replace variables inline
+                line.forEach((t, idx) => {
+                    if (t.type === "variable") {
+                        const v = this.variables[t.value];
+                        if (v) {
+                            line[idx].type = v.type;
+                            line[idx].value = v.value;
+                        } else {
+                            throw new FS3Error( "ReferenceError", `Variable [${t.value}] is not defined`, t.line, t.col, line
+                            );
+                        }
+                    }
+
+                    // Resolve variables inside arrays, but don’t rerun methodResolver
+                    if (t.type === "array") {
+                        t.value = t.value.map(el => {
+                            if (Array.isArray(el) && el.length === 1) el = el[0];
+                            if (el && el.type === "variable") {
+                                const v = this.variables[el.value];
+                                if (!v) {
+                                    throw new FS3Error("ReferenceError", `Variable [${el.value}] is not defined`, el.line, el.col, line);
+                                }
+                                return { ...el, type: v.type, value: v.value };
+                            }
+                            return el;
+                        });
+                    }
+                });
+
+                // Compact the line and resolve methods (outside arrays)
+                const compacted = this.compact(line);
+                const resolvedMethods = this.methodResolver(compacted);
+
+                // Execute keyword
+                await this.keywordExecutor(resolvedMethods);
+
+                // if its the last line, call onComplete
+                if (i === compressed.length - 1) {
+                    this.onComplete();
+                }
+            }
+        } catch (e) {
+            if (e instanceof FS3Error) {
+                if(e.type === "quietKill") return;
+                this.errout(e);
+                this.onError(e);
+            } else this.errout(new FS3Error("InternalJavaScriptError", `Internal JavaScript error: ${e.message}`, -1, -1));
+            throw e;
+        }
+    }
+
+    async keywordExecutor(line) {
+        try {
+            // Resolve variables
+            this.checkInterrupt();
+            if(this.clockLengthMs != 0) await new Promise(resolve => setTimeout(resolve, this.clockLengthMs));
+            let keyword = line[0]?.type === "keyword" ? line[0].value : null;
+            if (!keyword) return;
+            
+            let executedMethodTokens = this.executeMethods(line)
+
+            const lineArgs = executedMethodTokens.slice(1);
+
+            const keywordDef = Keyword.get(keyword);
+
+            if (!keywordDef) {
+                throw new FS3Error(
+                    "ReferenceError",
+                    `Unknown keyword [${keyword}]`,
+                    line[0].line,
+                    line[0].col,
+                    line
+                );
+            }
+
+            // Validate arguments
+            if (keywordDef.scheme) {
+                for (let i = 0; i < keywordDef.scheme.length; i++) {
+                    const expected = keywordDef.scheme[i].split("|");
+                    const actual = lineArgs[i];
+                    const expectedOptional = expected.some(e => e.endsWith("?"));
+
+                    if (!actual) {
+                        if (!expectedOptional) {
+                            throw new FS3Error(
+                                "ArgumentError",
+                                `Expected arg [${i + 1}] for keyword [${keyword}] to be of type [${expected.map(e => e.replace("?", "")).join(" or ")}], but found none`,
+                                line[0].line,
+                                line[0].col,
+                                line
+                            );
+                        }
+                        continue;
+                    }
+
+                    if (!expected.includes(actual.type) && !expected.includes("any")) {
+                        throw new FS3Error(
+                            "TypeError",
+                            `Invalid type for arg [${i + 1}] for keyword [${keyword}]: expected [${expected.map(e => e.replace("?", "")).join(" or ")}], got [${actual.type}]`,
+                            actual.line,
+                            actual.col,
+                            line
+                        );
+                    }
+                }
+            }
+
+
+            await keywordDef.fn(lineArgs, this, line);
+        } catch (e) {
+            throw e;
+        }
+    }
+
+    blockCompressor(flattened) {
+        function compressBlocks(tokens) {
+            const result = [];
+            const stack = [];
+            let currentLine = [];
+
+            const pushLine = (arr, line) => {
+                if (line.length) arr.push(line);
+            };
+
+            for (let i = 0; i < tokens.length; i++) {
+                const t = tokens[i];
+
+                if (t.type === "start_of_line") {
+                    // Start a new line: push previous line to the appropriate array
+                    if (stack.length) {
+                        pushLine(stack[stack.length - 1].body, currentLine);
+                    } else {
+                        pushLine(result, currentLine);
+                    }
+                    currentLine = [];
+                    continue;
                 }
 
+                if (t.type === "block_start") {
+                    // Push current line (may contain tokens before the block)
+                    pushLine(stack.length ? stack[stack.length - 1].body : result, currentLine);
+                    currentLine = [];
+                    // Begin a new block
+                    stack.push({ start: t, body: [] });
+                } else if (t.type === "block_end") {
+                    // End of block
+                    if (!stack.length) {
+                        throw new FS3Error("SyntaxError", "Unmatched closing bracket for block", t.line, t.col, t);
+                    }
+                    // Push any remaining tokens on this line before closing block
+                    pushLine(stack[stack.length - 1].body, currentLine);
+                    currentLine = [];
+
+                    const finished = stack.pop();
+                    const block = {
+                        type: "block",
+                        value: "{}",
+                        line: finished.start.line,
+                        col: finished.start.col,
+                        methods: finished.start.methods || [],
+                        body: finished.body // already grouped by lines
+                    };
+
+                    if (stack.length) {
+                        // Inside another block: treat as a token in its own line
+                        stack[stack.length - 1].body.push([block]);
+                    } else {
+                        result.push([block]);
+                    }
+                } else {
+                    // Normal token: add to current line
+                    currentLine.push(t);
+                }
+            }
+
+            // Push any trailing line after finishing tokens
+            if (stack.length) {
+                const u = stack.pop().start;
+                throw new FS3Error("SyntaxError", "Unmatched opening bracket for block", u.line, u.col, u);
+            }
+            pushLine(result, currentLine);
+
+            return result;
+        }
+
+        // Recursive merge pass
+        function mergeDanglingBlocks(lines) {
+            if (!Array.isArray(lines)) return lines;
+
+            for (let i = 0; i < lines.length;) {
+                const line = lines[i];
+
+                // Recurse into block bodies first
+                for (let t = 0; t < line.length; t++) {
+                    const tok = line[t];
+                    if (tok && tok.type === "block" && Array.isArray(tok.body)) {
+                        tok.body = mergeDanglingBlocks(tok.body);
+                    }
+                }
+
+                // If line is exactly [block], merge with previous line
+                if (line.length === 1 && line[0] && line[0].type === "block" && i > 0) {
+                    let prevIndex = i - 1;
+                    // walk back to find a non-empty line
+                    while (prevIndex >= 0 && (!Array.isArray(lines[prevIndex]) || lines[prevIndex].length === 0)) {
+                        prevIndex--;
+                    }
+                    if (prevIndex >= 0) {
+                        lines[prevIndex].push(line[0]); // attach block
+                        lines.splice(i, 1);             // remove dangling
+                        continue; // recheck same index
+                    }
+                }
+
+                i++;
+            }
+
+            return lines;
+        }
+
+        let tokens = compressBlocks(flattened);
+        tokens = mergeDanglingBlocks(tokens);
+        return tokens;
+    }
+
+    executeMethods(line) {
+        // Ensure we always work on an array of tokens
+        const tokens = Array.isArray(line) ? line : [line];
+
+        for (let i = 0; i < tokens.length; i++) {
+            let token = tokens[i];
+
+            // --- Variable resolution ---
+            if (token.type === "variable") {
+                const variable = this.variables[token.value];
+                if (!variable) {
+                    throw new FS3Error(
+                        "ReferenceError",
+                        `Variable [${token.value}] is not defined`,
+                        token.line,
+                        token.col,
+                        line
+                    );
+                }
                 token.type = variable.type;
                 token.value = variable.value;
             }
-        })
 
-        tokens.forEach((token, index) => {
-            if(token.type == "String") {
-                token.value = Interpreter.trimQuotes(token.value);
-            } else if(token.type == "String") {
-                token.value = this.evaluate(token.value);
-            }
-        })
+            // --- Recursively process arrays ---
+            if (token.type === "array" && Array.isArray(token.value)) {
+                token.value = token.value.map(el => {
+                    let resolved = this.executeMethods(el);
 
-        tokens.forEach((token, index) => {
-            if(token.type == "Array" && typeof token.value == "string") {
-                if(!Array.isArray(token.value)) {
-                    let array = token.value.slice(1, -1);
-                    let values = [];
-                    let groups = this.groupByCommas(this.tokenize(array));
-
-                    groups.forEach((group, i) => {
-                        let formatted = this.formatMethods(group);
-
-                        let parsed = this.parseMethods(formatted);
-                        values.push(parsed);
-                    });
-
-                    token.value = values;
-                }
-            }
-        })
-
-        tokens.forEach((token, index) => {
-            if(token.type == "IdentifierReference") {
-                token.value = token.value.slice(1);
-            }
-        })
-
-        tokens.forEach((token, index) => {
-            if(token.type == "Reflexive") {
-                let nextToken = tokens[index + 1];
-
-                if(nextToken.type != "IdentifierReference"){
-                    tokens.push(new InterpreterError('SyntaxError', `Expected IdentifierReference after Reflexive, found ${nextToken.type}`, tokens, this.interval, token.position));
-                    return tokens;
-                }
-
-                let variable = nextToken.value;
-
-                let rest = tokens.slice(index + 2).map((t, i) => t.type == 'String' ? `"${t.value}"` : t.value).join("");
-
-                let string = `set ${variable} = ${variable}${rest}`;
-
-                this.lines[this.interval] = string;
-                this.interval--;
-            }
-        })
-
-        tokens.forEach((token, index) => {
-            if(token.type == "String") {
-                const embeddedPattern = /\$\|(.+?)\|/g;
-                const matches = [...token.value.matchAll(embeddedPattern)];
-
-                let embeddedExpressions = matches.map(m => m[1].trim());
-
-                embeddedExpressions.forEach((expr, i) => {
-                    let exprTokens = this.tokenize(expr);
-
-                    exprTokens.forEach((exprToken, j) => {
-                        if(exprToken instanceof Token && exprToken.value == undefined) delete exprTokens[j];
-                    });
-                    exprTokens = exprTokens.filter(t => t != undefined);
-                    
-                    if(exprTokens.some(t => t instanceof InterpreterError)) {
-                        tokens.push(exprTokens.find(t => t instanceof InterpreterError));
-                        return tokens;
+                    // unwrap single-element arrays
+                    if (Array.isArray(resolved) && resolved.length === 1) {
+                        resolved = resolved[0];
                     }
 
-                    let groups = this.groupByCommas(exprTokens);
-                    let values = [];
-                    groups.forEach((group, i) => {
-                        let formatted = this.formatMethods(group);
-
-                        let parsed = this.parseMethods(formatted);
-
-                        values.push(parsed);
-                    });
-
-                    if(!["String", "Number", "Boolean"].includes(values[0].type)) {
-                        tokens.push(new InterpreterError('TypeError', `Expected type String|Number|Boolean, found type ${values[0].type}`, tokens, this.interval, token.position));
-                        return tokens;
+                    // ⚡ NEW: if element still has methods, execute them too
+                    if (resolved && resolved.methods && resolved.methods.length > 0) {
+                        let executed = this.executeMethods([resolved]);
+                        if (Array.isArray(executed) && executed.length === 1) {
+                            resolved = executed[0];
+                        } else {
+                            resolved = executed;
+                        }
                     }
 
-                    token.value = token.value.replace(`$\|${expr}\|`,values[0].value);
+                    return resolved;
                 });
             }
-        })
 
-        tokens.forEach((token, index) => {
-            if(token.type == "FunctionReturn"){
-                let functionName = token.value.slice(1);
+            // --- Execute attached methods on this token ---
+            if (token.methods && token.methods.length > 0) {
+                let methodIndex = 0;
+                for (const method of token.methods) {
+                    const def = Method.get(method.name);
+                    if (!def) {
+                        throw new FS3Error(
+                            "ReferenceError",
+                            `Unknown method [${method.name}] for type [${token.type}]`,
+                            method.line,
+                            method.col,
+                            line
+                        );
+                    }
 
-                let func = this.functions[functionName];
-                if(func == undefined) {
-                    tokens.push(new InterpreterError('ReferenceError', `Function [${functionName}] is not defined`, tokens, this.interval, token.position));
-                    return tokens;
+                    // Resolve args recursively
+                    method.args = method.args.map(arg => this.executeMethods(arg));
+
+                    // unwrap method args
+                    method.args = method.args.map(arg => {
+                        if (Array.isArray(arg) && arg.length === 1) return arg[0];
+                        return arg;
+                    });
+
+                    // Validate args
+                    if (def.args) {
+                        for (let idx = 0; idx < def.args.length; idx++) {
+                            const expected = def.args[idx];
+                            let actual = method.args[idx];
+
+                            // optional missing argument
+                            if (!actual) {
+                                if (!expected.optional) {
+                                    throw new FS3Error(
+                                        "ArgumentError",
+                                        `Expected argument [${idx + 1}] for method [${method.name}] of type [${expected.type.join(" or ")}], but found none`,
+                                        method.line,
+                                        method.col,
+                                        method
+                                    );
+                                }
+                                continue;
+                            }
+
+                            // math/condition tokens → evaluate
+
+                            if (!expected.type.includes(actual.type) && !expected.type.includes("any")) {
+                                // doesnt get caught
+                                throw new FS3Error(
+                                    "TypeError",
+                                    `Invalid type for argument [${idx + 1}] for method [${method.name}]: expected [${expected.type.join(" or ")}], got [${actual.type}] ga`,
+                                    actual.line ?? method.line,
+                                    actual.col ?? method.col,
+                                    method
+                                );
+                            }
+                        }
+                    }
+
+                    // Validate parent type
+                    if (def.parentTypes && !def.parentTypes.includes(token.type)) {
+                        throw new FS3Error(
+                            "TypeError",
+                            `Invalid parent type for method [${method.name}]: expected [${def.parentTypes.join(" or ")}], got [${token.type}]`,
+                            token.line,
+                            token.col,
+                            method
+                        );
+                    }
+
+                    // Execute method
+                    try {
+                        const result = def.fn(token, method.args, this);
+                        if (result) {
+                            token.type = result.type;
+                            token.value = result.value;
+                        }
+                    } catch (e) {
+                        if (e instanceof FS3Error) {
+                            e.message = `In method [${method.name}]: ${e.message}`;
+                            throw e;
+                        } else {
+                            throw new FS3Error(
+                                "InternalJavaScriptError",
+                                `Error executing method [${method.name}]: ${e.message}`,
+                                method.line,
+                                method.col,
+                                method
+                            );
+                        }
+                    }
+                
+                    methodIndex++;
                 }
-
-                let returnValue = func.returnValue;
-                if(returnValue == null) {
-                    tokens.push(new InterpreterError('ReferenceError', `Function [${functionName}] has no return value`, tokens, this.interval, token.position));
-                    return tokens;
-                }
-
-                tokens[index] = returnValue;
-
-                func.returnValue = null;
             }
-        })
 
-        if(tokens[0]?.type == "Oneliner") {
-            let tokensToParse = tokens.slice(1);
+            tokens[i] = token;
 
-            let parsed = this.parseMethods(this.formatMethods(tokensToParse));
-
-            if(parsed instanceof InterpreterError) {
-                tokens.push(parsed);
-                return tokens;
-            }
+            tokens[i].methods = [];
         }
 
         return tokens;
     }
 
-    groupByCommas(tokenArray) {
-        const groups = [];
-        let currentGroup = [];
-        let depth = 0;
+    methodResolver(compacted) {
+        const resolveLine = (lineTokens) => {
+            // Ensure lineTokens is always an array
+            const tokensArray = Array.isArray(lineTokens) ? lineTokens : [lineTokens];
 
-        for (const token of tokenArray) {
-            if (token.type === 'LeftParenthesis') {
-                depth++;
-            } else if (token.type === 'RightParenthesis') {
-                depth--;
-            }
-
-            // If we hit a comma at top level, start a new group
-            if (token.type === 'Comma' && depth === 0) {
-                groups.push(currentGroup);
-                currentGroup = [];
-            } else {
-                currentGroup.push(token);
-            }
-        }
-
-        // Push the final group if it's non-empty
-        if (currentGroup.length > 0) {
-            groups.push(currentGroup);
-        }
-
-        return groups;
-    }
-
-    groupByPipes(tokenArray) {
-        const groups = [];
-        let currentGroup = [];
-        let depth = 0;
-
-        for (const token of tokenArray) {
-            if (token.type === 'LeftParenthesis') {
-                depth++;
-            } else if (token.type === 'RightParenthesis') {
-                depth--;
-            }
-
-            // If we hit a comma at top level, start a new group
-            if (token.type === 'Pipe' && depth === 0) {
-                groups.push(currentGroup);
-                currentGroup = [];
-            } else {
-                currentGroup.push(token);
-            }
-        }
-
-        // Push the final group if it's non-empty
-        if (currentGroup.length > 0) {
-            groups.push(currentGroup);
-        }
-
-        return groups;
-    }
-
-
-    formatMethods(tokenArray) {
-        if (!tokenArray || tokenArray.length === 0) return null;
-
-        const root = structuredClone(tokenArray[0]);
-        const methods = [];
-
-        let i = 1;
-        while (i < tokenArray.length) {
-            if (tokenArray[i].type === 'Keyword') {
-                i++;
-                continue;
-            }
-            if (
-                tokenArray[i].type === 'MethodInitiator' &&
-                tokenArray[i + 1] &&
-                tokenArray[i + 1].type === 'Method'
-            ) {
-                const methodToken = tokenArray[i + 1];
-                const method = {
-                    name: methodToken.value,
-                    args: []
-                };
-
-                // Check for arguments
-                if (
-                    tokenArray[i + 2] &&
-                    tokenArray[i + 2].type === 'LeftParenthesis'
-                ) {
-                    let args = [];
-                    let depth = 1;
-                    let j = i + 3;
-                    const argTokens = [];
-
-                    while (j < tokenArray.length && depth > 0) {
-                        const t = tokenArray[j];
-                        if (t.type === 'LeftParenthesis') depth++;
-                        else if (t.type === 'RightParenthesis') depth--;
-
-                        if (depth > 0) argTokens.push(t);
-                        j++;
-                    }
-
-                    // Split and recursively format each top-level arg
-                    const argGroups = this.groupByCommas(argTokens);
-                    method.args = argGroups.map(group => this.formatMethods(group));
-
-                    i = j; // move past closing parenthesis
-                } else {
-                    i += 2; // move past '>' and method
+            this.walkMethods(tokensArray, (method, parent) => {
+                const def = Method.get(method.name);
+                if (!def) {
+                    throw new FS3Error(
+                        "ReferenceError",
+                        `Unknown method [${method.name}] for type [${parent.type}]`,
+                        parent.line, parent.col, method
+                    );
                 }
 
-                methods.push(method);
-            } else {
-                i++; // skip unknown tokens
-            }
-        }
-
-        root.methods = methods;
-        return root;
-    }
-
-    parseMethods(token) {
-        if(token == null) return null;
-        if(token.methods == undefined) return token;
-        while (token?.methods.length > 0) {
-            let method = token.methods.shift();
-
-            // Resolve arguments
-            let args = method.args.map(arg => {
-                if (arg.type === 'Identifier') {
-                    return this.getVariable(arg.value);
-                } else return arg;
+                // Recursively resolve methods inside arguments first
+                method.args = method.args.map(argLine => {
+                    const resolved = this.methodResolver(argLine);
+                    // If resolved is an array of length 1, unwrap it
+                    if (Array.isArray(resolved) && resolved.length === 1) return resolved[0];
+                    return resolved;
+                });
             });
 
-            // Retrieve method definition
-            let methodInstance = Method.get(token.type, method.name);
+            // Recursively resolve methods inside blocks
+            tokensArray.forEach((t) => {
+                if (t.type === "block" && Array.isArray(t.body)) {
+                    t.body = t.body.map(innerLine => this.methodResolver(innerLine));
+                }
+            });
 
-            if (!methodInstance) {
-                return new InterpreterError(
-                    'ReferenceError',
-                    `Method [${method.name}] is not a valid method for type ${token.type}`,
-                    token, this.interval, token.position
-                );
-            }
-
-            let validation = methodInstance.validateArgs(args);
-
-            if(!validation.result) {
-                return new InterpreterError(validation.type, validation.message, token, this.interval, token.position);
-            }
-
-            // Execute method
-            const result = methodInstance.fn(token, args, this, methodInstance);
-
-            if(result instanceof InterpreterError) {
-                this.outputError(result);
-                this.kill();
-                return;
-            }
-
-            token = result;
-        }
-
-
-        if(token == undefined) return new InterpreterError('MethodParseError', `Token is undefined after parsing methods. Possible issues:\n No Method function\n Method function returns undefined\n\n`, token, this.interval, NaN);
-        if(token instanceof InterpreterError) return token;
-        else if(token.value instanceof Token) token = token.value;
-        else token = new Token(token.type, token.value, token.position);
-
-        return token;
-    }
-
-    step() {
-        this.gotoNext();
-    }
-
-    appendToLine(index, text) {
-        this.lines[index] += text;
-    }
-
-    gotoIndex(index) {
-        if(this.paused) return;
-        this.error = false;
-
-        if (index < 0 || index >= this.lines.length) {
-            this.onComplete();
-            this.kill();
-            return;
-        }
-        
-        this.interval = index;
-    }
-
-    gotoNext() {
-        if(this.paused) return;
-        Token.generate();
-        this.error = false;
-
-        let line = this.lines[this.interval];
-
-        if (line === undefined) {
-            this.onComplete();
-            this.kill();
-            return;
-        }
-
-        let token = this.tokenize(line);
-
-        this.tokens.push(token)
-
-        if (token instanceof InterpreterError) {
-            this.outputError(token);
-        } else if (token.some(t => t instanceof InterpreterError)) {
-            this.outputError(token.find(t => t instanceof InterpreterError));
-        } else if (["Keyword", "Assigner"].includes(token[0].type)) {
-            const scheme = Keyword.schemes[token[0].value];
-
-            let errorInPre = scheme.prefn(token, this);
-
-            if(errorInPre == undefined) if (errorInPre instanceof InterpreterError) {
-                this.outputError(errorInPre);
-                this.kill();
-            }
-
-            const keywordResult = scheme.fn(token, this);
-
-            if (keywordResult instanceof InterpreterError) {
-                this.outputError(keywordResult);
-                this.kill()
-            }
-        }
-
-        this.interval++;
-        this.iteration++;
-    }
-
-    runLine(line) {
-        if(this.paused) return;
-        this.error = false;
-
-        let token = this.tokenize(line);
-
-        this.tokens.push(token)
-
-        if (token instanceof InterpreterError) {
-            this.outputError(token);
-        } else if (token.some(t => t instanceof InterpreterError)) {
-            this.outputError(token.find(t => t instanceof InterpreterError));
-        } else
-        if (["Keyword", "Assigner"].includes(token[0].type)) {
-            const scheme = Keyword.schemes[token[0].value];
-
-            let errorInPre = scheme.prefn(token, this);
-
-            if(errorInPre == undefined) if (errorInPre instanceof InterpreterError) {
-                this.outputError(errorInPre);
-                this.kill();
-            }
-
-            const keywordResult = scheme.fn(token, this);
-
-            if (keywordResult instanceof InterpreterError) {
-                this.outputError(keywordResult);
-                this.kill()
-            }
-        }
-
-        this.interval++;
-        this.iteration++;
-    }
-
-    run() {
-        if(this.running) return;
-        this.running = true;
-        Interpreter.blockErrorOutput = false;
-        Token.generate();
-        this.load();
-        this.error = false;
-        this.clock = setInterval(() => {
-            if(this.realtimeMode == false) this.gotoNext();
-        }, this.interval_length);
-    }
-
-    pause() {
-        this.paused = true;
-    }
-
-    resume() {
-        this.paused = false;
-        this.run();
-    }
-
-    hasImport(name) {
-        return this.imports.includes(name);
-    }
-
-    resetMemory() {
-        this.variables = {};
-        this.temporaryVariables = {};
-        this.functions = {};
-        this.savedData = {};
-        this.paused = false;
-        this.clock = null;
-        this.interval = 0;
-        this.iteration = 0;
-        this.interval_length = 1;
-        this.running = false;
-        this.lines = [];
-        this.tokens = [];
-        this.imports = [];
-        this.promptCount = 0;
-        this.importData = {
-            graphics: defaultImportData.graphics,
+            return tokensArray;
         };
-        this.subInterpreters = {};
-        this.fileArgumentCount = 0;
-        this.realtimeMode = false;
-        Keyword.schemes = {};
-        Method.registry = new Map();
-        Token.specs = [];
-        this.data = {};
-    }
 
-    setPixelColor(pixel, color) {
-        if(!this.hasImport("graphics")) return;
-        pixel.style.backgroundColor = `var(--${color})`;
-    }
-
-    setPixelTextColor(pixel, color) {
-        if(!this.hasImport("graphics")) return;
-        pixel.style.color = `var(--${color})`;
-    }
-
-    getPixel(x, y) {
-        if(!this.hasImport("graphics")) return;
-        let pixel = document.getElementById(`screen-${config.programSession}-${y}-${x}`);
-        return pixel;
-    }
-
-    renderGraphics(scope){
-        if(!this.hasImport("graphics")) return;
-        let renderedBackPixels = document.querySelectorAll(`[data-render-back]`);
-        let renderedFrontPixels = document.querySelectorAll(`[data-render-front]`);
-
-        let backRenderStack = this.importData.graphics.backRenderStack;
-        let frontRenderStack = this.importData.graphics.frontRenderStack;
-
-        let graphicsData = this.importData.graphics;
-
-        if(scope.includes("front")) {
-            renderedFrontPixels.forEach(pixel => {
-                pixel.style.color = `var(--${graphicsData.defaultTextClearColor})`;
-                pixel.textContent = '\u00A0';
-                pixel.removeAttribute("data-render-front");
-            })
-
-            frontRenderStack.forEach(obj => {
-                let name = obj.name;
-                let variable = this.getVariable(name);
-
-                if(variable.type == "Text"){
-                    let x = +variable.value.x - 1;
-                    let y = +variable.value.y;
-                    let text = variable.value.text;
-                    let width = +variable.value.width;
-                    let wrap = variable.value.wrap;
-
-                    let xLevel = x;
-                    let yLevel = y;
-
-                    for(let i = 0; i < text.length; i++){
-                        if(wrap){
-                            if(xLevel >= Math.min(x + width, graphicsData.width)){
-                                yLevel++;
-                                xLevel = x;
-                            }
-                        }
-                        xLevel += 1;
-
-                        let pixel = this.getPixel(xLevel, yLevel);
-
-                        if(pixel == null) continue;
-                        pixel.textContent = text[i];
-                        this.setPixelTextColor(pixel, variable.value.color);
-                        pixel.setAttribute("data-render-front", name);
-                    }
-                }
-            })
-        } else if(scope.includes("back")){
-            renderedBackPixels.forEach(pixel => {
-                pixel.style.backgroundColor = `var(--${graphicsData.defaultBackgroundColor})`;
-                pixel.removeAttribute("data-render-back");
-            })
-            backRenderStack.forEach(obj => {
-                let name = obj.name;
-                let variable = this.getVariable(name);
-
-                if(variable.type == "Rectangle"){
-                    let rectX = +variable.value.x;
-                    let rectY = +variable.value.y;
-                    let rectWidth = +variable.value.width;
-                    let rectHeight = +variable.value.height;
-                    let rectFill = variable.value.fill;
-                    let rectStroke = variable.value.stroke;
-
-                    for(let i = rectY; i <= rectY + rectHeight; i++){
-                        for(let j = rectX; j <= rectX + rectWidth; j++){
-                            let pixel = this.getPixel(j, i);
-                            if(pixel == null) continue;
-                            let color = rectFill;
-                            if(i == rectY || i == rectY + rectHeight || j == rectX || j == rectX + rectWidth) color = rectStroke;
-                            this.setPixelColor(pixel, color);
-                            pixel.setAttribute("data-render-back", name);
-                        }
-                    }
-                } else if(variable.type == "Line"){
-                    let x1 = +variable.value.x1;
-                    let y1 = +variable.value.y1;
-                    let x2 = +variable.value.x2;
-                    let y2 = +variable.value.y2;
-
-                    let stroke = variable.value.stroke;
-                    let text = variable.value.text;
-                    let textColor = variable.value.textColor;
-
-                    const dx = Math.abs(x2 - x1);
-                    const dy = Math.abs(y2 - y1);
-                    const sx = x1 < x2 ? 1 : -1;
-                    const sy = y1 < y2 ? 1 : -1;
-                    let err = dx - dy;
-
-                    while (true){
-                        let pixel = this.getPixel(x1, y1);
-                        if(pixel != null){
-                            this.setPixelColor(pixel, stroke);
-                            pixel.setAttribute("data-render-back", name);
-                        }
-
-                        if(x1 == x2 && y1 == y2) break;
-                        const e2 = 2 * err;
-                        if( e2 > -dy) { err -= dy; x1 += sx; }
-                        if( e2 < dx) { err += dx; y1 += sy; }
-                    }
-
-                }
-
-            })
-        }
-    }
-
-    kill() {
-        this.running = false;
-        config.currentProgram = "cli";
-        clearInterval(this.clock);
-    }
-}
-
-const load_function = () => {
-    const KEYWORD_LOADDATA = new Keyword('loaddata', "basic", ['Keyword', "String", "IdentifierReference"], {
-        post: (tokens, interp, keyword) => {
-            let key = tokens[1].value;
-            let variableName = tokens[2].value;
-
-            let value = '';
-            if(interp.savedData[key].type != "Array"){
-                value = `'${interp.savedData[key].value}'>coerce('${interp.savedData[key].type}')`
-            } else {
-                value = "$"+interp.savedData[key].value.map(x => `'${x.value}'>coerce('${x.type}')`).join(", ")+"$"
-            }
-
-            let line = `set ${variableName} = ${value}`;
-
-            interp.lines[interp.interval] = line;
-            interp.gotoIndex(interp.interval - 1);
-        }
-    }).add()
-    const KEYWORD_SAVEDATA = new Keyword('savedata', "basic", ['Keyword', "String", "IdentifierReference"], {
-        post: (tokens, interp, keyword) => {
-            let value = tokens[2].value;
-            const small_coerce = (v) => {
-                if(v.type == "Number") return +v.value;
-                else if(v.type == "Boolean") return v.value === "true";
-                else if(v.type == "String") return v.value;
-                else return v;
-            }
-            let variable = interp.getVariable(tokens[2].value)
-            value = small_coerce(variable);
-
-            if(variable.type == "Array"){
-                value = variable.value.map(v => small_coerce(v));
-            }
-
-            set_fSDS("Config:/program_data", config.currentProgram, tokens[1].value, value)
-        }
-    }).add()
-
-    const KEYWORD_ERROR = new Keyword('error', "basic", ['Keyword', "Number", "String", "String"], {
-        post: (tokens, interp, keyword) => {
-            let severity = tokens[1].value;
-            let errorText = tokens[2].value;
-            let errorMessage = tokens[3].value;
-
-            if(+severity < 0 || +severity > 6) {
-                return interp.outputError(new InterpreterError('RangeError', `Severity must be between 0 and 6`, tokens, interp.interval, tokens[1].position));
-            }
-            
-            createTerminalLine(errorMessage, createErrorText(severity, errorText), {translate: false});
-        }
-    }).add()
-    const KEYWORD_IMPORT = new Keyword('import', "basic", ['Keyword', "String"], {
-        post: (tokens, interp, keyword) => {
-            let importName = tokens[1].value;
-
-            if(Imports[importName] == undefined) {
-                return interp.outputError(new InterpreterError('ImportError', `Import [${importName}] does not exist`, tokens, interp.interval, tokens[1].position));
-            }
-
-            if(interp.hasImport(importName)) {
-                return interp.outputError(new InterpreterError('ImportError', `Import [${importName}] is already imported`, tokens, interp.interval, tokens[1].position));
-            }
-
-            let reversedTokens = structuredClone(interp.tokens).reverse();
-
-            let foundNonImport = false;
-
-            for (let i = 0; i < reversedTokens.length; i++) {
-                let statement = reversedTokens[i];
-                let firstToken = statement[0];
-
-                if (firstToken.type === "Keyword" && firstToken.value === "import") {
-                    if (foundNonImport) {
-                        return interp.outputError(new InterpreterError("StateError", `All imports must be at the top of the file`, tokens, interp.interval, firstToken.position));
-                    }
-                } else {
-                    foundNonImport = true;
-                }
-            }
-
-            let importData = Imports[importName];
-
-            importData.keywords.forEach((k, i) => {
-                if(!(k instanceof Keyword)) {
-                    return interp.outputError(new InterpreterError('StateError', `Imports.${importName}.keywords[${i}] is not of class Keyword`, tokens, interp.interval, tokens[1].position));
-                } else k.add()
-            });
-
-            importData.methods.forEach((m, i) => {
-                if(!(m instanceof Method)) {
-                    return interp.outputError(new InterpreterError('StateError', `Imports.${importName}.methods[${i}] is not of class Method`, tokens, interp.interval, tokens[1].position));
-                } else m.add()
-            });
-
-            importData.variables.forEach((v, i) => {
-                if(v.name == undefined) return interp.outputError(new InterpreterError('StateError', `Imports.${importName}.variables[${i}].name is not defined`, tokens, interp.interval, tokens[1].position));
-
-                if(v.type == undefined) return interp.outputError(new InterpreterError('StateError', `Imports.${importName}.variables[${i}].type is not defined`, tokens, interp.interval, tokens[1].position));
-
-                if(v.value == undefined) return interp.outputError(new InterpreterError('StateError', `Imports.${importName}.variables[${i}].value is not defined`, tokens, interp.interval, tokens[1].position));
-
-                if(v.mutable == undefined) v.mutable = true;
-                if(interp.variables[v.name] != undefined) {
-                    return interp.outputError(new InterpreterError('ReferenceError', `Variable [${v.name}] is already defined`, tokens, interp.interval, tokens[1].position));
-                }
-
-                interp.setVariable(v.name, v.value, v.type, v.mutable);
-            })
-
-            interp.imports.push(importName);
-        }
-    }).add()
-
-    const KEYWORD_CLEARTERMINAL = new Keyword('clearterminal', "basic", ['Keyword'], {
-        post: (tokens, interp, keyword) => {
-            terminal.innerHTML = "";
-        }
-    }).add()
-
-    const KEYWORD_QUICKLOOP = new Keyword('quickloop', "basic", ['Keyword', "Number|Boolean"], {
-        post: (tokens, interp, keyword) => {
-            let depth = 1;
-            let endQuickloopIndex = -1;
-
-            let startIndex = structuredClone(interp.interval);
-
-            for (let i = interp.interval + 1; i < interp.lines.length; i++) {
-                const line = interp.lines[i].trim();
-
-                if (line.startsWith('quickloop')) {
-                    depth++;
-                } else if (line.startsWith('endquickloop')) {
-                    depth--;
-                    if (depth === 0) {
-                        endQuickloopIndex = i;
-                        break;
-                    }
-                }
-            }
-
-            if(endQuickloopIndex == -1) {
-                return interp.outputError(new InterpreterError('SyntaxError', `Missing matching [endquickloop]`, tokens, interp.interval, tokens[0].position));
-            }
-
-            let lines = interp.lines.slice(interp.interval + 1, endQuickloopIndex);
-
-            let value = tokens[1];
-
-            setSetting("currentSpinner", "quickloop-in-progress");
-            setSetting("showSpinner", true);
-
-            if(value.type == "Number"){
-                let maxLoops = parseInt(value.value);
-                if(isNaN(maxLoops) || maxLoops <= 0) {
-                    return interp.outputError(new InterpreterError('TypeError', `Expected type Number, found type ${value.type} in quickloop`, tokens, interp.interval, value.position));
-                }
-
-                for(let i = 0; i < maxLoops; i++) {
-                    for(let j = 0; j < lines.length; j++) {
-                        interp.runLine(lines[j]);
-                    }
-                }
-                
-                interp.gotoIndex(endQuickloopIndex - 1);
-                setSetting("currentSpinner", getSetting("defaultSpinner"));
-                setSetting("showSpinner", false);
-            } else if (value.type == "Boolean") {
-                if(value.value == "true") {
-                    for(let i = 0; i < lines.length; i++) {
-                        interp.runLine(lines[i]);
-                    }
-                    interp.gotoIndex(startIndex - 1);
-                } else {
-                    interp.gotoIndex(endQuickloopIndex - 1);
-                    setSetting("currentSpinner", getSetting("defaultSpinner"));
-                    setSetting("showSpinner", false);
-                }
-            }
-        }
-    }).add()
-
-    const KEYWORD_ENDQUICKLOOP = new Keyword('endquickloop', "basic", ['Keyword'], {
-        post: (tokens, interp, keyword) => {
-            let depth = 1;
-            let startQuickloopIndex = -1;
-
-            for (let i = interp.interval - 1; i >= 0; i--) {
-                const line = interp.lines[i].trim();
-
-                if (line.startsWith('endquickloop')) {
-                    depth++;
-                } else if (line.startsWith('quickloop')) {
-                    depth--;
-                    if (depth === 0) {
-                        startQuickloopIndex = i;
-                        break;
-                    }
-                }
-            }
-
-            if(startQuickloopIndex == -1) {
-                return interp.outputError(new InterpreterError('SyntaxError', `Missing matching [quickloop]`, tokens, interp.interval, tokens[0].position));
-            }
-
-        }
-    }).add()
-
-    const KEYWORD_CALL = new Keyword('call', "basic", ['Keyword', "FunctionCall"], {
-        post: (tokens, interp, keyword) => {
-            let functionName = tokens[1].value.split("(")[0].slice(1);
-            let args = interp.groupByCommas(interp.tokenize(tokens[1].value.split("(")[1].slice(0, -1)))
-
-            args = args.map(group => {
-                let formatted = interp.formatMethods(group);
-                let parsed = interp.parseMethods(formatted);
-                return parsed;
-            });
-
-            if(args.some(t => t instanceof InterpreterError)) {
-                return interp.outputError(args.find(t => t instanceof InterpreterError));
-            }
-
-            let func = interp.functions[functionName];
-            if(func == undefined) {
-                return interp.outputError(new InterpreterError('ReferenceError', `Function [${functionName}] is not defined`, tokens, interp.interval, tokens[1].position));
-            }
-
-            let expectedArgs = func.args;
-            Object.keys(expectedArgs).forEach((key, j) => {
-                if(args[j] != undefined){
-                    interp.temporaryVariables[key] = {
-                        type: args[j].type,
-                        value: args[j].value,
-                        mutable: true
-                    }
-                }
-            })
-
-            interp.createSubInterpreter(func.body);
-        }
-    }).add()
-
-    const KEYWORD_OUTF = new Keyword('outf', "basic", ['Keyword', "String", "String"], {
-        post: (tokens, interp, keyword) => {
-            let format = tokens[1].value;
-            let text = tokens[2];
-            let formatArray = [];
-
-            let formatting = format.split("|")
-
-            let tokenErrors = [];
-
-            for (let i = 0; i < formatting.length; i++) {
-                const formattingObject = {};
-                const parts = formatting[i].split(",").map(p => p.trim());
-
-                for (const part of parts) {
-                    if (!part) continue;
-
-                    const [key, value] = part.split("=").map(s => s.trim());
-
-                    if (["t", "b", "i"].includes(key)) {
-                        formattingObject.type = "blanket";
-                        formattingObject[key] = value;
-
-                        if (key === "i" && value !== "1" && value !== "0") {
-                            tokenErrors.push(new InterpreterError("TypeError", `[${key}] must be 1 or 0, found ${value}`, tokens, interp.interval, tokens[0].position));
-                            break;
-                        }
-                    } else if (["tr", "br", "ir"].includes(key)) {
-                        const [startRaw, endRaw] = value.split("-").map(s => s.trim());
-                        let startTokens = interp.tokenize(startRaw);
-                        let endTokens = interp.tokenize(endRaw);
-
-                        let startTokensGroup = interp.groupByCommas(startTokens);
-                        let endTokensGroup = interp.groupByCommas(endTokens);
-
-                        startTokens = startTokensGroup.map(group => {
-                            let formatted = interp.formatMethods(group);
-                            let parsed = interp.parseMethods(formatted);
-                            return parsed;
-                        });
-
-                        endTokens = endTokensGroup.map(group => {
-                            let formatted = interp.formatMethods(group);
-                            let parsed = interp.parseMethods(formatted);
-                            return parsed;
-                        });
-
-                        if(startTokens.some(t => t instanceof InterpreterError)) {
-                            tokenErrors.push(startTokens.find(t => t instanceof InterpreterError));
-                            break;
-                        }
-
-                        if(endTokens.some(t => t instanceof InterpreterError)) {
-                            tokenErrors.push(endTokens.find(t => t instanceof InterpreterError));
-                            break;
-                        }
-
-                        if (startTokens.length !== 1 || endTokens.length !== 1) {
-                            tokenErrors.push(new InterpreterError("SyntaxError", `[${key}] range must be a single value, found ${startRaw} and ${endRaw}`, tokens, interp.interval, tokens[0].position));
-                            break;
-                        }
-
-                        let start = startTokens[0];
-                        let end = endTokens[0];
-
-                        if(typeof start.value === "object") start = start.value;
-                        if(typeof end.value === "object") end = end.value;
-
-                        start = new Token(start.type, start.value, start.position);
-                        end = new Token(end.type, end.value, end.position);
-
-                        if (start.type !== "Number") {
-                            tokenErrors.push(new InterpreterError("TypeError", `[${key}] range start must be a Number, found ${start.type}`, tokens, interp.interval, tokens[0].position));
-                            break;
-                        } else if (end.type !== "Number") {
-                            tokenErrors.push(new InterpreterError("TypeError", `[${key}] range end must be a Number, found ${end.type}`, tokens, interp.interval, tokens[0].position));
-                            break;
-                        } else {
-
-                            if(start.value == undefined){
-                                tokenErrors.push(new InterpreterError("TypeError", `[${key}] range start must be a Number`, tokens, interp.interval, tokens[0].position));
-                            } else if(end.value == undefined){
-                                tokenErrors.push(new InterpreterError("TypeError", `[${key}] range end must be a Number`, tokens, interp.interval, tokens[0].position));
-                            } else if(start.value > end.value){
-                                tokenErrors.push(new InterpreterError("TypeError", `[${key}] range start must be less than end`, tokens, interp.interval, tokens[0].position));
-                            } else {
-                                formattingObject.type = "range";
-                                formattingObject[`${key}_start`] = start.value.toString();
-                                formattingObject[`${key}_end`] = end.value.toString();
-                            }
-                        }
-                    }
-                }
-
-                formatArray.push(formattingObject);
-            }
-
-            if(tokenErrors.length > 0) interp.outputError(tokenErrors[0]);
-            else interp.formattedOutput(text, formatArray);
-        }
-    }).add()
-
-    const KEYWORD_COMMENT = new Keyword('##', "basic", ['Keyword'], { dud: true }).add()
-
-    const KEYWORD_PROMPT = new Keyword('prompt', "basic", ['Keyword', "IdentifierReference", "Number", "Array"], {
-        post: (tokens, interp, keyword) => {
-            let variable = tokens[1].value;
-            let startingIndex = tokens[2].value;
-            let values = tokens[3].value;
-
-
-            interp.pause();
-            setSetting("currentSpinner", "prompt-in-progress");
-            setSetting("showSpinner", true)
-
-            let selectedIndex = startingIndex;
-            let arrayOptions = values.map(v => v.value);
-
-            if(selectedIndex < 0 || selectedIndex >= arrayOptions.length){
-                return interp.outputError(new InterpreterError('RangeError', `Index [${selectedIndex}] is out of bounds for array of length [${arrayOptions.length}]`, tokens, interp.interval, tokens[2].position));
-            }
-            interp.promptCount++;
-
-            let prefixElement = document.createElement('span');
-            prefixElement.textContent = `>`;
-
-            let lineContainer = document.createElement('div');
-            lineContainer.classList.add('line-container');
-
-            lineContainer.appendChild(prefixElement);
-
-            // scroll to the bottom of the terminal
-
-
-            for(let i = 0; i < arrayOptions.length; i++){
-                let option = document.createElement('span');
-                option.setAttribute("data-program", `cli-session-${config.programSession}-${interp.promptCount}`);
-
-                if(i == selectedIndex) {
-                    option.classList.add('selected');
-                }
-                option.textContent = arrayOptions[i];
-
-                option.style.paddingLeft = 0;
-                lineContainer.appendChild(option);
-                if(i != arrayOptions.length-1) lineContainer.appendChild(document.createTextNode(" • "));
-            }
-
-            function promptHandler(e){
-                e.preventDefault();
-                let options = document.querySelectorAll(`[data-program='cli-session-${config.programSession}-${interp.promptCount}']`);
-
-                if(e.key == "ArrowLeft"){
-                    if(selectedIndex > 0) selectedIndex--;
-                    options.forEach(option => option.classList.remove('selected'));
-                    options[selectedIndex].classList.add('selected');
-                }
-
-                if(e.key == "ArrowRight"){
-                    if(selectedIndex < arrayOptions.length - 1) selectedIndex++;
-                    options.forEach(option => option.classList.remove('selected'));
-                    options[selectedIndex].classList.add('selected');
-                }
-
-                if(e.key == "Enter"){
-                    lineContainer.setAttribute('contenteditable', 'false');
-                    setSetting("currentSpinner", getSetting("defaultSpinner"));
-                    setSetting("showSpinner", false)
-                    setTimeout(() => interp.resume(), 10)
-                    interp.interval--;
-                    interp.lines[interp.interval] = `set ${variable} = "${arrayOptions[selectedIndex]}">coerce('${interp.variables[variable].type}')`;
-                    document.body.removeEventListener("keyup", promptHandler);
-                }
-            }
-
-            terminal.appendChild(lineContainer);
-            terminal.scrollTop = terminal.scrollHeight;
-            document.body.addEventListener("keyup", promptHandler)
-        }
-    }).add();
-
-    const KEYWORD_ASK = new Keyword('ask', "basic", ['Keyword', "IdentifierReference", "String"], {
-        post: (tokens, interp, keyword) => {
-            setSetting("currentSpinner", "ask-in-progress");
-            setSetting("showSpinner", true)
-            interp.pause();
-
-            let variable = tokens[1].value;
-            let prefix = tokens[2].value;
-
-            if(interp.variables[variable] == undefined) {
-                return interp.outputError(new InterpreterError('ReferenceError', `Variable [${variable}] is not defined`, tokens, interp.interval, tokens[0].position));
-            }
-
-            if(interp.variables[variable].mutable == false) {
-                return interp.outputError(new InterpreterError('ReferenceError', `Variable [${variable}] is not mutable`, tokens, interp.interval, tokens[0].position));
-            }
-
-            let prefixElement = document.createElement('span');
-            let lineElement = document.createElement('div');
-            let lineContainer = document.createElement('div');
-
-            lineElement.setAttribute('contenteditable', 'plaintext-only');
-            lineElement.setAttribute('spellcheck', 'false');
-
-            prefixElement.textContent = prefix;
-
-            lineContainer.appendChild(prefixElement);
-            lineContainer.appendChild(lineElement);
-
-            lineContainer.classList.add('line-container');
-            terminal.appendChild(lineContainer);
-            lineElement.focus();
-
-            lineElement.addEventListener('keydown', function(e){
-                if(e.key == "Enter") e.preventDefault();
-            });
-
-            lineElement.addEventListener('keyup', function(e){
-                if(e.key == "Enter"){
-                    lineElement.setAttribute('contenteditable', 'false');
-                    let inputValue = lineElement.textContent.trim();
-
-                    setSetting("currentSpinner", getSetting("defaultSpinner"));
-                    setSetting("showSpinner", false)
-                    setTimeout(() => interp.resume(), 10)
-
-                    interp.interval--;
-                    interp.lines[interp.interval] = `set ${variable} = "${inputValue}">coerce('${interp.variables[variable].type}')`;
-                }
-            });
-        }
-    }).add()
-
-    const KEYWORD_FILEARG = new Keyword('filearg', "basic", ['Keyword', 'IdentifierReference'], {
-        post: (tokens, interp, keyword) => {
-
-            let variableName = tokens[1].value
-            let typeToCoerce = interp.getVariable(tokens[1].value).type;
-            let value = interp.fileArguments[interp.fileArgumentCount];
-
-            if(value == undefined) {
-                return interp.outputError(new InterpreterError('StateError', `File argument [${interp.fileArgumentCount}] does not exist`, tokens, interp.interval, tokens[0].position));
-            }
-
-            interp.lines[interp.interval] = `set ${variableName} = "${value}">coerce('${typeToCoerce}')`;
-            interp.interval--
-
-            interp.fileArgumentCount++;
-        }
-    }).add()
-
-    const KEYWORD_ENDPROG = new Keyword('endprog', "basic", ['Keyword'], { 
-        post: (tokens, interp) => {
-            interp.kill();
-            interp.onComplete();
-        }
-    }).add()
-
-    const KEYWORD_FREE = new Keyword('free', "basic", ['Keyword', "IdentifierReference"], { 
-        pre: (tokens, interp, keyword) => {
-            let variableName = tokens[1].value;
-
-            if (interp.variables[variableName] == undefined) {
-                return interp.outputError(new InterpreterError('ReferenceError', `Variable [${variableName}] is not defined`, tokens, interp.interval, tokens[0].position));
-            } else if(interp.variables[variableName].mutable == false) {
-                return interp.outputError(new InterpreterError('ReferenceError', `Variable [${variableName}] is not mutable`, tokens, interp.interval, tokens[0].position));
-            } else {
-                delete interp.variables[variableName];
-            }
-        }
-    }).add()
-
-    const KEYWORD_STR = new Keyword('str', "assigner", ['Assigner', 'Assignee', 'Assignment', 'String'], {
-        post: (tokens, interp, keyword) => {
-            let identifier = tokens[1];
-            let value = tokens[3];
-
-            interp.setVariable(identifier.value, value.value, 'String', true);
-        }
-    }).add()
-
-    const KEYWORD_CSTR = new Keyword('cstr', "assigner", ['Assigner', 'Assignee', 'Assignment', 'String'], {
-        post: (tokens, interp, keyword) => {
-            let identifier = tokens[1];
-            let value = tokens[3];
-
-            interp.setVariable(identifier.value, value.value, 'String', false);
-        }
-    }).add()
-
-    const KEYWORD_NUM = new Keyword('num', "assigner", ['Assigner', 'Assignee', 'Assignment', 'Number'], {
-        post: (tokens, interp) => {
-            let identifier = tokens[1];
-            let value = tokens[3];
-
-            interp.setVariable(identifier.value, value.value.toString(), 'Number', true);
-        }
-    }).add()
-
-    const KEYWORD_CNUM = new Keyword('cnum', "assigner", ['Assigner', 'Assignee', 'Assignment', 'Number'], {
-        post: (tokens, interp) => {
-            let identifier = tokens[1];
-            let value = tokens[3];
-
-            interp.setVariable(identifier.value, value.value.toString(), 'Number', false);
-        }
-    }).add()
-
-    const KEYWORD_BLN = new Keyword('bln', "assigner", ['Assigner', 'Assignee', 'Assignment', 'Boolean'], {
-        post: (tokens, interp) => {
-            let identifier = tokens[1];
-            let value = tokens[3].value;
-
-            interp.setVariable(identifier.value, value, 'Boolean', true);
-        }
-    }).add()
-
-    const KEYWORD_CBLN = new Keyword('cbln', "assigner", ['Assigner', 'Assignee', 'Assignment', 'Boolean'], {
-        post: (tokens, interp) => {
-            let identifier = tokens[1];
-            let value = tokens[3].value;
-
-            interp.setVariable(identifier.value, value, 'Boolean', false);
-        }
-    }).add()
-
-    const KEYWORD_OUT = new Keyword('out', "basic", ['Keyword', 'String|Number|Boolean'], {
-        post: (tokens, interp) => {
-            let value = tokens[1];
-            interp.output(value);
-        }
-    }).add()
-
-    const KEYWORD_SET = new Keyword('set', "assigner", ['Assigner', 'Assignee', 'Assignment', '*'], {
-        pre: (tokens, interp, keyword) => {
-            keyword.scheme[3] = interp.getVariable(keyword.args[1].value).type;
-        },
-
-        post: (tokens, interp) => {
-            let identifier = tokens[1];
-            let value = tokens[3];
-
-            let variable = interp.getVariable(identifier.value);
-
-            if(variable.mutable == false){
-                return interp.outputError(new InterpreterError('ReferenceError', `Variable [${identifier.value}] is not mutable`, tokens, interp.interval, identifier.position));
-            }
-
-            interp.setVariable(identifier.value, value.value, variable.type, true);
-        }
-    }).add()
-
-    const KEYWORD_ARR = new Keyword('arr', "assigner", ['Assigner', 'Assignee', 'Assignment', 'Array|Empty'], {
-        post: (tokens, interp) => {
-            let identifier = tokens[1];
-            let token = tokens[3];
-
-            let value = token.type == "Empty" ? [] : token.value;
-
-            interp.setVariable(identifier.value, value, 'Array', true);
-        }
-    }).add()
-
-    const KEYWORD_CARR = new Keyword('carr', "assigner", ['Assigner', 'Assignee', 'Assignment', 'Array|Empty'], {
-        post: (tokens, interp) => {
-            let identifier = tokens[1];
-            let token = tokens[3];
-
-            let value = token.type == "Empty" ? [] : token.value;
-
-            interp.setVariable(identifier.value, value, 'Array', false);
-        }
-    }).add()
-
-    const KEYWORD_LOOP = new Keyword('loop', "basic", ['Keyword', 'Number|Boolean'], {
-        post: (tokens, interp, keyword) => {
-            let depth = 1;
-            let endLoopIndex = -1;
-
-            for (let i = interp.interval + 1; i < interp.lines.length; i++) {
-                const line = interp.lines[i].trim();
-
-                if (line.startsWith('loop')) {
-                    depth++;
-                } else if (line.startsWith('endloop')) {
-                    depth--;
-                    if (depth === 0) {
-                        endLoopIndex = i;
-                        break;
-                    }
-                }
-            }
-
-            if(endLoopIndex == -1) {
-                return interp.outputError(new InterpreterError('SyntaxError', `Missing matching [endloop]`, tokens, interp.interval, tokens[0].position));
-            }
-
-            let loopCondition = keyword.args[1];
-
-            if(loopCondition.type == "Boolean"){
-                setSetting("showSpinner", true);
-
-                if(loopCondition.value === 'false') {
-                    setSetting("showSpinner", false);
-                    interp.gotoIndex(endLoopIndex);
-                }
-            } else if(loopCondition.type == "Number"){
-                let maxLoops = parseInt(loopCondition.value);
-                if(maxLoops <= 0) {
-                    return interp.outputError(new InterpreterError('TypeError', `Number cannot be negative or 0`, tokens, interp.interval, loopCondition.position));
-                }
-
-                if(interp.data[`${interp.interval}_loop`] == undefined) interp.data[`${interp.interval}_loop`] = {
-                    loopCount: 0,
-                }
-
-                if(interp.data[`${interp.interval}_loop`].loopCount >= maxLoops) {
-                    delete interp.data[`${interp.interval}_loop`];
-                    setSetting("showSpinner", false);
-                    interp.gotoIndex(endLoopIndex + 1);
-                } else {
-                    interp.data[`${interp.interval}_loop`].loopCount++;
-                }
-
-                setSetting("showSpinner", true);
-            }
-
-
-        },
-    }).add();
-
-    const KEYWORD_ENDLOOP = new Keyword('endloop', "basic", ['Keyword'], { 
-        post: (tokens, interp, keyword) => {
-            // find the matching 'loop' keyword
-            let depth = 1;
-            let startLoopIndex = -1;
-            for (let i = interp.interval - 1; i >= 0; i--) {
-                const line = interp.lines[i].trim();
-                if (line.startsWith('endloop')) {
-                    depth++;
-                } else if (line.startsWith('loop')) {
-                    depth--;
-                    if (depth === 0) {
-                        startLoopIndex = i;
-                        break;
-                    }
-                }
-            }
-
-            if(startLoopIndex == -1) {
-                return interp.outputError(new InterpreterError('SyntaxError', `Missing matching [loop]`, tokens, interp.interval, tokens[0].position));
-            }
-
-            interp.gotoIndex(startLoopIndex - 1);
-        }
-    }).add();
-
-
-    const KEYWORD_IF = new Keyword('if', "basic", ['Keyword', 'Boolean'], {
-        pre: (tokens, interp, keyword) => {
-            let depth = 1;
-            let elseIndex = -1;
-            let endIfIndex = -1;
-
-            for (let i = interp.interval + 1; i < interp.lines.length; i++) {
-                const line = interp.lines[i].trim();
-
-                if (line.startsWith('if')) {
-                    depth++;
-                } else if (line.startsWith('endif')) {
-                    depth--;
-                    if (depth === 0) {
-                        endIfIndex = i;
-                        break;
-                    }
-                } else if (line.startsWith('else') && depth === 1 && elseIndex === -1) {
-                    elseIndex = i;
-                }
-            }
-
-            if(endIfIndex == -1) {
-                return interp.outputError(new InterpreterError('SyntaxError', `Missing matching [endif]`, tokens, interp.interval, tokens[0].position));
-            }
-
-            interp.lines[elseIndex] += ` ${endIfIndex}`
-
-            let ifCondition = keyword.args[1].value;
-
-            if(typeof ifCondition == 'string') ifCondition = ifCondition === 'true';
-
-            if(ifCondition == false) {
-                if (elseIndex !== -1) {
-                    interp.gotoIndex(elseIndex);
-                } else {
-                    interp.gotoIndex(endIfIndex);
-                }
-            }
-        },
-    }).add()
-
-    const KEYWORD_ENDIF = new Keyword('endif', "basic", ['Keyword'], { dud: true }).add()
-    const KEYWORD_ENDFUNC = new Keyword('endfunc', "basic", ['Keyword'], { dud: true }).add();
-
-    const KEYWORD_RETURN = new Keyword('return', "basic", ['Keyword', 'Number|String|Boolean'], { dud: true }).add();
-
-    const KEYWORD_ELSE = new Keyword('else', "basic", ['Keyword', 'Number'], {
-        post: (tokens, interp, keyword) => {
-            interp.gotoIndex(tokens[1].value - 1);
-        }
-    }).add();
-
-    const KEYWORD_WAIT = new Keyword('wait', "basic", ['Keyword', 'Number'], {
-        post: (tokens, interp) => {
-            let value = tokens[1];
-            interp.pause();
-            setSetting('showSpinner', true)
-            setTimeout(() => {
-                interp.resume();
-                setSetting('showSpinner', false)
-            }, value.value);
-        }
-    }).add();
-
-    const KEYWORD_FUNC = new Keyword('func', "basic", ['Keyword', 'Identifier'], {
-        post: (tokens, interp, keyword) => {
-            let depth = 1;
-            let endFuncIndex = -1;
-            let startFuncIndex = interp.interval;
-            for (let i = interp.interval + 1; i < interp.lines.length; i++) {
-                const line = interp.lines[i].trim();
-
-                if (line.startsWith('func')) {
-                    depth++;
-                } else if (line.startsWith('endfunc')) {
-                    depth--;
-                    if (depth === 0) {
-                        endFuncIndex = i;
-                        break;
-                    }
-                }
-            }
-            if (endFuncIndex == -1) {
-                return interp.outputError(new InterpreterError('SyntaxError', `Missing matching [endfunc]`, tokens, interp.interval, tokens[0].position));
-            }
-
-            interp.interval = endFuncIndex;
-
-            let argArray = structuredClone(tokens)
-
-            let functionIdentifier = structuredClone(argArray[1]);
-
-            argArray.shift()
-            argArray.shift();
-
-            // if the first index isnt type LeftParenthesis, throw error
-            if (argArray[0].type != "LeftParenthesis") {
-                return interp.outputError(new InterpreterError('SyntaxError', `Expected [LeftParenthesis]`, argArray, interp.interval, argArray[0].position));
-            }
-
-            if(argArray[argArray.length - 1].type != "RightParenthesis") {
-                return interp.outputError(new InterpreterError('SyntaxError', `Expected [RightParenthesis]`, argArray, interp.interval, argArray[argArray.length - 1].position));
-            }
-
-            argArray.pop();
-            argArray.shift();
-
-            const TypeMap = {
-                "S": "String",
-                "N": "Number",
-                "B": "Boolean",
-                "A": "Array"
-            }
-            let argGroups = interp.groupByCommas(argArray)
-
-            let args = {};
-            argGroups.forEach((group, i) => {
-                if (group.length != 3) {
-                    return interp.outputError(new InterpreterError('SyntaxError', `Missing [Identifier]:[Type] for arg ${i}`, group, interp.interval, group[0].position));
-                }
-
-                let argName = group[0];
-                let argDef = group[1];
-                let argValue = group[2];
-
-                if(argDef.type != "TypeDef") {
-                    return interp.outputError(new InterpreterError('SyntaxError', `Expected [:] for arg ${i}`, argDef, interp.interval, argDef.position));
-                }
-
-                if(argValue.type != "Identifier") {
-                    return interp.outputError(new InterpreterError('SyntaxError', `Expected argument Type (S, N, B, A) for arg ${i}`, argValue, interp.interval, argValue.position));
-                }
-
-                if(TypeMap[argValue.value] == undefined) {
-                    return interp.outputError(new InterpreterError('SyntaxError', `Expected argument Type (S, N, B, A) for arg ${i}`, argValue, interp.interval, argValue.position));
-                }
-
-                args[argName.value] = TypeMap[argValue.value]
-            }) 
-
-            if(interp.functions[functionIdentifier.value] != undefined) {
-                return interp.outputError(new InterpreterError('SyntaxError', `Function ${functionIdentifier.value} already defined`, functionIdentifier, interp.interval, functionIdentifier.position));
-            }
-
-            interp.functions[functionIdentifier.value] = {
-                args: args,
-                body: structuredClone(interp.lines).slice(startFuncIndex + 1, endFuncIndex),
-                start: startFuncIndex,
-                end: endFuncIndex,
-                returnValue: null,
-            }
-        }
-    }).add();
-
-    // Multi
-    new Method("type", ["String", "Number", "Boolean", "Array", "Rectangle", "Line", "Text", "Pixel"], (token, args, interp, method) => {
-        return new Token("String", token.type, token.position, token.methods);
-    }, []).add();
-
-    new Method("coerce", ["String", "Number", "Boolean"], (token, args, interp, method) => {
-        let currentType = token.type;
-        let targetType = args[0].value;
-
-        if(!["String", "Number", "Boolean", "Pixel"].includes(targetType)) {
-            return new InterpreterError('TypeError', `Cannot coerce type ${currentType} to type ${targetType}`, token, token.position, token.position);
-        }
-
-        if(currentType == "String"){
-            if(targetType == "Number") {
-                if(!isNaN(token.value)) {
-                    return new Token("Number", token.value, token.position, token.methods);
-                } else {
-                    return new InterpreterError('TypeError', `Cannot coerce String [${token.value}] to Number`, token, token.position, token.position);
-                }
-            } else if(targetType == "Boolean") {
-                if(token.value == "true" || token.value == "false") {
-                    return new Token("Boolean", token.value, token.position, token.methods);
-                } else {
-                    return new InterpreterError('TypeError', `Cannot coerce String [${token.value}] to Boolean`, token, token.position, token.position);
-                }
-            } else if(targetType == "String") return new Token("String", token.value, token.position, token.methods);
-        } else if(currentType == "Number") {
-            if(targetType == "String") {
-                return new Token("String", token.value.toString(), token.position, token.methods);
-            }
-            else if(targetType == "Boolean") {
-                if(token.value > 0) return new Token("Boolean", "true", token.position, token.methods);
-                else return new Token("Boolean", "false", token.position, token.methods);
-            }
-            else if(targetType == "Number") return new Token("Number", token.value, token.position, token.methods);
-        } else if(currentType == "Boolean") {
-            if(targetType == "String") {
-                return new Token("String", token.value.toString(), token.position, token.methods);
-            }
-            else if(targetType == "Number") {
-                if(token.value == "true") return new Token("Number", 1, token.position, token.methods);
-                else return new Token("Number", 0, token.position, token.methods);
-            }
-            else if(targetType == "Boolean") return new Token("Boolean", token.value, token.position, token.methods);
+        // Handle single line vs multiple lines
+        if (!Array.isArray(compacted[0]) || (compacted[0] && !Array.isArray(compacted[0][0]))) {
+            return resolveLine(compacted);
         } else {
-            return new InterpreterError('TypeError', `Cannot coerce type ${currentType} to type ${targetType}`, token, token.position, token.position);
+            return compacted.map(lineTokens => resolveLine(lineTokens));
         }
-    }, ["String"]).add();
-
-    new Method("index", ["String", "Array"], (token, args, interp, method) => {
-        let index = +args[0].value;
-        let value = token.value[index];
-
-        if(value == undefined) {
-            return new InterpreterError('RangeError', `Index [${index}] out of range for ${token.type} of length [${token.value.length}]`, token, token.position, token.position);
-        }
-
-        if(token.type == "String"){
-            return new Token("String", value, token.position, token.methods);
-        } else if(token.type == "Array") {
-            return value;
-        }
-    }, ["Number"]).add();
-
-    // pure array
-    new Method("join", ["Array"], (token, args, interp, method) => {
-        let arg0 = args[0]?.value || ","
-        return new Token("String", token.value.map(t => t.value).join(arg0), token.position, token.methods);
-    }, ["String?"]).add();
-
-    new Method("append", ["Array"], (token, args, interp, method) => {
-        let arg0 = args[0];
-        return new Token("Array", [...token.value, ...arg0.value], token.position, token.methods);
-    }, ["Array"]).add();
-
-    new Method("length", ["Array"], (token, args, interp, method) => {
-        return new Token("Number", token.value.length.toString(), token.position, token.methods);
-    }, []).add();
-
-    // pure string
-    new Method("eq", ["String"], (token, args, interp, method) => {
-        return new Token("Boolean", (token.value == args[0].value).toString(), token.position, token.methods);
-    }, ["String"]).add();
-
-    new Method("neq", ["String"], (token, args, interp, method) => {
-        return new Token("Boolean", (token.value != args[0].value).toString(), token.position, token.methods);
-    }, ["String"]).add();
-
-    new Method("append", ["String"], (token, args, interp, method) => {
-        let arg0 = args[0];
-        return new Token("String", token.value + arg0.value, token.position, token.methods);
-    }, ["String"]).add();
-
-    new Method("length", ["String"], (token, args, interp, method) => {
-        return new Token("Number", token.value.length.toString(), token.position, token.methods);
-    }, []).add();
-
-    new Method("repeat", ["String"], (token, args, interp, method) => {
-        let arg0 = args[0];
-        return new Token("String", token.value.repeat(arg0.value), token.position, token.methods);
-    }, ["Number"]).add();
-
-    // pure boolean
-    new Method("flip", ["Boolean"], (token, args, interp, method) => {
-        return new Token("Boolean", !token.value.toString(), token.position, token.methods);
-    }, []).add();
-
-    // pure number
-    new Method("abs", ["Number"], (token, args, interp, method) => {
-        return new Token("Number", Math.abs(token.value).toString(), token.position, token.methods);
-    }, []).add();
-    
-    new Method("truncate", ["Number"], (token, args, interp, method) => {
-        let precision = +args[0]?.value || 0;
-        if(precision < 0) return new InterpreterError('RangeError', `Cannot round to negative precision`, token, token.position, token.position);
-
-        const factor = Math.pow(10, precision);
-        let result = Math.round(token.value * factor) / factor;
-
-        return new Token("Number", result.toString(), token.position, token.methods);
-    }, ["Number?"]).add();
-
-    new Method("round", ["Number"], (token, args, interp, method) => {
-        return new Token("Number", Math.round(token.value).toString(), token.position, token.methods);
-    }, []).add();
-
-    new Method("mod", ["Number"], (token, args, interp, method) => {
-        let arg0 = args[0];
-        if(arg0.value == 0) {
-            return new Token("Number", "Infinity", token.position, token.methods);
-        }
-        return new Token("Number", (token.value % arg0.value).toString(), token.position, token.methods);
-    }).add();
-
-    new Method("inc", ["Number"], (token, args, interp, method) => {
-        return new Token("Number", (+token.value + 1).toString(), token.position, token.methods);
-    }, []).add();
-
-    new Method("dec", ["Number"], (token, args, interp, method) => {
-        return new Token("Number", (+token.value - 1).toString(), token.position, token.methods);
-    }, []).add();
-
-    new Method("add", ["Number"], (token, args, interp, method) => {
-        let arg0 = args[0];
-        return new Token("Number", (+token.value + +arg0.value).toString(), token.position, token.methods);
-    }, ["Number"]).add();
-
-    new Method("sub", ["Number"], (token, args, interp, method) => {
-        let arg0 = args[0];
-        return new Token("Number", (+token.value - +arg0.value).toString(), token.position, token.methods);
-    }, ["Number"]).add();
-
-    new Method("mul", ["Number"], (token, args, interp, method) => {
-        let arg0 = args[0];
-        return new Token("Number", (+token.value * +arg0.value).toString(), token.position, token.methods);
-    }, ["Number"]).add();
-
-    new Method("div", ["Number"], (token, args, interp, method) => {
-        let arg0 = args[0];
-        if(arg0.value == 0) {
-            return new Token("Number", "Infinity", token.position, token.methods);
-        }
-        return new Token("Number", (+token.value / +arg0.value).toString(), token.position, token.methods);
-    }, ["Number"]).add();
-}
-
-const defaultImportData = {
-    graphics: {
-        defaultBackgroundColor: "c15",
-        defaultTextColor: 'c02',
-        defaultTextClearColor: 'transparent',
-        defaultStrokeColor: "c00",
-        rendered: false,
-        maxWidth: 79,
-        maxHeight: 58,
-        width: undefined,
-        height: undefined,
-        backRenderStack: [],
-        frontRenderStack: [],
     }
-}
 
-const Imports = {
-    math: {
-        variables: [],
-        keywords: [],
-        methods: [],
-    },
-    config: {
-        variables: [
-            {
-                name: "Config",
-                type: "Config",
-                value: "Config",
-                mutable: false,
-            }
-        ],
-        keywords: [],
-        methods: [],
-    },
-    graphics: {
-        variables: [
-            {}
-        ],
-        keywords: [
-            new Keyword("createscreen", "basic", ['Keyword', 'Number', "Number"], {
-                post: (tokens, interp, keyword) => {
-                    let givenWidth = tokens[1].value;
-                    let givenHeight = tokens[2].value;
 
-                    if(givenWidth < 1 || givenWidth > defaultImportData.graphics.maxWidth) {
-                        return interp.outputError(new InterpreterError('RangeError', `Width must be in range[0, ${defaultImportData.graphics.maxWidth}]`, tokens, interp.interval, tokens[1].position));
+    compact(lineTokens) {
+        // Helper to parse arguments inside parentheses
+        const parseArgs = (tokens, startIndex) => {
+            let args = [];
+            let currentArg = [];
+            let depth = 0;
+            let i = startIndex;
+
+            for (; i < tokens.length; i++) {
+                const t = tokens[i];
+                if (t.type === "paren_start") {
+                    depth++;
+                    if (depth > 1) currentArg.push(t);
+                } else if (t.type === "paren_end") {
+                    if (depth === 0) {
+                        return [args, i]; // unmatched )
                     }
-                    if(givenHeight < 1 || givenHeight > defaultImportData.graphics.maxHeight) {
-                        return interp.outputError(new InterpreterError('RangeError', `Height must be in range [1, ${defaultImportData.graphics.maxHeight}]`, tokens, interp.interval, tokens[2].position));
-                    }
-                    interp.importData.graphics.width = +givenWidth;
-                    interp.importData.graphics.height = +givenHeight;
-
-                    interp.importData.graphics.rendered = true;
-
-                    terminal.innerHTML = "";
-
-                    for(let i = 0; i < givenHeight; i++){
-                        let rowHtml = '';
-                        for(let j = 0; j < givenWidth; j++){
-                            let style = `"background-color: var(--${defaultImportData.graphics.defaultBackgroundColor}); color: var(--${defaultImportData.graphics.defaultBackgroundColor})"`;
-                            rowHtml += `<span id="screen-${config.programSession}-${i}-${j}" style=${style}>\u00A0</span>`;
+                    depth--;
+                    if (depth === 0) {
+                        if (currentArg.length) {
+                            const parsed = this.compact(currentArg);
+                            args.push(parsed);
+                            currentArg = [];
                         }
-                        let lineContainer = document.createElement('div');
-                        let terminalLine = document.createElement('div');
-                        lineContainer.classList.add('line-container');
-                        terminalLine.innerHTML = rowHtml;
-                        lineContainer.appendChild(terminalLine);
-                        terminal.appendChild(lineContainer);
-                    }
-                }
-            }),
-            new Keyword('line', "assigner", ['Assigner', 'Assignee', 'Assignment', 'Array'], {
-                post: (tokens, interp, keyword) => {
-                    let array = tokens[3].value;
-
-                    if(array.length != 4){
-                        return new InterpreterError('SyntaxError', `Line must have 4 values`, tokens, interp.interval, tokens[3].position);
-                    }
-
-                    for(let i = 0; i < array.length; i++){
-                        if(array[i].type != "Number"){
-                            return new InterpreterError('TypeError', `Line values must be numbers`, tokens, interp.interval, array[i].position);
-                        }
-                    }
-
-                    let x1 = array[0].value;
-                    let y1 = array[1].value;
-                    let x2 = array[2].value;
-                    let y2 = array[3].value;
-
-                    let variableValue = {
-                        x1: x1,
-                        y1: y1,
-                        x2: x2,
-                        y2: y2,
-                        name: tokens[1].value,
-                        stroke: defaultImportData.graphics.defaultStrokeColor,
-                        text: "",
-                        color: defaultImportData.graphics.defaultTextColor,
-                    }
-
-                    if(array[0].cloneInfo != undefined){
-                        variableValue.x1 = array[0].value;
-                        variableValue.y1 = array[1].value;
-                        variableValue.x2 = array[2].value;
-                        variableValue.y2 = array[3].value;
-
-                        variableValue.stroke = array[0].cloneInfo.stroke;
-                    }
-
-                    interp.setVariable(tokens[1].value, variableValue, "Line", true);
-                }
-            }),
-            new Keyword("rect", "assigner", ['Assigner', 'Assignee', 'Assignment', 'Array'], {
-                post: (tokens, interp, keyword) => {
-                    let array = tokens[3].value;
-
-                    if(array.length != 4){
-                        return new InterpreterError('SyntaxError', `Rectangle must have 4 values`, tokens, interp.interval, tokens[3].position);
-                    }
-
-                    for(let i = 0; i < array.length; i++){
-                        if(array[i].type != "Number"){
-                            return new InterpreterError('TypeError', `Rectangle values must be numbers`, tokens, interp.interval, array[i].position);
-                        }
-                    }
-
-                    let x = array[0].value;
-                    let y = array[1].value;
-                    let width = array[2].value;
-                    let height = array[3].value;
-
-                    let variableValue = {
-                        x: x,
-                        y: y,
-                        width: width,
-                        height: height,
-                        name: tokens[1].value,
-                        fill: defaultImportData.graphics.defaultBackgroundColor,
-                        stroke: defaultImportData.graphics.defaultStrokeColor,
-                    }
-
-                    if(array[0].cloneInfo != undefined){
-                        variableValue.stroke = array[0].cloneInfo.stroke;
-                        variableValue.fill = array[0].cloneInfo.fill;
-
-                        variableValue.x = array[0].value;
-                        variableValue.y = array[1].value;
-                        variableValue.width = array[2].value;
-                        variableValue.height = array[3].value;
-                    }
-
-                    interp.setVariable(tokens[1].value, variableValue, "Rectangle", true);
-                }
-            }),
-            new Keyword("text", "assigner", ['Assigner', 'Assignee', 'Assignment', 'Array'], {
-                post: (tokens, interp, keyword) => {
-                    let array = tokens[3].value;
-
-                    if(array.length != 3){
-                        return new InterpreterError('SyntaxError', `Text must have 3 values`, tokens, interp.interval, tokens[3].position);
-                    }
-
-                    if(array[0].type != "Number"){
-                        return new InterpreterError('TypeError', `Text x value must be a number`, tokens, interp.interval, array[0].position);
-                    }
-
-                    if(array[1].type != "Number"){
-                        return new InterpreterError('TypeError', `Text y value must be a number`, tokens, interp.interval, array[1].position);
-                    }
-
-                    if(array[2].type != "String"){
-                        return new InterpreterError('TypeError', `Text value must be a string`, tokens, interp.interval, array[2].position);
-                    }
-
-                    let x = array[0].value;
-                    let y = array[1].value;
-                    let text = array[2].value;
-
-                    let variableValue = {
-                        x: x,
-                        y: y,
-                        text: text,
-                        width: Infinity,
-                        name: tokens[1].value,
-                        color: defaultImportData.graphics.defaultTextColor,
-                        wrap: false,
-                    }
-
-                    if(array[0].cloneInfo != undefined){
-                        variableValue.color = array[0].cloneInfo.color;
-                        variableValue.wrap = array[0].cloneInfo.wrap;
-                        variableValue.width = array[0].cloneInfo.width;
-                        variableValue.x = array[0].value;
-                        variableValue.y = array[1].value;
-                        variableValue.text = array[2].value;
-                    }
-
-                    interp.setVariable(tokens[1].value, variableValue, "Text", true);
-                }
-            }),
-            new Keyword("pxl", "assigner", ['Assigner', 'Assignee', 'Assignment', 'Array|Pixel'], {
-                post: (tokens, interp, keyword) => {
-                    if(tokens[3].type == "Array"){
-                        let array = tokens[3].value;
-
-                        if(array.length != 2){
-                            return new InterpreterError('SyntaxError', `Pixel must have 2 values`, tokens, interp.interval, tokens[3].position);
-                        }
-
-                        for(let i = 0; i < array.length; i++){
-                            if(array[i].type != "Number"){
-                                return new InterpreterError('TypeError', `Pixel values must be numbers`, tokens, interp.interval, array[i].position);
-                            }
-                        }
-
-                        let x = +array[0].value;
-                        let y = +array[1].value;
-
-                        let variableValue = {
-                            x: x.toString(),
-                            y: y.toString(),
-                            name: tokens[1].value,
-                        }
-
-                        interp.setVariable(tokens[1].value, variableValue, "Pixel", true);
+                        return [args, i];
                     } else {
-                        let value = {
-                            x: tokens[3].value.x,
-                            y: tokens[3].value.y,
-                            name: tokens[1].value,
+                        currentArg.push(t);
+                    }
+                } else if (t.type === "comma" && depth === 1) {
+                    if (!currentArg.length) {
+                        return new FS3Error("SyntaxError", "Empty argument in method call", t.line, t.col, t);
+                    }
+                    const parsed = this.compact(currentArg);
+                    args.push(parsed);
+                    currentArg = [];
+                } else {
+                    currentArg.push(t);
+                }
+            }
+
+            throw new FS3Error("SyntaxError", "Unclosed parenthesis in method call", tokens[startIndex - 1].line, tokens[startIndex - 1].col, tokens[startIndex - 1]);
+        };
+
+        const attachMethod = (parent, methodToken, args = []) => {
+            parent.methods.push({
+                name: methodToken.value,
+                args: args,
+                line: methodToken.line,
+                col: methodToken.col
+            });
+        };
+
+        let result = [];
+        let i = 0;
+
+        while (i < lineTokens.length) {
+            const token = lineTokens[i];
+
+            if (!token) { i++; continue; }
+
+            // Detect parent: first non-method token in chain
+            if (!["method_indicator", "method", "paren_start", "paren_end", "comma"].includes(token.type)) {
+                // Copy line and col
+                result.push({
+                    ...token,
+                    methods: [],
+                    line: token.line,
+                    col: token.col
+                });
+                i++;
+
+                while (i < lineTokens.length) {
+                    const t = lineTokens[i];
+
+                    if (t.type === "method_indicator") {
+                        const next = lineTokens[i + 1];
+                        if (!next || next.type !== "method") {
+                            throw new FS3Error("SyntaxError", "method_indicator has no following method", t.line, t.col);
                         }
-                        interp.setVariable(tokens[1].value, value, "Pixel", true);
+                        const methodTok = next;
+                        i += 2;
+
+                        let args = [];
+                        if (i < lineTokens.length && lineTokens[i].type === "paren_start") {
+                            const [parsedArgs, endIndex] = parseArgs(lineTokens, i);
+                            if (parsedArgs instanceof FS3Error) return parsedArgs;
+                            args = parsedArgs;
+                            i = endIndex + 1;
+                        }
+
+                        attachMethod(result[result.length - 1], methodTok, args);
+                    } else if (t.type === "comma" || t.type === "paren_end") {
+                        break;
+                    } else {
+                        break;
                     }
-
                 }
-            }),
-        ],
-        methods: [
-            // pixel ===========================================================================================
-            new Method("toString", ["Pixel"], (token, args, interp, method) => {
-                return new Token("String", `(${token.value.x},${token.value.y})`, token.position, token.methods);
-            }, []),
+            } else {
+                throw new FS3Error("SyntaxError", `Unexpected token [${token.value}]`, token.line, token.col);
+            }
+        }
 
-            new Method("x", ["Pixel"], (token, args, interp, method) => {
-                return new Token("Number", token.value.x, token.position, token.methods);
-            }),
+        return result.length === 1 ? result[0] : result;
+    }
 
-            new Method("y", ["Pixel"], (token, args, interp, method) => {
-                return new Token("Number", token.value.y, token.position, token.methods);
-            }),
+    tokenize(lines) {
+        const tokens = [];
 
-            new Method("back", ["Pixel"], (token, args, interp, method) => {
-                if(!interp.importData.graphics.rendered){
-                    return new InterpreterError('StateError', `Screen not created. Use the [createscreen] keyword first`, token, interp.interval, token.position);
-                }
-                let x = token.value.x;
-                let y = token.value.y;
-                let pixel = interp.getPixel(x, y);
+        lines.forEach((line, lineNo) => {
+            let pos = 0;
+            const lineTokens = [];
 
-                if(!pixel) {
-                    return new InterpreterError('RangeError', `Pixel (${x}, ${y}) is out of range`, token, interp.interval, token.position);
-                }
+            while (pos < line.length) {
+                let matched = false;
 
-                return new Token("String", pixel.style.backgroundColor.match(/--(c\d\d)/)[1], token.position, token.methods);
-            }),
+                for (const [type, base] of FroggyScript3.matches) {
+                    const regex = new RegExp(base.source, 'y'); // sticky
+                    regex.lastIndex = pos;
+                    const m = regex.exec(line);
 
-            new Method("front", ["Pixel"], (token, args, interp, method) => {
-                if(!interp.importData.graphics.rendered){
-                    return new InterpreterError('StateError', `Screen not created. Use the [createscreen] keyword first`, token, interp.interval, token.position);
-                }
-                let x = token.value.x;
-                let y = token.value.y;
-                let pixel = interp.getPixel(x, y);
-
-                if(!pixel) {
-                    return new InterpreterError('RangeError', `Pixel (${x}, ${y}) is out of range`, token, interp.interval, token.position);
-                }
-
-                return new Token("String", pixel.style.color.match(/--(c\d\d)/)[1], token.position, token.methods);
-            }),
-
-            new Method("value", ["Pixel"], (token, args, interp, method) => {
-                if(!interp.importData.graphics.rendered){
-                    return new InterpreterError('StateError', `Screen not created. Use the [createscreen] keyword first`, token, interp.interval, token.position);
-                }
-                let x = token.value.x;
-                let y = token.value.y;
-                let pixel = interp.getPixel(x, y);
-
-                if(!pixel) {
-                    return new InterpreterError('RangeError', `Pixel (${x}, ${y}) is out of range`, token, interp.interval, token.position);
-                }
-
-                return new Token("String", pixel.textContent.trim(), token.position, token.methods);
-            }, []),
-
-
-
-            // line ============================================================================================
-            new Method("intersection", ["Line"], (token, args, interp, method) => {
-                let line1 = token.value;
-                let line2 = args[0].value;
-
-                let line1_x1 = +line1.x1;
-                let line1_y1 = +line1.y1;
-                let line1_x2 = +line1.x2;
-                let line1_y2 = +line1.y2;
-
-                let line2_x1 = +line2.x1;
-                let line2_y1 = +line2.y1;
-                let line2_x2 = +line2.x2;
-                let line2_y2 = +line2.y2;
-
-                function getLineIntersection(x1, y1, x2, y2, x3, y3, x4, y4) {
-                    // Calculate denominators
-                    let denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
-                    if (denom === 0) return null; // Lines are parallel or coincident
-
-                    // Calculate intersection point
-                    let px = ((x1*y2 - y1*x2)*(x3 - x4) - (x1 - x2)*(x3*y4 - y3*x4)) / denom;
-                    let py = ((x1*y2 - y1*x2)*(y3 - y4) - (y1 - y2)*(x3*y4 - y3*x4)) / denom;
-
-                    // Check if point is within both segments
-                    let within1 = Math.min(x1, x2) <= px && px <= Math.max(x1, x2) &&
-                                Math.min(y1, y2) <= py && py <= Math.max(y1, y2);
-                    let within2 = Math.min(x3, x4) <= px && px <= Math.max(x3, x4) &&
-                                Math.min(y3, y4) <= py && py <= Math.max(y3, y4);
-
-                    if (within1 && within2) {
-                        return { 
-                            x: Math.round(px), 
-                            y: Math.round(py)
-                        };
+                    if (m) {
+                        matched = true;
+                        const value = m[0];
+                        // skip whitespace tokens by default
+                        if (type !== "whitespace") {
+                            lineTokens.push({
+                                type,
+                                value,
+                                line: lineNo,
+                                col: pos,
+                                methods: []
+                            });
+                        }
+                        pos += value.length;
+                        break;
                     }
-
-                    return null; // The intersection is outside the segments
                 }
 
-                let intersection = getLineIntersection(line1_x1, line1_y1, line1_x2, line1_y2, line2_x1, line2_y1, line2_x2, line2_y2);
+                if (!matched) {
+                    throw new FS3Error("TokenizationError", `Unrecognized token [${line[pos]}]`, lineNo, pos, tokens);
+                }
+            }
 
-                if(intersection == null) return new Token("Boolean", "false", token.position, token.methods);
-                else {
-                    // turn this into a Pixel object
+            tokens.push(lineTokens);
+        });
 
-                    let pixel = new Token("Pixel", {
-                        x: intersection.x.toString(),
-                        y: intersection.y.toString(),
-                    }, token.position, token.methods);
+        for(let lineNo = 0; lineNo < tokens.length; lineNo++){
+            let _tokens = tokens[lineNo];
+            if(_tokens instanceof FS3Error) break;
 
-                    return pixel;
+            // if _tokens is the type of FS3Error or FS3Warn
+            if(_tokens instanceof FS3Warn) {
+                this.warnout(_tokens);
+            }
+
+            // if the first token is a type variable, change it to type keyword
+            if(_tokens[0] && _tokens[0].type === "variable"){
+                _tokens[0].type = "keyword"; 
+            }
+
+
+            _tokens.forEach((token, i) => {
+                let prev = _tokens[i-1];
+                let current = _tokens[i];
+                let next = _tokens[i+1];
+
+                if(prev && prev.type == "method_indicator" && current.type == "variable"){
+                    tokens[lineNo][i].type = "method"
+                }
+            })
+        }
+
+        // filter out FS3Warn tokens
+        tokens.forEach((t, i) => {
+            if(t instanceof FS3Warn){
+                tokens.splice(i, 1);
+            }
+        }); 
+
+
+        // strip quotes, and turn number strings into actual numbers
+        for(let i = 0; i < tokens.length; i++){
+            for(let j = 0; j < tokens[i].length; j++){
+                let token = tokens[i][j];
+                if(token.type === "string"){
+                    // strip quotes and unescape
+                    const quoteType = token.value[0];
+                    token.value = token.value.slice(1, -1).replace(/\\(.)/g, "$1");
+                    tokens[i][j] = token;
+                }
+                else if(token.type === "number"){
+                    token.value = parseFloat(token.value);
+                    tokens[i][j] = token;
+                }
+            }
+        }
+
+        for(let i = 0; i < tokens.length; i++){
+            for(let j = 0; j < tokens[i].length; j++){
+                let token = tokens[i][j];
+
+                if(token.type === "assignment" && tokens[i][j-1]?.type === "variable"){
+                    tokens[i][j-1].type = "variable_reference";
                 }
 
-            }, ["Line"]),
-
-            new Method("cross", ["Line"], (token, args, interp, method) => {
-                let line1 = token.value;
-                let line2 = args[0].value;
-
-                let line1_x1 = +line1.x1;
-                let line1_y1 = +line1.y1;
-                let line1_x2 = +line1.x2;
-                let line1_y2 = +line1.y2;
-
-                let line2_x1 = +line2.x1;
-                let line2_y1 = +line2.y1;
-                let line2_x2 = +line2.x2;
-                let line2_y2 = +line2.y2;
-
-                function ccw(ax, ay, bx, by, cx, cy) {
-                    return (cy - ay) * (bx - ax) > (by - ay) * (cx - ax);
+                if(token.type === "variable" && (tokens[i][j-1]?.type === "keyword" && tokens[i][j-1]?.value === "free")){
+                    tokens[i][j].type = "variable_reference";
                 }
+            }
+        }
 
-                function linesIntersect(x1, y1, x2, y2, x3, y3, x4, y4) {
-                    return ccw(x1, y1, x3, y3, x4, y4) !== ccw(x2, y2, x3, y3, x4, y4) &&
-                            ccw(x1, y1, x2, y2, x3, y3) !== ccw(x1, y1, x2, y2, x4, y4);
-                }
-
-                let intersects = linesIntersect(line1_x1, line1_y1, line1_x2, line1_y2, line2_x1, line2_y1, line2_x2, line2_y2);
-
-                return new Token("Boolean", intersects.toString(), token.position, token.methods);
-            }, ["Line"]),
-
-            new Method("add", ["Line"], (token, args, interp, method) => {
-                if(!interp.importData.graphics.rendered){
-                    return new InterpreterError('StateError', `Screen not created. Use the [createscreen] keyword first`, token, interp.interval, token.position);
-                }
-
-                interp.importData.graphics.backRenderStack.push(token.value);
-                interp.renderGraphics(["back"]);
-                return token;
-            }),
-
-            new Method("remove", ["Line"], (token, args, interp, method) => {
-                if(!interp.importData.graphics.rendered){
-                    return new InterpreterError('StateError', `Screen not created. Use the [createscreen] keyword first`, token, interp.interval, token.position);
-                }
-                let variable = interp.variables[token.value.name];
-                if(variable == undefined) {
-                    return new InterpreterError('ReferenceError', `Variable [${token.value.name}] is not defined`, token, interp.interval, token.position);
-                }
-                interp.importData.graphics.backRenderStack = interp.importData.graphics.backRenderStack.filter(t => t.name != token.value.name);
-                interp.renderGraphics(["back"]);
-                return token;
-            }),
-
-            new Method("x1", ["Line"], (token, args, interp, method) => {
-                if(args[0] == undefined) return new Token("Number", token.value.x1, token.position, token.methods);
-                else {
-                    interp.variables[token.value.name].value.x1 = args[0].value;
-                    interp.renderGraphics(["back"]);
-                    return token;
-                }
-            }, ["Number?"]),
-
-            new Method("y1", ["Line"], (token, args, interp, method) => {
-                if(args[0] == undefined) return new Token("Number", token.value.y1, token.position, token.methods);
-                else {
-                    interp.variables[token.value.name].value.y1 = args[0].value;
-                    interp.renderGraphics(["back"]);
-                    return token;
-                }
-            }, ["Number?"]),
-
-            new Method("x2", ["Line"], (token, args, interp, method) => {
-                if(args[0] == undefined) return new Token("Number", token.value.x2, token.position, token.methods);
-                else {
-                    interp.variables[token.value.name].value.x2 = args[0].value;
-                    interp.renderGraphics(["back"]);
-                    return token;
-                }
-            }, ["Number?"]),
-        
-            new Method("y2", ["Line"], (token, args, interp, method) => {
-                if(args[0] == undefined) return new Token("Number", token.value.y2, token.position, token.methods);
-                else {
-                    interp.variables[token.value.name].value.y2 = args[0].value;
-                    interp.renderGraphics(["back"]);
-                    return token;
-                }
-            }, ["Number?"]),
-
-            new Method("stroke", ["Line"], (token, args, interp, method) => {
-                if(args[0] == undefined) return new Token("String", token.value.stroke, token.position, token.methods);
-                else {
-                    interp.variables[token.value.name].value.stroke = args[0].value;
-                    interp.renderGraphics(["back"]);
-                    return token;
-                }
-            }, ["String?"]),
-
-
-            // text ============================================================================================
-            new Method("add", ["Text"], (token, args, interp, method) => {
-                if(!interp.importData.graphics.rendered){
-                    return new InterpreterError('StateError', `Screen not created. Use the [createscreen] keyword first`, token, interp.interval, token.position);
-                }
-
-                interp.importData.graphics.frontRenderStack.push(token.value);
-                interp.renderGraphics(["front"]);
-                return token;
-            }),
-
-            new Method("remove", ["Text"], (token, args, interp, method) => {
-                if(!interp.importData.graphics.rendered){
-                    return new InterpreterError('StateError', `Screen not created. Use the [createscreen] keyword first`, token, interp.interval, token.position);
-                }
-
-                let variable = interp.variables[token.value.name];
-                if(variable == undefined) {
-                    return new InterpreterError('ReferenceError', `Variable [${token.value.name}] is not defined`, token, interp.interval, token.position);
-                }
-
-                interp.importData.graphics.frontRenderStack = interp.importData.graphics.frontRenderStack.filter(t => t.name != token.value.name);
-                interp.renderGraphics(["front"]);
-                return token;
-            }),
-
-            new Method("x", ["Text"], (token, args, interp, method) => {
-                if(args[0] == undefined) return new Token("Number", token.value.x, token.position, token.methods);
-                else {
-                    interp.variables[token.value.name].value.x = args[0].value;
-                    interp.renderGraphics(["front"]);
-                    return token;
-                }
-            }, ["Number?"]),
-
-            new Method("y", ["Text"], (token, args, interp, method) => {
-                if(args[0] == undefined) return new Token("Number", token.value.y, token.position, token.methods);
-                else {
-                    interp.variables[token.value.name].value.y = args[0].value;
-                    interp.renderGraphics(["front"]);
-                    return token;
-                }
-            }, ["Number?"]),
-
-            new Method("move", ["Text"], (token, args, interp, method) => {
-                let newX = args[0].value;
-                let newY = args[1].value;
-                interp.variables[token.value.name].value.x = newX;
-                interp.variables[token.value.name].value.y = newY;
-                interp.renderGraphics(["front"]);
-                return token;
-            }, ["Number", "Number"]),
-
-            new Method("text", ["Text"], (token, args, interp, method) => {
-                if(args[0] == undefined) return new Token("String", token.value.text, token.position, token.methods);
-                else {
-                    interp.variables[token.value.name].value.text = args[0].value;
-                    interp.renderGraphics(["front"]);
-                    return token;
-                }
-            }, ["String?"]),
-
-            new Method("width", ["Text"], (token, args, interp, method) => {
-                if(args[0] == undefined) return new Token("Number", token.value.width, token.position, token.methods);
-                else {
-                    interp.variables[token.value.name].value.width = args[0].value;
-                    interp.renderGraphics(["front"]);
-                    return token;
-                }
-            }, ["Number?"]),
-
-            new Method("wrap", ["Text"], (token, args, interp, method) => {
-                if(args[0] == undefined) return new Token("Boolean", token.value.wrap, token.position, token.methods);
-                else {
-                    interp.variables[token.value.name].value.wrap = args[0].value;
-                    interp.renderGraphics(["front"]);
-                    return token;
-                }
-            }, ["Boolean?"]),
-
-            new Method("color", ["Text"], (token, args, interp, method) => {
-                if(args[0] == undefined) return new Token("String", token.value.color, token.position, token.methods);
-                else {
-                    interp.variables[token.value.name].value.color = args[0].value;
-                    interp.renderGraphics(["front"]);
-                    return token;
-                }
-            }, ["String?"]),
-
-            new Method("clone", ["Text"], (token, args, interp, method) => {
-                let finalToken = new Token("Array", [], token.position, token.methods);
-                finalToken.value.push(new Token("Number", token.value.x, token.position, token.methods));
-                finalToken.value.push(new Token("Number", token.value.y, token.position, token.methods));
-                finalToken.value.push(new Token("String", token.value.text, token.position, token.methods));
-
-                finalToken.value[0].cloneInfo = {
-                    color: token.value.color,
-                    wrap: token.value.wrap,
-                    width: token.value.width,
-                }
-                return finalToken;
-            }, []),
-
-            // rectangle =======================================================================================
-            new Method("overlaps", ["Rectangle"], (token, args, interp, method) => {
-
-                let thisRect = token.value;
-                let otherRect = args[0].value;
-
-                // check if both are in the interp.importData.graphics.backRenderStack
-                if(!interp.importData.graphics.rendered){
-                    return new InterpreterError('ReferenceError', `Screen not created. Use the [createscreen] keyword first`, token, interp.interval, token.position);
-                }
-
-                if(interp.importData.graphics.backRenderStack.find(t => t.name == thisRect.name) == undefined){
-                    return new InterpreterError('StateError', `Cannot check for overlap because Rectangle [${thisRect.name}] has not been added to the screen`, token, interp.interval, token.position);
-                }
-                if(interp.importData.graphics.backRenderStack.find(t => t.name == otherRect.name) == undefined){
-                    return new InterpreterError('StateError', `Cannot check for overlap because Rectangle [${otherRect.name}] has not been added to the screen`, token, interp.interval, token.position);
-                }
-
-
-
-                let thisX = +thisRect.x;
-                let thisY = +thisRect.y;
-                let thisWidth = +thisRect.width;
-                let thisHeight = +thisRect.height;
-
-                let otherX = +otherRect.x;
-                let otherY = +otherRect.y;
-                let otherWidth = +otherRect.width;
-                let otherHeight = +otherRect.height;
-
-                let overlaps = !(thisX + thisWidth < otherX ||
-                    thisX > otherX + otherWidth ||
-                    thisY + thisHeight < otherY ||
-                    thisY > otherY + otherHeight);
-
-                return new Token("Boolean", overlaps.toString(), token.position, token.methods);
-            }, ["Rectangle"]),
-
-            new Method("clone", ["Rectangle"], (token, args, interp, method) => {
-                let finalToken = new Token("Array", [], token.position, token.methods);
-
-                finalToken.value.push(new Token("Number", token.value.x, token.position, token.methods));
-                finalToken.value.push(new Token("Number", token.value.y, token.position, token.methods));
-                finalToken.value.push(new Token("Number", token.value.width, token.position, token.methods));
-                finalToken.value.push(new Token("Number", token.value.height, token.position, token.methods));
-
-                finalToken.value[0].cloneInfo = {
-                    stroke: token.value.stroke,
-                    fill: token.value.fill,
-                }
-
-                return finalToken;
-            }, []),
-
-            new Method("add", ["Rectangle"], (token, args, interp, method) => {
-                if(!interp.importData.graphics.rendered){
-                    return new InterpreterError('ReferenceError', `Screen not created. Use the [createscreen] keyword first`, token, interp.interval, token.position);
-                }
-                args;
-
-                interp.importData.graphics.backRenderStack.push(token.value);
-                interp.renderGraphics(["back"]);
-                return token;
-            }),
-            new Method("remove", ["Rectangle"], (token, args, interp, method) => {
-                if(!interp.importData.graphics.rendered){
-                    return new InterpreterError('ReferenceError', `Screen not created. Use the [createscreen] keyword first`, token,  interp.interval, token.position);
-                }
-                args;
-                let variable = interp.variables[token.value.name];
-                if(variable == undefined) {
-                    return new InterpreterError('ReferenceError', `Variable [${token.value.name}] is not defined`, token, interp.interval, token.position);
-                }
-
-                interp.importData.graphics.backRenderStack = interp.importData.graphics.backRenderStack.filter(t => t.name != token.value.name);
-
-                interp.renderGraphics(["back"]);
-                return token;
-            }),
-            new Method("x", ["Rectangle"], (token, args, interp, method) => {
-                if(args[0] == undefined) return new Token("Number", token.value.x, token.position, token.methods);
-                else {
-                    interp.variables[token.value.name].value.x = args[0].value;
-
-                    interp.renderGraphics(["back"]);
-                    return token;
-                }
-            }, ["Number?"]),
-            new Method("y", ["Rectangle"], (token, args, interp, method) => {
-                if(args[0] == undefined) return new Token("Number", token.value.y, token.position, token.methods);
-                else {
-                    interp.variables[token.value.name].value.y = args[0].value;
-
-                    interp.renderGraphics(["back"]);
-                    return token;
-                }
-            }, ["Number?"]),
-            new Method("move", ["Rectangle"], (token, args, interp, method) => {
-                let newX = args[0].value;
-                let newY = args[1].value;
-
-                interp.variables[token.value.name].value.x = newX;
-                interp.variables[token.value.name].value.y = newY;
-                interp.renderGraphics(["back"]);
-                return token;
-            }, ["Number", "Number"]),
-            new Method("width", ["Rectangle"], (token, args, interp, method) => {
-                if(args[0] == undefined) return new Token("Number", token.value.width, token.position, token.methods);
-                else {
-                    interp.variables[token.value.name].value.width = args[0].value;
-
-                    interp.renderGraphics(["back"]);
-                    return token;
-                }
-            }, ["Number?"]),
-            new Method("height", ["Rectangle"], (token, args, interp, method) => {
-                if(args[0] == undefined) return new Token("Number", token.value.height, token.position, token.methods);
-                else {
-                    interp.variables[token.value.name].value.height = args[0].value;
-
-                    interp.renderGraphics(["back"]);
-                    return token;
-                }
-            }, ["Number?"]),
-            new Method("size", ["Rectangle"], (token, args, interp, method) => {
-                let newWidth = args[0].value;
-                let newHeight = args[1].value;
-
-                interp.variables[token.value.name].value.width = newWidth;
-                interp.variables[token.value.name].value.height = newHeight;
-                interp.renderGraphics(["back"]);
-                return token;
-            }, ["Number", "Number"]),
-            new Method("fill", ["Rectangle"], (token, args, interp, method) => {
-                if(args[0] == undefined) return new Token("String", token.value.fill, token.position, token.methods);
-                else {
-                    interp.variables[token.value.name].value.fill = args[0].value;
-
-                    interp.renderGraphics(["back"]);
-                    return token;
-                }
-            }, ["String?"]),
-            new Method("stroke", ["Rectangle"], (token, args, interp, method) => {
-                if(args[0] == undefined) return new Token("String", token.value.stroke, token.position, token.methods);
-                else {
-                    interp.variables[token.value.name].value.stroke = args[0].value;
-
-                    interp.renderGraphics(["back"]);
-                    return token;
-                }
-            }, ["String?"]),
-        ],
+        return tokens;
     }
 }
