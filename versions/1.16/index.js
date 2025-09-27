@@ -1994,6 +1994,7 @@ function createLilypadLine(path, linetype, filename){
             e.preventDefault();
             createLilypadLine("", linetype, filename);
             updateLinePrefixes(linetype);
+            highlight(document.activeElement);
         }
 
         if(keybindCondition("Backspace")){
@@ -2259,7 +2260,7 @@ let dateTimeInterval = setInterval(() => {
 }, 100);
 
 const onStart = () => {
-    //sendCommand("st", ['test'])
+    //sendCommand("/", ['e', "fibonacci"])
 }
 
 function ready(){
