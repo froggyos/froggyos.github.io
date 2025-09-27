@@ -191,7 +191,16 @@ This is a detailed error message.
 ## User Input
 The `ask` keyword prompts the user for input and stores the result in a variable. The variable must be of type `string`. Put the name of the variable into the string.
 ```
-ask [string]
+ask [string] [string]
+
+var name = ''
+ask 'name' 'What is your name?'
+out 'Hello, '>concat(name)>concat('!')
+
+-----
+
+What is your name? Alice (user types "Alice" and presses Enter)
+Hello, Alice!
 ```
 ## Program Termination
 The `kill` keyword immediately stops program execution by raising a `RuntimeError`.

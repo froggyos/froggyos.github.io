@@ -367,8 +367,9 @@ new Keyword("var", ["variable_reference", "assignment", "string|number|array"], 
 })
 
 // variable name, input type (string or number)
-new Keyword("ask", ["string"], async (args, interpreter) => {
+new Keyword("ask", ["string", "string"], async (args, interpreter) => {
     let variableName = args[0].value;
+    let prefix = args[1].value;
 
     if (!interpreter.variables[variableName]) {
         throw new FS3Error("ReferenceError", `Variable [${variableName}] is not defined`, args[0].line, args[0].col, args);
@@ -382,21 +383,29 @@ new Keyword("ask", ["string"], async (args, interpreter) => {
         throw new FS3Error("TypeError", `Variable [${variableName}] must be of type [string] to store user input`, args[0].line, args[0].col, args);
     }
 
-    const textinput = document.createElement("textarea");
-    textinput.style.position = "fixed";
-    textinput.style.top = "25%";
-    textinput.style.width = "50%";
-    textinput.style.height = "50%";
-    textinput.style.left = "25%";
-    document.body.appendChild(textinput);
+    let prefixElement = document.createElement('span');
+    let lineElement = document.createElement('div');
+    let lineContainer = document.createElement('div');
 
-    textinput.focus();
+    lineElement.setAttribute('contenteditable', 'plaintext-only');
+    lineElement.setAttribute('spellcheck', 'false');
+
+    prefixElement.textContent = prefix;
+
+    lineContainer.appendChild(prefixElement);
+    lineContainer.appendChild(lineElement);
+
+    lineContainer.classList.add('line-container');
+    terminal.appendChild(lineContainer);
+    lineElement.focus();
+
+    setSetting("currentSpinner", "ask-in-progress");
+    setSetting("showSpinner", true)
 
     return new Promise((resolve, reject) => {
+
         const cleanup = () => {
-            if (document.body.contains(textinput)) {
-                document.body.removeChild(textinput);
-            }
+            lineElement.setAttribute('contenteditable', 'false');
             if (interpreter._onInterrupt === interruptCheck) {
                 interpreter._onInterrupt = null;
             }
@@ -417,10 +426,17 @@ new Keyword("ask", ["string"], async (args, interpreter) => {
         // hook for interrupt
         interpreter._onInterrupt = interruptCheck;
 
-        textinput.addEventListener("keydown", (e) => {
-            if (e.key === "Enter") {
-                e.preventDefault();
-                finish(textinput.value.trim());
+        lineElement.addEventListener('keydown', function(e){
+            if(e.key == "Enter") e.preventDefault();
+        });
+
+        lineElement.addEventListener('keyup', function(e){
+            if(e.key == "Enter"){
+                let inputValue = lineElement.textContent.trim();
+
+                setSetting("currentSpinner", getSetting("defaultSpinner"));
+                setSetting("showSpinner", false)
+                finish(inputValue);
             }
         });
     });
@@ -575,6 +591,8 @@ class FroggyScript3 {
 
     checkInterrupt(){
         if(this._interrupt){
+            setSetting("currentSpinner", getSetting("defaultSpinner"));
+            setSetting("showSpinner", false)
             throw new FS3Error("RuntimeError", "Program interrupted by user", -1, -1);
         }
     }
@@ -730,6 +748,8 @@ class FroggyScript3 {
 
     async interpret(code) {
         this._interrupt = false;
+        setSetting("currentSpinner", getSetting("defaultSpinner"));
+        setSetting("showSpinner", false)
         for(let method in Method.table){
             let def = Method.table[method];
             if(!def.defaultMethod) delete Method.table[method];

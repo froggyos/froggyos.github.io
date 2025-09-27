@@ -249,6 +249,6 @@ Lilypad is the text editor in froggyOS. It has a few keybinds that you can use t
 8. Validate current language
 Along with the startup sequence, there are two intervals, `configInterval` and `dateTimeInterval`. The `configInterval` updates the user config and program list every 250 milliseconds, while the `dateTimeInterval` updates the date and time every 100 milliseconds.
 # FroggyScript
-FroggyScript is a programming language used in froggyOS. Documentation [here](./docs/froggyscript.md). To get a formatted version of the documentation, append `https://rus1130.github.io/projects/mdparser.html?toc=true&url=` to the start of the URL.
+FroggyScript is a programming language used in froggyOS. Documentation [here](https://rus1130.github.io/projects/mdparser.html?toc=true&url=https://froggyos.github.io/versions/1.16/docs/froggyscript3.md).
 # Other
 If you have any questions, comments, or suggestions, email `froggyoscom+other@gmail.com`. If you have any concerns or found a bug, [open an issue on the GitHub repository](https://github.com/froggyos/froggyos.github.io/issues).

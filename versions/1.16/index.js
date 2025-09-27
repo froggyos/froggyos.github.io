@@ -1485,6 +1485,10 @@ function sendCommand(command, args, createEditableLineAfter){
                         createTerminalLine(err.message, "", {translate: false});
                         createTerminalLine(`\u00A0in line: ${err.line}`, "", {translate: false})
                         createTerminalLine(`\u00A0at position: ${err.col}`, "", {translate: false})
+
+                        if(err.type == "InternalJavaScriptError"){
+                            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                        }
                     },
 
                     smallerrout: (text) => {

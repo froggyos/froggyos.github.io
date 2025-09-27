@@ -1153,7 +1153,9 @@ const FroggyFileSystem = new fs({
             "prompt %selectedAction , 0 , $'feed', 'play', 'sleep'$",
         ] },
         { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
-            "longwarn 'meow' 'shit'",
+            "var meow = ''",
+            "ask 'meow' 'What is your name?'",
+            "out 'Hello, '>concat(meow)>concat('!')",
             // "error 0, 'alert', 'hey look here! read me!'",
             // "error 1, 'warning', 'something might be wrong'",
             // "error 2, 'error', 'something went wrong'",
