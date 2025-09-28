@@ -244,6 +244,7 @@ You selected: option 1
 The `filearg` keyword retrieves a command line argument passed to the program and stores it in a variable. The variable must be of type `string`. The second argument is the index of the command line argument to retrieve (0-based). If you want to include a space, type `\_` instead of a space.
 ```
 filearg [$variable] [number]
+
 var arg = ''
 filearg $arg 0
 out 'The first command line argument is: '>concat(arg)
