@@ -1154,12 +1154,8 @@ const FroggyFileSystem = new fs({
         ] },
         { name: "test", properties: {transparent: true, read: true, write: true, hidden: false }, data: [
             "var name = ''",
-            "var age = ''",
             "filearg $name 0",
-            "filearg $age 1",
-            "out 'Hello, '>concat(name)>concat('!')",
-            "out 'You are '>concat(age)>concat(' years old.')",
-            "out age",
+            "out name",
             // "var meow = ''",
             // "ask $meow 'What is your name?'",
             // "out 'Hello, '>concat(meow)>concat('!')",

@@ -202,6 +202,8 @@ new Keyword("filearg", ["variable_reference", "number"], (args, interpreter) => 
         throw new FS3Error("TypeError", `Variable [${variableName}] must be of type [string] to store command line argument`, args[0].line, args[0].col, args);
     }
 
+    argValue = argValue.replaceAll("\\_", " ");
+
     interpreter.variables[variableName].value = argValue;
 });
 

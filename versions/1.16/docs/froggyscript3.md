@@ -226,7 +226,7 @@ option 1 • [option 2] • option 3
 You selected: option 1
 ```
 ### File Arguments
-The `filearg` keyword retrieves a command line argument passed to the program and stores it in a variable. The variable must be of type `string`. The second argument is the index of the command line argument to retrieve (0-based).
+The `filearg` keyword retrieves a command line argument passed to the program and stores it in a variable. The variable must be of type `string`. The second argument is the index of the command line argument to retrieve (0-based). If you want to include a space, type `\_` instead of a space.
 ```
 filearg [$variable] [number]
 var arg = ''
