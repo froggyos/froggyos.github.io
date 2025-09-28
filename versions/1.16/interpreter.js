@@ -163,6 +163,48 @@ new Method("join", ["array"], [{type: ["string"], optional: true}], (parent, arg
     return parent;
 });
 
+new Method("toNumber", ["string"], [], (parent, args, interpreter) => {
+    let num = Number(parent.value);
+    if(isNaN(num)){
+        num = 0;
+    }
+
+    parent.value = num;
+    parent.type = "number";
+
+    return parent;
+});
+
+new Method("toString", ["number"], [], (parent, args, interpreter) => {
+    parent.value = String(parent.value);
+    parent.type = "string";
+    return parent;
+});
+
+new Keyword("filearg", ["variable_reference", "number"], (args, interpreter) => {
+    let variableName = args[0].value.slice(1);
+    let argIndex = args[1].value;
+    let argValue = interpreter.fileArguments[argIndex];
+
+    if(argValue === undefined){
+        throw new FS3Error("RuntimeError", `No command line argument found at index [${argIndex}]`, args[1].line, args[1].col, args);
+    }
+
+    if(!interpreter.variables[variableName]){
+        throw new FS3Error("ReferenceError", `Variable [${variableName}] is not defined`, args[0].line, args[0].col, args);
+    }
+
+    if(!interpreter.variables[variableName].mut){
+        throw new FS3Error("AccessError", `Variable [${variableName}] is immutable and cannot be changed`, args[0].line, args[0].col, args);
+    }
+
+    if(interpreter.variables[variableName].type !== "string"){
+        throw new FS3Error("TypeError", `Variable [${variableName}] must be of type [string] to store command line argument`, args[0].line, args[0].col, args);
+    }
+
+    interpreter.variables[variableName].value = argValue;
+});
+
 new Keyword("set", ["variable_reference", "assignment", "string|number|array"], (args, interpreter) => {
     let variableName = args[0].value;
     let variableValue = args[2].value;
@@ -184,7 +226,7 @@ new Keyword("set", ["variable_reference", "assignment", "string|number|array"], 
 
 // ["string", "string|number", "any?"]
 new Keyword("out", ["string|number"], (args, interpreter) => {
-    interpreter.out(args[0].value);
+    interpreter.out(args[0]);
 });
 
 new Keyword("warn", ["string"], (args, interpreter) => {
@@ -366,9 +408,108 @@ new Keyword("var", ["variable_reference", "assignment", "string|number|array"], 
     }
 })
 
+new Keyword("prompt", ["variable_reference", "number", "array"], (args, interpreter) => {
+    let variable = args[0].value.slice(1);
+    let selectedIndex = args[1].value;
+    let options = args[2].value.map(o => o.value);
+
+    setSetting("currentSpinner", "prompt-in-progress");
+    setSetting("showSpinner", true)
+
+    if(!interpreter.variables[variable]){
+        throw new FS3Error("ReferenceError", `Variable [${variable}] is not defined`, args[0].line, args[0].col, args);
+    }
+
+    if(!interpreter.variables[variable].mut){
+        throw new FS3Error("AccessError", `Variable [${variable}] is immutable and cannot be changed`, args[0].line, args[0].col, args);
+    }
+
+    if(interpreter.variables[variable].type !== "string"){
+        throw new FS3Error("TypeError", `Variable [${variable}] must be of type [string] to store user input`, args[0].line, args[0].col, args);
+    }
+
+    if(selectedIndex < 0 || selectedIndex >= options.length){
+        throw new FS3Error("RangeError", `Default index [${selectedIndex}] is out of bounds for options array of length [${options.length}]`, args[1].line, args[1].col, args);
+    }
+
+    if(options.length === 0){
+        throw new FS3Error("ArgumentError", `Options array cannot be empty`, args[2].line, args[2].col, args);
+    }
+
+    return new Promise((resolve, reject) => {
+        const finish = () => {
+            interpreter.variables[variable].value = options[selectedIndex];
+            interpreter.variables[variable].type = "string";
+            setSetting("currentSpinner", getSetting("defaultSpinner"));
+            setSetting("showSpinner", false)
+            resolve();
+        };
+
+        const cleanup = () => {
+            lineContainer.setAttribute('contenteditable', 'false');
+            document.body.removeEventListener("keyup", promptHandler);
+            if (interpreter._onInterrupt === interruptCheck) {
+                interpreter._onInterrupt = null;
+            }
+        };
+
+        const interruptCheck = () => {
+            cleanup();
+            reject(new FS3Error("RuntimeError", "Program interrupted by user", -1, -1, args));
+        };
+
+        // hook for interrupt
+        interpreter._onInterrupt = interruptCheck;
+        interpreter.promptCount++;
+
+        let prefixElement = document.createElement('span');
+        prefixElement.textContent = `>`;
+
+        let lineContainer = document.createElement('div');
+        lineContainer.classList.add('line-container');
+
+        lineContainer.appendChild(prefixElement);
+
+        for(let i = 0; i < options.length; i++){
+            let option = document.createElement('span');
+            option.setAttribute("data-program", `cli-session-${config.programSession}-${interpreter.promptCount}`);
+            if(i == selectedIndex) {
+                option.classList.add('selected');
+            }
+            option.textContent = options[i];
+            option.style.paddingLeft = 0;
+            lineContainer.appendChild(option);
+            if(i != options.length-1) lineContainer.appendChild(document.createTextNode(" • "));
+        }
+
+        function promptHandler(e){
+            e.preventDefault();
+            let optionElements = document.querySelectorAll(`[data-program='cli-session-${config.programSession}-${interpreter.promptCount}']`);
+            if(e.key == "ArrowLeft"){
+                if(selectedIndex > 0) selectedIndex--;
+                optionElements.forEach(option => option.classList.remove('selected'));
+                optionElements[selectedIndex].classList.add('selected');
+            }
+            if(e.key == "ArrowRight"){
+                if(selectedIndex < options.length - 1) selectedIndex++;
+                optionElements.forEach(option => option.classList.remove('selected'));
+                optionElements[selectedIndex].classList.add('selected');
+            }
+            if(e.key == "Enter"){
+                cleanup();
+                finish();
+            }
+        }
+
+        terminal.appendChild(lineContainer);
+        terminal.scrollTop = terminal.scrollHeight;
+        document.body.addEventListener("keyup", promptHandler)
+    });
+});
+
 // variable name, input type (string or number)
-new Keyword("ask", ["string", "string"], async (args, interpreter) => {
-    let variableName = args[0].value;
+new Keyword("ask", ["variable_reference", "string"], async (args, interpreter) => {
+    let variableName = args[0].value.slice(1);
     let prefix = args[1].value;
 
     if (!interpreter.variables[variableName]) {
@@ -458,7 +599,7 @@ new Keyword("cvar", ["variable_reference", "assignment", "string|number|array"],
 })
 
 new Keyword("free", ["variable_reference"], (args, interpreter) => {
-    let name = args[0].value;
+    let name = args[0].value.slice(1);
     let variable = interpreter.variables[name];
     if(!variable){
         throw new FS3Error("ReferenceError", `Variable [${name}] is not defined`, args[0].line, args[0].col, args);
@@ -576,6 +717,20 @@ class FroggyScript3 {
         this._interrupt = false;
         this.clockLengthMs = 1;
         this._onInterrupt = null;
+        this.promptCount = 0;
+
+        function interruptHandler(e) {
+            if (e.key === "c" && (e.ctrlKey || e.metaKey)) {
+                e.preventDefault();
+                if (!this._interrupt) {
+                    this.interrupt();
+                }
+            }
+        }
+
+        document.body.removeEventListener("keydown", interruptHandler);
+        document.body.addEventListener("keydown", interruptHandler.bind(this));
+
     }
 
     clockLength(ms){
@@ -746,15 +901,20 @@ class FroggyScript3 {
         return lines;
     }
 
-    async interpret(code) {
+    async interpret(code, fileName, fileArguments) {
         this._interrupt = false;
-        setSetting("currentSpinner", getSetting("defaultSpinner"));
-        setSetting("showSpinner", false)
         for(let method in Method.table){
             let def = Method.table[method];
             if(!def.defaultMethod) delete Method.table[method];
         }
+
+        this.fileName = fileName;
+        this.fileArguments = fileArguments;
+
         try {
+            if(code.length == 0){
+                throw new FS3Error("SyntaxError", "No code to execute", 0, 0);
+            }
             let tokens = this.tokenize(code);
             let lines = tokens.map(line => [{ type: "start_of_line", value: "" }, ...line]);
             let flattened = lines.flat();

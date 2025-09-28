@@ -1096,8 +1096,8 @@ const FroggyFileSystem = new fs({
     "C:/Docs": [],
     "D:": [], 
     "D:/Programs": [
-        { name: "cli", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["str cli = 'this program is hardcoded into froggyOS'", "endprog"] },
-        { name: "lilypad", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["str lilypad = 'this program is hardcoded into froggyOS'", "endprog"] },
+        { name: "cli", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["quietkill"] },
+        { name: "lilypad", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["quietkill"] },
         { name: "kaerugotchi", properties: {transparent: false, read:true, write: true, hidden: false}, data: [
             "func display_frog(head:S)",
                 "if head>eq('default')",
@@ -1152,10 +1152,22 @@ const FroggyFileSystem = new fs({
             "call @display_frog(currentMood)",
             "prompt %selectedAction , 0 , $'feed', 'play', 'sleep'$",
         ] },
-        { name: "test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
-            "var meow = ''",
-            "ask 'meow' 'What is your name?'",
-            "out 'Hello, '>concat(meow)>concat('!')",
+        { name: "test", properties: {transparent: true, read: true, write: true, hidden: false }, data: [
+            "var name = ''",
+            "var age = ''",
+            "filearg $name 0",
+            "filearg $age 1",
+            "out 'Hello, '>concat(name)>concat('!')",
+            "out 'You are '>concat(age)>concat(' years old.')",
+            "out age",
+            // "var meow = ''",
+            // "ask $meow 'What is your name?'",
+            // "out 'Hello, '>concat(meow)>concat('!')",
+            // "var promptVariable = ''",
+            // "prompt $promptVariable 0 ['option1', 'option2', 'option3']",
+            // "out 'You selected: '>concat(promptVariable)"
+        ] },
+        { name: "error-levels", properties: {transparent: false, read: true, write: true, hidden: true}, data: [
             // "error 0, 'alert', 'hey look here! read me!'",
             // "error 1, 'warning', 'something might be wrong'",
             // "error 2, 'error', 'something went wrong'",
@@ -1267,7 +1279,6 @@ const FroggyFileSystem = new fs({
             "prompt-selected-background 02",
             "prompt-selected-text 15",
             "froggyscript-number-color 09",
-            "froggyscript-boolean-color 09",
             "froggyscript-string-color 02",
         ] },
         { name: "revised", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
@@ -1306,7 +1317,6 @@ const FroggyFileSystem = new fs({
             "prompt-selected-background 02",
             "prompt-selected-text 15",
             "froggyscript-number-color 09",
-            "froggyscript-boolean-color 09",
             "froggyscript-string-color 02",
         ] },
         { name: "standard-dark", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
@@ -1346,7 +1356,6 @@ const FroggyFileSystem = new fs({
             "prompt-selected-background 02",
             "prompt-selected-text 15",
             "froggyscript-number-color 09",
-            "froggyscript-boolean-color 09",
             "froggyscript-string-color 02",
         ] },
         { name: "cherry", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
@@ -1386,7 +1395,6 @@ const FroggyFileSystem = new fs({
             "prompt-selected-background 02",
             "prompt-selected-text 15",
             "froggyscript-number-color 09",
-            "froggyscript-boolean-color 09",
             "froggyscript-string-color 02",
         ] },
         { name: "swamp", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
@@ -1426,7 +1434,6 @@ const FroggyFileSystem = new fs({
             "prompt-selected-background 02",
             "prompt-selected-text 15",
             "froggyscript-number-color 01",
-            "froggyscript-boolean-color 01",
             "froggyscript-string-color 02",
         ] },
         { name: "swamp-revised", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
@@ -1466,7 +1473,6 @@ const FroggyFileSystem = new fs({
             "prompt-selected-background 02",
             "prompt-selected-text 15",
             "froggyscript-number-color 01",
-            "froggyscript-boolean-color 01",
             "froggyscript-string-color 02",
         ] },
         { name: "neon", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
@@ -1506,7 +1512,6 @@ const FroggyFileSystem = new fs({
             "prompt-selected-background 02",
             "prompt-selected-text 15",
             "froggyscript-number-color 09",
-            "froggyscript-boolean-color 09",
             "froggyscript-string-color 02",
         ] },
     ],

@@ -130,10 +130,10 @@ set myString = 10                # TypeError
 ### Deletion
 Variables can be deleted with the `free` keyword.
 ```
-free [variable]
+free [$variable]
 
 var myString = 'Hello, World!'
-free myString
+free $myString
 out myString  # ReferenceError
 ```
 
@@ -179,6 +179,7 @@ error 'This is an error!'
 The `longerr` keyword raises an error with additional details but does not stop program execution.
 ```
 longerr [string] [string]
+
 longerr "Error!" "This is a detailed error message."
 
 -----
@@ -189,18 +190,54 @@ This is a detailed error message.
     at col (column number)
 ```
 ## User Input
-The `ask` keyword prompts the user for input and stores the result in a variable. The variable must be of type `string`. Put the name of the variable into the string.
+### Ask
+The `ask` keyword prompts the user for input and stores the result in a variable. The variable must be of type `string`.
 ```
-ask [string] [string]
+ask [$variable] [string]
 
 var name = ''
-ask 'name' 'What is your name?'
+ask $name 'What is your name?'
 out 'Hello, '>concat(name)>concat('!')
 
 -----
 
 What is your name? Alice (user types "Alice" and presses Enter)
 Hello, Alice!
+```
+### Prompt
+The `prompt` keyword prompts the user to select an option from a list and stores the selected option in a variable. The variable must be of type `string`. The second argument is the index of the default selected option (0-based). The third argument is an array of options to choose from. Navigate the options with the left and right arrow keys, and select an option with the Enter key.
+```
+prompt [$variable] [number] [array]
+
+var choice = ''
+out 'What do you choose?'
+prompt $choice 0 ['option 1', 'option 2', 'option 3']
+out 'You selected: '>concat(choice)
+
+-----
+
+What do you choose?
+[option 1] • option 2 • option 3
+(user presses right arrow key)
+option 1 • [option 2] • option 3
+(user presses left arrow key)
+[option 1] • option 2 • option 3
+(user presses Enter)
+You selected: option 1
+```
+### File Arguments
+The `filearg` keyword retrieves a command line argument passed to the program and stores it in a variable. The variable must be of type `string`. The second argument is the index of the command line argument to retrieve (0-based).
+```
+filearg [$variable] [number]
+var arg = ''
+filearg $arg 0
+out 'The first command line argument is: '>concat(arg)
+
+-----
+(in command line)
+C:/Home> st program cool_argument
+
+The first command line argument is: cool_argument
 ```
 ## Program Termination
 The `kill` keyword immediately stops program execution by raising a `RuntimeError`.
@@ -287,7 +324,6 @@ pcall [function_reference] [array]
 pfunc @addTwo ['addTwo_num1:N', 'addTwo_num2:N'] {
     out addTwo_num1>add(addTwo_num2)
 }
-
 pcall @addTwo [3, 5]
 
 -----

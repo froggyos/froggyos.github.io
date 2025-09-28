@@ -670,6 +670,7 @@ function createTerminalLine(text, path, other){
             span += `style="${properties.join(";")}">${character}</span>`
             html += span;
         }
+
         terminalLine.innerHTML = html;
     } else {
         let localizedText = localize(text, translateText);
@@ -702,7 +703,7 @@ function createTerminalLine(text, path, other){
     lineContainer.appendChild(terminalPath);
     lineContainer.appendChild(terminalLine);
 
-    if(terminalLine.textContent.trim().length == 0) terminalLine.textContent = "\u00A0";
+    if(terminalLine.textContent.length == 0) terminalLine.innerHTML = "(empty string)";
 
     terminal.appendChild(lineContainer);
     terminal.scrollTop = terminal.scrollHeight;
@@ -1475,13 +1476,30 @@ function sendCommand(command, args, createEditableLineAfter){
 
                 config.currentProgram = args[0];
 
+                setSetting("currentSpinner", getSetting("defaultSpinner"));
+                setSetting("showSpinner", false)
+
                 const fs3 = new FroggyScript3({
-                    out: (text) => {
-                        createTerminalLine(text, ">", {translate: false});
+                    out: (token) => {
+                        let formatting = {
+                            type: 'blanket',
+                            t: function(){
+                                if(token.type == "string") {
+                                    return "froggyscript-string-color";
+                                } else if(token.type == "number") {
+                                    return "froggyscript-number-color";
+                                } else {
+                                    return "terminal-line-text"
+                                }
+                            }()
+                        };
+
+                        createTerminalLine(token.value.toString(), "\u00A0", {translate: false, formatting: [formatting]});
+                        
                     },
                     errout: (err) => {;
-                        createTerminalLine("", config.programErrorText.replace("{{}}", err.type), {translate: false});
-                        createTerminalLine(" ", "", {translate: false});
+                        createTerminalLine("\u00A0", config.programErrorText.replace("{{}}", err.type), {translate: false});
+                        createTerminalLine("\u00A0", "", {translate: false});
                         createTerminalLine(err.message, "", {translate: false});
                         createTerminalLine(`\u00A0in line: ${err.line}`, "", {translate: false})
                         createTerminalLine(`\u00A0at position: ${err.col}`, "", {translate: false})
@@ -1514,7 +1532,7 @@ function sendCommand(command, args, createEditableLineAfter){
                     }
                 })
 
-                fs3.interpret(file.getData())
+                fs3.interpret(file.getData(), file.getName(), fileArguments);
                 // let interpreter = new Interpreter("main", file.getData(), file.getName(), fileArguments);
             }
         break;
@@ -2260,7 +2278,7 @@ let dateTimeInterval = setInterval(() => {
 }, 100);
 
 const onStart = () => {
-    //sendCommand("/", ['e', "fibonacci"])
+    //sendCommand("st", ["test"])
 }
 
 function ready(){
