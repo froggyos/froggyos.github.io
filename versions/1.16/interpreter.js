@@ -293,7 +293,7 @@ new Keyword("arrset", ["variable_reference", "number", "assignment", "string|num
     }
 });
 
-new Keyword("foreach", ["variable_reference", "foreach_in", "variable_reference", "block"], async (args, interpreter) => {
+new Keyword("foreach", ["variable_reference", "literal_in", "variable_reference", "block"], async (args, interpreter) => {
     let variableName = args[0].value.slice(1);
     let targetArrayName = args[2].value.slice(1);
     let block = args[3].body;
@@ -850,7 +850,7 @@ new Keyword("loop", ["number|condition_statement", "block"], async (args, interp
 class FroggyScript3 {
     static matches = [
         ["comment", /# .*/],
-        ["foreach_in", /in/],
+        ["literal_in", /in/],
         ["number", /[0-9]+(?:\.[0-9]+)?/],
         ["variable", /[A-Za-z_][A-Za-z0-9_]*/],
         ["function_reference", /@[A-Za-z_][A-Za-z0-9_]*/],
