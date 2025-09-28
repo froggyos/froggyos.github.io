@@ -44,7 +44,12 @@ There are also three other types: `function_reference`, `condition_statement`, a
 $myVariable
 ```
 Variable references are used to reference a variable without resolving the variable itself. This is used to pass variables as arguments to keywords.
-
+### Literals
+Literals are just non-variable tokens. 
+```
+in # literal_in
+ =  # literal_assignment
+```
 ### Keyword Type Annotations
 Keywords can take only specific types as arguments. In documentation, this is how it is notated:
 ```

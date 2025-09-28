@@ -263,7 +263,7 @@ new Keyword("exit", [], (args, interpreter, line) => {
     throw new ExitFunction(line[0].line, line[0].col);
 });
 
-new Keyword("arrset", ["variable_reference", "number", "assignment", "string|number|array"], (args, interpreter) => {
+new Keyword("arrset", ["variable_reference", "number", "literal_assignment", "string|number|array"], (args, interpreter) => {
     let variableName = args[0].value.slice(1);
     let index = args[1].value;
     let newValue = args[3];
@@ -374,7 +374,7 @@ new Keyword("filearg", ["variable_reference", "number"], (args, interpreter) => 
     interpreter.variables[variableName].value = argValue;
 });
 
-new Keyword("set", ["variable_reference", "assignment", "string|number|array"], (args, interpreter) => {
+new Keyword("set", ["variable_reference", "literal_assignment", "string|number|array"], (args, interpreter) => {
     let variableName = args[0].value.slice(1);
     let variableValue = args[2].value;
 
@@ -560,7 +560,7 @@ new Keyword("call", ["function_reference"], async (args, interpreter) => {
     await interpreter.executeBlock(functionBody);
 })
 
-new Keyword("var", ["variable_reference", "assignment", "string|number|array"], (args, interpreter) => {
+new Keyword("var", ["variable_reference", "literal_assignment", "string|number|array"], (args, interpreter) => {
     let name = args[0].value;
     let value = args[2].value;
     let type = args[2].type;
@@ -752,7 +752,7 @@ new Keyword("ask", ["variable_reference", "string"], async (args, interpreter) =
     });
 });
 
-new Keyword("cvar", ["variable_reference", "assignment", "string|number|array"], (args, interpreter) => {
+new Keyword("cvar", ["variable_reference", "literal_assignment", "string|number|array"], (args, interpreter) => {
     let name = args[0].value;
     let value = args[2].value;
     let type = args[2].type;
@@ -861,7 +861,7 @@ class FroggyScript3 {
         ["block_end", /\}/],
         ["paren_start", /\(/],
         ["paren_end", /\)/],
-        ["assignment", / = /],
+        ["literal_assignment", / = /],
         ["comma", /,/],
         ["method_indicator", />/],
         ["whitespace", /\s+/],
