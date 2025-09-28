@@ -123,12 +123,12 @@ free $myConstant  # AccessError
 set myConstant = "Try to change me."  # AccessError
 ```
 ### Reassignment
-#### Set
+#### Setting a Variable to a New Value
 Variable values can be reassigned with the `set` keyword. The type will not be changed.
 ```
 set [$variable] = [string|number|array]
 
-var myString = 'Hello, World!'   # string
+var myString = 'Hello, World!'    # string
 set $myString = 'Goodbye, World!' # Still a string
 set $myString = 10                # TypeError
 ```
