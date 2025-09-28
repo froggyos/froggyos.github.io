@@ -453,10 +453,10 @@ const presetLanguagesMap = {
         nmt: "sepu ágayuménta. apelelala som '1' ute '0'",
         jpn: "無効な引数です。「1」または「0」を入力してください。"
     },
-    "T_provide_program_name_and_line": {
-        eng: "Please provide a program name and a line number.",
-        nmt: "T_provide_program_name_and_line",
-        jpn: "T_provide_program_name_and_line"
+    "T_provide_program_name_line_col": {
+        eng: "Please provide a program name, program line, and column.",
+        nmt: "T_provide_program_name_line_col",
+        jpn: "T_provide_program_name_line_col"
     },
 
     // lilypad ====================================
@@ -1159,10 +1159,17 @@ const FroggyFileSystem = new fs({
             // "    out item",
             // "}",
             // "out array>join"
-            "loop 10 {",
-            "    out 'Hello, World!'",
-            "    break",
+            "pfunc @myFunction ['myfunc_num:N'] {",
+            "    if <<myfunc_num < 5>> {",
+            "        out 'Number must be greater than or equal to 5'",
+            "        kill",
+            "        exit",
+            "    }",
+            "    out 'You passed!'",
             "}",
+            "out 'after!'",
+            "pcall @myFunction [2]",
+
             // "var meow = ''",
             // "ask $meow 'What is your name?'",
             // "out 'Hello, '>concat(meow)>concat('!')",

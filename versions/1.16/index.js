@@ -1528,6 +1528,10 @@ function sendCommand(command, args, createEditableLineAfter){
                     },
 
                     onError: (error) => {
+                        let command = `[[BULLFROG]]gotoprogramline ${args[0]} ${error.line} ${error.col}`;
+                        console.log(command)
+                        // append the command to the command history
+                        addToCommandHistory(command);
                         if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                     }
                 })
@@ -1554,8 +1558,8 @@ function sendCommand(command, args, createEditableLineAfter){
         // opens that file up in lilypad and highlights the line
         // only if it is not hidden and you have write permission
         case "[[BULLFROG]]gotoprogramline": {
-            if(args.length < 2 || isNaN(parseInt(args[1]))){
-                createTerminalLine("T_provide_program_name_and_line", config.errorText);
+            if(args.length < 3 || isNaN(parseInt(args[1])) || isNaN(parseInt(args[1]))){
+                createTerminalLine("T_provide_program_name_line_col", config.errorText);
                 hadError = true;
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
@@ -1571,7 +1575,10 @@ function sendCommand(command, args, createEditableLineAfter){
                     let targetLineNumber = parseInt(args[1]);
 
                     lines[targetLineNumber].focus();
-                    moveCaretToEnd(lines[targetLineNumber]);
+                    moveCaretToPosition(lines[targetLineNumber], parseInt(args[2]));
+
+                    lines.forEach(line => line.classList.remove("highlighted-line"));
+                    lines[targetLineNumber].classList.add("highlighted-line");
                 }
             }
         } break;
@@ -1933,7 +1940,7 @@ function createLilypadLine(path, linetype, filename){
     terminalLine.textContent = "";
 
     function highlight(e){
-            let highlightedLines = document.querySelectorAll('.highlighted-line');
+        let highlightedLines = document.querySelectorAll('.highlighted-line');
         highlightedLines.forEach(line => {
             unhilight(line);
         });

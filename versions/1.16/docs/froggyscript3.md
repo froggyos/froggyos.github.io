@@ -370,6 +370,28 @@ loop 5 {
 
 Hello, World!
 ```
+#### exit
+The `exit` keyword immediately ends the current function.
+```
+exit
+
+pfunc @myFunction ['myfunc_num:N'] {
+    if <<myfunc_num < 5>> {
+        out 'Number must be greater than or equal to 5'
+        exit
+    }
+    out 'You passed!'
+}
+
+pcall @myFunction [2]
+pcall @myFunction [5]
+
+-----
+
+Number must be greater than or equal to 5
+You passed!
+```
+
 ## Functions
 ### No Parameters
 Functions without parameters are defined with the `func` keyword and called with the `call` keyword.

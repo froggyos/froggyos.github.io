@@ -509,7 +509,13 @@ new Keyword("pcall", ["function_reference", "array"], async (args, interpreter) 
         }
     });
 
-    await interpreter.executeBlock(functionBody)
+    try {
+        await interpreter.executeBlock(functionBody)
+    } catch (e) {
+        if(e instanceof ExitFunction) return;
+        else throw e;
+    }
+    
 });
 
 new Keyword("wait", ["number"], async (args, interpreter) => {
@@ -557,8 +563,14 @@ new Keyword("call", ["function_reference"], async (args, interpreter) => {
         throw new FS3Error("AccessError", `Function [${functionName}] is a parameterized function and must be called with the [pcall] keyword`, args[0].line, args[0].col, args);
     }
 
-    await interpreter.executeBlock(functionBody);
-})
+    try {
+        await interpreter.executeBlock(functionBody);
+    } catch (e) {
+        if(e instanceof ExitFunction) return;
+        else throw e;
+    }
+});
+    
 
 new Keyword("var", ["variable_reference", "literal_assignment", "string|number|array"], (args, interpreter) => {
     let name = args[0].value;
@@ -1217,6 +1229,7 @@ class FroggyScript3 {
                 this.errout(e);
             } else if(e instanceof SkipBlock) this.errout(new FS3Error("SyntaxError", "[skip] keyword cannot be used outside of a block", e.line, e.col));
             else if(e instanceof BreakLoop) this.errout(new FS3Error("SyntaxError", "[break] keyword cannot be used outside of a loop", e.line, e.col));
+            else if(e instanceof ExitFunction) this.errout(new FS3Error("SyntaxError", "[return] keyword cannot be used outside of a function", e.line, e.col));
             else this.errout(new FS3Error("InternalJavaScriptError", `Internal JavaScript error: ${e.message}`, -1, -1));
             this.onError(e);
             throw e;
