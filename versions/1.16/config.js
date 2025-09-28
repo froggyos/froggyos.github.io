@@ -1163,7 +1163,6 @@ const FroggyFileSystem = new fs({
             "    out 'Hello, World!'",
             "    break",
             "}",
-            "break"
             // "var meow = ''",
             // "ask $meow 'What is your name?'",
             // "out 'Hello, '>concat(meow)>concat('!')",

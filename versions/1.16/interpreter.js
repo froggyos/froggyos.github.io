@@ -328,7 +328,14 @@ new Keyword("foreach", ["variable_reference", "foreach_in", "variable_reference"
         interpreter.variables[variableName].value = el.value;
         interpreter.variables[variableName].type = el.type;
 
-        await interpreter.executeBlock(block);
+        try {
+            await interpreter.executeBlock(block);
+        } catch (e) {
+            if(e instanceof BreakLoop){
+                break;
+            } else throw e;
+        }
+        
 
         interpreter.variables[targetArrayName].value[i].value = interpreter.variables[variableName].value;
         interpreter.variables[targetArrayName].value[i].type = interpreter.variables[variableName].type;
