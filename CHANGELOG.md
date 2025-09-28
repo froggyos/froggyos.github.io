@@ -169,3 +169,9 @@ idk
 ~ changed the error system (colors show severity instead of type)
 ~ changed translation inclusions
 ```
+
+# 1.16
+```
+~ rewrote FroggyScript AGAIN
+    - read the documentation
+```

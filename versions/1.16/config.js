@@ -1153,11 +1153,15 @@ const FroggyFileSystem = new fs({
             "prompt %selectedAction , 0 , $'feed', 'play', 'sleep'$",
         ] },
         { name: "test", properties: {transparent: true, read: true, write: true, hidden: false }, data: [
-            "var array = ['item1', 'item2', 'item3']",
-            "foreach $item in $array {",
-            "   set $item = item>concat('_modified')",
-            "}",
-            "out array>join"
+            // "var array = ['item1', 'item2', 'item3']",
+            // "foreach $item in $array {",
+            // "    set $item = item>concat('_modified')",
+            // "    out item",
+            // "}",
+            // "out array>join"
+            "out 'hi'>wrap",
+            "out 'bye'>wrap('1')",
+            "out 'wrap test'>wrap('<', '>')",
             // "var meow = ''",
             // "ask $meow 'What is your name?'",
             // "out 'Hello, '>concat(meow)>concat('!')",

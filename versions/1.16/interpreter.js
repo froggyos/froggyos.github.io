@@ -201,6 +201,32 @@ new Method("set", ["array"], [{type: ["number"], optional: false}, {type: ["stri
     return newParent;
 });
 
+new Method("wrap", ["string"], [{type: ["string"], optional: true}, {type: ["string"], optional: true}], (parent, args, interpreter) => {
+    let left = '"';
+    let right = '"';
+
+    if(args[0]){
+        left = args[0].value;
+        right = args[0].value;
+    }
+
+    if(args[1]){
+        right = args[1].value;
+    }
+
+    parent.value = left + parent.value + right;
+    return parent;
+});
+
+new Method("repeat", ["string"], [{type: ["number"], optional: false}], (parent, args, interpreter) => {
+    let times = args[0].value;
+    if(times < 0){
+        throw new FS3Error("RangeError", `Cannot repeat a string a negative number of times`, args[0].line, args[0].col, args);
+    }
+    parent.value = parent.value.repeat(times);
+    return parent;
+});
+
 new Keyword("arrset", ["variable_reference", "number", "assignment", "string|number|array"], (args, interpreter) => {
     let variableName = args[0].value.slice(1);
     let index = args[1].value;
@@ -259,6 +285,8 @@ new Keyword("foreach", ["variable_reference", "foreach_in", "variable_reference"
     let array = interpreter.variables[targetArrayName].value;
 
     for(let i = 0; i < array.length; i++){
+        interpreter.checkInterrupt();
+
         let el = array[i];
 
         interpreter.variables[variableName].value = el.value;

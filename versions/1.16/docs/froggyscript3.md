@@ -391,6 +391,10 @@ string>stringMethod(string? = "default") => string
 Returns the type of the parent as a string: `string`, `number`, or `array`.
 ```
 string|number|array>type => string
+
+'Hello'>type   # 'string'
+10>type        # 'number'
+[1, 2, 3]>type # 'array'
 ```
 #### length
 Returns the length of the parent. For strings, this is the number of characters. For arrays, this is the number of elements.
@@ -405,6 +409,9 @@ Returns the element at the specified index in an array or string. Indexing is ze
 ```
 string>index(number) => string
 array>index(number) => string|number|array (whatever is in that index)
+
+'Hello'>index(1) # 'e'
+[10, 20, 30]>index(2) # 30
 ```
 ### String Methods
 #### concat
@@ -429,6 +436,31 @@ string>neq(string) => condition_statement
 
 "foo">neq("bar") # <<1>>
 "foo">neq("foo") # <<0>>
+```
+#### toNumber
+Converts a string to a number. If the string cannot be converted, it returns 0.
+```
+string>toNumber => number
+
+'123'>toNumber # 123
+'abc'>toNumber # 0
+```
+#### wrap
+Wraps the string with the specified character(s). If zero arguments are given, it defaults to wrapping with double quotes. If one argument is given, it wraps with that argument on both sides. If two arguments are given, it wraps with the first argument on the left and the second argument on the right.
+```
+string>wrap(string?, string?) => string
+
+'Hello'>wrap          # "Hello"
+'Hello'>wrap('*')     # *Hello*
+'Hello'>wrap('<', '>') # <Hello>
+```
+#### repeat
+Repeats the string a specified number of times. Cannot be negative.
+```
+string>repeat(number) => string
+
+'Ha'>repeat(3) # 'HaHaHa'
+'Ha'>repeat(0) # ''
 ```
 ### Number Methods
 #### inc
@@ -473,6 +505,13 @@ number>div(number) => number
 
 10>div(2) # 5
 10>div(0) # MathError
+```
+#### toString
+Converts a number to a string.
+```
+number>toString => string
+
+123>toString # '123'
 ```
 ### Array Methods
 #### join
