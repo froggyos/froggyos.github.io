@@ -130,7 +130,7 @@ set $myString = 10                # TypeError
 #### Setting an Index of an Array
 The `arrset` keyword sets the value at a specific index of an array variable. The type of the value being set does not have to match the type of the existing value at that index.
 ```
-arrset [$array_variable] [number] = [string|number|array]
+arrset [$variable] [number] = [string|number|array]
 
 var myArray = [1, 2, 3]
 arrset $myArray 0 = 10      # myArray is now [10, 2, 3]
