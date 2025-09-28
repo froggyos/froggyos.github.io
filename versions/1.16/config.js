@@ -1159,9 +1159,11 @@ const FroggyFileSystem = new fs({
             // "    out item",
             // "}",
             // "out array>join"
-            "out 'hi'>wrap",
-            "out 'bye'>wrap('1')",
-            "out 'wrap test'>wrap('<', '>')",
+            "loop 10 {",
+            "    out 'Hello, World!'",
+            "    break",
+            "}",
+            "break"
             // "var meow = ''",
             // "ask $meow 'What is your name?'",
             // "out 'Hello, '>concat(meow)>concat('!')",

@@ -330,6 +330,40 @@ out array>join
 
 item1_modified,item2_modified,item3_modified
 ```
+### Block Control Keywords
+#### skip
+The `skip` keyword immediately ends the current block. Has no effect on loops.
+```
+skip
+
+loop 5 {
+    out 'Hello, World!'
+    skip
+    out 'This will never be printed.'
+}
+
+-----
+
+Hello, World!
+Hello, World!
+Hello, World!
+Hello, World!
+Hello, World!
+```
+#### break
+The `break` keyword immediately ends the current loop.
+```
+break
+
+loop 5 {
+    out 'Hello, World!'
+    break
+}
+
+-----
+
+Hello, World!
+```
 ## Functions
 ### No Parameters
 Functions without parameters are defined with the `func` keyword and called with the `call` keyword.

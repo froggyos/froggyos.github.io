@@ -17,6 +17,30 @@ class FS3Warn {
     }
 }
 
+class SkipBlock {
+    constructor(line, col){
+        this.type = "SkipBlock";
+        this.line = line;
+        this.col = col;
+    }
+} 
+
+class ExitFunction {
+    constructor(line, col){
+        this.type = "ExitFunction";
+        this.line = line;
+        this.col = col;
+    }
+} 
+
+class BreakLoop {
+    constructor(line, col){
+        this.type = "BreakLoop";
+        this.line = line;
+        this.col = col;
+    }
+} 
+
 class Method {
     static table = {};
     constructor(name, parentTypes, args, fn, defaultMethod = true){
@@ -225,6 +249,18 @@ new Method("repeat", ["string"], [{type: ["number"], optional: false}], (parent,
     }
     parent.value = parent.value.repeat(times);
     return parent;
+});
+
+new Keyword("skip", [], (args, interpreter, line) => {
+    throw new SkipBlock(line[0].line, line[0].col);
+});
+
+new Keyword("break", [], (args, interpreter, line) => {
+    throw new BreakLoop(line[0].line, line[0].col);
+});
+
+new Keyword("exit", [], (args, interpreter, line) => {
+    throw new ExitFunction(line[0].line, line[0].col);
 });
 
 new Keyword("arrset", ["variable_reference", "number", "assignment", "string|number|array"], (args, interpreter) => {
@@ -770,8 +806,15 @@ new Keyword("loop", ["number|condition_statement", "block"], async (args, interp
     if(cond.type === "number"){
         let count = cond.value;
         for(let i = 0; i < count; i++){
+            interpreter.checkInterrupt();
             let blockCopy = structuredClone(block);
-            await interpreter.executeBlock(blockCopy);
+            try {
+                await interpreter.executeBlock(blockCopy);
+            } catch (e) {
+                if(e instanceof BreakLoop){
+                    break;
+                } else throw e;
+            }
         }
     } else if(cond.type === "condition_statement"){
         let breaker = interpreter.variables["MAX_LOOP_ITERATIONS"].value;
@@ -779,7 +822,14 @@ new Keyword("loop", ["number|condition_statement", "block"], async (args, interp
 
         while(interpreter.evaluateMathExpression(cond.value)){
             let blockCopy = structuredClone(block);
-            await interpreter.executeBlock(blockCopy);
+            try {
+                await interpreter.executeBlock(blockCopy);
+            } catch (e) {
+                if(e instanceof BreakLoop){
+                    break;
+                } else throw e;
+            }
+            
             i++;
 
             if(i >= breaker){
@@ -975,7 +1025,13 @@ class FroggyScript3 {
             const compacted = this.compact(line);
             const resolvedMethods = this.methodResolver(compacted);
 
-            await this.keywordExecutor(resolvedMethods);
+            try {
+                await this.keywordExecutor(resolvedMethods);
+            } catch (e) {
+                if(e instanceof SkipBlock){
+                    break;
+                } else throw e;
+            }
         }
     }
 
@@ -1152,8 +1208,10 @@ class FroggyScript3 {
             if (e instanceof FS3Error) {
                 if(e.type === "quietKill") return;
                 this.errout(e);
-                this.onError(e);
-            } else this.errout(new FS3Error("InternalJavaScriptError", `Internal JavaScript error: ${e.message}`, -1, -1));
+            } else if(e instanceof SkipBlock) this.errout(new FS3Error("SyntaxError", "[skip] keyword cannot be used outside of a block", e.line, e.col));
+            else if(e instanceof BreakLoop) this.errout(new FS3Error("SyntaxError", "[break] keyword cannot be used outside of a loop", e.line, e.col));
+            else this.errout(new FS3Error("InternalJavaScriptError", `Internal JavaScript error: ${e.message}`, -1, -1));
+            this.onError(e);
             throw e;
         }
     }
