@@ -181,6 +181,102 @@ new Method("toString", ["number"], [], (parent, args, interpreter) => {
     return parent;
 });
 
+new Method("set", ["array"], [{type: ["number"], optional: false}, {type: ["string", "number", "array"], optional: false}], (parent, args, interpreter) => {
+    let index = args[0].value;
+    let newValue = args[1];
+    if(index < 0 || index >= parent.value.length){
+        throw new FS3Error("RangeError", `Index [${index}] is out of bounds for array of length [${parent.value.length}]`, args[0].line, args[0].col, args);
+    }
+
+    let newParent = structuredClone(parent);
+
+    newParent.value[index] = {
+        type: newValue.type,
+        value: newValue.value,
+        line: parent.value[index].line,
+        col: parent.value[index].col,
+        methods: []
+    }
+
+    return newParent;
+});
+
+new Keyword("arrset", ["variable_reference", "number", "assignment", "string|number|array"], (args, interpreter) => {
+    let variableName = args[0].value.slice(1);
+    let index = args[1].value;
+    let newValue = args[3];
+
+    if(!interpreter.variables[variableName]){
+        throw new FS3Error("ReferenceError", `Variable [${variableName}] is not defined`, args[0].line, args[0].col, args);
+    }
+
+    if(!interpreter.variables[variableName].mut){
+        throw new FS3Error("AccessError", `Variable [${variableName}] is immutable and cannot be changed`, args[0].line, args[0].col, args);
+    }
+
+    if(interpreter.variables[variableName].type !== "array"){
+        throw new FS3Error("TypeError", `Variable [${variableName}] must be of type [array] to use [arrset] keyword`, args[0].line, args[0].col, args);
+    }
+
+    if(index < 0 || index >= interpreter.variables[variableName].value.length){
+        throw new FS3Error("RangeError", `Index [${index}] is out of bounds for array of length [${interpreter.variables[variableName].value.length}]`, args[1].line, args[1].col, args);
+    }
+
+    interpreter.variables[variableName].value[index] = {
+        type: newValue.type,
+        value: newValue.value,
+        line: interpreter.variables[variableName].value[index].line,
+        col: interpreter.variables[variableName].value[index].col,
+        methods: []
+    }
+});
+
+new Keyword("foreach", ["variable_reference", "foreach_in", "variable_reference", "block"], async (args, interpreter) => {
+    let variableName = args[0].value.slice(1);
+    let targetArrayName = args[2].value.slice(1);
+    let block = args[3].body;
+    if(!interpreter.variables[variableName]){
+        interpreter.variables[variableName] = {
+            value: null,
+            type: null,
+            mut: true,
+            freeable: true
+        }
+    }
+
+    if(!interpreter.variables[variableName].mut){
+        throw new FS3Error("AccessError", `Variable [${variableName}] is immutable and cannot be changed`, args[0].line, args[0].col, args);
+    }
+
+    if(!interpreter.variables[targetArrayName]){
+        throw new FS3Error("ReferenceError", `Variable [${targetArrayName}] is not defined`, args[2].line, args[2].col, args);
+    }
+
+    if(interpreter.variables[targetArrayName].type !== "array"){
+        throw new FS3Error("TypeError", `Variable [${targetArrayName}] must be of type [array] to be used in [foreach]`, args[2].line, args[2].col, args);
+    }
+
+    let array = interpreter.variables[targetArrayName].value;
+
+    for(let i = 0; i < array.length; i++){
+        let el = array[i];
+
+        interpreter.variables[variableName].value = el.value;
+        interpreter.variables[variableName].type = el.type;
+
+        await interpreter.executeBlock(block);
+
+        interpreter.variables[targetArrayName].value[i].value = interpreter.variables[variableName].value;
+        interpreter.variables[targetArrayName].value[i].type = interpreter.variables[variableName].type;
+    }
+
+    console.log(interpreter.variables[targetArrayName]);
+
+
+    delete interpreter.variables[variableName];
+
+});
+
 new Keyword("filearg", ["variable_reference", "number"], (args, interpreter) => {
     let variableName = args[0].value.slice(1);
     let argIndex = args[1].value;
@@ -208,7 +304,7 @@ new Keyword("filearg", ["variable_reference", "number"], (args, interpreter) => 
 });
 
 new Keyword("set", ["variable_reference", "assignment", "string|number|array"], (args, interpreter) => {
-    let variableName = args[0].value;
+    let variableName = args[0].value.slice(1);
     let variableValue = args[2].value;
 
     if(!interpreter.variables[variableName]){
@@ -251,8 +347,8 @@ new Keyword("longerr", ["string", "string"], (args, interpreter) => {
     interpreter.errout(new FS3Error(errorName, errorMessage, args[1].line, args[1].col, args));
 });
 
-new Keyword("kill", [], (args, interpreter, keywordInfo) => {
-    throw new FS3Error("RuntimeError", "Program terminated with [kill] keyword", keywordInfo[0].line, keywordInfo[0].col, args);
+new Keyword("kill", [], (args, interpreter, line) => {
+    throw new FS3Error("RuntimeError", "Program terminated with [kill] keyword", line[0].line, line[0].col, args);
 });
 
 new Keyword("quietkill", [], (args, interpreter) => {
@@ -669,6 +765,7 @@ new Keyword("loop", ["number|condition_statement", "block"], async (args, interp
 class FroggyScript3 {
     static matches = [
         ["comment", /# .*/],
+        ["foreach_in", /in/],
         ["number", /[0-9]+(?:\.[0-9]+)?/],
         ["variable", /[A-Za-z_][A-Za-z0-9_]*/],
         ["function_reference", /@[A-Za-z_][A-Za-z0-9_]*/],
@@ -1602,11 +1699,7 @@ class FroggyScript3 {
             for(let j = 0; j < tokens[i].length; j++){
                 let token = tokens[i][j];
 
-                if(token.type === "assignment" && tokens[i][j-1]?.type === "variable"){
-                    tokens[i][j-1].type = "variable_reference";
-                }
-
-                if(token.type === "variable" && (tokens[i][j-1]?.type === "keyword" && tokens[i][j-1]?.value === "free")){
+                if(token.type === "variable" && tokens[i][j-1]?.type === "keyword" && tokens[i][j-1]?.value === "var"){
                     tokens[i][j].type = "variable_reference";
                 }
             }

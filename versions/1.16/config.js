@@ -1153,9 +1153,11 @@ const FroggyFileSystem = new fs({
             "prompt %selectedAction , 0 , $'feed', 'play', 'sleep'$",
         ] },
         { name: "test", properties: {transparent: true, read: true, write: true, hidden: false }, data: [
-            "var name = ''",
-            "filearg $name 0",
-            "out name",
+            "var array = ['item1', 'item2', 'item3']",
+            "foreach $item in $array {",
+            "   set $item = item>concat('_modified')",
+            "}",
+            "out array>join"
             // "var meow = ''",
             // "ask $meow 'What is your name?'",
             // "out 'Hello, '>concat(meow)>concat('!')",

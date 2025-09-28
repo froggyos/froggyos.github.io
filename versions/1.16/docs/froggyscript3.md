@@ -114,17 +114,32 @@ You can create constant variables with the `cvar` keyword. These cannot be reass
 cvar [variable] = [string|number|array]
 
 cvar myConstant = "I am constant."
-free myConstant  # AccessError
+free $myConstant  # AccessError
 set myConstant = "Try to change me."  # AccessError
 ```
 ### Reassignment
+#### Set
 Variable values can be reassigned with the `set` keyword. The type will not be changed.
 ```
-set [variable] = [string|number|array]
+set [$variable] = [string|number|array]
 
 var myString = 'Hello, World!'   # string
-set myString = 'Goodbye, World!' # Still a string
-set myString = 10                # TypeError
+set $myString = 'Goodbye, World!' # Still a string
+set $myString = 10                # TypeError
+```
+#### Setting an Index of an Array
+The `arrset` keyword sets the value at a specific index of an array variable. The type of the value being set does not have to match the type of the existing value at that index.
+```
+arrset [$array_variable] [number] = [string|number|array]
+
+var myArray = [1, 2, 3]
+arrset $myArray 0 = 10      # myArray is now [10, 2, 3]
+arrset $myArray 1 = 'two'   # myArray is now [10, 'two', 3]
+out myArray>join
+
+-----
+
+10,two,3
 ```
 
 ### Deletion
@@ -297,6 +312,22 @@ loop <<count < 5>> {
 2
 3
 4
+```
+
+### For-Each
+The `foreach` keyword iterates over each element in an array. The variable specified will be assigned to each element in the array for the duration of the block. The variable must be of type `string`, `number`, or `array`. The array must be of type `array`.
+```
+foreach [$variable] in [$variable] [block]
+
+var array = ['item1', 'item2', 'item3']
+foreach $item in $array {
+    set $item = item>concat('_modified')
+}
+out array>join
+
+-----
+
+item1_modified,item2_modified,item3_modified
 ```
 ## Functions
 ### No Parameters
