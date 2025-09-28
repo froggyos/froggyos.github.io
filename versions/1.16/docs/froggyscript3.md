@@ -462,16 +462,16 @@ Compares if two strings are equal. Returns `<<1>>` if true, `<<0>>` if false.
 ```
 string>eq(string) => condition_statement
 
-"foo">eq("foo") # <<1>>
-"foo">eq("bar") # <<0>>
+"equal">eq("equal") # <<1>>
+"not">eq("equal")   # <<0>>
 ```
 #### neq
 Compares if two strings are not equal. Returns `<<1>>` if true, `<<0>>` if false.
 ```
 string>neq(string) => condition_statement
 
-"foo">neq("bar") # <<1>>
-"foo">neq("foo") # <<0>>
+"equal">eq("equal") # <<0>>
+"not">eq("equal")   # <<1>>
 ```
 #### toNumber
 Converts a string to a number. If the string cannot be converted, it returns 0.
