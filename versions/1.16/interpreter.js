@@ -80,6 +80,33 @@ class Keyword {
 }
 
 const imports = {
+    math: (interp) => {
+        if (interp.variables["Math"]) {
+            throw new FS3Error("ReferenceError", `Variable [Math] is already defined`, -1, -1, []);
+        }
+        interp.variables["Math"] = {
+            value: "Math Module",
+            type: "Math",
+            mut: false,
+            freeable: false
+        }
+
+        new Method("random", ["Math"], [{type: ["number"], optional: false}, {type: ["number"], optional: false}], (parent, args, interpreter) => {
+            let min = args[0].value;
+            let max = args[1].value;
+            if(min >= max){
+                throw new FS3Error("RangeError", `Math>random() min [${min}] must be less than max [${max}]`, args[0].line, args[0].col, args);
+            }
+            let rand = Math.floor(Math.random() * (max - min)) + min;
+            return {
+                type: "number",
+                value: rand,
+                line: parent.line,
+                col: parent.col,
+                methods: []
+            }
+        }, false);
+    },
     keyboardinput: (interp) => {
         new Keyword("keydown", ["string", "block"], (args, interpreter) => {
             let key = args[0].value.toLowerCase();
@@ -196,6 +223,69 @@ const imports = {
 }
 
 // {type: ['number'], optional: false}
+new Method("splice", ["array"], [{type: ['number'], optional: false}, {type: ['number'], optional: true}], (parent, args, interpreter) => {
+    let start = args[0].value;
+    let deleteCount = args[1] ? args[1].value : parent.value.length - start;
+    if(start < 0 || start >= parent.value.length){
+        throw new FS3Error("RangeError", `Start index [${start}] is out of bounds for array of length [${parent.value.length}]`, args[0].line, args[0].col, args);
+    }
+    if(deleteCount < 0){
+        throw new FS3Error("RangeError", `Delete count [${deleteCount}] cannot be negative`, args[1] ? args[1].line : args[0].line, args[1] ? args[1].col : args[0].col, args);
+    }
+    let array = structuredClone(parent.value);
+    array.splice(start, deleteCount);
+    parent.value = array;
+    return parent;
+});
+
+// document
+new Method("shift", ["array"], [], (parent, args, interpreter) => {
+    if(parent.value.length === 0){
+        throw new FS3Error("RangeError", `Cannot shift from an empty array`, parent.line, parent.col, args);
+    }
+    let array = structuredClone(parent.value);
+
+    array.shift()
+
+    parent.value = array;
+
+    return parent;
+});
+
+// document
+new Method('replaceAt', ['string'], [{type: ['number'], optional: false}, {type: ['string'], optional: false}], (parent, args, interpreter) => {
+    let index = args[0].value;
+    let replacement = args[1].value;
+    if(index < 0 || index >= parent.value.length){
+        throw new FS3Error("RangeError", `Index [${index}] is out of bounds for string of length [${parent.value.length}]`, args[0].line, args[0].col, args);
+    }
+    parent.value = parent.value.substring(0, index) + replacement + parent.value.substring(index + 1);
+    return parent;
+});
+
+
+// document
+new Method('last', ['array'], [], (parent, args, interpreter) => {
+    if(parent.value.length === 0){
+        throw new FS3Error("RangeError", `Cannot get last element of an empty array`, parent.line, parent.col, args);
+    }
+    return parent.value[parent.value.length - 1];
+});
+
+// document
+new Method('first', ['array'], [], (parent, args, interpreter) => {
+    if(parent.value.length === 0){
+        throw new FS3Error("RangeError", `Cannot get first element of an empty array`, parent.line, parent.col, args);
+    }
+    return parent.value[0];
+});
+
+// document
+new Method("push", ["array"], [{type: ["string", "number", "array"], optional: false}], (parent, args, interpreter) => {
+    parent.value.push(args[0]);
+    return parent;
+});
+
 new Method('concat', ['string'], [{type: ['string'], optional: false}], (parent, args, interpreter) => {
     parent.value = parent.value + args[0].value;
     return parent;
@@ -382,6 +472,7 @@ new Method("indexOf", ["array"], [{type: ["string", "number", "array"], optional
     }
 });
 
+// document
 new Keyword("clearterminal", [], (args, interpreter) => {
     document.getElementById('terminal').innerHTML = "";
 });
@@ -988,6 +1079,7 @@ new Keyword("loop", ["number|condition_statement", "block"], async (args, interp
     if(cond.type === "number"){
         let count = cond.value;
         for(let i = 0; i < count; i++){
+            interpreter.variables["__loop_index__"] = {value: i, type: "number", mut: false, freeable: false};
             interpreter.checkInterrupt();
             let blockCopy = structuredClone(block);
             try {

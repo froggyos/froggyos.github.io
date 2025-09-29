@@ -613,6 +613,22 @@ array>indexOf(*) => number
 [10, 20, 30]>indexOf(20) # 1
 [10, 20, 30]>indexOf(40) # -1
 ```
+#### last
+Returns the last element of the array. If the array is empty, `RangeError` is raised.
+```
+array>last => *
+
+[1, 2, 3]>last # 3
+[]>last        # RangeError
+```
+#### first
+Returns the first element of the array. If the array is empty, `RangeError` is raised.
+```
+array>first => *
+
+[1, 2, 3]>first # 1
+[]>first        # RangeError
+```
 ## Types of Errors
 | Error                     | Description                                                                                                                                                                                                                |
 | ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
