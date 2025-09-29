@@ -70,6 +70,21 @@ class Keyword {
     }
 }
 
+const imports = {
+    objects: (interpreter) => {
+        if (interpreter.variables["Object"]) {
+            throw new FS3Error("ReferenceError", `Variable [Object] is already defined`, -1, -1, []);
+        }
+
+        interpreter.variables["Object"] = {
+            value: "{}",
+            type: "object",
+            mut: false,
+            freeable: false
+        }
+    }
+}
+
 // {type: ['number'], optional: false}
 new Method('concat', ['string'], [{type: ['string'], optional: false}], (parent, args, interpreter) => {
     parent.value = parent.value + args[0].value;
