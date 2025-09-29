@@ -59,10 +59,11 @@ class Method {
 
 class Keyword {
     static table = {};
-    constructor(name, scheme, fn){
+    constructor(name, scheme, fn, defaultKeyword = true){
         this.scheme = scheme;
         this.fn = fn;
         Keyword.table[name] = this;
+        this.defaultKeyword = defaultKeyword;
     }
 
     static get(name){
@@ -264,6 +265,14 @@ new Method("repeat", ["string"], [{type: ["number"], optional: false}], (parent,
     }
     parent.value = parent.value.repeat(times);
     return parent;
+});
+
+new Keyword("import", ["string"], (args, interpreter) => {
+    let moduleName = args[0].value;
+    if(!imports[moduleName]){
+        throw new FS3Error("ReferenceError", `Module [${moduleName}] does not exist`, args[0].line, args[0].col, args);
+    }
+    imports[moduleName](interpreter);
 });
 
 new Keyword("skip", [], (args, interpreter, line) => {
@@ -1123,6 +1132,11 @@ class FroggyScript3 {
         for(let method in Method.table){
             let def = Method.table[method];
             if(!def.defaultMethod) delete Method.table[method];
+        }
+
+        for(let keyword in Keyword.table){
+            let def = Keyword.table[keyword];
+            if(!def.defaultKeyword) delete Keyword.table[keyword];
         }
 
         this.fileName = fileName;
