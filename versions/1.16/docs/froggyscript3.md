@@ -113,7 +113,7 @@ var myString = 'Hello, World!' # string
 var myNumber = 10              # number
 var myArray = [1, 2, 3]        # array
 ```
-
+#### Constants
 You can create constant variables with the `cvar` keyword. These cannot be reassigned or deleted.
 ```
 cvar [variable] = [string|number|array]
