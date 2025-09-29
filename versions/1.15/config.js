@@ -838,7 +838,7 @@ class ThrownError extends Error {
 
 class fs {
     #fs;
-    #functionHashes = ["381bf05bf93fffdf", "63f33591efffbfb3", "9af413c39bf77bcf", "943ee33ffefffb3f", "c9bf35d4cdffb7df", "12643adc16e67fdc", "c7e06200e7e4fa7e", "628bdc7c6e8bff7e", "1838f0a69c3bf1af", "8a9767948bd7ff94"]
+    #functionHashes = ["381bf05bf93fffdf", "63f33591efffbfb3", "9af413c39bf77bcf", "943ee33ffefffb3f", "c9bf35d4cdffb7df", "12643adc16e67fdc", "c7e06200e7e4fa7e", "628bdc7c6e8bff7e", "1838f0a69c3bf1af", "8a9767948bd7ff94", "9ac47c9c9af5fe9c", "bfd42740fffd7fca"]
     #keywordHashes = ['eb6ebeffebfebfff']
     #methodHashes = []
 

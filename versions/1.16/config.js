@@ -116,7 +116,7 @@ const presetLanguagesMap = {
     },
     "T_basic_commands_metaprop": {
         eng: "metaprop [file] [property] [0/1] . Edits a file's properties.",
-        nmt: "metaprop [fiyala] [popatí] [0/1]. . lohi fiyala oəpopatí me",
+        nmt: "metaprop [fiyala] [popatí] [0/1]. . lohi fiyala oәpopatí me",
         jpn: "metaprop [file] [property] [0/1] . . ファイルのプロパティを変更する"
     },
     "T_basic_commands_opendoc": {
@@ -131,7 +131,7 @@ const presetLanguagesMap = {
     },
     "T_basic_commands_ribbit": {
         eng: "ribbit [text]. . . . . . . . . . . Displays the text.",
-        nmt: "ribbit [meməpelezwisi]. . . . . . . nenta meməpelezwisi",
+        nmt: "ribbit [memәpelezwisi]. . . . . . . nenta memәpelezwisi",
         jpn: "ribbit [テキスト] . . テキストを表示する"
     },
     "T_basic_commands_savestate": {
@@ -187,7 +187,7 @@ const presetLanguagesMap = {
     },
     "T_state_saved": {
         eng: "State saved. May need to loadstate for some changes to take effect.",
-        nmt: `satéte esaya mana. kana "loadstate" ma lohiəte me fene`,
+        nmt: `satéte esaya mana. kana "loadstate" ma lohiәte me fene`,
         jpn: "状態をセーブしました。いくつかの変更を適用するには、状態をロードする必要があるかもしれません。"
     },
 
@@ -214,7 +214,7 @@ const presetLanguagesMap = {
     },
     "T_file_name_already_exists": {
         eng: "File with that name already exists in this directory.",
-        nmt: "tama oəfiyala tsefese dilekatüli wa",
+        nmt: "tama oәfiyala tsefese dilekatüli wa",
         jpn: "そのファイル名はこのディレクトリにすでに存在します"
     },
     "T_file_name_not_3_char": {
@@ -440,7 +440,7 @@ const presetLanguagesMap = {
     },
     "T_provide_text_to_display": {
         eng: "Please provide text to display.",
-        nmt: "apelelala som meməpelezwisi nenta",
+        nmt: "apelelala som memәpelezwisi nenta",
         jpn: "表示するテキストを入力してください"
     },
     "T_provide_path": {
@@ -511,7 +511,7 @@ const presetLanguagesMap = {
     },
     "T_UNUSED_invalid_format_object_inter_rule_delimiter": {
         eng: "Invalid FormatObject (INTER-RULE DELIMITER) syntax.",
-        nmt: "gogowa FormatObject (LU GAYANA MEMƏPELEWISI) sebesikya",
+        nmt: "gogowa FormatObject (LU GAYANA MEMәPELEWISI) sebesikya",
         jpn: "無効なフォーマットオブジェクト（インター・ルール・デリミター）構文です"
     },
     "T_UNUSED_error_data_unavailable": {
@@ -545,7 +545,7 @@ const presetLanguagesMap = {
     },
     "T_bullfrog_commands_changepath": {
         eng: "[[BULLFROG]]changepath [path] - Changes the path of the terminal",
-        nmt: "[[BULLFROG]]changepath [fiyalātáne] - lohi fiyalātáne oətaminalu",
+        nmt: "[[BULLFROG]]changepath [fiyalātáne] - lohi fiyalātáne oәtaminalu",
         jpn: "[[BULLFROG]]changepath [path] - 端末のパスを変更する"
     },
     "T_bullfrog_commands_greeting": {
@@ -560,7 +560,7 @@ const presetLanguagesMap = {
     },
     "T_bullfrog_commands_setstatbar": {
         eng: "[[BULLFROG]]setstatbar [text] - Changes the text in the status bar",
-        nmt: "[[BULLFROG]]setstatbar [meməpelezwisi] - lohi meməpelezwisi status-bar wa",
+        nmt: "[[BULLFROG]]setstatbar [memәpelezwisi] - lohi memәpelezwisi status-bar wa",
         jpn: "[[BULLFROG]]setstatbar [text] - ステータスバーのテキストを変更する"
     },
     "T_bullfrog_commands_statbarlock": {
@@ -615,7 +615,7 @@ const presetLanguagesMap = {
     },
     "T_bullfrog_commands_trigdiag": {
         eng: "[[BULLFROG]]triggerdialogue - trigger a specific dialogue option",
-        nmt: "[[BULLFROG]]triggerdialogue - bene náha meməpelezwisi ndisé",
+        nmt: "[[BULLFROG]]triggerdialogue - bene náha memәpelezwisi ndisé",
         jpn: "[[[BULLFROG]]triggerdialogue - 特定の対話を開始する",
     },
 
@@ -819,7 +819,7 @@ class UserKey { constructor() {} };
 
 class fs {
     #fs;
-    #functionHashes = ["381bf05bf93fffdf", "63f33591efffbfb3", "9af413c39bf77bcf", "943ee33ffefffb3f", "c9bf35d4cdffb7df", "12643adc16e67fdc", "c7e06200e7e4fa7e", "628bdc7c6e8bff7e", "1838f0a69c3bf1af", "8a9767948bd7ff94"]
+    #functionHashes = ["a9252b0bf9e52b8", "381bf05bf93fffdf", "63f33591efffbfb3", "9af413c39bf77bcf", "943ee33ffefffb3f", "c9bf35d4cdffb7df", "12643adc16e67fdc", "c7e06200e7e4fa7e", "1838f0a69c3bf1af", "8a9767948bd7ff94", "27858ab87785febc", "bfd42740fffd7fca"]
     #keywordHashes = ['eb6ebeffebfebfff']
     #methodHashes = []
 
@@ -850,36 +850,23 @@ class fs {
     }
 
     #verify() {
-        return;
         let stack = new Error().stack.split("\n");
         const caller = stack[stack.length - 2].trim().split(" ")[1];
 
-        if(caller == "Interpreter.gotoNext"){
-            // keyword verification
-            const tokens = structuredClone(Interpreter.interpreters.main.tokens);
-            const tokenName = tokens[tokens.length - 1][0].value;
+        // function verification
+        // if any index of the stack has <anonymous> in it, it means the function is anonymous and we should not allow file system access
+        if (stack.some(line => line.includes("at <anonymous>"))) throw new Error(`HAHA! NICE TRY! No.`);
+        if(eval(caller) === undefined && caller.startsWith("fs.")) return;
 
-            let keyword = Keyword.schemes[tokenName];
+        try { eval(caller) } catch (e) { throw new Error(`Access denied: You may not access the file system through an anonymous arrow function.`) }
 
-            let id = keyword.getId();
+        if(eval(caller) == undefined) throw new Error(`Access denied: You may not access the file system through an anonymous arrow function.`);
 
-            if (!this.#keywordHashes.includes(id)) throw new Error(`Access denied: Keyword "${tokenName}" is not allowed to access the file system.`);
-        } else {
-            // function verification
-            // if any index of the stack has <anonymous> in it, it means the function is anonymous and we should not allow file system access
-            if (stack.some(line => line.includes("at <anonymous>"))) throw new Error(`HAHA! NICE TRY! No.`);
-            if(eval(caller) === undefined && caller.startsWith("fs.")) return;
+        const callerHash = this.#cache.get(eval(caller).toString()) || this.hash(eval(caller).toString());
 
-            try { eval(caller) } catch (e) { throw new Error(`Access denied: You may not access the file system through an anonymous arrow function.`) }
+        if(this.#cache.get(eval(caller).toString()) === undefined) this.#cache.set(eval(caller).toString(), callerHash);
 
-            if(eval(caller) == undefined) throw new Error(`Access denied: You may not access the file system through an anonymous arrow function.`);
-
-            const callerHash = this.#cache.get(eval(caller).toString()) || this.hash(eval(caller).toString());
-
-            if(this.#cache.get(eval(caller).toString()) === undefined) this.#cache.set(eval(caller).toString(), callerHash);
-
-            if (!this.#functionHashes.includes(callerHash)) throw new Error(`Access denied: JavaScript Function "${caller}" is not allowed to access the file system.`);
-        }
+        if (!this.#functionHashes.includes(callerHash)) throw new Error(`Access denied: JavaScript Function "${caller}" is not allowed to access the file system.`);
     }
 
     getDirectory(location) {
