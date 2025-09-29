@@ -817,25 +817,6 @@ const presetLanguagesMap = {
 
 class UserKey { constructor() {} };
 
-function killAndOutputError(message) {
-//    Interpreter.interpreters.main.kill();
-    throw new Error(message);
-}
-
-class ThrownError extends Error {
-    constructor(message){
-        // if(Interpreter.interpreters?.main){
-        //     for(let interpreter in Interpreter.interpreters){
-        //         Interpreter.interpreters[interpreter].kill()
-        //     }
-            // createTerminalLine(message, createErrorText(6, "Critical Error"), {translate: false});
-            // createEditableTerminalLine(config.currentPath+">")
-        // }
-        console.error(message);
-        super(message);
-    }
-}
-
 class fs {
     #fs;
     #functionHashes = ["381bf05bf93fffdf", "63f33591efffbfb3", "9af413c39bf77bcf", "943ee33ffefffb3f", "c9bf35d4cdffb7df", "12643adc16e67fdc", "c7e06200e7e4fa7e", "628bdc7c6e8bff7e", "1838f0a69c3bf1af", "8a9767948bd7ff94"]
@@ -861,10 +842,10 @@ class fs {
 
     verifyMethod(method) {
         let stack = new Error().stack.split("\n");
-        if(!stack[2].trim().startsWith("at Method.ffsProxy")) throw new ThrownError(`You may not use verifyMethod() directly. You must use method.ffsProxy() instead.`); 
+        if(!stack[2].trim().startsWith("at Method.ffsProxy")) throw new Error(`You may not use verifyMethod() directly. You must use method.ffsProxy() instead.`); 
         let id = method.getId();
 
-        if (!this.#methodHashes.includes(id)) throw new ThrownError(`Access denied: Method "${method.name}" is not allowed to access the file system.`);
+        if (!this.#methodHashes.includes(id)) throw new Error(`Access denied: Method "${method.name}" is not allowed to access the file system.`);
         return this;
     }
 
@@ -882,22 +863,22 @@ class fs {
 
             let id = keyword.getId();
 
-            if (!this.#keywordHashes.includes(id)) throw new ThrownError(`Access denied: Keyword "${tokenName}" is not allowed to access the file system.`);
+            if (!this.#keywordHashes.includes(id)) throw new Error(`Access denied: Keyword "${tokenName}" is not allowed to access the file system.`);
         } else {
             // function verification
             // if any index of the stack has <anonymous> in it, it means the function is anonymous and we should not allow file system access
-            if (stack.some(line => line.includes("at <anonymous>"))) throw new ThrownError(`HAHA! NICE TRY! No.`);
+            if (stack.some(line => line.includes("at <anonymous>"))) throw new Error(`HAHA! NICE TRY! No.`);
             if(eval(caller) === undefined && caller.startsWith("fs.")) return;
 
-            try { eval(caller) } catch (e) { throw new ThrownError(`Access denied: You may not access the file system through an anonymous arrow function.`) }
+            try { eval(caller) } catch (e) { throw new Error(`Access denied: You may not access the file system through an anonymous arrow function.`) }
 
-            if(eval(caller) == undefined) throw new ThrownError(`Access denied: You may not access the file system through an anonymous arrow function.`);
+            if(eval(caller) == undefined) throw new Error(`Access denied: You may not access the file system through an anonymous arrow function.`);
 
             const callerHash = this.#cache.get(eval(caller).toString()) || this.hash(eval(caller).toString());
 
             if(this.#cache.get(eval(caller).toString()) === undefined) this.#cache.set(eval(caller).toString(), callerHash);
 
-            if (!this.#functionHashes.includes(callerHash)) throw new ThrownError(`Access denied: JavaScript Function "${caller}" is not allowed to access the file system.`);
+            if (!this.#functionHashes.includes(callerHash)) throw new Error(`Access denied: JavaScript Function "${caller}" is not allowed to access the file system.`);
         }
     }
 
