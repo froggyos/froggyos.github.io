@@ -1529,8 +1529,6 @@ function sendCommand(command, args, createEditableLineAfter){
 
                     onError: (error) => {
                         let command = `[[BULLFROG]]gotoprogramline ${args[0]} ${error.line} ${error.col}`;
-                        console.log(command)
-                        // append the command to the command history
                         addToCommandHistory(command);
                         if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                     }
