@@ -107,7 +107,7 @@ const imports = {
             }
         }, false);
     },
-    keyboardinput: (interp) => {
+    keyboard: (interp) => {
         new Keyword("keydown", ["string", "block"], (args, interpreter) => {
             let key = args[0].value.toLowerCase();
             let block = args[1].body;
@@ -646,7 +646,8 @@ new Keyword("set", ["variable_reference", "literal_assignment", "string|number|a
 
 // ["string", "string|number", "any?"]
 new Keyword("out", ["string|number"], (args, interpreter) => {
-    interpreter.out(args[0]);
+    if(args[0].type === "string" && args[0].value.length === 0) interpreter.out("(empty string)");
+    else interpreter.out(args[0]);
 });
 
 new Keyword("warn", ["string"], (args, interpreter) => {

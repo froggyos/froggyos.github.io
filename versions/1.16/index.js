@@ -703,8 +703,6 @@ function createTerminalLine(text, path, other){
     lineContainer.appendChild(terminalPath);
     lineContainer.appendChild(terminalLine);
 
-    if(terminalLine.textContent.length == 0) terminalLine.innerHTML = "(empty string)";
-
     terminal.appendChild(lineContainer);
     terminal.scrollTop = terminal.scrollHeight;
 }
