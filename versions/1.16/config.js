@@ -1064,12 +1064,6 @@ const FroggyFileSystem = new fs({
     ],
     "C:/Docs": [],
     "D:": [], 
-    /*
-              @..@
-             (----)
-            ( >__< )
-            ^^ ~~ ^^
-    */
     "D:/Programs": [
         { name: "cli", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["quietkill"] },
         { name: "lilypad", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["quietkill"] },
@@ -1270,16 +1264,55 @@ const FroggyFileSystem = new fs({
             "}"
 
         ]},
+        // x = 78
+        // y = 59
         { name: "test", properties: {transparent: true, read: true, write: true, hidden: false }, data: [
-            //"import 'objects'",
-            // "var obj = Object>new",
-            // "objset $obj 'name' = 'froggy'",
-            // "out obj>get('name')",
-            "if <<true>> {",
-            "    skip",
-            "    out 'it was true!'",
+            "import 'keyboardinput'",
+            "keydown 'd' {",
+            "    set $playerx = playerx>add(1)",
+            "}",
+            "keydown 'a' {",
+            "    set $playerx = playerx>sub(1)",
+            "}",
+            "clearterminal",
+            "var playerx = 1",
+            "var playery = 1",
+            "",
+            "var drawIndex = 0",
+            "",
+            "var line = ' '",
+            "",
+            "loop <<true>> {",
+            "    set $drawIndex = 0",
+            "    clearterminal",
+            "    loop 58 {",
+            "        set $drawIndex = drawIndex>inc",
+            "        if <<drawIndex == playerx>> {",
+            "            out ' '>repeat(playerx>sub(1))>concat('#')",
+            "        }",
+            "        else {",
+            "            out ' '",
+            "        }",
+            "    }",
+            "    wait 500",
             "}"
         ] },
+        /*
+        loop <<true>> {
+    set $drawIndex = 0
+    clearterminal
+
+    # build a row of 58 spaces
+    var row = ' '>repeat(58)
+
+    # replace the character at playerx with '#'
+    set $row = row>replaceAt(playerx, '#')
+
+    out row
+
+    wait 200
+}
+        */
         { name: "error-levels", properties: {transparent: false, read: true, write: true, hidden: true}, data: [
             // "error 0, 'alert', 'hey look here! read me!'",
             // "error 1, 'warning', 'something might be wrong'",

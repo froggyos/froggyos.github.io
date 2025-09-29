@@ -80,6 +80,60 @@ class Keyword {
 }
 
 const imports = {
+    keyboardinput: (interp) => {
+        new Keyword("keydown", ["string", "block"], (args, interpreter) => {
+            let key = args[0].value.toLowerCase();
+            let block = args[1].body;
+
+            async function handler(e) {
+                if (e.key.toLowerCase() === key) {
+                    try {
+                        await interpreter.executeBlock(block);
+                    } catch (e) {
+                        if (
+                            e instanceof SkipBlock ||
+                            e instanceof BreakLoop ||
+                            e instanceof ExitFunction ||
+                            e instanceof ContinueLoop
+                        ) {
+                            // ignore loop/function flow controls
+                        } else {
+                            interpreter.errout(e);
+                        }
+                    }
+                }
+            }
+
+            document.body.addEventListener("keydown", handler);
+            interpreter.keyListeners.push({ type: "keydown", handler });
+        }, false);
+
+        new Keyword("keyup", ["string", "block"], (args, interpreter) => {
+            let key = args[0].value.toLowerCase();
+            let block = args[1].body;
+
+            async function handler(e) {
+                if (e.key.toLowerCase() === key) {
+                    try {
+                        await interpreter.executeBlock(block);
+                    } catch (e) {
+                        if (
+                            e instanceof SkipBlock ||
+                            e instanceof BreakLoop ||
+                            e instanceof ExitFunction ||
+                            e instanceof ContinueLoop
+                        ) {
+                            // ignore loop/function flow controls
+                        } else {
+                            interpreter.errout(e);
+                        }
+                    }
+                }
+            }
+            document.body.addEventListener("keyup", handler);
+            interpreter.keyListeners.push({ type: "keyup", handler });
+        }, false);
+    },
     objects: (interp) => {
         if (interp.variables["Object"]) {
             throw new FS3Error("ReferenceError", `Variable [Object] is already defined`, -1, -1, []);
@@ -1028,6 +1082,7 @@ class FroggyScript3 {
         this.clockLengthMs = 0;
         this._onInterrupt = null;
         this.promptCount = 0;
+        this.keyListeners = [];
 
         function interruptHandler(e) {
             if (e.key === "c" && (e.ctrlKey || e.metaKey)) {
@@ -1040,7 +1095,13 @@ class FroggyScript3 {
 
         document.body.removeEventListener("keydown", interruptHandler);
         document.body.addEventListener("keydown", interruptHandler.bind(this));
+    }
 
+    cleanupKeyListeners() {
+        for (const { type, handler } of this.keyListeners) {
+            document.body.removeEventListener(type, handler);
+        }
+        this.keyListeners = [];
     }
 
     clockLength(ms){
@@ -1049,6 +1110,7 @@ class FroggyScript3 {
 
     interrupt(){
         this._interrupt = true;
+        this.cleanupKeyListeners();
         if (typeof this._onInterrupt === "function") {
             this._onInterrupt();
         }
@@ -1218,6 +1280,7 @@ class FroggyScript3 {
     }
 
     async interpret(code, fileName, fileArguments) {
+        this.cleanupKeyListeners();
         this._interrupt = false;
         for(let method in Method.table){
             let def = Method.table[method];
@@ -1344,6 +1407,7 @@ class FroggyScript3 {
             }
         } catch (e) {
             if (e instanceof FS3Error) {
+                this.cleanupKeyListeners();
                 if(e.type === "quietKill") { 
                     this.onError(e)
                     return;
@@ -1351,11 +1415,13 @@ class FroggyScript3 {
                 this.errout(e);
             } else if(e instanceof SkipBlock || e instanceof BreakLoop || e instanceof ExitFunction || e instanceof ContinueLoop) {}
             else {
+                this.cleanupKeyListeners();
                 this.errout(new FS3Error("InternalJavaScriptError", `Internal JavaScript error: ${e.message}`, -1, -1));
                 throw e;
             }
             this.onError(e);
         }
+        this.cleanupKeyListeners();
     }
 
     async keywordExecutor(line) {
