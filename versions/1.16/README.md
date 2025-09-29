@@ -73,59 +73,6 @@ There are no set colors that you must have, but these are the color conventions.
 * If a text results in `Index Missing! -> [translation descriptor]`, this means that the translation descriptor is missing from the language file.
 * Some translation descriptors include `{{}}` in it. These are called **inclusions**. Inclusions allow translations to include dynamic text. For example, if you used `T_greeting_2 {{3 million}}`, it would return in the `eng` translation as `* Welcome to froggyOS, version 3 million *`. You can use as many inclusions as you want. You can also use multiple inclusions in a single translation descriptor, as long as the descriptor can handle that amount of inclusions.
 
-## Bugs
-### 1
-* error text color does not save properly when running `svs`.
-* example program:
-```
-error 0, 'alert', 'hey look here! read me!'
-error 1, 'warning', 'something might be wrong'
-error 2, 'error', 'something IS wrong'
-error 3, 'important warning', 'something is wrong but its not too bad'
-error 4, 'important error', 'something is wrong and it is bad'
-error 5, 'critical error', 'something is wrong and it is very bad'
-error 6, 'fatal error', 'you curbstomped froggyOS and it is now dead'
-```
-* steps to reproduce:
-    1. run the example program
-    2. run `changepalette (any palette)`
-    3. run `svs`
-    4. reload the page
-    5. Result -> text color of the error text should be the same as the normal text color
-### 2
-* In froggyScript
-* In string inclusions, you can sometimes return `undefined` if you mess up syntax inside of the inclusion.
-* example program:
-```
-out 10>repeat('meow')
-## will return undefined
-```
-### 3
-* Prompts inside of loops dont work the way they should.
-* given an infinite loop, the prompt should be displayed every time the loop runs, but it only displays once.
-* example program:
-```
-str promptVariable = ''
-loop true
-    out "this will output every loop, but the prompt will only show once"
-    prompt %promptVariable, 0, $'hello','goodbye'$
-endloop
-```
-### 4
-* example program:
-```
-str promptVariable = ''
-loop true
-    out "this will output every loop, but the prompt will only show once"
-    prompt %promptVariable, 0, $'hello','goodbye'$
-endloop
-```
-* how to reproduce:
-    1. run the example program
-    2. interrupt the program with `DEL` and do not complete the prompt
-    3. Run the program again, every single method will throw `MethodParseError` and loop will continue without user being able to interrupt
-* possible reason:
-    * the `load_function()` is not being called properly, or is being wiped
 ## Command Help
 ### formattime
 The all instances of the following characters (or character sequences) will be replaced with their respective values. Place a `!` before the character to escape it.
