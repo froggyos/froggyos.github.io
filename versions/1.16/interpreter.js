@@ -301,6 +301,29 @@ new Method("repeat", ["string"], [{type: ["number"], optional: false}], (parent,
     return parent;
 });
 
+new Method("indexOf", ["array"], [{type: ["string", "number", "array"], optional: false}], (parent, args, interpreter) => {
+    let searchValue = args[0];
+    let index = -1;
+    parent.value.forEach((el, i) => {
+        if(el.type === searchValue.type && el.value === searchValue.value){
+            index = i;
+            return;
+        }
+    });
+
+    return {
+        type: "number",
+        value: index,
+        line: parent.line,
+        col: parent.col,
+        methods: []
+    }
+});
+
+new Keyword("clearterminal", [], (args, interpreter) => {
+    document.getElementById('terminal').innerHTML = "";
+});
+
 new Keyword("import", ["string"], (args, interpreter) => {
     let moduleName = args[0].value;
     if(!imports[moduleName]){
@@ -573,6 +596,12 @@ new Keyword("pcall", ["function_reference", "array"], async (args, interpreter) 
 
     try {
         await interpreter.executeBlock(functionBody)
+        // for each parameter, delete the temporary variable
+        expectedFunctionArgs.forEach(param => {
+            if(interpreter.variables[param.value] && !interpreter.variables[param.value].freeable){
+                delete interpreter.variables[param.value];
+            }
+        });
     } catch (e) {
         if(e instanceof ExitFunction) return;
         else throw e;
@@ -928,7 +957,7 @@ new Keyword("loop", ["number|condition_statement", "block"], async (args, interp
 class FroggyScript3 {
     static matches = [
         ["comment", /# .*/],
-        ["literal_in", /in/],
+        ["literal_in", / in /],
         ["number", /[0-9]+(?:\.[0-9]+)?/],
         ["variable", /[A-Za-z_][A-Za-z0-9_]*/],
         ["function_reference", /@[A-Za-z_][A-Za-z0-9_]*/],
@@ -977,7 +1006,7 @@ class FroggyScript3 {
         this.debug = false;
         this.lastIfExecuted = false;
         this._interrupt = false;
-        this.clockLengthMs = 1;
+        this.clockLengthMs = 0;
         this._onInterrupt = null;
         this.promptCount = 0;
 
@@ -1298,12 +1327,12 @@ class FroggyScript3 {
             if (e instanceof FS3Error) {
                 if(e.type === "quietKill") return;
                 this.errout(e);
-            } else if(e instanceof SkipBlock) this.errout(new FS3Error("SyntaxError", "[skip] keyword cannot be used outside of a block", e.line, e.col));
-            else if(e instanceof BreakLoop) this.errout(new FS3Error("SyntaxError", "[break] keyword cannot be used outside of a loop", e.line, e.col));
-            else if(e instanceof ExitFunction) this.errout(new FS3Error("SyntaxError", "[return] keyword cannot be used outside of a function", e.line, e.col));
-            else this.errout(new FS3Error("InternalJavaScriptError", `Internal JavaScript error: ${e.message}`, -1, -1));
+            } else if(e instanceof SkipBlock || e instanceof BreakLoop || e instanceof ExitFunction) {}
+            else {
+                this.errout(new FS3Error("InternalJavaScriptError", `Internal JavaScript error: ${e.message}`, -1, -1));
+                throw e;
+            }
             this.onError(e);
-            throw e;
         }
     }
 
@@ -1578,7 +1607,7 @@ class FroggyScript3 {
                                 // doesnt get caught
                                 throw new FS3Error(
                                     "TypeError",
-                                    `Invalid type for argument [${idx + 1}] for method [${method.name}]: expected [${expected.type.join(" or ")}], got [${actual.type}] ga`,
+                                    `Invalid type for argument [${idx + 1}] for method [${method.name}]: expected [${expected.type.join(" or ")}], got [${actual.type}]`,
                                     actual.line ?? method.line,
                                     actual.col ?? method.col,
                                     method

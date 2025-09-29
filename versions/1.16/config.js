@@ -850,6 +850,7 @@ class fs {
     }
 
     #verify() {
+        return;
         let stack = new Error().stack.split("\n");
         const caller = stack[stack.length - 2].trim().split(" ")[1];
 
@@ -1063,10 +1064,88 @@ const FroggyFileSystem = new fs({
     ],
     "C:/Docs": [],
     "D:": [], 
+    /*
+              @..@
+             (----)
+            ( >__< )
+            ^^ ~~ ^^
+    */
     "D:/Programs": [
         { name: "cli", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["quietkill"] },
         { name: "lilypad", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["quietkill"] },
         { name: "kaerugotchi", properties: {transparent: false, read:true, write: true, hidden: false}, data: [
+            "pfunc @display_frog ['display_head:S'] {",
+            "    if display_head>eq('default') {",
+            "        out '  o..o'",
+            "    }",
+            "    if display_head>eq('hungry') {",
+            "        out '  o..o'",
+            "    }",
+            "    if display_head>eq('drowsy') {",
+            "        out '  =..='",
+            "    }",
+            "    if display_head>eq('sleepy') {",
+            "        out '  _.._ .zZ'",
+            "    }",
+            "    if display_head>eq('happy') {",
+            "        out '  ^..^'",
+            "    }",
+            "    if display_head>eq('confused') {",
+            "        out '  @..@'",
+            "    }",
+            "    if display_head>eq('angry') {",
+            "        out '  >..<'",
+            "    }",
+            "    if display_head>eq('sad') {",
+            "        out '  q..q'",
+            "    }",
+            "    if display_head>eq('unamused') {",
+            "        out '  -..-'",
+            "    }",
+            "    if display_head>eq('dead') {",
+            "        out '  x..x'",
+            "    }",
+            "    if display_head>eq('hungry') {",
+            "        out ' (~~~~)'",
+            "    }",
+            "    else {",
+            "        out ' (----)'",
+            "    }",
+            "    out '( >__< )'",
+            "    out '^^ ~~ ^^'",
+            "}",
+            "",
+            "var currentMood = 'default'",
+            "",
+            "var coin = 60",
+            "var energy = 60",
+            "var hunger = 30",
+            "var happiness = 1",
+            "",
+            "var selectedAction = ''",
+            "var lastChosenAction = 0",
+            "var actions = ['feed', 'play', 'sleep', 'quit']",
+            "",
+            "func @outputStatus {",
+            "    out '     coin: '>concat(coin>toString)",
+            "    out '   energy: '>concat('#'>repeat(energy))",
+            "    out '   hunger: '>concat('#'>repeat(hunger))",
+            "    out 'happiness: '>concat('#'>repeat(happiness))",
+            "}",
+            "",
+            "loop <<true>> {",
+            "    clearterminal",
+            "    call @outputStatus",
+            "    pcall @display_frog [currentMood]",
+            "    prompt $selectedAction lastChosenAction actions",
+            "    set $lastChosenAction = actions>indexOf(selectedAction)",
+            "    if selectedAction>eq('quit') {",
+            "        kill",
+            "    }",
+            "}"
+
+        ]},
+        { name: "kaerugotchi-old", properties: {transparent: false, read:true, write: true, hidden: false}, data: [
             "func display_frog(head:S)",
                 "if head>eq('default')",
                     "out '  o..o'",
@@ -1122,9 +1201,13 @@ const FroggyFileSystem = new fs({
         ] },
         { name: "test", properties: {transparent: true, read: true, write: true, hidden: false }, data: [
             //"import 'objects'",
-            "var obj = Object>new",
-            "objset $obj 'name' = 'froggy'",
-            "out obj>get('name')",
+            // "var obj = Object>new",
+            // "objset $obj 'name' = 'froggy'",
+            // "out obj>get('name')",
+            "if <<true>> {",
+            "    skip",
+            "    out 'it was true!'",
+            "}"
         ] },
         { name: "error-levels", properties: {transparent: false, read: true, write: true, hidden: true}, data: [
             // "error 0, 'alert', 'hey look here! read me!'",
