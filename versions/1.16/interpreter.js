@@ -72,17 +72,64 @@ class Keyword {
 }
 
 const imports = {
-    objects: (interpreter) => {
-        if (interpreter.variables["Object"]) {
+    objects: (interp) => {
+        if (interp.variables["Object"]) {
             throw new FS3Error("ReferenceError", `Variable [Object] is already defined`, -1, -1, []);
         }
 
-        interpreter.variables["Object"] = {
+        interp.variables["Object"] = {
             value: "{}",
+            tree: {},
             type: "object",
             mut: false,
             freeable: false
         }
+
+        Method.table.type.parentTypes.push("object")
+        Keyword.table.var.scheme[2] += "|object"
+        Keyword.table.cvar.scheme[2] += "|object"
+
+        new Method("new", ["object"], [], (parent, args, interpreter) => {
+            return {
+                type: "object",
+                value: {},
+                line: parent.line,
+                col: parent.col,
+                methods: parent.methods,
+            }
+        }, false);
+
+        new Method("get", ["object"], [{type: ["string"], optional: false}], (parent, args, interpreter) => {
+            let key = args[0].value;
+
+            if(!(key in parent.value)){
+                throw new FS3Error("ReferenceError", `Key [${key}] does not exist on object`, args[0].line, args[0].col, args);
+            }
+            return parent.value[key];
+        }, false);
+
+        new Keyword("objset", ["variable_reference", "string", "literal_assignment" ,"string|number|array|object"], (args, interpreter) => {
+            let variableName = args[0].value.slice(1);
+            let key = args[1].value;
+            let newValue = args[3];
+            if(!interpreter.variables[variableName]){
+                throw new FS3Error("ReferenceError", `Variable [${variableName}] is not defined`, args[0].line, args[0].col, args);
+            }
+            if(!interpreter.variables[variableName].mut){
+                throw new FS3Error("AccessError", `Variable [${variableName}] is immutable and cannot be changed`, args[0].line, args[0].col, args);
+            }
+            if(interpreter.variables[variableName].type !== "object"){
+                throw new FS3Error("TypeError", `Variable [${variableName}] must be of type [object] to use [objset] keyword`, args[0].line, args[0].col, args);
+            }
+
+            interpreter.variables[variableName].value[key] = {
+                type: newValue.type,
+                value: newValue.value,
+                line: args[1].line,
+                col: args[1].col,
+                methods: []
+            }
+        }, false);
     }
 }
 
@@ -166,6 +213,13 @@ new Method("div", ["number"], [{type: ["number"], optional: false}], (parent, ar
     return parent;
 });
 
+new Method("mod", ["number"], [{type: ["number"], optional: false}], (parent, args, interpreter) => {
+    if(args[0].value === 0){
+        throw new FS3Error("MathError", "Modulo by zero is not permitted", args[0].line, args[0].col, args);
+    }
+    parent.value = parent.value % args[0].value;
+    return parent;
+});
 
 new Method("index", ["array", "string"], [{type: ["number"], optional: false}], (parent, args, interpreter) => {
     if(parent.type === "array"){
@@ -221,26 +275,6 @@ new Method("toString", ["number"], [], (parent, args, interpreter) => {
     return parent;
 });
 
-new Method("set", ["array"], [{type: ["number"], optional: false}, {type: ["string", "number", "array"], optional: false}], (parent, args, interpreter) => {
-    let index = args[0].value;
-    let newValue = args[1];
-    if(index < 0 || index >= parent.value.length){
-        throw new FS3Error("RangeError", `Index [${index}] is out of bounds for array of length [${parent.value.length}]`, args[0].line, args[0].col, args);
-    }
-
-    let newParent = structuredClone(parent);
-
-    newParent.value[index] = {
-        type: newValue.type,
-        value: newValue.value,
-        line: parent.value[index].line,
-        col: parent.value[index].col,
-        methods: []
-    }
-
-    return newParent;
-});
-
 new Method("wrap", ["string"], [{type: ["string"], optional: true}, {type: ["string"], optional: true}], (parent, args, interpreter) => {
     let left = '"';
     let right = '"';
@@ -274,6 +308,10 @@ new Keyword("import", ["string"], (args, interpreter) => {
     }
     imports[moduleName](interpreter);
 });
+
+// new Keyword("do", [], (args, interpreter, line) => {
+//     console.log(line)
+// });
 
 new Keyword("skip", [], (args, interpreter, line) => {
     throw new SkipBlock(line[0].line, line[0].col);
@@ -611,6 +649,8 @@ new Keyword("var", ["variable_reference", "literal_assignment", "string|number|a
         mut: true,
         freeable: true
     }
+
+    if(type === "object") interpreter.variables[name].tree = {};
 })
 
 new Keyword("prompt", ["variable_reference", "number", "array"], (args, interpreter) => {
@@ -801,6 +841,8 @@ new Keyword("cvar", ["variable_reference", "literal_assignment", "string|number|
         mut: false,
         freeable: true
     }
+
+    if(type === "object") interpreter.variables[name].tree = {};
 })
 
 new Keyword("free", ["variable_reference"], (args, interpreter) => {

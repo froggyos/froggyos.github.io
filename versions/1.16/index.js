@@ -1535,7 +1535,6 @@ function sendCommand(command, args, createEditableLineAfter){
                 })
 
                 fs3.interpret(file.getData(), file.getName(), fileArguments);
-                // let interpreter = new Interpreter("main", file.getData(), file.getName(), fileArguments);
             }
         break;
 

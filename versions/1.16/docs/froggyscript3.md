@@ -440,6 +440,13 @@ out fReturn
 Hello, Alice!
 ```
 
+### Importing Modules
+The `import` keyword imports predefined modules that extend functionality of FroggyScript3. Modules can define new keywords, functions, and methods.
+```
+import [string]
+
+import 'objects'
+```
 ## Methods
 Methods are functions that are called on a value using the `>` operator. The value to the left of the `>` is called the `parent`. If the method has no arguments, parentheses can be omitted. If the method has arguments, parentheses are required. Methods can be chained together. Method parameters can be optional, which is denoted by `?`. In documentation, `=> return_type` indicates what type the method returns.
 ```
@@ -568,6 +575,14 @@ number>div(number) => number
 
 10>div(2) # 5
 10>div(0) # MathError
+```
+#### mod
+Returns the remainder of the parent divided by the argument. If dividing by zero, `MathError` is raised.
+```
+number>mod(number) => number
+
+10>mod(3) # 1
+10>mod(0) # MathError
 ```
 #### toString
 Converts a number to a string.

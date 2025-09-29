@@ -819,7 +819,7 @@ class UserKey { constructor() {} };
 
 class fs {
     #fs;
-    #functionHashes = ["a9252b0bf9e52b8", "381bf05bf93fffdf", "63f33591efffbfb3", "9af413c39bf77bcf", "943ee33ffefffb3f", "c9bf35d4cdffb7df", "12643adc16e67fdc", "c7e06200e7e4fa7e", "1838f0a69c3bf1af", "8a9767948bd7ff94", "27858ab87785febc", "bfd42740fffd7fca"]
+    #functionHashes = ['381bf05bf93fffdf', "63f33591efffbfb3", "9af413c39bf77bcf", "943ee33ffefffb3f", "c9bf35d4cdffb7df", "12643adc16e67fdc", "c7e06200e7e4fa7e", "d921574adf257fff", "1838f0a69c3bf1af", "8a9767948bd7ff94", "27858ab87785febc", "bfd42740fffd7fca"]
     #keywordHashes = ['eb6ebeffebfebfff']
     #methodHashes = []
 
@@ -1121,29 +1121,10 @@ const FroggyFileSystem = new fs({
             "prompt %selectedAction , 0 , $'feed', 'play', 'sleep'$",
         ] },
         { name: "test", properties: {transparent: true, read: true, write: true, hidden: false }, data: [
-            // "var array = ['item1', 'item2', 'item3']",
-            // "foreach $item in $array {",
-            // "    set $item = item>concat('_modified')",
-            // "    out item",
-            // "}",
-            // "out array>join"
-            "pfunc @myFunction ['myfunc_num:N'] {",
-            "    if <<myfunc_num < 5>> {",
-            "        out 'Number must be greater than or equal to 5'",
-            "        kill",
-            "        exit",
-            "    }",
-            "    out 'You passed!'",
-            "}",
-            "out 'after!'",
-            "pcall @myFunction [2]",
-
-            // "var meow = ''",
-            // "ask $meow 'What is your name?'",
-            // "out 'Hello, '>concat(meow)>concat('!')",
-            // "var promptVariable = ''",
-            // "prompt $promptVariable 0 ['option1', 'option2', 'option3']",
-            // "out 'You selected: '>concat(promptVariable)"
+            //"import 'objects'",
+            "var obj = Object>new",
+            "objset $obj 'name' = 'froggy'",
+            "out obj>get('name')",
         ] },
         { name: "error-levels", properties: {transparent: false, read: true, write: true, hidden: true}, data: [
             // "error 0, 'alert', 'hey look here! read me!'",
