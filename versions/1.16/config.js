@@ -1272,7 +1272,7 @@ const FroggyFileSystem = new fs({
             "set $_2darray = _2darray>shift",
             "out _2darray>join",
         ] },
-        { name: "snake", properties: {transparent: true, read: true, write: true, hidden: false }, data: [
+        { name: "snake", properties: {transparent: false, read: true, write: true, hidden: false }, data: [
             "import 'keyboardinput'",
             "import 'math'",
             "",
