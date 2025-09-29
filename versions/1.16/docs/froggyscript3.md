@@ -341,7 +341,7 @@ The `skip` keyword immediately ends the current block. Has no effect on loops.
 ```
 skip
 
-loop 5 {
+if <<true>> {
     out 'Hello, World!'
     skip
     out 'This will never be printed.'
@@ -349,10 +349,6 @@ loop 5 {
 
 -----
 
-Hello, World!
-Hello, World!
-Hello, World!
-Hello, World!
 Hello, World!
 ```
 #### break
@@ -368,6 +364,25 @@ loop 5 {
 
 -----
 
+Hello, World!
+```
+#### continue
+The `continue` keyword immediately ends the current iteration of a loop and begins the next iteration.
+```
+continue
+
+loop 5 {
+    out 'Hello, World!'
+    continue
+    out 'This will never be printed.'
+}
+
+-----
+
+Hello, World!
+Hello, World!
+Hello, World!
+Hello, World!
 Hello, World!
 ```
 #### exit
@@ -390,11 +405,6 @@ pcall @myFunction [5]
 
 Number must be greater than or equal to 5
 You passed!
-```
-#### continue
-The `continue` keyword immediately ends the current iteration of a loop and begins the next iteration.
-```
-continue
 ```
 ## Functions
 ### No Parameters
