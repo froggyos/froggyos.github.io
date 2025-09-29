@@ -391,7 +391,11 @@ pcall @myFunction [5]
 Number must be greater than or equal to 5
 You passed!
 ```
-
+#### continue
+The `continue` keyword immediately ends the current iteration of a loop and begins the next iteration.
+```
+continue
+```
 ## Functions
 ### No Parameters
 Functions without parameters are defined with the `func` keyword and called with the `call` keyword.
@@ -452,7 +456,7 @@ Methods are functions that are called on a value using the `>` operator. The val
 ```
 [parent_type]>[method_name]([arg1, arg2, ...]) => [return_type]
 ```
-`?` indicates an optional argument, and `= default_value` indicates a default value for an optional argument.
+`?` indicates an optional argument, and `= default_value` indicates a default value for an optional argument. `*` as a return type indicates the return type can vary (ususally because of array values).
 ```
 string>stringMethod(string? = "default") => string
 ```
@@ -478,7 +482,7 @@ string|array>length => number
 Returns the element at the specified index in an array or string. Indexing is zero-based. If the index is out of bounds, `RangeError` is raised.
 ```
 string>index(number) => string
-array>index(number) => string|number|array (whatever is in that index)
+array>index(number) => *
 
 'Hello'>index(1) # 'e'
 [10, 20, 30]>index(2) # 30
@@ -600,6 +604,14 @@ array>join([string? = ","]) => string
 [1, 2, 3]>join                # '1,2,3'
 [1, 2, 3]>join(", ")          # '1, 2, 3'
 ['a', 'b', 'c']>join(" and ") # 'a and b and c'
+```
+#### indexOf
+Returns the index of the first occurrence of the specified value in the array. If the value is not found, it returns -1.
+```
+array>indexOf(*) => number
+
+[10, 20, 30]>indexOf(20) # 1
+[10, 20, 30]>indexOf(40) # -1
 ```
 ## Types of Errors
 | Error                     | Description                                                                                                                                                                                                                |

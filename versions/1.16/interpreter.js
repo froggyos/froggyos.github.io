@@ -39,7 +39,15 @@ class BreakLoop {
         this.line = line;
         this.col = col;
     }
-} 
+}
+
+class ContinueLoop {
+    constructor(line, col){
+        this.type = "ContinueLoop";
+        this.line = line;
+        this.col = col;
+    }
+}
 
 class Method {
     static table = {};
@@ -348,6 +356,10 @@ new Keyword("exit", [], (args, interpreter, line) => {
     throw new ExitFunction(line[0].line, line[0].col);
 });
 
+new Keyword("continue", [], (args, interpreter, line) => {
+    throw new ContinueLoop(line[0].line, line[0].col);
+});
+
 new Keyword("arrset", ["variable_reference", "number", "literal_assignment", "string|number|array"], (args, interpreter) => {
     let variableName = args[0].value.slice(1);
     let index = args[1].value;
@@ -416,7 +428,9 @@ new Keyword("foreach", ["variable_reference", "literal_in", "variable_reference"
         try {
             await interpreter.executeBlock(block);
         } catch (e) {
-            if(e instanceof BreakLoop){
+            if(e instanceof ContinueLoop){
+                continue;
+            } else if(e instanceof BreakLoop){
                 break;
             } else throw e;
         }
@@ -925,7 +939,9 @@ new Keyword("loop", ["number|condition_statement", "block"], async (args, interp
             try {
                 await interpreter.executeBlock(blockCopy);
             } catch (e) {
-                if(e instanceof BreakLoop){
+                if(e instanceof ContinueLoop){
+                    continue;
+                } else if(e instanceof BreakLoop){
                     break;
                 } else throw e;
             }
@@ -936,20 +952,23 @@ new Keyword("loop", ["number|condition_statement", "block"], async (args, interp
 
         while(interpreter.evaluateMathExpression(cond.value)){
             let blockCopy = structuredClone(block);
-            try {
-                await interpreter.executeBlock(blockCopy);
-            } catch (e) {
-                if(e instanceof BreakLoop){
-                    break;
-                } else throw e;
-            }
-            
             i++;
 
             if(i >= breaker){
                 // error not closing program
                 throw new FS3Error("RuntimeError", `Possible infinite loop detected after ${breaker} iterations.`, cond.line, cond.col, args);
             }
+
+            try {
+                await interpreter.executeBlock(blockCopy);
+            } catch (e) {
+                if(e instanceof ContinueLoop){
+                    continue;
+                } else if(e instanceof BreakLoop){
+                    break;
+                } else throw e;
+            }
+        
         }
     }
 });
@@ -1325,9 +1344,12 @@ class FroggyScript3 {
             }
         } catch (e) {
             if (e instanceof FS3Error) {
-                if(e.type === "quietKill") return;
+                if(e.type === "quietKill") { 
+                    this.onError(e)
+                    return;
+                }
                 this.errout(e);
-            } else if(e instanceof SkipBlock || e instanceof BreakLoop || e instanceof ExitFunction) {}
+            } else if(e instanceof SkipBlock || e instanceof BreakLoop || e instanceof ExitFunction || e instanceof ContinueLoop) {}
             else {
                 this.errout(new FS3Error("InternalJavaScriptError", `Internal JavaScript error: ${e.message}`, -1, -1));
                 throw e;
