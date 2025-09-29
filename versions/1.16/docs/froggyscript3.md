@@ -256,9 +256,9 @@ out 'The first command line argument is: '>concat(arg)
 
 -----
 (in command line)
-C:/Home> st program cool_argument
+C:/Home> st program cool\_argument
 
-The first command line argument is: cool_argument
+The first command line argument is: cool argument
 ```
 ## Program Termination
 The `kill` keyword immediately stops program execution by raising a `RuntimeError`.
