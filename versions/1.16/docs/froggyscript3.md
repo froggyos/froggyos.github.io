@@ -45,7 +45,7 @@ $myVariable
 ```
 Variable references are used to reference a variable without resolving the variable itself. This is used to pass variables as arguments to keywords.
 ### Literals
-Literals are just non-variable tokens. 
+Literals are non-variables with specific meaning. 
 ```
 in # literal_in
  =  # literal_assignment
