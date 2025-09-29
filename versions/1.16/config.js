@@ -1337,7 +1337,6 @@ const FroggyFileSystem = new fs({
             "loop <<true>> {",
             "    clearterminal",
             "    out 'WASD to move'",
-            "    out 'Score: '>concat(score>toString)",
             "    set $drawY = 0",
             "    set $headX = snakeX>last",
             "    set $headY = snakeY>last",
@@ -1412,6 +1411,7 @@ const FroggyFileSystem = new fs({
             "                set $row = row>replaceAt(appleX, '@')",
             "            }",
             "        }",
+            "",
             "        if <<headY == drawY>> {",
             "            set $row = row>replaceAt(headX, 'O')",
             "        }",
@@ -1421,27 +1421,11 @@ const FroggyFileSystem = new fs({
             "    }",
             "    if <<collision == true>> {",
             "        out 'Game Over! Final Score: '>concat(score>toString)",
-            "        quietkill",
+            "        break",
             "    }",
             "    wait 200",
             "}",
         ] },
-        /*
-        loop <<true>> {
-            set $drawIndex = 0
-            clearterminal
-
-            # build a row of 58 spaces
-            var row = ' '>repeat(58)
-
-            # replace the character at playerx with '#'
-            set $row = row>replaceAt(playerx, '#')
-
-            out row
-
-            wait 200
-        }
-        */
         { name: "error-levels", properties: {transparent: false, read: true, write: true, hidden: true}, data: [
             // "error 0, 'alert', 'hey look here! read me!'",
             // "error 1, 'warning', 'something might be wrong'",

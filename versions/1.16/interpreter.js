@@ -253,14 +253,24 @@ new Method("shift", ["array"], [], (parent, args, interpreter) => {
 });
 
 // document
-new Method('replaceAt', ['string'], [{type: ['number'], optional: false}, {type: ['string'], optional: false}], (parent, args, interpreter) => {
-    let index = args[0].value;
-    let replacement = args[1].value;
-    if(index < 0 || index >= parent.value.length){
-        throw new FS3Error("RangeError", `Index [${index}] is out of bounds for string of length [${parent.value.length}]`, args[0].line, args[0].col, args);
+new Method('replaceAt', ['string', 'array'], [{type: ['number'], optional: false}, {type: ['string'], optional: false}], (parent, args, interpreter) => {
+    if(parent.type === "array"){
+        let index = args[0].value;
+        let replacement = args[1];
+        if(index < 0 || index >= parent.value.length){
+            throw new FS3Error("RangeError", `Index [${index}] is out of bounds for array of length [${parent.value.length}]`, args[0].line, args[0].col, args);
+        }
+        parent.value[index] = replacement;
+        return parent;
+    } else {
+        let index = args[0].value;
+        let replacement = args[1].value;
+        if(index < 0 || index >= parent.value.length){
+            throw new FS3Error("RangeError", `Index [${index}] is out of bounds for string of length [${parent.value.length}]`, args[0].line, args[0].col, args);
+        }
+        parent.value = parent.value.substring(0, index) + replacement + parent.value.substring(index + 1);
+        return parent;
     }
-    parent.value = parent.value.substring(0, index) + replacement + parent.value.substring(index + 1);
-    return parent;
 });
 
 
@@ -584,9 +594,6 @@ new Keyword("foreach", ["variable_reference", "literal_in", "variable_reference"
         interpreter.variables[targetArrayName].value[i].value = interpreter.variables[variableName].value;
         interpreter.variables[targetArrayName].value[i].type = interpreter.variables[variableName].type;
     }
-
-    console.log(interpreter.variables[targetArrayName]);
-
 
     delete interpreter.variables[variableName];
 
