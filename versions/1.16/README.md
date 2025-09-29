@@ -137,6 +137,10 @@ fSDS is a way to store key-value pairs in a file. A value can be one of four typ
 ### Non-Array
 ```
 KEY [key name] TYPE [type (String/Number/Boolean)] VALUE [value] END
+
+KEY name TYPE String VALUE Alice END
+KEY age TYPE Number VALUE 25 END
+KEY isStudent TYPE Boolean VALUE false END
 ```
 ### Array
 ```
@@ -145,6 +149,12 @@ KEY [key name] TYPE Array START
 1 TYPE [type (String/Number/Boolean)] VALUE [value]
 (...)
 KEY [key name] TYPE Array END
+
+KEY favoriteColors TYPE Array START
+0 TYPE String VALUE Blue
+1 TYPE String VALUE Green
+2 TYPE String VALUE Red
+KEY favoriteColors TYPE Array END
 ```
 ## Lilypad keybinds
 Lilypad is the text editor in froggyOS. It has a few keybinds that you can use to make editing easier.
