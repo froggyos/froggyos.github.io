@@ -167,7 +167,7 @@ Lilypad is the text editor in froggyOS. It has a few keybinds that you can use t
 * `ArrowDown` - move cursor down one line
 
 * `Shift + ArrowUp` - move cursor to end of previous line
-* `Shift + ArrowDown` - move cursor to beginning of next line
+* `Shift + ArrowDown` - move cursor to end of next line
 
 * `CTRL + ArrowUp` - Move to first line
 * `CTRL + ArrowDown` - Move to last line
