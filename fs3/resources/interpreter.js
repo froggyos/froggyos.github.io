@@ -1,3 +1,5 @@
+const math = require("mathjs");
+
 class FS3Error {
     constructor(type, message, line, col, errLine){
         this.type = type;
@@ -94,75 +96,12 @@ const imports = {
         }
 
 
-        new Method("random", ["Math"], [{type: ["number"], optional: false}, {type: ["number"], optional: false}], (parent, args, interpreter) => {
-            let min = args[0].value;
-            let max = args[1].value;
-            if(min >= max){
-                throw new FS3Error("RangeError", `Math>random() min [${min}] must be less than max [${max}]`, args[0].line, args[0].col, args);
-            }
-            let rand = Math.floor(Math.random() * (max - min)) + min;
-            return {
-                type: "number",
-                value: rand,
-                line: parent.line,
-                col: parent.col,
-                methods: []
-            }
-        }, false);
+        new Method("random", ["Math"], [{type: ["number"], optional: false}, {type: ["number"], optional: false}], undefined, false);
     },
     keyboard: (interp) => {
-        new Keyword("keydown", ["string", "block"], (args, interpreter) => {
-            let key = args[0].value.toLowerCase();
-            let block = args[1].body;
+        new Keyword("keydown", ["string", "block"], undefined, false);
 
-            async function handler(e) {
-                if (e.key.toLowerCase() === key) {
-                    try {
-                        await interpreter.executeBlock(block);
-                    } catch (e) {
-                        if (
-                            e instanceof SkipBlock ||
-                            e instanceof BreakLoop ||
-                            e instanceof ExitFunction ||
-                            e instanceof ContinueLoop
-                        ) {
-                            // ignore loop/function flow controls
-                        } else {
-                            interpreter.errout(e);
-                        }
-                    }
-                }
-            }
-
-            document.body.addEventListener("keydown", handler);
-            interpreter.keyListeners.push({ type: "keydown", handler });
-        }, false);
-
-        new Keyword("keyup", ["string", "block"], (args, interpreter) => {
-            let key = args[0].value.toLowerCase();
-            let block = args[1].body;
-
-            async function handler(e) {
-                if (e.key.toLowerCase() === key) {
-                    try {
-                        await interpreter.executeBlock(block);
-                    } catch (e) {
-                        if (
-                            e instanceof SkipBlock ||
-                            e instanceof BreakLoop ||
-                            e instanceof ExitFunction ||
-                            e instanceof ContinueLoop
-                        ) {
-                            // ignore loop/function flow controls
-                        } else {
-                            interpreter.errout(e);
-                        }
-                    }
-                }
-            }
-            document.body.addEventListener("keyup", handler);
-            interpreter.keyListeners.push({ type: "keyup", handler });
-        }, false);
+        new Keyword("keyup", ["string", "block"], undefined, false);
     },
     objects: (interp) => {
         if(interp){
@@ -204,26 +143,7 @@ const imports = {
         }, false);
 
         new Keyword("objset", ["variable_reference", "string", "literal_assignment" ,"string|number|array|object"], (args, interpreter) => {
-            let variableName = args[0].value.slice(1);
-            let key = args[1].value;
-            let newValue = args[3];
-            if(!interpreter.variables[variableName]){
-                throw new FS3Error("ReferenceError", `Variable [${variableName}] is not defined`, args[0].line, args[0].col, args);
-            }
-            if(!interpreter.variables[variableName].mut){
-                throw new FS3Error("AccessError", `Variable [${variableName}] is immutable and cannot be changed`, args[0].line, args[0].col, args);
-            }
-            if(interpreter.variables[variableName].type !== "object"){
-                throw new FS3Error("TypeError", `Variable [${variableName}] must be of type [object] to use [objset] keyword`, args[0].line, args[0].col, args);
-            }
 
-            interpreter.variables[variableName].value[key] = {
-                type: newValue.type,
-                value: newValue.value,
-                line: args[1].line,
-                col: args[1].col,
-                methods: []
-            }
         }, false);
     }
 }
@@ -489,37 +409,17 @@ new Method("indexOf", ["array"], [{type: ["string", "number", "array"], optional
 });
 
 // document
-new Keyword("clearterminal", [], (args, interpreter) => {
-    document.getElementById('terminal').innerHTML = "";
-});
+new Keyword("clearterminal", []);
 
-new Keyword("import", ["string"], (args, interpreter) => {
-    let moduleName = args[0].value;
-    if(!imports[moduleName]){
-        throw new FS3Error("ReferenceError", `Import [${moduleName}] does not exist`, args[0].line, args[0].col, args);
-    }
-    imports[moduleName](interpreter);
-});
+new Keyword("import", ["string"]);
 
-// new Keyword("do", [], (args, interpreter, line) => {
-//     console.log(line)
-// });
+new Keyword("skip", []);
 
-new Keyword("skip", [], (args, interpreter, line) => {
-    throw new SkipBlock(line[0].line, line[0].col);
-});
+new Keyword("break", []);
 
-new Keyword("break", [], (args, interpreter, line) => {
-    throw new BreakLoop(line[0].line, line[0].col);
-});
+new Keyword("exit", []);
 
-new Keyword("exit", [], (args, interpreter, line) => {
-    throw new ExitFunction(line[0].line, line[0].col);
-});
-
-new Keyword("continue", [], (args, interpreter, line) => {
-    throw new ContinueLoop(line[0].line, line[0].col);
-});
+new Keyword("continue", []);
 
 new Keyword("arrset", ["variable_reference", "number", "literal_assignment", "string|number|array"], (args, interpreter) => {
     let variableName = args[0].value.slice(1);
@@ -551,85 +451,9 @@ new Keyword("arrset", ["variable_reference", "number", "literal_assignment", "st
     }
 });
 
-new Keyword("foreach", ["variable_reference", "literal_in", "variable_reference", "block"], async (args, interpreter) => {
-    let variableName = args[0].value.slice(1);
-    let targetArrayName = args[2].value.slice(1);
-    let block = args[3].body;
-    if(!interpreter.variables[variableName]){
-        interpreter.variables[variableName] = {
-            value: null,
-            type: null,
-            mut: true,
-            freeable: true
-        }
-    }
+new Keyword("foreach", ["variable_reference", "literal_in", "variable_reference", "block"]);
 
-    if(!interpreter.variables[variableName].mut){
-        throw new FS3Error("AccessError", `Variable [${variableName}] is immutable and cannot be changed`, args[0].line, args[0].col, args);
-    }
-
-    if(!interpreter.variables[targetArrayName]){
-        throw new FS3Error("ReferenceError", `Variable [${targetArrayName}] is not defined`, args[2].line, args[2].col, args);
-    }
-
-    if(interpreter.variables[targetArrayName].type !== "array"){
-        throw new FS3Error("TypeError", `Variable [${targetArrayName}] must be of type [array] to be used in [foreach]`, args[2].line, args[2].col, args);
-    }
-
-    let array = interpreter.variables[targetArrayName].value;
-
-    for(let i = 0; i < array.length; i++){
-        interpreter.checkInterrupt();
-
-        let el = array[i];
-
-        interpreter.variables[variableName].value = el.value;
-        interpreter.variables[variableName].type = el.type;
-
-        try {
-            await interpreter.executeBlock(block);
-        } catch (e) {
-            if(e instanceof ContinueLoop){
-                continue;
-            } else if(e instanceof BreakLoop){
-                break;
-            } else throw e;
-        }
-        
-
-        interpreter.variables[targetArrayName].value[i].value = interpreter.variables[variableName].value;
-        interpreter.variables[targetArrayName].value[i].type = interpreter.variables[variableName].type;
-    }
-
-    delete interpreter.variables[variableName];
-
-});
-
-new Keyword("filearg", ["variable_reference", "number"], (args, interpreter) => {
-    let variableName = args[0].value.slice(1);
-    let argIndex = args[1].value;
-    let argValue = interpreter.fileArguments[argIndex];
-
-    if(argValue === undefined){
-        throw new FS3Error("RuntimeError", `No command line argument found at index [${argIndex}]`, args[1].line, args[1].col, args);
-    }
-
-    if(!interpreter.variables[variableName]){
-        throw new FS3Error("ReferenceError", `Variable [${variableName}] is not defined`, args[0].line, args[0].col, args);
-    }
-
-    if(!interpreter.variables[variableName].mut){
-        throw new FS3Error("AccessError", `Variable [${variableName}] is immutable and cannot be changed`, args[0].line, args[0].col, args);
-    }
-
-    if(interpreter.variables[variableName].type !== "string"){
-        throw new FS3Error("TypeError", `Variable [${variableName}] must be of type [string] to store command line argument`, args[0].line, args[0].col, args);
-    }
-
-    argValue = argValue.replaceAll("\\_", " ");
-
-    interpreter.variables[variableName].value = argValue;
-});
+new Keyword("filearg", ["variable_reference", "number"]);
 
 new Keyword("set", ["variable_reference", "literal_assignment", "string|number|array"], (args, interpreter) => {
     let variableName = args[0].value.slice(1);
@@ -651,189 +475,30 @@ new Keyword("set", ["variable_reference", "literal_assignment", "string|number|a
 });
 
 // ["string", "string|number", "any?"]
-new Keyword("out", ["string|number"], (args, interpreter) => {
-    if(args[0].type === "string" && args[0].value.length === 0) interpreter.out("(empty string)");
-    else interpreter.out(args[0]);
-});
+new Keyword("out", ["string|number"]);
 
-new Keyword("warn", ["string"], (args, interpreter) => {
-    interpreter.smallwarnout(args[0].value);
-});
+new Keyword("warn", ["string"]);
 
-new Keyword("error", ["string"], (args, interpreter) => {
-    interpreter.smallerrout(args[0].value);
-});
+new Keyword("error", ["string"]);
 
-new Keyword("longwarn", ["string", "string"], (args, interpreter) => {
-    let warningName = args[0].value;
-    let warningMessage = args[1].value;
-    interpreter.warnout(new FS3Warn(warningName, warningMessage, args[0].line, args[0].col));
-});
+new Keyword("longwarn", ["string", "string"]);
 
-new Keyword("longerr", ["string", "string"], (args, interpreter) => {
-    let errorName = args[0].value; 
-    let errorMessage = args[1].value;
-    interpreter.errout(new FS3Error(errorName, errorMessage, args[1].line, args[1].col, args));
-});
+new Keyword("longerr", ["string", "string"]);
 
-new Keyword("kill", [], (args, interpreter, line) => {
-    throw new FS3Error("RuntimeError", "Program terminated with [kill] keyword", line[0].line, line[0].col, args);
-});
+new Keyword("kill", []);
 
-new Keyword("quietkill", [], (args, interpreter) => {
-    throw new FS3Error("quietKill", "", -1, -1, args);
-});
+new Keyword("quietkill", []);
 
-new Keyword("func", ["function_reference", "block"], (args, interpreter) => {
-    let functionName = args[0].value;
-    let functionBody = args[1].body;
+new Keyword("func", ["function_reference", "block"])
 
-    if(interpreter.functions[functionName]){
-        throw new FS3Error("ReferenceError", `Function [${functionName}] is already defined`, args[0].line, args[0].col, args);
-    }
-    interpreter.functions[functionName] = functionBody;
-})
+new Keyword("pfunc", ["function_reference", "array", "block"]);
 
-new Keyword("pfunc", ["function_reference", "array", "block"], (args, interpreter) => {
-    let functionName = args[0].value;
-    let functionParams = args[1].value.flat();
-    let functionBody = args[2].body;
+new Keyword("pcall", ["function_reference", "array"]);
 
-    let params = [];
-
-    functionParams.forEach(p => {
-        if(p.type != "string"){
-            throw new FS3Error("TypeError", `Parameter declaration [${p.value}] in function [${functionName}] must be a string`, p.line, p.col, args);
-        }
-
-        let value = p.value.split(":")[0];
-        let type = p.value.split(":")[1];
-
-        if(type == "S") type = "string";
-        else if(type == "N") type = "number";
-        else if(type == "A") type = "array";
-        else if(type == "" || type == undefined){
-            throw new FS3Error("SyntaxError", `Parameter [${value}] in function [${functionName}] is missing a type declaration. Must be S (string), N (number), or A (array)`, p.line, p.col, args);
-        } else {
-            throw new FS3Error("TypeError", `Invalid parameter type [${type}] for parameter [${value}] in function [${functionName}]. Must be S (string), N (number), or A (array)`, p.line, p.col, args);
-        }
-
-        params.push({value, type});
-    });
+new Keyword("wait", ["number"]);
 
 
-    if(interpreter.functions[functionName]){
-        throw new FS3Error("ReferenceError", `Function [${functionName}] is already defined`, args[0].line, args[0].col, args);
-    }
-
-    interpreter.functions[functionName] = {
-        body: functionBody,
-        params: params.flat()
-    };
-});
-
-new Keyword("pcall", ["function_reference", "array"], async (args, interpreter) => {
-    let functionName = args[0].value;
-    let functionArgs = args[1].value;
-    
-    if(!interpreter.functions[functionName]){
-        throw new FS3Error("ReferenceError", `Function [${functionName}] is not defined`, args[0].line, args[0].col, args);
-    }
-
-    if(!interpreter.functions[functionName].body){
-        throw new FS3Error("AccessError", `Function [${functionName}] is not a parameterized function and must be called with the [call] keyword`, args[0].line, args[0].col, args);
-    }
-
-    let expectedFunctionArgs = interpreter.functions[functionName].params;
-    let functionBody = interpreter.functions[functionName].body;
-
-    expectedFunctionArgs.forEach((param, idx) => {
-        let arg = functionArgs[idx];
-        if(!arg){
-            throw new FS3Error("ArgumentError", `Missing argument [${param.value}] of type [${param.type}] for function [${functionName}]`, args[0].line, args[0].col, args);
-        }
-        if(arg.type !== param.type){
-            throw new FS3Error("TypeError", `Invalid type for argument [${param.value}] in function [${functionName}]: expected [${param.type}], got [${arg.type}]`, arg.line, arg.col, args);
-        }
-        // create a temporary variable for this arg
-        if(interpreter.variables[param.value]){
-            throw new FS3Error("ReferenceError", `Cannot use parameter name [${param.value}] for function [${functionName}] because a variable with that name already exists`, arg.line, arg.col, args);
-        }
-        interpreter.variables[param.value] = {
-            value: arg.value,
-            type: arg.type,
-            mut: false,
-            freeable: false
-        }
-    });
-
-    try {
-        await interpreter.executeBlock(functionBody)
-        // for each parameter, delete the temporary variable
-        expectedFunctionArgs.forEach(param => {
-            if(interpreter.variables[param.value] && !interpreter.variables[param.value].freeable){
-                delete interpreter.variables[param.value];
-            }
-        });
-    } catch (e) {
-        if(e instanceof ExitFunction) return;
-        else throw e;
-    }
-    
-});
-
-new Keyword("wait", ["number"], async (args, interpreter) => {
-    let duration = args[0].value;
-
-    if(duration < 0){
-        throw new FS3Error("RangeError", `Cannot wait for a negative duration`, args[0].line, args[0].col, args);
-    }
-    await new Promise((resolve, reject) => {
-        // Start the timer
-        const id = setTimeout(() => {
-            // When timer finishes, check for interrupt
-            if (interpreter.interrupted) {
-                reject(new FS3Error("RuntimeError", "Program interrupted by user", -1, -1, args));
-            } else {
-                resolve();
-            }
-        }, duration);
-
-        // If user interrupts DURING the wait, clear the timeout and reject immediately
-        const interruptCheck = () => {
-            clearTimeout(id);
-            reject(new FS3Error("RuntimeError", "Program interrupted by user", -1, -1, args));
-        };
-
-        // Register a hook
-        interpreter._onInterrupt = interruptCheck;
-    }).finally(() => {
-        // Cleanup hook so future waits aren't affected
-        if (interpreter._onInterrupt) {
-            interpreter._onInterrupt = null;
-        }
-    });
-});
-
-
-new Keyword("call", ["function_reference"], async (args, interpreter) => {
-    let functionName = args[0].value;
-    let functionBody = interpreter.functions[functionName];
-
-    if(!functionBody){
-        throw new FS3Error("ReferenceError", `Function [${functionName}] is not defined`, args[0].line, args[0].col, args);
-    }
-    if(functionBody.body){
-        throw new FS3Error("AccessError", `Function [${functionName}] is a parameterized function and must be called with the [pcall] keyword`, args[0].line, args[0].col, args);
-    }
-
-    try {
-        await interpreter.executeBlock(functionBody);
-    } catch (e) {
-        if(e instanceof ExitFunction) return;
-        else throw e;
-    }
-});
+new Keyword("call", ["function_reference"]);
     
 
 new Keyword("var", ["variable_reference", "literal_assignment", "string|number|array"], (args, interpreter) => {
@@ -855,180 +520,10 @@ new Keyword("var", ["variable_reference", "literal_assignment", "string|number|a
     if(type === "object") interpreter.variables[name].tree = {};
 })
 
-new Keyword("prompt", ["variable_reference", "number", "array"], (args, interpreter) => {
-    let variable = args[0].value.slice(1);
-    let selectedIndex = args[1].value;
-    let options = args[2].value.map(o => o.value);
-
-    setSetting("currentSpinner", "prompt-in-progress");
-    setSetting("showSpinner", true)
-
-    if(!interpreter.variables[variable]){
-        throw new FS3Error("ReferenceError", `Variable [${variable}] is not defined`, args[0].line, args[0].col, args);
-    }
-
-    if(!interpreter.variables[variable].mut){
-        throw new FS3Error("AccessError", `Variable [${variable}] is immutable and cannot be changed`, args[0].line, args[0].col, args);
-    }
-
-    if(interpreter.variables[variable].type !== "string"){
-        throw new FS3Error("TypeError", `Variable [${variable}] must be of type [string] to store user input`, args[0].line, args[0].col, args);
-    }
-
-    if(selectedIndex < 0 || selectedIndex >= options.length){
-        throw new FS3Error("RangeError", `Default index [${selectedIndex}] is out of bounds for options array of length [${options.length}]`, args[1].line, args[1].col, args);
-    }
-
-    if(options.length === 0){
-        throw new FS3Error("ArgumentError", `Options array cannot be empty`, args[2].line, args[2].col, args);
-    }
-
-    return new Promise((resolve, reject) => {
-        const finish = () => {
-            interpreter.variables[variable].value = options[selectedIndex];
-            interpreter.variables[variable].type = "string";
-            setSetting("currentSpinner", getSetting("defaultSpinner"));
-            setSetting("showSpinner", false)
-            resolve();
-        };
-
-        const cleanup = () => {
-            lineContainer.setAttribute('contenteditable', 'false');
-            document.body.removeEventListener("keyup", promptHandler);
-            if (interpreter._onInterrupt === interruptCheck) {
-                interpreter._onInterrupt = null;
-            }
-        };
-
-        const interruptCheck = () => {
-            cleanup();
-            reject(new FS3Error("RuntimeError", "Program interrupted by user", -1, -1, args));
-        };
-
-        // hook for interrupt
-        interpreter._onInterrupt = interruptCheck;
-        interpreter.promptCount++;
-
-        let prefixElement = document.createElement('span');
-        prefixElement.textContent = `>`;
-
-        let lineContainer = document.createElement('div');
-        lineContainer.classList.add('line-container');
-
-        lineContainer.appendChild(prefixElement);
-
-        for(let i = 0; i < options.length; i++){
-            let option = document.createElement('span');
-            option.setAttribute("data-program", `cli-session-${config.programSession}-${interpreter.promptCount}`);
-            if(i == selectedIndex) {
-                option.classList.add('selected');
-            }
-            option.textContent = options[i];
-            option.style.paddingLeft = 0;
-            lineContainer.appendChild(option);
-            if(i != options.length-1) lineContainer.appendChild(document.createTextNode(" • "));
-        }
-
-        function promptHandler(e){
-            e.preventDefault();
-            let optionElements = document.querySelectorAll(`[data-program='cli-session-${config.programSession}-${interpreter.promptCount}']`);
-            if(e.key == "ArrowLeft"){
-                if(selectedIndex > 0) selectedIndex--;
-                optionElements.forEach(option => option.classList.remove('selected'));
-                optionElements[selectedIndex].classList.add('selected');
-            }
-            if(e.key == "ArrowRight"){
-                if(selectedIndex < options.length - 1) selectedIndex++;
-                optionElements.forEach(option => option.classList.remove('selected'));
-                optionElements[selectedIndex].classList.add('selected');
-            }
-            if(e.key == "Enter"){
-                cleanup();
-                finish();
-            }
-        }
-
-        terminal.appendChild(lineContainer);
-        terminal.scrollTop = terminal.scrollHeight;
-        document.body.addEventListener("keyup", promptHandler)
-    });
-});
+new Keyword("prompt", ["variable_reference", "number", "array"]);
 
 // variable name, input type (string or number)
-new Keyword("ask", ["variable_reference", "string"], async (args, interpreter) => {
-    let variableName = args[0].value.slice(1);
-    let prefix = args[1].value;
-
-    if (!interpreter.variables[variableName]) {
-        throw new FS3Error("ReferenceError", `Variable [${variableName}] is not defined`, args[0].line, args[0].col, args);
-    }
-
-    if (!interpreter.variables[variableName].mut) {
-        throw new FS3Error("AccessError", `Variable [${variableName}] is immutable and cannot be changed`, args[0].line, args[0].col, args);
-    }
-
-    if(interpreter.variables[variableName].type !== "string"){
-        throw new FS3Error("TypeError", `Variable [${variableName}] must be of type [string] to store user input`, args[0].line, args[0].col, args);
-    }
-
-    let prefixElement = document.createElement('span');
-    let lineElement = document.createElement('div');
-    let lineContainer = document.createElement('div');
-
-    lineElement.setAttribute('contenteditable', 'plaintext-only');
-    lineElement.setAttribute('spellcheck', 'false');
-
-    prefixElement.textContent = prefix;
-
-    lineContainer.appendChild(prefixElement);
-    lineContainer.appendChild(lineElement);
-
-    lineContainer.classList.add('line-container');
-    terminal.appendChild(lineContainer);
-    lineElement.focus();
-
-    setSetting("currentSpinner", "ask-in-progress");
-    setSetting("showSpinner", true)
-
-    return new Promise((resolve, reject) => {
-
-        const cleanup = () => {
-            lineElement.setAttribute('contenteditable', 'false');
-            if (interpreter._onInterrupt === interruptCheck) {
-                interpreter._onInterrupt = null;
-            }
-        };
-
-        const finish = (value) => {
-            interpreter.variables[variableName].value = value;
-            interpreter.variables[variableName].type = "string";
-            cleanup();
-            resolve();
-        };
-
-        const interruptCheck = () => {
-            cleanup();
-            reject(new FS3Error("RuntimeError", "Program interrupted by user", -1, -1, args));
-        };
-
-        // hook for interrupt
-        interpreter._onInterrupt = interruptCheck;
-
-        lineElement.addEventListener('keydown', function(e){
-            if(e.key == "Enter") e.preventDefault();
-        });
-
-        lineElement.addEventListener('keyup', function(e){
-            if(e.key == "Enter"){
-                let inputValue = lineElement.textContent.trim();
-
-                setSetting("currentSpinner", getSetting("defaultSpinner"));
-                setSetting("showSpinner", false)
-                finish(inputValue);
-            }
-        });
-    });
-});
+new Keyword("ask", ["variable_reference", "string"]);
 
 new Keyword("cvar", ["variable_reference", "literal_assignment", "string|number|array"], (args, interpreter) => {
     let name = args[0].value;
@@ -1047,91 +542,15 @@ new Keyword("cvar", ["variable_reference", "literal_assignment", "string|number|
     if(type === "object") interpreter.variables[name].tree = {};
 })
 
-new Keyword("free", ["variable_reference"], (args, interpreter) => {
-    let name = args[0].value.slice(1);
-    let variable = interpreter.variables[name];
-    if(!variable){
-        throw new FS3Error("ReferenceError", `Variable [${name}] is not defined`, args[0].line, args[0].col, args);
-    }
-    if(!variable.freeable){
-        throw new FS3Error("AccessError", `Variable [${name}] cannot be freed`, args[0].line, args[0].col, args);
-    }
-    if(!variable.mut){
-        throw new FS3Error("AccessError", `Variable [${name}] is immutable and cannot be freed`, args[0].line, args[0].col, args);
-    }
-    delete interpreter.variables[name];
-});
+new Keyword("free", ["variable_reference"]);
 
-new Keyword("return", ["string|number|array"], (args, interpreter) => {
-    interpreter.variables["fReturn"].value = args[0].value;
-    interpreter.variables["fReturn"].type = args[0].type;
-});
+new Keyword("return", ["string|number|array"]);
 
+new Keyword("if", ["condition_statement", "block"]);
 
-new Keyword("if", ["condition_statement", "block"], async (args, interpreter) => {
-    let conditionResult = interpreter.evaluateMathExpression(args[0].value)
+new Keyword("else", ["block"]);
 
-    if(conditionResult){
-        await interpreter.executeBlock(args[1].body);
-        interpreter.lastIfExecuted = true;
-    } else {
-        interpreter.lastIfExecuted = false;
-    }
-});
-
-new Keyword("else", ["block"], async (args, interpreter) => {
-    if(!interpreter.lastIfExecuted){
-        await interpreter.executeBlock(args[0].body);
-    }
-    interpreter.lastIfExecuted = false;
-});
-
-new Keyword("loop", ["number|condition_statement", "block"], async (args, interpreter) => {
-    let cond = args[0];
-    let block = args[1].body;
-
-    if(cond.type === "number"){
-        let count = cond.value;
-        for(let i = 0; i < count; i++){
-            interpreter.variables["__loop_index__"] = {value: i, type: "number", mut: false, freeable: false};
-            interpreter.checkInterrupt();
-            let blockCopy = structuredClone(block);
-            try {
-                await interpreter.executeBlock(blockCopy);
-            } catch (e) {
-                if(e instanceof ContinueLoop){
-                    continue;
-                } else if(e instanceof BreakLoop){
-                    break;
-                } else throw e;
-            }
-        }
-    } else if(cond.type === "condition_statement"){
-        let breaker = interpreter.variables["MAX_LOOP_ITERATIONS"].value;
-        let i = 0;
-
-        while(interpreter.evaluateMathExpression(cond.value)){
-            let blockCopy = structuredClone(block);
-            i++;
-
-            if(i >= breaker){
-                // error not closing program
-                throw new FS3Error("RuntimeError", `Possible infinite loop detected after ${breaker} iterations.`, cond.line, cond.col, args);
-            }
-
-            try {
-                await interpreter.executeBlock(blockCopy);
-            } catch (e) {
-                if(e instanceof ContinueLoop){
-                    continue;
-                } else if(e instanceof BreakLoop){
-                    break;
-                } else throw e;
-            }
-        
-        }
-    }
-});
+new Keyword("loop", ["number|condition_statement", "block"]);
 
 class FroggyScript3 {
     static matches = [
@@ -1199,13 +618,11 @@ class FroggyScript3 {
             }
         }
 
-        document.body.removeEventListener("keydown", interruptHandler);
-        document.body.addEventListener("keydown", interruptHandler.bind(this));
     }
 
     cleanupKeyListeners() {
         for (const { type, handler } of this.keyListeners) {
-            document.body.removeEventListener(type, handler);
+
         }
         this.keyListeners = [];
     }
@@ -1392,7 +809,28 @@ class FroggyScript3 {
         return Object.keys(Keyword.table).join("|");
     }
 
-    _process(code, fileName, fileArguments) {
+    _vscode_process(code){
+        // do the same as _process but without executing methods or keywords, or resolving variables
+        for (let method in Method.table) {
+            let def = Method.table[method];
+            if (!def.defaultMethod) delete Method.table[method];
+        }
+        for (let keyword in Keyword.table) {
+            let def = Keyword.table[keyword];
+            if (!def.defaultKeyword) delete Keyword.table[keyword];
+        }
+        if (code.length == 0) {
+            throw new FS3Error("SyntaxError", "No code to process", 0, 0);
+        }
+        let tokens = this.tokenize(code);
+        let lines = tokens.map(line => [{ type: "start_of_line", value: "" }, ...line]);
+        let flattened = lines.flat();
+        let compressed = this.blockCompressor(flattened);
+
+        return compressed;
+    }
+
+    _process(code, fileName = "*", fileArguments = []) {
         this.cleanupKeyListeners();
         this._interrupt = false;
 
@@ -2136,3 +1574,5 @@ class FroggyScript3 {
         return tokens;
     }
 }
+
+module.exports = { FroggyScript3, Keyword, Method, FS3Error, imports };

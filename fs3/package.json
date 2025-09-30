@@ -1,4 +1,5 @@
 {
+    "type": "commonjs",
     "name": "fs3",
     "displayName": "froggyscript3",
     "description": "for froggyscript",
@@ -9,6 +10,7 @@
     "categories": [
         "Programming Languages"
     ],
+    "main": "./client/extension.js",
     "contributes": {
         "iconThemes": [
             {
@@ -22,34 +24,48 @@
                 "textMateRules": [
                     {
                         "scope": "keyword.imported.fs3",
-                        "settings": { "foreground": "#0384d4" }
+                        "settings": {
+                            "foreground": "#0384d4"
+                        }
                     },
                     {
                         "scope": "keyword.io.fs3",
-                        "settings": { "foreground": "#2ae659" }
+                        "settings": {
+                            "foreground": "#2ae659"
+                        }
                     },
                     {
                         "scope": "literal.fs3",
-                        "settings": { "foreground": "#ffeab6" }
+                        "settings": {
+                            "foreground": "#ffeab6"
+                        }
                     },
                     {
                         "scope": "keyword.call.fs3",
-                        "settings": { "foreground": "#b6cafd" }
+                        "settings": {
+                            "foreground": "#b6cafd"
+                        }
                     },
                     {
                         "scope": "keyword.declaration.fs3",
-                        "settings": { "foreground": "#84a7ff" }
+                        "settings": {
+                            "foreground": "#84a7ff"
+                        }
                     },
                     {
                         "scope": "keyword.control.fs3",
-                        "settings": { "foreground": "#f4b782" }
+                        "settings": {
+                            "foreground": "#f4b782"
+                        }
                     },
                     {
                         "scope": [
                             "array.begin.fs3",
                             "array.end.fs3"
                         ],
-                        "settings": { "foreground": "#00eeff" }
+                        "settings": {
+                            "foreground": "#00eeff"
+                        }
                     },
                     {
                         "scope": [
@@ -58,54 +74,81 @@
                             "paren.begin.fs3",
                             "paren.end.fs3"
                         ],
-                        "settings": { "foreground": "#FF79C6" }
+                        "settings": {
+                            "foreground": "#FF79C6"
+                        }
                     },
                     {
                         "scope": "keyword.io.error.fs3",
-                        "settings": { "foreground": "#FF5555" }
+                        "settings": {
+                            "foreground": "#FF5555"
+                        }
                     },
                     {
                         "scope": "keyword.io.warn.fs3",
-                        "settings": { "foreground": "#FFB86C" }
+                        "settings": {
+                            "foreground": "#FFB86C"
+                        }
                     },
                     {
                         "scope": "boolean.fs3",
-                        "settings": { "foreground": "#BD93F9", "fontStyle": "bold" }
+                        "settings": {
+                            "foreground": "#BD93F9",
+                            "fontStyle": "bold"
+                        }
                     },
                     {
                         "scope": "operator.fs3",
-                        "settings": { "foreground": "#9BBAD4" }
+                        "settings": {
+                            "foreground": "#9BBAD4"
+                        }
                     },
                     {
                         "scope": "support.function.fs3",
-                        "settings": { "foreground": "#50FA7B" }
+                        "settings": {
+                            "foreground": "#50FA7B"
+                        }
                     },
                     {
                         "scope": "keyword.system.fs3",
-                        "settings": { "foreground": "#f882c5" }
+                        "settings": {
+                            "foreground": "#f882c5"
+                        }
                     },
                     {
                         "scope": "keyword.system.file.fs3",
-                        "settings": { "foreground": "#fc48ae", "fontStyle": "bold"}
+                        "settings": {
+                            "foreground": "#fc48ae",
+                            "fontStyle": "bold"
+                        }
                     },
                     {
                         "scope": [
                             "reference.variable.fs3",
                             "reference.function.fs3"
                         ],
-                        "settings": { "foreground": "#a5d4de" }
+                        "settings": {
+                            "foreground": "#a5d4de"
+                        }
                     },
                     {
                         "scope": "punctuation.definition.condition.begin.fs3",
-                        "settings": { "foreground": "#50FA7B" }
+                        "settings": {
+                            "foreground": "#50FA7B"
+                        }
                     },
                     {
                         "scope": "punctuation.definition.condition.end.fs3",
-                        "settings": { "foreground": "#50FA7B" }
+                        "settings": {
+                            "foreground": "#50FA7B"
+                        }
                     },
                     {
                         "scope": "keyword.control.freturn.fs3",
-                        "settings": { "foreground": "#c6a5fd", "fontStyle": "bold" }
+                        "settings": {
+                            "foreground": "#c6a5fd",
+                            "fontStyle": "bold"
+                        }
                     }
                 ]
             }
@@ -113,8 +156,13 @@
         "languages": [
             {
                 "id": "froggyscript3",
-                "aliases": ["FroggyScript3", "fs3"],
-                "extensions": [".fs3"],
+                "aliases": [
+                    "FroggyScript3",
+                    "fs3"
+                ],
+                "extensions": [
+                    ".fs3"
+                ],
                 "configuration": "./language-configuration.json"
             }
         ],
@@ -126,16 +174,30 @@
             }
         ]
     },
-    "languages": [{
-        "id": "froggyscript3",
-        "aliases": ["FroggyScript3", "froggyscript3"],
-        "extensions": [".fs3"],
-        "configuration": "./language-configuration.json"
-    }],
-    "grammars": [{
-        "language": "froggyscript3",
-        "scopeName": "froggy3",
-        "path": "./syntaxes/froggyscript3.tmLanguage.json"
-    }]
+    "languages": [
+        {
+            "id": "froggyscript3",
+            "aliases": [
+                "FroggyScript3",
+                "froggyscript3"
+            ],
+            "extensions": [
+                ".fs3"
+            ],
+            "configuration": "./language-configuration.json"
+        }
+    ],
+    "grammars": [
+        {
+            "language": "froggyscript3",
+            "scopeName": "froggy3",
+            "path": "./syntaxes/froggyscript3.tmLanguage.json"
+        }
+    ],
+    "dependencies": {
+        "mathjs": "^14.8.1",
+        "vscode-languageclient": "^9.0.1",
+        "vscode-languageserver": "^9.0.1",
+        "vscode-languageserver-textdocument": "^1.0.12"
+    }
 }
-
