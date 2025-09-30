@@ -1,0 +1,136 @@
+{
+    "scopeName": "source.froggyscript3",
+    "patterns": [
+        { "include": "#fReturn" },
+        { "include": "#dunder" },
+        { "include": "#system" },
+        { "include": "#boolean" },
+        { "include": "#strings" },
+        { "include": "#numbers" },
+        { "include": "#variables" },
+        { "include": "#methods" },
+        { "include": "#condition" },
+        { "include": "#varref" },
+        { "include": "#comments" },
+        { "include": "#operator" },
+        { "include": "#parens" }
+    ],
+    "repository": {
+        "fReturn": {
+            "patterns": [
+                {
+                    "name": "keyword.control.freturn.fs3",
+                    "match": "\\bfReturn\\b"
+                }
+            ]
+        },
+        "parens": {
+            "patterns": [
+                {
+                    "name": "punctuation.parenthesis.fs3",
+                    "match": "[()]"
+                }
+            ]
+        },
+        "comments": {
+            "patterns": [
+                {
+                    "name": "comment.line.number-sign.fs3",
+                    "match": "#.*$"
+                }
+            ]
+        },
+        "operator": {
+            "patterns": [
+                {
+                    "name": "keyword.operator.fs3",
+                    "match": "( == | != | <= | >= | < | > | & )"
+                }
+            ]
+        },
+        "system": {
+            "patterns": [
+                {
+                    "name": "system.keyword.fs3",
+                    "match": "\\b(kill|quietkill|wait|clearterminal|import|free)\\b"
+                }
+            ]
+        },
+        "boolean": {
+            "patterns": [
+                {
+                    "name": "constant.boolean.fs3",
+                    "match": "\\b(true|false)\\b"
+                }
+            ]
+        },
+        "condition": {
+            "patterns": [
+                {
+                    "name": "meta.condition.fs3",
+                    "begin": "<<",
+                    "end": ">>",
+                    "beginCaptures": {
+                        "0": { "name": "punctuation.definition.condition.begin.fs3" }
+                    },
+                    "endCaptures": {
+                        "0": { "name": "punctuation.definition.condition.end.fs3" }
+                    },
+                    "patterns": [
+                        { "include": "#boolean" },
+                        { "include": "#operator" },
+                        { "include": "#dunder" }
+                    ]
+                }
+            ]
+        },
+        "dunder": {
+            "patterns": [
+                {
+                    "name": "variable.language.dunder.fs3",
+                    "match": "(__[a-zA-Z_][a-zA-Z0-9_]*__)"
+                }
+            ]
+        },
+        "strings": {
+            "patterns": [
+                {
+                    "name": "string.quoted.single.fs3",
+                    "match": "'([^'\\\\]|\\\\.)*'"
+                }
+            ]
+        },
+        "numbers": {
+            "patterns": [
+                {
+                    "name": "constant.numeric.fs3",
+                    "match": "\\b[0-9]+(?:\\.[0-9]+)?\\b"
+                }
+            ]
+        },
+        "varref": {
+            "patterns": [
+                {
+                    "name": "variable.reference.fs3",
+                    "match": "\\$[A-Za-z_][A-Za-z0-9_]*"
+                }
+            ]
+        },
+        "variables": {
+            "patterns": [
+                {
+                    "name": "variable.fs3",
+                    "match": "[A-Za-z_][A-Za-z0-9_]*"
+                }
+            ]
+        },
+        "methods": {
+            "patterns": [
+                {
+                    "name": "support.function.fs3",
+                    "match": ">[a-zA-Z_][a-zA-Z0-9_]*\\b"
+                }
+            ]
+        }
+    }
+}

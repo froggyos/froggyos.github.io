@@ -1,0 +1,91 @@
+{
+    "name": "fs3",
+    "displayName": "froggyscript3",
+    "description": "for froggyscript",
+    "version": "0.0.1",
+    "engines": {
+        "vscode": "^1.104.0"
+    },
+    "categories": [
+        "Programming Languages"
+    ],
+    "contributes": {
+        "configurationDefaults": {
+            "editor.tokenColorCustomizations": {
+                "textMateRules": [
+                    {
+                        "scope": "punctuation.parenthesis.fs3",
+                        "settings": { "foreground": "#FF79C6" }
+                    },
+                    {
+                        "scope": "error.keyword.fs3",
+                        "settings": { "foreground": "#FF5555" }
+                    },
+                    {
+                        "scope": "warn.keyword.fs3",
+                        "settings": { "foreground": "#FFB86C" }
+                    },
+                    {
+                        "scope": "constant.boolean.fs3",
+                        "settings": { "foreground": "#BD93F9", "fontStyle": "bold" }
+                    },
+                    {
+                        "scope": "keyword.operator.fs3",
+                        "settings": { "foreground": "#9BBAD4" }
+                    },
+                    {
+                        "scope": "support.function.fs3",
+                        "settings": { "foreground": "#50FA7B" }
+                    },
+                    {
+                        "scope": "system.keyword.fs3",
+                        "settings": { "foreground": "#FF79C6" }
+                    },
+                    {
+                        "scope": "variable.reference.fs3",
+                        "settings": { "foreground": "#a5d4de" }
+                    },
+                    {
+                        "scope": "punctuation.definition.condition.begin.fs3",
+                        "settings": { "foreground": "#50FA7B" }
+                    },
+                    {
+                        "scope": "punctuation.definition.condition.end.fs3",
+                        "settings": { "foreground": "#50FA7B" }
+                    },
+                    {
+                        "scope": "keyword.control.freturn.fs3",
+                        "settings": { "foreground": "#c6a5fd", "fontStyle": "bold" }
+                    }
+                ]
+            }
+        },
+        "languages": [
+            {
+                "id": "froggyscript3",
+                "aliases": ["FroggyScript3", "fs3"],
+                "extensions": [".fs3"],
+                "configuration": "./language-configuration.json"
+            }
+        ],
+        "grammars": [
+            {
+                "language": "froggyscript3",
+                "scopeName": "source.froggyscript3",
+                "path": "./syntaxes/froggyscript3.tmLanguage.json"
+            }
+        ]
+    },
+    "languages": [{
+        "id": "froggyscript3",
+        "aliases": ["FroggyScript3", "froggyscript3"],
+        "extensions": [".fs3"],
+        "configuration": "./language-configuration.json"
+    }],
+    "grammars": [{
+        "language": "froggyscript3",
+        "scopeName": "froggy3",
+        "path": "./syntaxes/froggyscript3.tmLanguage.json"
+    }]
+}
+

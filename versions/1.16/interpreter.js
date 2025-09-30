@@ -81,15 +81,18 @@ class Keyword {
 
 const imports = {
     math: (interp) => {
-        if (interp.variables["Math"]) {
-            throw new FS3Error("ReferenceError", `Variable [Math] is already defined`, -1, -1, []);
+        if(interp){
+            if (interp.variables["Math"]) {
+                throw new FS3Error("ReferenceError", `Variable [Math] is already defined`, -1, -1, []);
+            }
+            interp.variables["Math"] = {
+                value: "Math Module",
+                type: "Math",
+                mut: false,
+                freeable: false
+            }
         }
-        interp.variables["Math"] = {
-            value: "Math Module",
-            type: "Math",
-            mut: false,
-            freeable: false
-        }
+
 
         new Method("random", ["Math"], [{type: ["number"], optional: false}, {type: ["number"], optional: false}], (parent, args, interpreter) => {
             let min = args[0].value;
@@ -162,17 +165,20 @@ const imports = {
         }, false);
     },
     objects: (interp) => {
-        if (interp.variables["Object"]) {
-            throw new FS3Error("ReferenceError", `Variable [Object] is already defined`, -1, -1, []);
+        if(interp){
+            if (interp.variables["Object"]) {
+                throw new FS3Error("ReferenceError", `Variable [Object] is already defined`, -1, -1, []);
+            }
+
+            interp.variables["Object"] = {
+                value: "{}",
+                tree: {},
+                type: "object",
+                mut: false,
+                freeable: false
+            }
         }
 
-        interp.variables["Object"] = {
-            value: "{}",
-            tree: {},
-            type: "object",
-            mut: false,
-            freeable: false
-        }
 
         Method.table.type.parentTypes.push("object")
         Keyword.table.var.scheme[2] += "|object"
@@ -1377,6 +1383,13 @@ class FroggyScript3 {
             }
         }
         return lines;
+    }
+
+    static GetAllKeywords() {
+        for(let imp in imports){
+            imports[imp]();
+        }
+        return Object.keys(Keyword.table).join("|");
     }
 
     async interpret(code, fileName, fileArguments) {
