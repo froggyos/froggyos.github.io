@@ -1,0 +1,10 @@
+{
+  "iconDefinitions": {
+    "fs3-icon": {
+      "iconPath": "./resources/fs3-icon.png"
+    }
+  },
+  "fileExtensions": {
+    "fs3": "fs3-icon"
+  }
+}

@@ -10,6 +10,13 @@
         "Programming Languages"
     ],
     "contributes": {
+        "iconThemes": [
+            {
+                "id": "fs3-icons",
+                "label": "FS3 Icons",
+                "path": "./fs3-icon-theme.json"
+            }
+        ],
         "configurationDefaults": {
             "editor.tokenColorCustomizations": {
                 "textMateRules": [
