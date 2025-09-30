@@ -1,2 +1,152 @@
-continue
-# meow
+import 'keyboard'
+import 'math'
+
+clearterminal
+
+var snakeX = [5, 5, 5, 5]
+var snakeY = [5, 6, 7, 8]
+
+var drawY = 0
+
+var row = ''
+
+var width = 15
+var height = 15
+
+var headX = 0
+var headY = 0
+
+var applesX = []
+var applesY = []
+
+loop 5 {
+     set $applesX = applesX>push(Math>random(1, width>sub(2)))
+     set $applesY = applesY>push(Math>random(1, height>sub(2)))
+}
+
+var direction = 'right'
+
+keydown 'd' {
+    if direction>neq('left') {
+       set $direction = 'right'
+    }
+}", 
+keydown 'a' {
+    if direction>neq('right') {
+       set $direction = 'left'
+    }
+}
+keydown 's' {
+    if direction>neq('up') {
+       set $direction = 'down'
+    }
+}
+keydown 'w' {
+    if direction>neq('down') {
+        set $direction = 'up'
+    }
+}
+var score = 0
+
+var snakeXDraw = 0
+var snakeYDraw = 0
+
+var appleX = 0
+var appleY = 0
+
+var ate = false
+var collision = false
+var dudX = 0
+var dudY = 0
+
+loop <<true>> {
+    clearterminal
+    out 'WASD to move'
+    set $drawY = 0
+    set $headX = snakeX>last
+    set $headY = snakeY>last
+
+    if direction>eq('right') {
+        set $headX = headX>inc
+        if <<headX >= width>> {
+            set $headX = 0
+        }
+    }
+    if direction>eq('left') {
+        set $headX = headX>dec
+        if <<headX < 0>> {
+            set $headX = width>dec
+        }
+    }
+    if direction>eq('down') {
+        set $headY = headY>inc
+        if <<headY > height>> {
+            set $headY = 0
+        }
+    }
+    if direction>eq('up') {
+        set $headY = headY>dec
+        if <<headY < 1>> {
+            set $headY = height
+        }
+    }
+
+    loop applesX>length {
+        set $appleX = applesX>index(__loop_index__)
+        set $appleY = applesY>index(__loop_index__)
+        if <<headX == appleX & headY == appleY>> {
+            set $ate = true
+            set $score = score>inc
+            set $applesX = applesX>splice(__loop_index__, 1)
+            set $applesY = applesY>splice(__loop_index__, 1)
+            set $applesX = applesX>push(Math>random(1, width>sub(2)))
+            set $applesY = applesY>push(Math>random(1, height>sub(2)))
+        }
+    }
+
+    if <<ate == false>> {
+        set $snakeX = snakeX>shift
+        set $snakeY = snakeY>shift
+    }
+
+    set $snakeX = snakeX>push(headX)
+    set $snakeY = snakeY>push(headY)
+
+    loop height {
+        set $row = '.'>repeat(width)
+
+        set $drawY = drawY>inc
+
+        loop snakeX>length {
+            set $snakeXDraw = snakeX>index(__loop_index__)
+            set $snakeYDraw = snakeY>index(__loop_index__)
+            if <<snakeYDraw == drawY>> {
+                set $row = row>replaceAt(snakeXDraw, '#')", 
+            }
+            set $dudX = snakeX>length>dec
+            if <<(__loop_index__ < dudX) & headX == snakeXDraw & headY == snakeYDraw>> {
+                set $collision = true
+            }
+        }
+
+        loop applesX>length {
+            set $appleX = applesX>index(__loop_index__)
+            set $appleY = applesY>index(__loop_index__)
+            if <<appleY == drawY>> {
+                set $row = row>replaceAt(appleX, '@')
+            }
+        }
+
+        if <<headY == drawY>> {
+            set $row = row>replaceAt(headX, 'O')
+        }
+
+        set $ate = false
+        out row
+    }
+    if <<collision == true>> {
+        out 'Game Over! Final Score: '>concat(score>toString)
+        break
+    }
+    wait 200
+}
