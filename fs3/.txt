@@ -1,0 +1,15 @@
+control.keyword.fs3     = if|else|loop|foreach|break|continue|skip|return|exit
+
+declaration.keyword.fs3 = var|cvar|func|pfunc
+
+call.keyword.fs3        = call|pcall
+
+io.keyword.fs3          = out|prompt|ask|filearg
+
+warn.keyword.fs3        = warn|longwarn
+
+error.keyword.fs3       = error|longerror
+
+system.keyword.fs3      = kill|quietkill|wait|clearterminal|import|free
+
+imports.keyword.fs3     = arrset|objset|keydown|keyup
