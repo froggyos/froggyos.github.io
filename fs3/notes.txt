@@ -1,6 +1,6 @@
 control.keyword.fs3     = if|else|loop|foreach|break|continue|skip|return|exit
 
-declaration.keyword.fs3 = var|cvar|func|pfunc
+declaration.keyword.fs3 = var|cvar|func|pfunc|set
 
 call.keyword.fs3        = call|pcall
 

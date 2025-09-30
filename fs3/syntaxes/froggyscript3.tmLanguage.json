@@ -3,19 +3,69 @@
     "patterns": [
         { "include": "#fReturn" },
         { "include": "#dunder" },
-        { "include": "#system" },
         { "include": "#boolean" },
         { "include": "#strings" },
         { "include": "#numbers" },
-        { "include": "#variables" },
         { "include": "#methods" },
+        { "include": "#literal" },
+        { "include": "#keywords" },
+        { "include": "#variables" },
         { "include": "#condition" },
-        { "include": "#varref" },
+        { "include": "#references" },
         { "include": "#comments" },
         { "include": "#operator" },
-        { "include": "#parens" }
+        { "include": "#grouping" },
+        { "include": "#array" }
     ],
     "repository": {
+        "literal": {
+            "patterns": [
+                {
+                    "name": "literal.fs3",
+                    "match": " in | = "
+                }
+            ]
+        },
+        "keywords": {
+            "patterns": [
+                {
+                    "name": "keyword.io.fs3",
+                    "match": "\\b(out|prompt|ask)\\b"
+                },
+                {
+                    "name": "keyword.control.fs3",
+                    "match": "\\b(if|else|loop|foreach|break|continue|skip|return|exit)\\b"
+                },
+                {
+                    "name": "keyword.system.fs3",
+                    "match": "\\b(kill|quietkill|wait|clearterminal|free)\\b"
+                },
+                {
+                    "name": "keyword.imported.fs3",
+                    "match": "\\b(objset|keydown|keyup)\\b"
+                },
+                {
+                    "name": "keyword.system.file.fs3",
+                    "match": "\\b(import|filearg)\\b"
+                },
+                {
+                    "name": "keyword.declaration.fs3",
+                    "match": "\\b(var|cvar|func|pfunc|set|arrset)\\b"
+                },
+                {
+                    "name": "keyword.call.fs3",
+                    "match": "\\b(call|pcall)\\b"
+                },
+                {
+                    "name": "keyword.io.error.fs3",
+                    "match": "\\b(error|longerror)\\b"
+                },
+                {
+                    "name": "keyword.io.warn.fs3",
+                    "match": "\\b(warn|longwarn)\\b"
+                }
+            ]
+        },
         "fReturn": {
             "patterns": [
                 {
@@ -24,11 +74,35 @@
                 }
             ]
         },
-        "parens": {
+        "array": {
             "patterns": [
                 {
-                    "name": "punctuation.parenthesis.fs3",
-                    "match": "[()]"
+                    "name": "array.begin.fs3",
+                    "match": "\\["
+                },
+                {
+                    "name": "array.end.fs3",
+                    "match": "\\]"
+                }
+            ]
+        },
+        "grouping": {
+            "patterns": [
+                {
+                    "name": "paren.begin.fs3",
+                    "match": "\\("
+                },
+                {
+                    "name": "paren.end.fs3",
+                    "match": "\\)"
+                },
+                {
+                    "name": "block.begin.fs3",
+                    "match": "\\{"
+                },
+                {
+                    "name": "block.end.fs3",
+                    "match": "\\}"
                 }
             ]
         },
@@ -43,23 +117,15 @@
         "operator": {
             "patterns": [
                 {
-                    "name": "keyword.operator.fs3",
+                    "name": "operator.fs3",
                     "match": "( == | != | <= | >= | < | > | & )"
-                }
-            ]
-        },
-        "system": {
-            "patterns": [
-                {
-                    "name": "system.keyword.fs3",
-                    "match": "\\b(kill|quietkill|wait|clearterminal|import|free)\\b"
                 }
             ]
         },
         "boolean": {
             "patterns": [
                 {
-                    "name": "constant.boolean.fs3",
+                    "name": "boolean.fs3",
                     "match": "\\b(true|false)\\b"
                 }
             ]
@@ -108,11 +174,15 @@
                 }
             ]
         },
-        "varref": {
+        "references": {
             "patterns": [
                 {
-                    "name": "variable.reference.fs3",
+                    "name": "reference.variable.fs3",
                     "match": "\\$[A-Za-z_][A-Za-z0-9_]*"
+                },
+                {
+                    "name": "reference.function.fs3",
+                    "match": "@[a-zA-Z_][a-zA-Z0-9_]*\\b"
                 }
             ]
         },
