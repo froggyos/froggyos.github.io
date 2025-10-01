@@ -12,6 +12,22 @@
     ],
     "main": "./client/extension.js",
     "contributes": {
+        "commands": [
+            {
+                "command": "froggyscript3.runFile",
+                "title": "▶ Run",
+                "description": "Run FroggyScript3 file"
+            }
+        ],
+        "menus": {
+            "editor/title": [
+                {
+                    "command": "froggyscript3.runFile",
+                    "when": "resourceLangId == froggyscript3",
+                    "group": "navigation@1"
+                }
+            ]
+        },
         "iconThemes": [
             {
                 "id": "fs3-icons",
@@ -236,8 +252,12 @@
     ],
     "dependencies": {
         "mathjs": "^14.8.1",
+        "vscode": "^1.1.37",
         "vscode-languageclient": "^9.0.1",
         "vscode-languageserver": "^9.0.1",
         "vscode-languageserver-textdocument": "^1.0.12"
+    },
+    "devDependencies": {
+        "@types/vscode": "^1.104.0"
     }
 }

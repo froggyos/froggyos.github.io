@@ -27,8 +27,25 @@ function activate(context) {
         clientOptions
     );
 
+    const disposable = vscode.commands.registerCommand('froggyscript3.runFile', async () => {
+        // Create and show a new webview
+        const panel = vscode.window.createWebviewPanel(
+            'froggyscriptRun', // internal identifier
+            'FroggyScript',    // title of the panel
+            vscode.ViewColumn.One, // show in first column
+            {}
+        );
+
+        // Set HTML content
+        const html = await fetch("https://rus1130.github.io/projects/").then(r => r.text());
+        //let code = vscode.window.activeTextEditor.document.getText();
+        panel.webview.html = html;
+    });
+
+    context.subscriptions.push(disposable);
     client.start();
 }
+
 
 function deactivate() {
     return client ? client.stop() : undefined;

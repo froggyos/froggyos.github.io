@@ -7,7 +7,7 @@ const {
 } = require("vscode-languageserver/node");
 const { TextDocument } = require("vscode-languageserver-textdocument");
 
-const { FroggyScript3, Keyword, FS3Error, imports } = require("../resources/interpreter.js");
+const { FS3Checker, Keyword, FS3Error, imports } = require("../resources/checker.js");
 
 const keywordDocumentation = require("../resources/keyword-docs.json");
 
@@ -60,12 +60,12 @@ function clearDiagnostics(uri) {
     connection.sendDiagnostics({ uri, diagnostics: [] });
 }
 
-const fs3 = new FroggyScript3();
+const fs3Checker = new FS3Checker();
 
 console.log("FS3 language server initialized");
 
 function _vscode_tokenize(lines) {
-    const tokenized = fs3.tokenize(lines);
+    const tokenized = fs3Checker.tokenize(lines);
 
     // group array tokens into single tokens
     tokenized.forEach((line, lineIndex) => {
@@ -283,7 +283,7 @@ documents.onDidChangeContent(async (change) => {
         // Try parsing or tokenizing FS3 code
         _vscode_tokenize(lines);
 
-        const results = fs3._vscode_process(lines);
+        const results = fs3Checker._vscode_process(lines);
 
         results.forEach(item => {
             const firstKeyword = item[0];

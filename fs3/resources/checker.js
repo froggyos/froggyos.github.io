@@ -552,7 +552,7 @@ new Keyword("else", ["block"]);
 
 new Keyword("loop", ["number|condition_statement", "block"]);
 
-class FroggyScript3 {
+class FS3Checker {
     static matches = [
         ["comment", /# .*/],
         ["literal_in", / in /],
@@ -1481,7 +1481,7 @@ class FroggyScript3 {
             while (pos < line.length) {
                 let matched = false;
 
-                for (const [type, base] of FroggyScript3.matches) {
+                for (const [type, base] of FS3Checker.matches) {
                     const regex = new RegExp(base.source, 'y'); // sticky
                     regex.lastIndex = pos;
                     const m = regex.exec(line);
@@ -1581,4 +1581,4 @@ class FroggyScript3 {
     }
 }
 
-module.exports = { FroggyScript3, Keyword, Method, FS3Error, imports };
+module.exports = { FS3Checker, Keyword, Method, FS3Error, imports };
