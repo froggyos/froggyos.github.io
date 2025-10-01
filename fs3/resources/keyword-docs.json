@@ -151,7 +151,7 @@
     },
     "foreach": {
         "description": "Begins a loop that iterates over each element in an array.",
-        "usage": "foreach [$variable] in [$variable] [block]",
+        "usage": "foreach [$variable] in [$array ] [block]",
         "example": [
             "var array = ['item1', 'item2', 'item3']",
             "foreach $item in $array {",

@@ -23,6 +23,30 @@
             "editor.tokenColorCustomizations": {
                 "textMateRules": [
                     {
+                        "scope": "ref.froggytypeannotation",
+                        "settings": {
+                            "foreground": "#bccdff"
+                        }
+                    },
+                    {
+                        "scope": "type.froggytypeannotation",
+                        "settings": {
+                            "foreground": "#50FA7B"
+                        }
+                    },
+                    {
+                        "scope": "mut.froggytypeannotation",
+                        "settings": {
+                            "foreground": "#88aafe"
+                        }
+                    },
+                    {
+                        "scope": "const.froggytypeannotation",
+                        "settings": {
+                            "foreground": "#f6843e"
+                        }
+                    },
+                    {
                         "scope": "keyword.imported.fs3",
                         "settings": {
                             "foreground": "#0384d4"

@@ -1570,6 +1570,10 @@ class FroggyScript3 {
                 if(token.type === "variable" && tokens[i][j-1]?.type === "keyword" && tokens[i][j-1]?.value === "var"){
                     tokens[i][j].type = "variable_reference";
                 }
+
+                if(token.type === "variable" && tokens[i][j-1]?.type === "keyword" && tokens[i][j-1]?.value === "cvar"){
+                    tokens[i][j].type = "variable_reference";
+                }
             }
         }
 

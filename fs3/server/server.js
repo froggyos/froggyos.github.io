@@ -191,7 +191,33 @@ connection.onHover((params) => {
             if(trueType == "variable"){
                 if(variables[hoveredToken.value]) {
                     const varInfo = variables[hoveredToken.value];
-                    console.log(varInfo)
+                    let type = varInfo.type;
+
+                    return {
+                        contents: {
+                            kind: "markdown",
+                            value: "```froggytypeannotation\n" + 
+                            (varInfo.mutable ? "mut " : "const ") + 
+                            hoveredToken.value + 
+                            "<" + type + ">\n```"
+                        }
+                    };
+                }
+            } else {
+                const varName = hoveredToken.value.slice(1); // remove the $ at the start
+                if(variables[varName]) {
+                    const varInfo = variables[varName];
+                    let type = varInfo.type;
+
+                    return {
+                        contents: {
+                            kind: "markdown",
+                            value: "```froggytypeannotation\n" +
+                            (varInfo.mutable ? "mut " : "const ") +
+                            "ref " + varName +
+                            "<" + type + ">\n```"
+                        }
+                    };
                 }
             }
         }
@@ -222,7 +248,6 @@ todo:
     make variables, functions, etc actually get stored
     be able to check if a variable/function actually exists or not
     when hovered over variables, show their type
-    deal with variables being set to variables
 
     variable annotation:
     var_name<type>
@@ -249,6 +274,7 @@ todo:
 
 // --- Live diagnostics ---
 documents.onDidChangeContent(async (change) => {
+    clearVariables();
     const uri = change.document.uri;
     const text = change.document.getText();
     const lines = text.split('\n');
@@ -284,7 +310,7 @@ documents.onDidChangeContent(async (change) => {
                 } else {
                     imports[moduleName]();
                 }
-            }  else if (firstKeyword.type === "keyword" && firstKeyword.value === "var") {
+            }  else if (firstKeyword.type === "keyword" && (firstKeyword.value === "var" || firstKeyword.value === "cvar")) {
                 let variable = item[1];
 
                 if(item.length < 4) {
@@ -299,6 +325,24 @@ documents.onDidChangeContent(async (change) => {
                     );
                 }
 
+                    function resolveVariable(token) {
+                        if (!token) return null;
+
+                        if (token.type === "variable") {
+                            const result = variables[token.value];
+                            if (!result) return null; // undefined variable
+                            // If the result itself is a variable, resolve recursively
+                            if (result.type === "variable") {
+                                return resolveVariable({ value: result.value, type: result.type });
+                            }
+                            return result;
+                        }
+
+                        // If it’s not a variable, just return it
+                        return token;
+                    }
+            
+
                 if(variables[variable.value]) {
                     throw new FS3Error(
                         "ReferenceError",
@@ -308,12 +352,14 @@ documents.onDidChangeContent(async (change) => {
                         variable
                     );
                 } else {
-                    if(item[3]?.type){
-                        variables[variable.value] = {
-                            type: item[3].type,
-                            mutable: true
-                        }
-                    }
+                    let resolved = resolveVariable(item[3])
+                    let type = resolved.type;
+
+                    if(type.includes("array_")) type = "array";
+                    variables[variable.value] = {
+                        type: type,
+                        mutable: firstKeyword.value === "var"
+                    };
                 }
             }
         });
@@ -355,10 +401,9 @@ documents.onDidChangeContent(async (change) => {
             `${error.type}: ${error.message}` || "Unknown error"
         );
 
-        clearVariables()
+        //clearVariables()
 
     }
-    //clearVariables();
 });
 
 documents.listen(connection);
