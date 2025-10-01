@@ -171,7 +171,6 @@ connection.onHover((params) => {
         if (!hoveredToken) return null;
 
 
-
         if(hoveredToken.type == "variable" && hoveredToken.value == "__loop_index__") {
             return {
                 contents: {
@@ -187,6 +186,8 @@ connection.onHover((params) => {
             if(hoveredToken.value.startsWith("$")) {
                 trueType = "variable_reference";
             }
+
+            // get the token to the left of the hovered token
 
             if(trueType == "variable"){
                 if(variables[hoveredToken.value]) {
@@ -310,6 +311,14 @@ documents.onDidChangeContent(async (change) => {
                 } else {
                     imports[moduleName]();
                 }
+            } else if (firstKeyword.type === "keyword" && firstKeyword.value === "foreach") {
+                let itemVariable = item[1];
+                let itemVariableName = itemVariable.value.slice(1);
+
+                variables[itemVariableName] = {
+                    type: "*",
+                    mutable: true,
+                };
             }  else if (firstKeyword.type === "keyword" && (firstKeyword.value === "var" || firstKeyword.value === "cvar")) {
                 let variable = item[1];
 
@@ -358,7 +367,7 @@ documents.onDidChangeContent(async (change) => {
                     if(type.includes("array_")) type = "array";
                     variables[variable.value] = {
                         type: type,
-                        mutable: firstKeyword.value === "var"
+                        mutable: firstKeyword.value === "var",
                     };
                 }
             }

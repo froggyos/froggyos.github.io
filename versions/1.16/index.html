@@ -312,7 +312,12 @@
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById("terminal").innerHTML = "";
 
-            fs3.interpret(code.split("\\n"), "from_url", [])
+            // remove the leading code=
+            let readyToRun = code.replace(/^code=/, "").split("\n").map(l => l.trim());
+
+            console.log(readyToRun)
+
+            fs3.interpret(readyToRun, "from_url", [])
         });
     }
 </script>
