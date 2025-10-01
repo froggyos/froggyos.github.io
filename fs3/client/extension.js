@@ -28,9 +28,12 @@ function activate(context) {
     );
 
     const disposable = vscode.commands.registerCommand('froggyscript3.runFile', async () => {
-        // Create and show a new webview
-        // Set HTML content
-        vscode.env.openExternal(vscode.Uri.parse("https://rus1130.github.io/projects/"));
+        // get current document text
+        const editor = vscode.window.activeTextEditor;
+        const document = editor.document;
+        const code = document.getText();
+
+        vscode.env.openExternal(vscode.Uri.parse("https://froggyos.xyz/versions/1.16/index.html?code=" + encodeURIComponent(code)));
     });
 
     context.subscriptions.push(disposable);
