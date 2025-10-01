@@ -10,69 +10,110 @@ const WebSocket = require("ws");
 
 let server, wss;
 
+const SERVER_PORT = 3000; // default port if needed
+
 function activate(context) {
-    console.log("FS3 client activating...");
+    // get document text from the lsp
 
-    let serverModule = context.asAbsolutePath(
-        path.join("server", "server.js")
-    );
+    const editor = vscode.window.activeTextEditor;
+    if(!editor) {
+        vscode.window.showErrorMessage("No active editor found.");
+        return;
+    }
 
+    const outputChannel = vscode.window.createOutputChannel("FS3 ClientServer");
+
+    outputChannel.appendLine("FS3 ClientServer activating...");
+
+    // -- start language server as before --
+    let serverModule = context.asAbsolutePath(path.join("server", "server.js"));
     let serverOptions = {
         run: { module: serverModule, transport: TransportKind.ipc },
         debug: { module: serverModule, transport: TransportKind.ipc, options: { execArgv: ["--nolazy", "--inspect=6009"] } }
     };
+    let clientOptions = { documentSelector: [{ scheme: "file", language: "froggyscript3" }] };
+    client = new LanguageClient("fs3LanguageServer", "FS3 Language Server", serverOptions, clientOptions);
 
-    let clientOptions = {
-        documentSelector: [{ scheme: "file", language: "froggyscript3" }]
-    };
+    // get document text from the lsp
 
-    client = new LanguageClient(
-        "fs3LanguageServer",
-        "FS3 Language Server",
-        serverOptions,
-        clientOptions
-    );
 
+
+    // -- express + websocket server --
     const app = express();
     server = http.createServer(app);
     wss = new WebSocket.Server({ server });
 
-    app.get("/mini.html", (req, res) => {
+    // serve the single file
+
+    // redirect root to mini.html so visiting / works too
+    app.get("/", (req, res) => {
         res.sendFile(path.join(context.extensionPath, "resources", "mini.html"));
     });
 
-    // WebSocket connections
+    // websocket connections
     wss.on("connection", (ws) => {
-        console.log("Client connected");
+        outputChannel.appendLine("Browser connected via WebSocket");
 
         ws.on("message", (msg) => {
-            console.log("Received from browser:", msg.toString());
+            outputChannel.appendLine("Received from browser: " + msg);
 
-            // Example: echo back
-            ws.send("Echo: " + msg);
+            let data;
+            try { data = JSON.parse(msg); } catch(e) { return; }
+
+            if (data.type === "requestDocument") {
+                const editor = vscode.window.activeTextEditor;
+                if (!editor) return;
+                const code = editor.document.getText().split("\n").map(l => l.trim()).filter(l => l.length > 0);
+
+                ws.send(JSON.stringify({ type: "document", text: code }));
+            } else {
+                // Echo back
+                ws.send(JSON.stringify({ type: "echo", text: data.text || msg }));
+            }
+        });
+
+        ws.on("close", () => {
+            outputChannel.appendLine("Browser disconnected");
         });
     });
 
-    server.listen(3000, () => {
-        console.log("Express server running at http://localhost:3000");
+    // Listen on an available port (0 picks a free port)
+    server.listen(SERVER_PORT, "127.0.0.1", () => {
+        outputChannel.appendLine(`ClientServer listening on http://localhost:${SERVER_PORT}`);
     });
 
+    server.on("error", (err) => {
+        outputChannel.appendLine("ClientServer error: " + err.message);
+    });
+
+    // command to open the page externally (uses the actual port)
     const disposable = vscode.commands.registerCommand('froggyscript3.runFile', async () => {
-        // get current document text
         const editor = vscode.window.activeTextEditor;
-        const document = editor.document;
-        const code = document.getText();
+        if (!editor) return;
 
-        vscode.env.openExternal("http://localhost:3000");
+            const code = editor.document.getText().split("\n").map(l => l.trim()).filter(l => l.length > 0);
+
+        if (wss.clients.size > 0) {
+            // Send code to all connected clients
+            wss.clients.forEach(ws => {
+                if (ws.readyState === ws.OPEN) {
+                    ws.send(JSON.stringify({ type: "document", text: code }) );
+                }
+            });
+        } else {
+            // Open (or reopen) the page in the default browser
+            await vscode.env.openExternal(vscode.Uri.parse("http://localhost:3000/"));
+        }
     });
-
     context.subscriptions.push(disposable);
+
+    // start LSP client
     client.start();
 }
 
-
 function deactivate() {
-    return client ? client.stop() : undefined;
+    if (client) client.stop();
+    if (server) server.close();
 }
 
 module.exports = { activate, deactivate };

@@ -1,34 +1,46 @@
 
-<!DOCTYPE html>
-<html>
+
 <head>
-  <meta charset="UTF-8">
-  <title>FroggyScript UI</title>
 </head>
 <body>
-  <h1>Hello from FroggyScript</h1>
-  <textarea id="input"></textarea>
-  <button id="send">Send</button>
-  <pre id="log"></pre>
-
-  <script>
-    const ws = new WebSocket("ws://localhost:3000");
-
-    ws.onopen = () => {
-      document.getElementById("log").textContent += "Connected to VS Code extension\n";
-    };
-
-    ws.onmessage = (event) => {
-      document.getElementById("log").textContent += "Received: " + event.data + "\n";
-    };
-
-    document.getElementById("send").onclick = () => {
-      const msg = document.getElementById("input").value;
-      ws.send(msg);
-    };
-  </script>
+    <h1>hi</h1>
 </body>
-</html>
+
+<!--websocket-->
+<script>
+const ws = new WebSocket("ws://localhost:3000");
+
+ws.addEventListener('open', () => {
+    console.log("Connected to server via WebSocket");
+
+    // Request document text
+    ws.send(JSON.stringify({ type: "requestDocument" }));
+});
+
+ws.addEventListener('message', (event) => {
+    let msg;
+    try {
+        msg = JSON.parse(event.data);
+    } catch(e) {
+        console.log("Received non-JSON message:", event.data);
+        return;
+    }
+
+    if (msg.type === "document") {
+        console.log("Received document text:", msg.text);
+        // Do whatever you want with it
+    } else if (msg.type === "echo") {
+        console.log("Echo from server:", msg.text);
+    }
+});
+
+ws.addEventListener('close', () => {
+    console.log("Disconnected from server");
+});
+
+</script>
+
+<!--interpreter-->
 <script>
     class FS3Error {
     constructor(type, message, line, col, errLine){
@@ -2156,5 +2168,7 @@ class FroggyScript3 {
     }
 }
 </script>
+
+<!--other-->
 <script>
 </script>
