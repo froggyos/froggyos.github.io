@@ -9,6 +9,8 @@ const { TextDocument } = require("vscode-languageserver-textdocument");
 
 const { FroggyScript3, Keyword, FS3Error, imports } = require("../resources/interpreter.js");
 
+const keywordDocumentation = require("../resources/keyword-docs.json");
+
 const connection = createConnection(ProposedFeatures.all);
 const documents = new TextDocuments(TextDocument);
 
@@ -21,6 +23,22 @@ connection.onInitialize(() => ({
 }));
 
 const diagnosticsMap = new Map();
+const variables = {
+    "false": { type: "number", mutable: false },
+    "true": { type: "number", mutable: false },
+    "MAX_LOOP_ITERATIONS": { type: "number", mutable: false }
+};
+const functions = {}
+
+function clearVariables() {
+    for (let key in variables) {
+        delete variables[key];
+    }
+
+    variables["false"] = { type: "number", mutable: false };
+    variables["true"] = { type: "number", mutable: false };
+    variables["MAX_LOOP_ITERATIONS"] = { type: "number", mutable: false };
+}
 
 function sendErrorDiagnostic(uri, line, startCol, endCol, message) {
     const diagnostic = {
@@ -46,6 +64,68 @@ const fs3 = new FroggyScript3();
 
 console.log("FS3 language server initialized");
 
+function _vscode_tokenize(lines) {
+    const tokenized = fs3.tokenize(lines);
+
+    // group array tokens into single tokens
+    tokenized.forEach((line, lineIndex) => {
+        let newLine = [];
+        let arrayStack = [];
+        line.forEach((token) => {
+            const val = token?.value ?? "";
+            if (val === "[") {
+                arrayStack.push({
+                    type: "array",
+                    value: [],
+                    line: token.line ?? lineIndex,
+                    col: token.col ?? 0,
+                    endCol: null
+                });
+            } else if (val === "]") {
+                if (arrayStack.length === 0) {
+                    // stray ], throw error
+                    throw new FS3Error(
+                        "SyntaxError",
+                        "Stray closing bracket with no matching opening bracket",
+                        token.line,
+                        token.col,
+                        token
+                    );
+                }
+                const finished = arrayStack.pop();
+                finished.endCol = (token.col ?? finished.col) + (val.length || 1);
+                if (arrayStack.length > 0) {
+                    arrayStack[arrayStack.length - 1].value.push(finished);
+                } else {
+                    newLine.push(finished);
+                }
+            } else {
+                if (arrayStack.length > 0) {
+                    arrayStack[arrayStack.length - 1].value.push(token);
+                } else {
+                    newLine.push(token);
+                }
+            }
+        });
+
+        // any unclosed [ left over, throw error
+        while (arrayStack.length > 0) {
+            const unclosed = arrayStack.shift();
+            throw new FS3Error(
+                "SyntaxError",
+                "Unclosed array",
+                unclosed.line,
+                unclosed.col,
+                unclosed
+            );
+        }
+        tokenized[lineIndex] = newLine;
+    });
+    return tokenized;
+}
+
+
+
 // --- Hover support ---
 connection.onHover((params) => {
     const { position, textDocument } = params;
@@ -57,25 +137,79 @@ connection.onHover((params) => {
     const lines = document.getText().split("\n");
 
     try {
-        const tokenized = fs3.tokenize(lines);
+        const tokenized = _vscode_tokenize(lines);
+
+        // group array tokens into single tokens
+
+        // if theres any array with an endCol of null, it means it was never closed
+        for (let i = 0; i < tokenized.length; i++) {
+            for (let j = 0; j < tokenized[i].length; j++) {
+                const token = tokenized[i][j];
+                if (token.type === "array" && token.endCol === null) {
+                    throw new FS3Error(
+                        "SyntaxError",
+                        "Unclosed array literal",
+                        token.line,
+                        token.col,
+                        token
+                    );
+                }
+            }
+        }
+
         const lineTokens = tokenized[cursor_line];
+
         if (!lineTokens) return null;
 
         // Find token containing cursor
         const hoveredToken = lineTokens.find(token => {
             const startCol = token.col;
-            const endCol = startCol + (token.value?.length || 1);
+            const endCol = token?.endCol ? token.endCol : startCol + (token.value?.length || 1);
             return cursor_pos >= startCol && cursor_pos < endCol;
         });
 
         if (!hoveredToken) return null;
 
-        return {
-            contents: {
-                kind: "markdown",
-                value: `Token: \`${hoveredToken.value}\` (type: ${hoveredToken.type})`
+
+
+        if(hoveredToken.type == "variable" && hoveredToken.value == "__loop_index__") {
+            return {
+                contents: {
+                    kind: "markdown",
+                    value: "`__loop_index__` is a special variable available inside loops that represents the current iteration index (starting from 0)."
+                }
+            };
+        }
+
+        if(hoveredToken.type == "variable" || hoveredToken.type == "variable_reference") {
+            let trueType = "variable";
+
+            if(hoveredToken.value.startsWith("$")) {
+                trueType = "variable_reference";
             }
-        };
+
+            if(trueType == "variable"){
+                if(variables[hoveredToken.value]) {
+                    const varInfo = variables[hoveredToken.value];
+                    console.log(varInfo)
+                }
+            }
+        }
+
+        if(hoveredToken.type === "keyword" && keywordDocumentation[hoveredToken.value] && Keyword.table[hoveredToken.value]) {
+            const doc = keywordDocumentation[hoveredToken.value];
+
+            return {
+                contents: {
+                    kind: "markdown",
+                    value: doc.description + "\n\n" +
+                    "```txt\n" +
+                    doc.usage + "\n\n\n```\n-----\n```\n\n" + 
+                    (Array.isArray(doc.example) ? doc.example.join("\n") : doc.example) +
+                    "\n\n```"
+                }
+            };
+        }
 
     } catch (error) {
         console.error(error);
@@ -87,6 +221,30 @@ connection.onHover((params) => {
 todo:
     make variables, functions, etc actually get stored
     be able to check if a variable/function actually exists or not
+    when hovered over variables, show their type
+    deal with variables being set to variables
+
+    variable annotation:
+    var_name<type>
+    const: var_name<type>
+
+    const in a deep blue
+    <type> in a light blue
+
+    variable reference annotation:
+    $var_name<type>
+    const $var_name<type>
+
+    $ in a light green
+    <type> in a light blue
+    const in a deep blue
+
+    non-parameterized function type annotation:
+    @function_name
+
+    parameterized function type annotation:
+    @function_name [type, type]
+
 */
 
 // --- Live diagnostics ---
@@ -97,7 +255,7 @@ documents.onDidChangeContent(async (change) => {
 
     try {
         // Try parsing or tokenizing FS3 code
-        fs3.tokenize(lines);
+        _vscode_tokenize(lines);
 
         const results = fs3._vscode_process(lines);
 
@@ -126,7 +284,55 @@ documents.onDidChangeContent(async (change) => {
                 } else {
                     imports[moduleName]();
                 }
+            }  else if (firstKeyword.type === "keyword" && firstKeyword.value === "var") {
+                let variable = item[1];
+
+                if(item.length < 4) {
+                    // get the entire length of the line
+
+                    throw new FS3Error(
+                        "SyntaxError",
+                        `Invalid variable declaration`,
+                        firstKeyword.line,
+                        firstKeyword.col,
+                        firstKeyword
+                    );
+                }
+
+                if(variables[variable.value]) {
+                    throw new FS3Error(
+                        "ReferenceError",
+                        `Variable [${variable.value}] is already defined`,
+                        variable.line,
+                        variable.col,
+                        variable
+                    );
+                } else {
+                    if(item[3]?.type){
+                        variables[variable.value] = {
+                            type: item[3].type,
+                            mutable: true
+                        }
+                    }
+                }
             }
+        });
+
+        // go through every variable and see if its in the variables object
+        results.forEach(item => {
+            item.forEach(token => {
+                if(token.type === "variable") {
+                    if(!variables[token.value]) {
+                        throw new FS3Error(
+                            "ReferenceError",
+                            `Variable [${token.value}] is not defined`,
+                            token.line,
+                            token.col,
+                            token
+                        );
+                    }
+                }
+            });
         });
 
         // If no error → clear previous diagnostics
@@ -137,8 +343,6 @@ documents.onDidChangeContent(async (change) => {
         const lineText = linesText[error.line || 0] || '';
         const tokenValue = error.token?.value || '';
 
-        console.log(error);
-
         // Compute end column dynamically
         let startCol = error.col;
         let endCol = startCol + tokenValue.length
@@ -148,9 +352,13 @@ documents.onDidChangeContent(async (change) => {
             error.line || 0,
             startCol,
             endCol,
-            error.message || "Unknown error"
+            `${error.type}: ${error.message}` || "Unknown error"
         );
+
+        clearVariables()
+
     }
+    //clearVariables();
 });
 
 documents.listen(connection);

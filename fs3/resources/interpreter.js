@@ -809,8 +809,8 @@ class FroggyScript3 {
         return Object.keys(Keyword.table).join("|");
     }
 
-    _vscode_process(code){
-        // do the same as _process but without executing methods or keywords, or resolving variables
+    _vscode_process(code) {
+        // Strip non-default methods/keywords
         for (let method in Method.table) {
             let def = Method.table[method];
             if (!def.defaultMethod) delete Method.table[method];
@@ -819,9 +819,11 @@ class FroggyScript3 {
             let def = Keyword.table[keyword];
             if (!def.defaultKeyword) delete Keyword.table[keyword];
         }
-        if (code.length == 0) {
+
+        if (code.length === 0) {
             throw new FS3Error("SyntaxError", "No code to process", 0, 0);
         }
+
         let tokens = this.tokenize(code);
         let lines = tokens.map(line => [{ type: "start_of_line", value: "" }, ...line]);
         let flattened = lines.flat();

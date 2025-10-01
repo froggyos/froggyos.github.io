@@ -1434,7 +1434,7 @@ class FroggyScript3 {
                 }
 
                 if (depth !== 0) {
-                    throw new FS3Error("SyntaxError", "Unclosed array literal", token.line, token.col, flattened);
+                    throw new FS3Error("SyntaxError", "Unclosed array", token.line, token.col, flattened);
                 }
 
                 // Split by commas at top level

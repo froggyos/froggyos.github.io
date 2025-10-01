@@ -164,9 +164,25 @@
                     ".fs3"
                 ],
                 "configuration": "./language-configuration.json"
+            },
+            {
+                "id": "froggytypeannotation",
+                "aliases": [
+                    "FroggyTypeAnnotation",
+                    "fta"
+                ],
+                "extensions": [
+                    ".fta"
+                ],
+                "configuration": "./language-configuration.json"
             }
         ],
         "grammars": [
+            {
+                "language": "froggytypeannotation",
+                "scopeName": "source.froggytypeannotation",
+                "path": "./syntaxes/froggytypeannotation.tmLanguage.json"
+            },
             {
                 "language": "froggyscript3",
                 "scopeName": "source.froggyscript3",
