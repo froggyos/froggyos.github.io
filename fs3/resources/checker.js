@@ -832,7 +832,7 @@ class FS3Checker {
         return compressed;
     }
 
-    _process(code, fileName = "*", fileArguments = []) {
+    async _process(code, fileName = '*', fileArguments = [], executeKeywords = false) {
         this.cleanupKeyListeners();
         this._interrupt = false;
 
@@ -874,7 +874,7 @@ class FS3Checker {
                 }
 
                 if (depth !== 0) {
-                    throw new FS3Error("SyntaxError", "Unclosed array literal", token.line, token.col, flattened);
+                    throw new FS3Error("SyntaxError", "Unclosed array", token.line, token.col, flattened);
                 }
 
                 // Split by commas at top level
@@ -923,7 +923,7 @@ class FS3Checker {
                         line[idx].type = v.type;
                         line[idx].value = v.value;
                     } else {
-                        throw new FS3Error("ReferenceError", `Variable [${t.value}] is not defined`, t.line, t.col, line);
+                        throw new FS3Error("ReferenceError", `Variable [${t.value}] is notggggg defined`, t.line, t.col, line);
                     }
                 }
 
@@ -943,6 +943,14 @@ class FS3Checker {
             });
 
             compressed[i] = this.methodResolver(this.compact(line));
+
+            if(executeKeywords){
+                await this.keywordExecutor(compressed[i]);
+            }
+
+            if(executeKeywords && i === compressed.length - 1){
+                this.onComplete();
+            }
         }
 
         return compressed;
@@ -950,7 +958,7 @@ class FS3Checker {
 
     async interpret(code, fileName, fileArguments) {
         try {
-            let parsed = this._process(code, fileName, fileArguments);
+            let parsed = this._process(code, fileName, fileArguments, false);
 
             for (let i = 0; i < parsed.length; i++) {
                 await this.keywordExecutor(parsed[i]);
@@ -968,7 +976,7 @@ class FS3Checker {
 
     async parse(code, fileName, fileArguments) {
         try {
-            return this._process(code, fileName, fileArguments);
+            return this._process(code, fileName, fileArguments, false);
         } catch (e) {
             this._handleError(e);
             return null;

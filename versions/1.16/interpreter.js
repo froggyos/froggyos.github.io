@@ -1392,7 +1392,7 @@ class FroggyScript3 {
         return Object.keys(Keyword.table).join("|");
     }
 
-    _process(code, fileName, fileArguments) {
+    async _process(code, fileName, fileArguments, executeKeywords = false) {
         this.cleanupKeyListeners();
         this._interrupt = false;
 
@@ -1483,7 +1483,7 @@ class FroggyScript3 {
                         line[idx].type = v.type;
                         line[idx].value = v.value;
                     } else {
-                        throw new FS3Error("ReferenceError", `Variable [${t.value}] is not defined`, t.line, t.col, line);
+                        throw new FS3Error("ReferenceError", `Variable [${t.value}] is notggggg defined`, t.line, t.col, line);
                     }
                 }
 
@@ -1503,6 +1503,14 @@ class FroggyScript3 {
             });
 
             compressed[i] = this.methodResolver(this.compact(line));
+
+            if(executeKeywords){
+                await this.keywordExecutor(compressed[i]);
+            }
+
+            if(executeKeywords && i === compressed.length - 1){
+                this.onComplete();
+            }
         }
 
         return compressed;
@@ -1510,15 +1518,7 @@ class FroggyScript3 {
 
     async interpret(code, fileName, fileArguments) {
         try {
-            let parsed = this._process(code, fileName, fileArguments);
-
-            for (let i = 0; i < parsed.length; i++) {
-                await this.keywordExecutor(parsed[i]);
-
-                if (i === parsed.length - 1) {
-                    this.onComplete();
-                }
-            }
+            let parsed = this._process(code, fileName, fileArguments, true);
         } catch (e) {
             this._handleError(e);
         } finally {

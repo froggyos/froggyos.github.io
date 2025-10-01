@@ -1273,6 +1273,7 @@ const FroggyFileSystem = new fs({
             // "out _2darray>join",
             "var userInput = ''",
             "ask $userInput 'Type something: '",
+            "out userInput"
         ] },
         { name: "snake", properties: {transparent: false, read: true, write: true, hidden: false }, data: [
             "import 'keyboard'",
