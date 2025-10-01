@@ -263,3 +263,57 @@
 <script src="./config.js"></script>
 <script src="./interpreter.js"></script>
 <script src="./index.js"></script>
+<script>
+    const fs3 = new FroggyScript3({
+        out: (token) => {
+            let formatting = {
+                type: 'blanket',
+                t: function(){
+                    if(token.type == "string") {
+                        return "froggyscript-string-color";
+                    } else if(token.type == "number") {
+                        return "froggyscript-number-color";
+                    } else {
+                        return "terminal-line-text"
+                    }
+                }()
+            };
+
+            createTerminalLine(token.value.toString(), "\u00A0", {translate: false, formatting: [formatting]});
+            
+        },
+        errout: (err) => {;
+            createTerminalLine("\u00A0", config.programErrorText.replace("{{}}", err.type), {translate: false});
+            createTerminalLine("\u00A0", "", {translate: false});
+            createTerminalLine(err.message, "", {translate: false});
+            createTerminalLine(`\u00A0in line: ${err.line}`, "", {translate: false})
+            createTerminalLine(`\u00A0at position: ${err.col}`, "", {translate: false})
+        },
+
+        smallerrout: (text) => {
+            createTerminalLine(text, config.errorText, {translate: false});
+        },
+
+        smallwarnout: (text) => {
+            createTerminalLine(text, createErrorText(3, "Warning"), {translate: false});
+        },
+
+        warnout: (warn) => {
+            createTerminalLine(warn.message, createErrorText(3, "Warning"), {translate: false});
+            createTerminalLine(`\u00A0in line: ${warn.line}`, "", {translate: false})
+            createTerminalLine(`\u00A0at position: ${warn.col}`, "", {translate: false});
+        },
+    })
+
+
+    // var meow = 10\nout meow
+    const code = new URLSearchParams(window.location.search).get('code')
+    if(code){
+        console.log()
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById("terminal").innerHTML = "";
+
+            fs3.interpret(code.split("\\n"), "from_url", [])
+        });
+    }
+</script>
