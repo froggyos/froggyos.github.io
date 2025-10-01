@@ -958,15 +958,7 @@ class FS3Checker {
 
     async interpret(code, fileName, fileArguments) {
         try {
-            let parsed = this._process(code, fileName, fileArguments, false);
-
-            for (let i = 0; i < parsed.length; i++) {
-                await this.keywordExecutor(parsed[i]);
-
-                if (i === parsed.length - 1) {
-                    this.onComplete();
-                }
-            }
+            let parsed = this._process(code, fileName, fileArguments, true);
         } catch (e) {
             this._handleError(e);
         } finally {

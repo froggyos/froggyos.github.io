@@ -12,6 +12,8 @@ let server, wss;
 
 const SERVER_PORT = 3000; // default port if needed
 
+// SWITCH TO TERMINAL OUTPUT INSTEAD OF SERVER . BASICALLY MAKES ALL OF THIS SHIT FUCKING OBSOLETE. YAAAAAY
+
 function activate(context) {
     // get document text from the lsp
 
