@@ -1267,10 +1267,12 @@ const FroggyFileSystem = new fs({
         // x = 78
         // y = 59
         { name: "test", properties: {transparent: true, read: true, write: true, hidden: false }, data: [
-            "var _2darray = [1,2,3,4]",
-            "out _2darray>join",
-            "set $_2darray = _2darray>shift",
-            "out _2darray>join",
+            // "var _2darray = [1,2,3,4]",
+            // "out _2darray>join",
+            // "set $_2darray = _2darray>shift",
+            // "out _2darray>join",
+            "var userInput = ''",
+            "ask $userInput 'Type something: '",
         ] },
         { name: "snake", properties: {transparent: false, read: true, write: true, hidden: false }, data: [
             "import 'keyboard'",

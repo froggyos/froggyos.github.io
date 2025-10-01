@@ -87,9 +87,9 @@
     },
     "prompt": {
         "description": "Displays a prompt to the user and stores the response in a variable.",
-        "usage": "prompt [$variable] [array]",
+        "usage": "prompt [$variable] [number] [array]",
         "example": [
-            "prompt $userResponse ['Yes', 'No', 'Maybe']"
+            "prompt $userResponse 0 ['Yes', 'No', 'Maybe']"
         ]
     },
     "filearg": {
