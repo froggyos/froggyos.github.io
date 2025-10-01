@@ -251,11 +251,13 @@
         }
     ],
     "dependencies": {
+        "express": "^5.1.0",
         "mathjs": "^14.8.1",
         "vscode": "^1.1.37",
         "vscode-languageclient": "^9.0.1",
         "vscode-languageserver": "^9.0.1",
-        "vscode-languageserver-textdocument": "^1.0.12"
+        "vscode-languageserver-textdocument": "^1.0.12",
+        "ws": "^8.18.3"
     },
     "devDependencies": {
         "@types/vscode": "^1.104.0"

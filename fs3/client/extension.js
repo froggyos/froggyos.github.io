@@ -4,6 +4,12 @@ const { LanguageClient, TransportKind } = require("vscode-languageclient/node");
 
 let client;
 
+const express = require("express");
+const http = require("http");
+const WebSocket = require("ws");
+
+let server, wss;
+
 function activate(context) {
     console.log("FS3 client activating...");
 
@@ -27,13 +33,37 @@ function activate(context) {
         clientOptions
     );
 
+    const app = express();
+    server = http.createServer(app);
+    wss = new WebSocket.Server({ server });
+
+    app.get("/mini.html", (req, res) => {
+        res.sendFile(path.join(context.extensionPath, "resources", "mini.html"));
+    });
+
+    // WebSocket connections
+    wss.on("connection", (ws) => {
+        console.log("Client connected");
+
+        ws.on("message", (msg) => {
+            console.log("Received from browser:", msg.toString());
+
+            // Example: echo back
+            ws.send("Echo: " + msg);
+        });
+    });
+
+    server.listen(3000, () => {
+        console.log("Express server running at http://localhost:3000");
+    });
+
     const disposable = vscode.commands.registerCommand('froggyscript3.runFile', async () => {
         // get current document text
         const editor = vscode.window.activeTextEditor;
         const document = editor.document;
         const code = document.getText();
 
-        vscode.env.openExternal(vscode.Uri.parse("https://froggyos.xyz/versions/1.16/index.html?code=" + encodeURIComponent(code)));
+        vscode.env.openExternal("http://localhost:3000");
     });
 
     context.subscriptions.push(disposable);
