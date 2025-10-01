@@ -30,7 +30,8 @@ keydown 'd' {
     if direction>neq('left') {
        set $direction = 'right'
     }
-}", 
+}
+ 
 keydown 'a' {
     if direction>neq('right') {
        set $direction = 'left'
@@ -121,7 +122,7 @@ loop <<true>> {
             set $snakeXDraw = snakeX>index(__loop_index__)
             set $snakeYDraw = snakeY>index(__loop_index__)
             if <<snakeYDraw == drawY>> {
-                set $row = row>replaceAt(snakeXDraw, '#')", 
+                set $row = row>replaceAt(snakeXDraw, '#') 
             }
             set $dudX = snakeX>length>dec
             if <<(__loop_index__ < dudX) & headX == snakeXDraw & headY == snakeYDraw>> {
@@ -169,6 +170,8 @@ foreach $item in $array {
 out array>join
 
 var myArray = [1, 2, 3]
+cvar myCvar = 'Hello'
+
 arrset $myArray 0 = 10      # myArray is now [10, 2, 3]
 arrset $myArray 1 = 'two'   # myArray is now [10, 'two', 3]
 out myArray>join

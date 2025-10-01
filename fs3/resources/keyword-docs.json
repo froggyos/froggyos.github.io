@@ -243,7 +243,7 @@
         ]
     },
     "pcall": {
-        "description": "Calls a parameterized function by its reference, passing the specified arguments.",
+        "description": "Calls a parameterized function by its reference, passing the specified arguments as an array.",
         "usage": "pcall [function_reference] [array]",
         "example": [
             "pfunc @add ['num1:N', 'num2:N'] {",
