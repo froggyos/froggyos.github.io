@@ -1,48 +1,6 @@
+const terminalKit = require("terminal-kit").terminal;
 
-
-<head>
-</head>
-<body>
-    <h1>hi</h1>
-</body>
-
-<!--websocket-->
-<script>
-const ws = new WebSocket("ws://localhost:3000");
-
-ws.addEventListener('open', () => {
-    console.log("Connected to server via WebSocket");
-
-    // Request document text
-    ws.send(JSON.stringify({ type: "requestDocument" }));
-});
-
-ws.addEventListener('message', (event) => {
-    let msg;
-    try {
-        msg = JSON.parse(event.data);
-    } catch(e) {
-        console.log("Received non-JSON message:", event.data);
-        return;
-    }
-
-    if (msg.type === "document") {
-        console.log("Received document text:", msg.text);
-        // Do whatever you want with it
-    } else if (msg.type === "echo") {
-        console.log("Echo from server:", msg.text);
-    }
-});
-
-ws.addEventListener('close', () => {
-    console.log("Disconnected from server");
-});
-
-</script>
-
-<!--interpreter-->
-<script>
-    class FS3Error {
+class FS3Error {
     constructor(type, message, line, col, errLine){
         this.type = type;
         this.message = message;
@@ -178,7 +136,7 @@ const imports = {
                 }
             }
 
-            document.body.addEventListener("keydown", handler);
+            // add a key handler here
             interpreter.keyListeners.push({ type: "keydown", handler });
         }, false);
 
@@ -204,7 +162,7 @@ const imports = {
                     }
                 }
             }
-            document.body.addEventListener("keyup", handler);
+            //add a key handler here
             interpreter.keyListeners.push({ type: "keyup", handler });
         }, false);
     },
@@ -534,7 +492,7 @@ new Method("indexOf", ["array"], [{type: ["string", "number", "array"], optional
 
 // document
 new Keyword("clearterminal", [], (args, interpreter) => {
-    document.getElementById('terminal').innerHTML = "";
+    // clear terminal output
 });
 
 new Keyword("import", ["string"], (args, interpreter) => {
@@ -904,6 +862,9 @@ new Keyword("prompt", ["variable_reference", "number", "array"], (args, interpre
     let selectedIndex = args[1].value;
     let options = args[2].value.map(o => o.value);
 
+    setSetting("currentSpinner", "prompt-in-progress");
+    setSetting("showSpinner", true)
+
     if(!interpreter.variables[variable]){
         throw new FS3Error("ReferenceError", `Variable [${variable}] is not defined`, args[0].line, args[0].col, args);
     }
@@ -928,12 +889,14 @@ new Keyword("prompt", ["variable_reference", "number", "array"], (args, interpre
         const finish = () => {
             interpreter.variables[variable].value = options[selectedIndex];
             interpreter.variables[variable].type = "string";
+            setSetting("currentSpinner", getSetting("defaultSpinner"));
+            setSetting("showSpinner", false)
             resolve();
         };
 
         const cleanup = () => {
             lineContainer.setAttribute('contenteditable', 'false');
-            document.body.removeEventListener("keyup", promptHandler);
+            // remove keyup prompt handler
             if (interpreter._onInterrupt === interruptCheck) {
                 interpreter._onInterrupt = null;
             }
@@ -948,48 +911,48 @@ new Keyword("prompt", ["variable_reference", "number", "array"], (args, interpre
         interpreter._onInterrupt = interruptCheck;
         interpreter.promptCount++;
 
-        let prefixElement = document.createElement('span');
-        prefixElement.textContent = `>`;
+        // let prefixElement = document.createElement('span');
+        // prefixElement.textContent = `>`;
 
-        let lineContainer = document.createElement('div');
-        lineContainer.classList.add('line-container');
+        // let lineContainer = document.createElement('div');
+        // lineContainer.classList.add('line-container');
 
-        lineContainer.appendChild(prefixElement);
+        // lineContainer.appendChild(prefixElement);
 
-        for(let i = 0; i < options.length; i++){
-            let option = document.createElement('span');
-            option.setAttribute("data-program", `cli-session-${config.programSession}-${interpreter.promptCount}`);
-            if(i == selectedIndex) {
-                option.classList.add('selected');
-            }
-            option.textContent = options[i];
-            option.style.paddingLeft = 0;
-            lineContainer.appendChild(option);
-            if(i != options.length-1) lineContainer.appendChild(document.createTextNode(" • "));
-        }
+        // for(let i = 0; i < options.length; i++){
+        //     let option = document.createElement('span');
+        //     option.setAttribute("data-program", `cli-session-${config.programSession}-${interpreter.promptCount}`);
+        //     if(i == selectedIndex) {
+        //         option.classList.add('selected');
+        //     }
+        //     option.textContent = options[i];
+        //     option.style.paddingLeft = 0;
+        //     lineContainer.appendChild(option);
+        //     if(i != options.length-1) lineContainer.appendChild(document.createTextNode(" • "));
+        // }
 
-        function promptHandler(e){
-            e.preventDefault();
-            let optionElements = document.querySelectorAll(`[data-program='cli-session-${config.programSession}-${interpreter.promptCount}']`);
-            if(e.key == "ArrowLeft"){
-                if(selectedIndex > 0) selectedIndex--;
-                optionElements.forEach(option => option.classList.remove('selected'));
-                optionElements[selectedIndex].classList.add('selected');
-            }
-            if(e.key == "ArrowRight"){
-                if(selectedIndex < options.length - 1) selectedIndex++;
-                optionElements.forEach(option => option.classList.remove('selected'));
-                optionElements[selectedIndex].classList.add('selected');
-            }
-            if(e.key == "Enter"){
-                cleanup();
-                finish();
-            }
-        }
+        // function promptHandler(e){
+        //     e.preventDefault();
+        //     let optionElements = document.querySelectorAll(`[data-program='cli-session-${config.programSession}-${interpreter.promptCount}']`);
+        //     if(e.key == "ArrowLeft"){
+        //         if(selectedIndex > 0) selectedIndex--;
+        //         optionElements.forEach(option => option.classList.remove('selected'));
+        //         optionElements[selectedIndex].classList.add('selected');
+        //     }
+        //     if(e.key == "ArrowRight"){
+        //         if(selectedIndex < options.length - 1) selectedIndex++;
+        //         optionElements.forEach(option => option.classList.remove('selected'));
+        //         optionElements[selectedIndex].classList.add('selected');
+        //     }
+        //     if(e.key == "Enter"){
+        //         cleanup();
+        //         finish();
+        //     }
+        // }
 
-        terminal.appendChild(lineContainer);
-        terminal.scrollTop = terminal.scrollHeight;
-        document.body.addEventListener("keyup", promptHandler)
+        // terminal.appendChild(lineContainer);
+        // terminal.scrollTop = terminal.scrollHeight;
+        // document.body.addEventListener("keyup", promptHandler)
     });
 });
 
@@ -1009,56 +972,18 @@ new Keyword("ask", ["variable_reference", "string"], async (args, interpreter) =
     if(interpreter.variables[variableName].type !== "string"){
         throw new FS3Error("TypeError", `Variable [${variableName}] must be of type [string] to store user input`, args[0].line, args[0].col, args);
     }
-
-    let prefixElement = document.createElement('span');
-    let lineElement = document.createElement('div');
-    let lineContainer = document.createElement('div');
-
-    lineElement.setAttribute('contenteditable', 'plaintext-only');
-    lineElement.setAttribute('spellcheck', 'false');
-
-    prefixElement.textContent = prefix;
-
-    lineContainer.appendChild(prefixElement);
-    lineContainer.appendChild(lineElement);
-
-    lineContainer.classList.add('line-container');
-    terminal.appendChild(lineContainer);
-    lineElement.focus();
-
+    
     return new Promise((resolve, reject) => {
-
-        const cleanup = () => {
-            lineElement.setAttribute('contenteditable', 'false');
-            if (interpreter._onInterrupt === interruptCheck) {
-                interpreter._onInterrupt = null;
-            }
-        };
-
-        const finish = (value) => {
-            interpreter.variables[variableName].value = value;
+        terminalKit("? " + prefix)
+        terminalKit.inputField({ echo: true, placeholder: 'Type something here...' }, (err, input) => {
+            if (err) {
+                terminalKit.red('Error reading input\n');
+                reject(err);
+            };
+            if(input === null || input === undefined) input = "";
+            interpreter.variables[variableName].value = input;
             interpreter.variables[variableName].type = "string";
-            cleanup();
             resolve();
-        };
-
-        const interruptCheck = () => {
-            cleanup();
-            reject(new FS3Error("RuntimeError", "Program interrupted by user", -1, -1, args));
-        };
-
-        // hook for interrupt
-        interpreter._onInterrupt = interruptCheck;
-
-        lineElement.addEventListener('keydown', function(e){
-            if(e.key == "Enter") e.preventDefault();
-        });
-
-        lineElement.addEventListener('keyup', function(e){
-            if(e.key == "Enter"){
-                let inputValue = lineElement.textContent.trim();
-                finish(inputValue);
-            }
         });
     });
 });
@@ -1232,13 +1157,13 @@ class FroggyScript3 {
             }
         }
 
-        document.body.removeEventListener("keydown", interruptHandler);
-        document.body.addEventListener("keydown", interruptHandler.bind(this));
+        // remove interruptHandler
+        // re-add handler
     }
 
     cleanupKeyListeners() {
         for (const { type, handler } of this.keyListeners) {
-            document.body.removeEventListener(type, handler);
+            // remove key listeners
         }
         this.keyListeners = [];
     }
@@ -1257,6 +1182,8 @@ class FroggyScript3 {
 
     checkInterrupt(){
         if(this._interrupt){
+            setSetting("currentSpinner", getSetting("defaultSpinner"));
+            setSetting("showSpinner", false)
             throw new FS3Error("RuntimeError", "Program interrupted by user", -1, -1);
         }
     }
@@ -1549,7 +1476,7 @@ class FroggyScript3 {
 
     async interpret(code, fileName, fileArguments) {
         try {
-            let parsed = this._process(code, fileName, fileArguments, true);
+            this._process(code, fileName, fileArguments, true).catch(e => { throw e; });
         } catch (e) {
             this._handleError(e);
         } finally {
@@ -2167,8 +2094,5 @@ class FroggyScript3 {
         return tokens;
     }
 }
-</script>
 
-<!--other-->
-<script>
-</script>
+module.exports = { FroggyScript3 }
