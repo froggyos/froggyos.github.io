@@ -8,6 +8,10 @@
         "state": {
             "patterns": [
                 {
+                    "name": "temp.froggytypeannotation",
+                    "match": "\\btemp\\b"
+                },
+                {
                     "name": "mut.froggytypeannotation",
                     "match": "\\bmut\\b"
                 },

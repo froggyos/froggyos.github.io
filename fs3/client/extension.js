@@ -2,15 +2,8 @@ const path = require("path");
 const vscode = require("vscode");
 const { LanguageClient, TransportKind } = require("vscode-languageclient/node");
 
-// SWITCH TO TERMINAL OUTPUT INSTEAD OF SERVER . BASICALLY MAKES ALL OF THIS SHIT FUCKING OBSOLETE. YAAAAAY
-
 function activate(context) {
     // get document text from the lsp
-
-    const outputChannel = vscode.window.createOutputChannel("FS3 ClientServer");
-
-    outputChannel.appendLine("FS3 ClientServer activating...");
-
     // -- start language server as before --
     let serverModule = context.asAbsolutePath(path.join("server", "server.js"));
     let serverOptions = {

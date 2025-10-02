@@ -193,12 +193,11 @@ connection.onHover((params) => {
                 if(variables[hoveredToken.value]) {
                     const varInfo = variables[hoveredToken.value];
                     let type = varInfo.type;
-
                     return {
                         contents: {
                             kind: "markdown",
                             value: "```froggytypeannotation\n" + 
-                            (varInfo.mutable ? "mut " : "const ") + 
+                            (varInfo.temp ? "temp ": "") + (varInfo.mutable ? "mut " : "const ") +
                             hoveredToken.value + 
                             "<" + type + ">\n```"
                         }
@@ -214,7 +213,7 @@ connection.onHover((params) => {
                         contents: {
                             kind: "markdown",
                             value: "```froggytypeannotation\n" +
-                            (varInfo.mutable ? "mut " : "const ") +
+                            (varInfo.temp ? "temp ": "") + (varInfo.mutable ? "mut " : "const ") + 
                             "ref " + varName +
                             "<" + type + ">\n```"
                         }
@@ -318,6 +317,7 @@ documents.onDidChangeContent(async (change) => {
                 variables[itemVariableName] = {
                     type: "*",
                     mutable: true,
+                    temp: true
                 };
             }  else if (firstKeyword.type === "keyword" && (firstKeyword.value === "var" || firstKeyword.value === "cvar")) {
                 let variable = item[1];
@@ -368,6 +368,7 @@ documents.onDidChangeContent(async (change) => {
                     variables[variable.value] = {
                         type: type,
                         mutable: firstKeyword.value === "var",
+                        temporary: false
                     };
                 }
             }

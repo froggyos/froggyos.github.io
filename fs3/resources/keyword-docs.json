@@ -150,9 +150,10 @@
         ]
     },
     "foreach": {
-        "description": "Begins a loop that iterates over each element in an array.",
-        "usage": "foreach [$variable] in [$array ] [block]",
+        "description": "Begins a loop that iterates over each element in an array. The loop variable does not need to be declared beforehand.",
+        "usage": "foreach [$variable] in [$array] [block]",
         "example": [
+            "# $item is not declared beforehand",
             "var array = ['item1', 'item2', 'item3']",
             "foreach $item in $array {",
             "    set $item = item>concat('_modified')",
