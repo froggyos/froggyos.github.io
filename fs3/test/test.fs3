@@ -1,0 +1,5 @@
+var array = ['item1', 'item2', 'item3']
+foreach $item in $array {
+    set $item = item>concat('_modified')
+}
+out array>joi

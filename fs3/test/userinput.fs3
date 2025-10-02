@@ -1,0 +1,4 @@
+var userIn = ""
+
+ask $userIn "Please enter something: "
+out userIn
