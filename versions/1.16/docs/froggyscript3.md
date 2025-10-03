@@ -321,13 +321,13 @@ loop <<count < 5>> {
 ```
 
 ### For-Each
-The `foreach` keyword iterates over each element in an array. The variable specified will be assigned to each element in the array for the duration of the block. The variable must be of type `string`, `number`, or `array`. The array must be of type `array`.
+The `foreach` keyword iterates over each element in an array. The variable specified will be assigned to each element in the array for the duration of the block. The array must be of type `array`. You can use the variable `__loop_index__` to get the current index of the loop (0-based). You can use the variable `__item__` to get or set the current item in the loop. If you set `__item__`, it will update the value in the original array.
 ```
-foreach [$variable] in [$variable] [block]
+foreach [$variable] [block]
 
 var array = ['item1', 'item2', 'item3']
-foreach $item in $array {
-    set $item = item>concat('_modified')
+foreach $array {
+    set __item__ = __item__>concat('_modified')
 }
 out array>join
 

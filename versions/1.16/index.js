@@ -1492,7 +1492,7 @@ function sendCommand(command, args, createEditableLineAfter){
                             }()
                         };
 
-                        createTerminalLine(token.value.toString(), "\u00A0", {translate: false, formatting: [formatting]});
+                        createTerminalLine(String(token.value), "\u00A0", {translate: false, formatting: [formatting]});
                         
                     },
                     errout: (err) => {;

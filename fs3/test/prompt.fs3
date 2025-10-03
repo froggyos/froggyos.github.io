@@ -1,0 +1,10 @@
+import 'keyboard'
+import 'math'
+
+keydown 'a' {
+    out 'you pressed a!'
+}
+
+out math
+
+wait 10000

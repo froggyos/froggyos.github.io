@@ -20,8 +20,8 @@ var applesX = []
 var applesY = []
 
 loop 5 {
-    set $applesX = applesX>push(Math>random(1, width>sub(2)))
-    set $applesY = applesY>push(Math>random(1, height>sub(2)))
+    set $applesX = applesX>push(math>random(1, width>sub(2)))
+    set $applesY = applesY>push(math>random(1, height>sub(2)))
 }
 
 var direction = 'right'
@@ -100,8 +100,8 @@ loop <<true>> {
             set $score = score>inc
             set $applesX = applesX>splice(__loop_index__, 1)
             set $applesY = applesY>splice(__loop_index__, 1)
-            set $applesX = applesX>push(Math>random(1, width>sub(2)))
-            set $applesY = applesY>push(Math>random(1, height>sub(2)))
+            set $applesX = applesX>push(math>random(1, width>sub(2)))
+            set $applesY = applesY>push(math>random(1, height>sub(2)))
         }
     }
 
@@ -151,27 +151,3 @@ loop <<true>> {
     }
     wait 200
 }
-
-pfunc @myFunction ['myfunc_num:N'] {
-    if <<myfunc_num < 5>> {
-        out 'Number must be greater than or equal to 5'
-        exit
-    }
-    out 'You passed!'
-}
-
-pcall @myFunction [2]
-pcall @myFunction [5]
-
-var array = ['item1', 'item2', 'item3']
-foreach $item in $array {
-    set $item = item>concat('_modified')
-}
-out array>join
-
-var myArray = [1, 2, 3]
-cvar myCvar = 'Hello'
-
-arrset $myArray 0 = 10      # myArray is now [10, 2, 3]
-arrset $myArray 1 = 'two'   # myArray is now [10, 'two', 3]
-out myArray>join

@@ -81,24 +81,23 @@ class Keyword {
 
 const imports = {
     math: (interp) => {
-        if(interp){
-            if (interp.variables["Math"]) {
-                throw new FS3Error("ReferenceError", `Variable [Math] is already defined`, -1, -1, []);
-            }
-            interp.variables["Math"] = {
-                value: "Math Module",
-                type: "Math",
-                mut: false,
-                freeable: false
-            }
+        if (interp.variables["math"]) {
+            throw new FS3Error("ReferenceError", `Variable [math] is already defined`, -1, -1, []);
+        }
+
+        interp.variables["math"] = {
+            value: "Math Module",
+            type: "module_math",
+            mut: false,
+            freeable: false
         }
 
 
-        new Method("random", ["Math"], [{type: ["number"], optional: false}, {type: ["number"], optional: false}], (parent, args, interpreter) => {
+        new Method("random", ["module_math"], [{type: ["number"], optional: false}, {type: ["number"], optional: false}], (parent, args, interpreter) => {
             let min = args[0].value;
             let max = args[1].value;
             if(min >= max){
-                throw new FS3Error("RangeError", `Math>random() min [${min}] must be less than max [${max}]`, args[0].line, args[0].col, args);
+                throw new FS3Error("RangeError", `math>random() min [${min}] must be less than max [${max}]`, args[0].line, args[0].col, args);
             }
             let rand = Math.floor(Math.random() * (max - min)) + min;
             return {
@@ -551,22 +550,13 @@ new Keyword("arrset", ["variable_reference", "number", "literal_assignment", "st
     }
 });
 
-new Keyword("foreach", ["variable_reference", "literal_in", "variable_reference", "block"], async (args, interpreter) => {
-    let variableName = args[0].value.slice(1);
-    let targetArrayName = args[2].value.slice(1);
-    let block = args[3].body;
-    if(!interpreter.variables[variableName]){
-        interpreter.variables[variableName] = {
-            value: null,
-            type: null,
-            mut: true,
-            freeable: true
-        }
-    }
+new Keyword("foreach", ["variable_reference", "block"], async (args, interpreter) => {
+    let targetArrayName = args[0].value.slice(1);
 
-    if(!interpreter.variables[variableName].mut){
-        throw new FS3Error("AccessError", `Variable [${variableName}] is immutable and cannot be changed`, args[0].line, args[0].col, args);
-    }
+    let block = args[1].body;
+
+    interpreter.variables["__item__"] = { value: "", type: "string", mut: true, freeable: false };
+    interpreter.variables["__loop_index__"] = { value: 0, type: "number", mut: true, freeable: false };
 
     if(!interpreter.variables[targetArrayName]){
         throw new FS3Error("ReferenceError", `Variable [${targetArrayName}] is not defined`, args[2].line, args[2].col, args);
@@ -583,8 +573,9 @@ new Keyword("foreach", ["variable_reference", "literal_in", "variable_reference"
 
         let el = array[i];
 
-        interpreter.variables[variableName].value = el.value;
-        interpreter.variables[variableName].type = el.type;
+        interpreter.variables["__loop_index__"].value = i;
+        interpreter.variables["__item__"].value = el.value;
+        interpreter.variables["__item__"].type = el.type;
 
         try {
             await interpreter.executeBlock(block);
@@ -597,12 +588,12 @@ new Keyword("foreach", ["variable_reference", "literal_in", "variable_reference"
         }
         
 
-        interpreter.variables[targetArrayName].value[i].value = interpreter.variables[variableName].value;
-        interpreter.variables[targetArrayName].value[i].type = interpreter.variables[variableName].type;
+        interpreter.variables[targetArrayName].value[i].value = interpreter.variables["__item__"].value;
+        interpreter.variables[targetArrayName].value[i].type = interpreter.variables["__loop_index__"].type;
     }
 
-    delete interpreter.variables[variableName];
-
+    delete interpreter.variables["__item__"];
+    delete interpreter.variables["__loop_index__"];
 });
 
 new Keyword("filearg", ["variable_reference", "number"], (args, interpreter) => {
@@ -652,8 +643,7 @@ new Keyword("set", ["variable_reference", "literal_assignment", "string|number|a
 
 // ["string", "string|number", "any?"]
 new Keyword("out", ["string|number"], (args, interpreter) => {
-    if(args[0].type === "string" && args[0].value.length === 0) interpreter.out("(empty string)");
-    else interpreter.out(args[0]);
+    interpreter.out(args[0]);
 });
 
 new Keyword("warn", ["string"], (args, interpreter) => {
@@ -1180,7 +1170,6 @@ class FroggyScript3 {
             "fReturn": { value: "", type: "string", mut: true, freeable: false },
             "MAX_LOOP_ITERATIONS": { value: 10000, type: "number", mut: true, freeable: false },
         };
-        this.temporaryVariables = {};
         this.functions = {};
         this.debug = false;
         this.lastIfExecuted = false;
@@ -1483,7 +1472,7 @@ class FroggyScript3 {
                         line[idx].type = v.type;
                         line[idx].value = v.value;
                     } else {
-                        throw new FS3Error("ReferenceError", `Variable [${t.value}] is notggggg defined`, t.line, t.col, line);
+                        throw new FS3Error("ReferenceError", `Variable [${t.value}] is not defined`, t.line, t.col, line);
                     }
                 }
 
@@ -1518,7 +1507,7 @@ class FroggyScript3 {
 
     async interpret(code, fileName, fileArguments) {
         try {
-            let parsed = this._process(code, fileName, fileArguments, true);
+            await this._process(code, fileName, fileArguments, true).catch(e => { throw e; });
         } catch (e) {
             this._handleError(e);
         } finally {
@@ -1528,7 +1517,7 @@ class FroggyScript3 {
 
     async parse(code, fileName, fileArguments) {
         try {
-            return this._process(code, fileName, fileArguments);
+            return await this._process(code, fileName, fileArguments).catch(e => { throw e; });
         } catch (e) {
             this._handleError(e);
             return null;

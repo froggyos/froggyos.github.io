@@ -1,5 +1,8 @@
 var array = ['item1', 'item2', 'item3']
-foreach $item in $array {
-    set $item = item>concat('_modified')
+
+foreach $array {
+    out __loop_index__
+    out __item__
 }
-out array>joi
+
+out array>join
