@@ -1,4 +1,5 @@
 var userIn = ""
+var meow = []
 
 ask $userIn "Please enter something: "
 out userIn

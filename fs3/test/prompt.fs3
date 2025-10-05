@@ -1,10 +1,13 @@
 import 'keyboard'
 import 'math'
 
+var meow = '10'
+
 keydown 'a' {
-    out 'you pressed a!'
+
 }
 
-out math
+
+out 'meow'
 
 wait 10000
