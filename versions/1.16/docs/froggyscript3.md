@@ -472,7 +472,7 @@ string>stringMethod(string? = "default") => string
 ```
 ### Multi-type Methods
 #### type
-Returns the type of the parent as a string: `string`, `number`, or `array`.
+Returns the type of the parent as a string.
 ```
 string|number|array>type => string
 
