@@ -1,3 +1,0 @@
-pfunc @meow ['meow:S'] {
-    out meow
-}
