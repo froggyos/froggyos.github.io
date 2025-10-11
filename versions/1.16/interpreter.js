@@ -1,10 +1,10 @@
 class FS3Error {
-    constructor(type, message, line, col, errLine){
+    constructor(type, message, token){
         this.type = type;
         this.message = message;
-        this.line = line;
-        this.col = col;
-        this.errLine = errLine;
+        this.line = token.line;
+        this.col = token.col;
+        this.errTokens = token;
     }
 }
 
@@ -82,7 +82,7 @@ class Keyword {
 const imports = {
     math: (interp) => {
         if (interp.variables["math"]) {
-            throw new FS3Error("ReferenceError", `Variable [math] is already defined`, -1, -1, []);
+            throw new FS3Error("ReferenceError", `Variable [math] is already defined`, {line: -1, col: -1, value: "" });
         }
 
         interp.variables["math"] = {
@@ -97,7 +97,7 @@ const imports = {
             let min = args[0].value;
             let max = args[1].value;
             if(min >= max){
-                throw new FS3Error("RangeError", `math>random() min [${min}] must be less than max [${max}]`, args[0].line, args[0].col, args);
+                throw new FS3Error("RangeError", `math>random() min [${min}] must be less than max [${max}]`, args[0]);
             }
             let rand = Math.floor(Math.random() * (max - min)) + min;
             return {
@@ -166,7 +166,7 @@ const imports = {
     objects: (interp) => {
         if(interp){
             if (interp.variables["Object"]) {
-                throw new FS3Error("ReferenceError", `Variable [Object] is already defined`, -1, -1, []);
+                throw new FS3Error("ReferenceError", `Variable [Object] is already defined`, {line: -1, col: -1, value: "" });
             }
 
             interp.variables["Object"] = {
@@ -197,7 +197,7 @@ const imports = {
             let key = args[0].value;
 
             if(!(key in parent.value)){
-                throw new FS3Error("ReferenceError", `Key [${key}] does not exist on object`, args[0].line, args[0].col, args);
+                throw new FS3Error("ReferenceError", `Key [${key}] does not exist on object`, args[0]);
             }
             return parent.value[key];
         }, false);
@@ -207,13 +207,13 @@ const imports = {
             let key = args[1].value;
             let newValue = args[3];
             if(!interpreter.variables[variableName]){
-                throw new FS3Error("ReferenceError", `Variable [${variableName}] is not defined`, args[0].line, args[0].col, args);
+                throw new FS3Error("ReferenceError", `Variable [${variableName}] is not defined`, args[0]);
             }
             if(!interpreter.variables[variableName].mut){
-                throw new FS3Error("AccessError", `Variable [${variableName}] is immutable and cannot be changed`, args[0].line, args[0].col, args);
+                throw new FS3Error("AccessError", `Variable [${variableName}] is immutable and cannot be changed`, args[0]);
             }
             if(interpreter.variables[variableName].type !== "object"){
-                throw new FS3Error("TypeError", `Variable [${variableName}] must be of type [object] to use [objset] keyword`, args[0].line, args[0].col, args);
+                throw new FS3Error("TypeError", `Variable [${variableName}] must be of type [object] to use [objset] keyword`, args[0]);
             }
 
             interpreter.variables[variableName].value[key] = {
@@ -232,10 +232,10 @@ new Method("splice", ["array"], [{type: ['number'], optional: false}, {type: ['n
     let start = args[0].value;
     let deleteCount = args[1] ? args[1].value : parent.value.length - start;
     if(start < 0 || start >= parent.value.length){
-        throw new FS3Error("RangeError", `Start index [${start}] is out of bounds for array of length [${parent.value.length}]`, args[0].line, args[0].col, args);
+        throw new FS3Error("RangeError", `Start index [${start}] is out of bounds for array of length [${parent.value.length}]`, args[0]);
     }
     if(deleteCount < 0){
-        throw new FS3Error("RangeError", `Delete count [${deleteCount}] cannot be negative`, args[1] ? args[1].line : args[0].line, args[1] ? args[1].col : args[0].col, args);
+        throw new FS3Error("RangeError", `Delete count [${deleteCount}] cannot be negative`, args[1] || args[0]);
     }
     let array = structuredClone(parent.value);
     array.splice(start, deleteCount);
@@ -246,7 +246,7 @@ new Method("splice", ["array"], [{type: ['number'], optional: false}, {type: ['n
 // document
 new Method("shift", ["array"], [], (parent, args, interpreter) => {
     if(parent.value.length === 0){
-        throw new FS3Error("RangeError", `Cannot shift from an empty array`, parent.line, parent.col, args);
+        throw new FS3Error("RangeError", `Cannot shift from an empty array`, parent);
     }
     let array = structuredClone(parent.value);
 
@@ -263,7 +263,7 @@ new Method('replaceAt', ['string', 'array'], [{type: ['number'], optional: false
         let index = args[0].value;
         let replacement = args[1];
         if(index < 0 || index >= parent.value.length){
-            throw new FS3Error("RangeError", `Index [${index}] is out of bounds for array of length [${parent.value.length}]`, args[0].line, args[0].col, args);
+            throw new FS3Error("RangeError", `Index [${index}] is out of bounds for array of length [${parent.value.length}]`, args[0]);
         }
         parent.value[index] = replacement;
         return parent;
@@ -271,7 +271,7 @@ new Method('replaceAt', ['string', 'array'], [{type: ['number'], optional: false
         let index = args[0].value;
         let replacement = args[1].value;
         if(index < 0 || index >= parent.value.length){
-            throw new FS3Error("RangeError", `Index [${index}] is out of bounds for string of length [${parent.value.length}]`, args[0].line, args[0].col, args);
+            throw new FS3Error("RangeError", `Index [${index}] is out of bounds for string of length [${parent.value.length}]`, args[0]);
         }
         parent.value = parent.value.substring(0, index) + replacement + parent.value.substring(index + 1);
         return parent;
@@ -282,7 +282,7 @@ new Method('replaceAt', ['string', 'array'], [{type: ['number'], optional: false
 // document
 new Method('last', ['array'], [], (parent, args, interpreter) => {
     if(parent.value.length === 0){
-        throw new FS3Error("RangeError", `Cannot get last element of an empty array`, parent.line, parent.col, args);
+        throw new FS3Error("RangeError", `Cannot get last element of an empty array`, parent);
     }
     return parent.value[parent.value.length - 1];
 });
@@ -290,7 +290,7 @@ new Method('last', ['array'], [], (parent, args, interpreter) => {
 // document
 new Method('first', ['array'], [], (parent, args, interpreter) => {
     if(parent.value.length === 0){
-        throw new FS3Error("RangeError", `Cannot get first element of an empty array`, parent.line, parent.col, args);
+        throw new FS3Error("RangeError", `Cannot get first element of an empty array`, parent);
     }
     return parent.value[0];
 });
@@ -374,7 +374,7 @@ new Method("mul", ["number"], [{type: ["number"], optional: false}], (parent, ar
 
 new Method("div", ["number"], [{type: ["number"], optional: false}], (parent, args, interpreter) => {
     if(args[0].value === 0){
-        throw new FS3Error("MathError", "Division by zero is not permitted", args[0].line, args[0].col, args);
+        throw new FS3Error("MathError", "Division by zero is not permitted", args[0]);
     }
     parent.value = parent.value / args[0].value;
     return parent;
@@ -382,7 +382,7 @@ new Method("div", ["number"], [{type: ["number"], optional: false}], (parent, ar
 
 new Method("mod", ["number"], [{type: ["number"], optional: false}], (parent, args, interpreter) => {
     if(args[0].value === 0){
-        throw new FS3Error("MathError", "Modulo by zero is not permitted", args[0].line, args[0].col, args);
+        throw new FS3Error("MathError", "Modulo by zero is not permitted", args[0]);
     }
     parent.value = parent.value % args[0].value;
     return parent;
@@ -392,7 +392,7 @@ new Method("index", ["array", "string"], [{type: ["number"], optional: false}], 
     if(parent.type === "array"){
         let index = args[0].value;
         if(index < 0 || index >= parent.value.length){
-            throw new FS3Error("RangeError", `Index [${index}] is out of bounds for array of length [${parent.value.length}]`, args[0].line, args[0].col, args);
+            throw new FS3Error("RangeError", `Index [${index}] is out of bounds for array of length [${parent.value.length}]`, args);
         }
 
         return parent.value[index]
@@ -400,7 +400,7 @@ new Method("index", ["array", "string"], [{type: ["number"], optional: false}], 
         let str = parent.value;
         let index = args[0].value;
         if(index < 0 || index >= str.length){
-            throw new FS3Error("RangeError", `Index [${index}] is out of bounds for string of length [${str.length}]`, args[0].line, args[0].col, args);
+            throw new FS3Error("RangeError", `Index [${index}] is out of bounds for string of length [${str.length}]`, args);
         }
 
         return {
@@ -417,7 +417,7 @@ new Method("join", ["array"], [{type: ["string"], optional: true}], (parent, arg
     let separator = args[0] ? args[0].value : ",";
 
     parent.value = parent.value.map(el => {
-        if(Array.isArray(el)) throw new FS3Error("TypeError", "Nested arrays are not supported in join()", el[0]?.line, el[0]?.col, el);
+        if(Array.isArray(el)) throw new FS3Error("TypeError", "Nested arrays are not supported in join()", el[0]);
         return String(el.value);
     }).join(separator);
     parent.type = "string";
@@ -462,7 +462,7 @@ new Method("wrap", ["string"], [{type: ["string"], optional: true}, {type: ["str
 new Method("repeat", ["string"], [{type: ["number"], optional: false}], (parent, args, interpreter) => {
     let times = args[0].value;
     if(times < 0){
-        throw new FS3Error("RangeError", `Cannot repeat a string a negative number of times`, args[0].line, args[0].col, args);
+        throw new FS3Error("RangeError", `Cannot repeat a string a negative number of times`, args[0]);
     }
     parent.value = parent.value.repeat(times);
     return parent;
@@ -495,7 +495,7 @@ new Keyword("clearterminal", [], (args, interpreter) => {
 new Keyword("import", ["string"], (args, interpreter) => {
     let moduleName = args[0].value;
     if(!imports[moduleName]){
-        throw new FS3Error("ReferenceError", `Import [${moduleName}] does not exist`, args[0].line, args[0].col, args);
+        throw new FS3Error("ReferenceError", `Import [${moduleName}] does not exist`, args[0]);
     }
     imports[moduleName](interpreter);
 });
@@ -526,19 +526,19 @@ new Keyword("arrset", ["variable_reference", "number", "literal_assignment", "st
     let newValue = args[3];
 
     if(!interpreter.variables[variableName]){
-        throw new FS3Error("ReferenceError", `Variable [${variableName}] is not defined`, args[0].line, args[0].col, args);
+        throw new FS3Error("ReferenceError", `Variable [${variableName}] is not defined`, args[0]);
     }
 
     if(!interpreter.variables[variableName].mut){
-        throw new FS3Error("AccessError", `Variable [${variableName}] is immutable and cannot be changed`, args[0].line, args[0].col, args);
+        throw new FS3Error("AccessError", `Variable [${variableName}] is immutable and cannot be changed`, args[0]);
     }
 
     if(interpreter.variables[variableName].type !== "array"){
-        throw new FS3Error("TypeError", `Variable [${variableName}] must be of type [array] to use [arrset] keyword`, args[0].line, args[0].col, args);
+        throw new FS3Error("TypeError", `Variable [${variableName}] must be of type [array] to use [arrset] keyword`, args[0]);
     }
 
     if(index < 0 || index >= interpreter.variables[variableName].value.length){
-        throw new FS3Error("RangeError", `Index [${index}] is out of bounds for array of length [${interpreter.variables[variableName].value.length}]`, args[1].line, args[1].col, args);
+        throw new FS3Error("RangeError", `Index [${index}] is out of bounds for array of length [${interpreter.variables[variableName].value.length}]`, args[1]);
     }
 
     interpreter.variables[variableName].value[index] = {
@@ -559,11 +559,11 @@ new Keyword("foreach", ["variable_reference", "block"], async (args, interpreter
     interpreter.variables["__loop_index__"] = { value: 0, type: "number", mut: true, freeable: false };
 
     if(!interpreter.variables[targetArrayName]){
-        throw new FS3Error("ReferenceError", `Variable [${targetArrayName}] is not defined`, args[2].line, args[2].col, args);
+        throw new FS3Error("ReferenceError", `Variable [${targetArrayName}] is not defined`, args[2]);
     }
 
     if(interpreter.variables[targetArrayName].type !== "array"){
-        throw new FS3Error("TypeError", `Variable [${targetArrayName}] must be of type [array] to be used in [foreach]`, args[2].line, args[2].col, args);
+        throw new FS3Error("TypeError", `Variable [${targetArrayName}] must be of type [array] to be used in [foreach]`, args[2]);
     }
 
     let array = interpreter.variables[targetArrayName].value;
@@ -602,19 +602,19 @@ new Keyword("filearg", ["variable_reference", "number"], (args, interpreter) => 
     let argValue = interpreter.fileArguments[argIndex];
 
     if(argValue === undefined){
-        throw new FS3Error("RuntimeError", `No command line argument found at index [${argIndex}]`, args[1].line, args[1].col, args);
+        throw new FS3Error("RuntimeError", `No command line argument found at index [${argIndex}]`, args[1]);
     }
 
     if(!interpreter.variables[variableName]){
-        throw new FS3Error("ReferenceError", `Variable [${variableName}] is not defined`, args[0].line, args[0].col, args);
+        throw new FS3Error("ReferenceError", `Variable [${variableName}] is not defined`, args[0]);
     }
 
     if(!interpreter.variables[variableName].mut){
-        throw new FS3Error("AccessError", `Variable [${variableName}] is immutable and cannot be changed`, args[0].line, args[0].col, args);
+        throw new FS3Error("AccessError", `Variable [${variableName}] is immutable and cannot be changed`, args[0]);
     }
 
     if(interpreter.variables[variableName].type !== "string"){
-        throw new FS3Error("TypeError", `Variable [${variableName}] must be of type [string] to store command line argument`, args[0].line, args[0].col, args);
+        throw new FS3Error("TypeError", `Variable [${variableName}] must be of type [string] to store command line argument`, args[0]);
     }
 
     argValue = argValue.replaceAll("\\_", " ");
@@ -627,15 +627,15 @@ new Keyword("set", ["variable_reference", "literal_assignment", "string|number|a
     let variableValue = args[2].value;
 
     if(!interpreter.variables[variableName]){
-        throw new FS3Error("ReferenceError", `Variable [${variableName}] is not defined`, args[0].line, args[0].col, args);
+        throw new FS3Error("ReferenceError", `Variable [${variableName}] is not defined`, args[0]);
     } 
 
     if(interpreter.variables[variableName].type !== args[2].type){
-        throw new FS3Error("TypeError", `Cannot set variable [${variableName}] of type [${interpreter.variables[variableName].type}] to value of type [${args[2].type}]`, args[0].line, args[0].col, args);
+        throw new FS3Error("TypeError", `Cannot set variable [${variableName}] of type [${interpreter.variables[variableName].type}] to value of type [${args[2].type}]`, args[0]);
     }
 
     if(!interpreter.variables[variableName].mut){
-        throw new FS3Error("AccessError", `Variable [${variableName}] is immutable and cannot be changed`, args[0].line, args[0].col, args);
+        throw new FS3Error("AccessError", `Variable [${variableName}] is immutable and cannot be changed`, args[0]);
     }
     
     interpreter.variables[variableName].value = variableValue;
@@ -663,7 +663,7 @@ new Keyword("longwarn", ["string", "string"], (args, interpreter) => {
 new Keyword("longerr", ["string", "string"], (args, interpreter) => {
     let errorName = args[0].value; 
     let errorMessage = args[1].value;
-    interpreter.errout(new FS3Error(errorName, errorMessage, args[1].line, args[1].col, args));
+    interpreter.errout(new FS3Error(errorName, errorMessage, args[1].line, args[1].col, args[1]));
 });
 
 new Keyword("kill", [], (args, interpreter, line) => {
@@ -679,7 +679,7 @@ new Keyword("func", ["function_reference", "block"], (args, interpreter) => {
     let functionBody = args[1].body;
 
     if(interpreter.functions[functionName]){
-        throw new FS3Error("ReferenceError", `Function [${functionName}] is already defined`, args[0].line, args[0].col, args);
+        throw new FS3Error("ReferenceError", `Function [${functionName}] is already defined`, args[0]);
     }
     interpreter.functions[functionName] = functionBody;
 })
@@ -693,7 +693,7 @@ new Keyword("pfunc", ["function_reference", "array", "block"], (args, interprete
 
     functionParams.forEach(p => {
         if(p.type != "string"){
-            throw new FS3Error("TypeError", `Parameter declaration [${p.value}] in function [${functionName}] must be a string`, p.line, p.col, args);
+            throw new FS3Error("TypeError", `Parameter declaration [${p.value}] in function [${functionName}] must be a string`, p);
         }
 
         let value = p.value.split(":")[0];
@@ -703,9 +703,9 @@ new Keyword("pfunc", ["function_reference", "array", "block"], (args, interprete
         else if(type == "N") type = "number";
         else if(type == "A") type = "array";
         else if(type == "" || type == undefined){
-            throw new FS3Error("SyntaxError", `Parameter [${value}] in function [${functionName}] is missing a type declaration. Must be S (string), N (number), or A (array)`, p.line, p.col, args);
+            throw new FS3Error("SyntaxError", `Parameter [${value}] in function [${functionName}] is missing a type declaration. Must be S (string), N (number), or A (array)`, p);
         } else {
-            throw new FS3Error("TypeError", `Invalid parameter type [${type}] for parameter [${value}] in function [${functionName}]. Must be S (string), N (number), or A (array)`, p.line, p.col, args);
+            throw new FS3Error("TypeError", `Invalid parameter type [${type}] for parameter [${value}] in function [${functionName}]. Must be S (string), N (number), or A (array)`, p);
         }
 
         params.push({value, type});
@@ -713,7 +713,7 @@ new Keyword("pfunc", ["function_reference", "array", "block"], (args, interprete
 
 
     if(interpreter.functions[functionName]){
-        throw new FS3Error("ReferenceError", `Function [${functionName}] is already defined`, args[0].line, args[0].col, args);
+        throw new FS3Error("ReferenceError", `Function [${functionName}] is already defined`, args[0]);
     }
 
     interpreter.functions[functionName] = {
@@ -727,11 +727,11 @@ new Keyword("pcall", ["function_reference", "array"], async (args, interpreter) 
     let functionArgs = args[1].value;
     
     if(!interpreter.functions[functionName]){
-        throw new FS3Error("ReferenceError", `Function [${functionName}] is not defined`, args[0].line, args[0].col, args);
+        throw new FS3Error("ReferenceError", `Function [${functionName}] is not defined`, args[0]);
     }
 
     if(!interpreter.functions[functionName].body){
-        throw new FS3Error("AccessError", `Function [${functionName}] is not a parameterized function and must be called with the [call] keyword`, args[0].line, args[0].col, args);
+        throw new FS3Error("AccessError", `Function [${functionName}] is not a parameterized function and must be called with the [call] keyword`, args[0]);
     }
 
     let expectedFunctionArgs = interpreter.functions[functionName].params;
@@ -740,7 +740,7 @@ new Keyword("pcall", ["function_reference", "array"], async (args, interpreter) 
     expectedFunctionArgs.forEach((param, idx) => {
         let arg = functionArgs[idx];
         if(!arg){
-            throw new FS3Error("ArgumentError", `Missing argument [${param.value}] of type [${param.type}] for function [${functionName}]`, args[0].line, args[0].col, args);
+            throw new FS3Error("ArgumentError", `Missing argument [${param.value}] of type [${param.type}] for function [${functionName}]`, args[0]);
         }
         if(arg.type !== param.type){
             throw new FS3Error("TypeError", `Invalid type for argument [${param.value}] in function [${functionName}]: expected [${param.type}], got [${arg.type}]`, arg.line, arg.col, args);
@@ -776,14 +776,14 @@ new Keyword("wait", ["number"], async (args, interpreter) => {
     let duration = args[0].value;
 
     if(duration < 0){
-        throw new FS3Error("RangeError", `Cannot wait for a negative duration`, args[0].line, args[0].col, args);
+        throw new FS3Error("RangeError", `Cannot wait for a negative duration`, args[0]);
     }
     await new Promise((resolve, reject) => {
         // Start the timer
         const id = setTimeout(() => {
             // When timer finishes, check for interrupt
             if (interpreter.interrupted) {
-                reject(new FS3Error("RuntimeError", "Program interrupted by user", -1, -1, args));
+                reject(new FS3Error("RuntimeError", "Program interrupted by user", {line: -1, col: -1, value: "" }));
             } else {
                 resolve();
             }
@@ -792,7 +792,7 @@ new Keyword("wait", ["number"], async (args, interpreter) => {
         // If user interrupts DURING the wait, clear the timeout and reject immediately
         const interruptCheck = () => {
             clearTimeout(id);
-            reject(new FS3Error("RuntimeError", "Program interrupted by user", -1, -1, args));
+            reject(new FS3Error("RuntimeError", "Program interrupted by user", {line: -1, col: -1, value: "" }));
         };
 
         // Register a hook
@@ -811,10 +811,10 @@ new Keyword("call", ["function_reference"], async (args, interpreter) => {
     let functionBody = interpreter.functions[functionName];
 
     if(!functionBody){
-        throw new FS3Error("ReferenceError", `Function [${functionName}] is not defined`, args[0].line, args[0].col, args);
+        throw new FS3Error("ReferenceError", `Function [${functionName}] is not defined`, args[0]);
     }
     if(functionBody.body){
-        throw new FS3Error("AccessError", `Function [${functionName}] is a parameterized function and must be called with the [pcall] keyword`, args[0].line, args[0].col, args);
+        throw new FS3Error("AccessError", `Function [${functionName}] is a parameterized function and must be called with the [pcall] keyword`, args[0]);
     }
 
     try {
@@ -832,7 +832,7 @@ new Keyword("var", ["variable_reference", "literal_assignment", "string|number|a
     let type = args[2].type;
 
     if(interpreter.variables[name]){
-        throw new FS3Error("ReferenceError", `Variable [${name}] is already defined`, args[0].line, args[0].col, args);
+        throw new FS3Error("ReferenceError", `Variable [${name}] is already defined`, args[0]);
     }
 
     interpreter.variables[name] = {
@@ -854,23 +854,23 @@ new Keyword("prompt", ["variable_reference", "number", "array"], (args, interpre
     setSetting("showSpinner", true)
 
     if(!interpreter.variables[variable]){
-        throw new FS3Error("ReferenceError", `Variable [${variable}] is not defined`, args[0].line, args[0].col, args);
+        throw new FS3Error("ReferenceError", `Variable [${variable}] is not defined`, args[0]);
     }
 
     if(!interpreter.variables[variable].mut){
-        throw new FS3Error("AccessError", `Variable [${variable}] is immutable and cannot be changed`, args[0].line, args[0].col, args);
+        throw new FS3Error("AccessError", `Variable [${variable}] is immutable and cannot be changed`, args[0]);
     }
 
     if(interpreter.variables[variable].type !== "string"){
-        throw new FS3Error("TypeError", `Variable [${variable}] must be of type [string] to store user input`, args[0].line, args[0].col, args);
+        throw new FS3Error("TypeError", `Variable [${variable}] must be of type [string] to store user input`, args[0]);
     }
 
     if(selectedIndex < 0 || selectedIndex >= options.length){
-        throw new FS3Error("RangeError", `Default index [${selectedIndex}] is out of bounds for options array of length [${options.length}]`, args[1].line, args[1].col, args);
+        throw new FS3Error("RangeError", `Default index [${selectedIndex}] is out of bounds for options array of length [${options.length}]`, args[1]);
     }
 
     if(options.length === 0){
-        throw new FS3Error("ArgumentError", `Options array cannot be empty`, args[2].line, args[2].col, args);
+        throw new FS3Error("ArgumentError", `Options array cannot be empty`, args[2]);
     }
 
     return new Promise((resolve, reject) => {
@@ -892,7 +892,7 @@ new Keyword("prompt", ["variable_reference", "number", "array"], (args, interpre
 
         const interruptCheck = () => {
             cleanup();
-            reject(new FS3Error("RuntimeError", "Program interrupted by user", -1, -1, args));
+            reject(new FS3Error("RuntimeError", "Program interrupted by user", {line: -1, col: -1, value: "" }));
         };
 
         // hook for interrupt
@@ -950,15 +950,15 @@ new Keyword("ask", ["variable_reference", "string"], async (args, interpreter) =
     let prefix = args[1].value;
 
     if (!interpreter.variables[variableName]) {
-        throw new FS3Error("ReferenceError", `Variable [${variableName}] is not defined`, args[0].line, args[0].col, args);
+        throw new FS3Error("ReferenceError", `Variable [${variableName}] is not defined`, args[0]);
     }
 
     if (!interpreter.variables[variableName].mut) {
-        throw new FS3Error("AccessError", `Variable [${variableName}] is immutable and cannot be changed`, args[0].line, args[0].col, args);
+        throw new FS3Error("AccessError", `Variable [${variableName}] is immutable and cannot be changed`, args[0]);
     }
 
     if(interpreter.variables[variableName].type !== "string"){
-        throw new FS3Error("TypeError", `Variable [${variableName}] must be of type [string] to store user input`, args[0].line, args[0].col, args);
+        throw new FS3Error("TypeError", `Variable [${variableName}] must be of type [string] to store user input`, args[0]);
     }
 
     let prefixElement = document.createElement('span');
@@ -1025,7 +1025,7 @@ new Keyword("cvar", ["variable_reference", "literal_assignment", "string|number|
     let value = args[2].value;
     let type = args[2].type;
 
-    if(interpreter.variables[name]) throw new FS3Error("ReferenceError", `Variable [${name}] is already defined`, args[0].line, args[0].col, args);
+    if(interpreter.variables[name]) throw new FS3Error("ReferenceError", `Variable [${name}] is already defined`, args[0]);
 
     interpreter.variables[name] = {
         value: value,
@@ -1041,13 +1041,13 @@ new Keyword("free", ["variable_reference"], (args, interpreter) => {
     let name = args[0].value.slice(1);
     let variable = interpreter.variables[name];
     if(!variable){
-        throw new FS3Error("ReferenceError", `Variable [${name}] is not defined`, args[0].line, args[0].col, args);
+        throw new FS3Error("ReferenceError", `Variable [${name}] is not defined`, args[0]);
     }
     if(!variable.freeable){
-        throw new FS3Error("AccessError", `Variable [${name}] cannot be freed`, args[0].line, args[0].col, args);
+        throw new FS3Error("AccessError", `Variable [${name}] cannot be freed`, args[0]);
     }
     if(!variable.mut){
-        throw new FS3Error("AccessError", `Variable [${name}] is immutable and cannot be freed`, args[0].line, args[0].col, args);
+        throw new FS3Error("AccessError", `Variable [${name}] is immutable and cannot be freed`, args[0]);
     }
     delete interpreter.variables[name];
 });
@@ -1106,7 +1106,7 @@ new Keyword("loop", ["number|condition_statement", "block"], async (args, interp
 
             if(i >= breaker){
                 // error not closing program
-                throw new FS3Error("RuntimeError", `Possible infinite loop detected after ${breaker} iterations.`, cond.line, cond.col, args);
+                throw new FS3Error("RuntimeError", `Possible infinite loop detected after ${breaker} iterations.`, cond);
             }
 
             try {
@@ -1215,7 +1215,7 @@ class FroggyScript3 {
         if(this._interrupt){
             setSetting("currentSpinner", getSetting("defaultSpinner"));
             setSetting("showSpinner", false)
-            throw new FS3Error("RuntimeError", "Program interrupted by user", -1, -1);
+            throw new FS3Error("RuntimeError", "Program interrupted by user", {line: -1, col: -1, value: "" })
         }
     }
 
@@ -1234,11 +1234,11 @@ class FroggyScript3 {
             if(typeof result === "boolean"){
                 result = result ? 1 : 0;
             } else if(typeof result !== "number"){
-                throw new FS3Error("MathError", `Math expression did not evaluate to a number`, -1, -1);
+                throw new FS3Error("MathError", `Math expression did not evaluate to a number`, {line: -1, col: -1, value: "" });
             }
             return result;
         } catch (e) {
-            throw new FS3Error("MathError", `Error evaluating math expression: ${e.message}`, -1, -1);
+            throw new FS3Error("MathError", `Error evaluating math expression: ${e.message}`, {line: -1, col: -1, value: "" });
         }
     }
 
@@ -1399,7 +1399,7 @@ class FroggyScript3 {
         this.fileArguments = fileArguments;
 
         if (code.length == 0) {
-            throw new FS3Error("SyntaxError", "No code to process", 0, 0);
+            throw new FS3Error("SyntaxError", "No code to process", { line: -1, col: -1 });
         }
 
         let tokens = this.tokenize(code);
@@ -1423,7 +1423,7 @@ class FroggyScript3 {
                 }
 
                 if (depth !== 0) {
-                    throw new FS3Error("SyntaxError", "Unclosed array", token.line, token.col, flattened);
+                    throw new FS3Error("SyntaxError", "Unclosed array", token);
                 }
 
                 // Split by commas at top level
@@ -1472,7 +1472,7 @@ class FroggyScript3 {
                         line[idx].type = v.type;
                         line[idx].value = v.value;
                     } else {
-                        throw new FS3Error("ReferenceError", `Variable [${t.value}] is not defined`, t.line, t.col, line);
+                        throw new FS3Error("ReferenceError", `Variable [${t.value}] is not defined`, t);
                     }
                 }
 
@@ -1482,7 +1482,7 @@ class FroggyScript3 {
                         if (el && el.type === "variable") {
                             const v = this.variables[el.value];
                             if (!v) {
-                                throw new FS3Error("ReferenceError", `Variable [${el.value}] is not defined`, el.line, el.col, line);
+                                throw new FS3Error("ReferenceError", `Variable [${el.value}] is not defined`, el);
                             }
                             return { ...el, type: v.type, value: v.value };
                         }
@@ -1541,7 +1541,7 @@ class FroggyScript3 {
             e instanceof ContinueLoop)
         ) {
             this.cleanupKeyListeners();
-            this.errout(new FS3Error("InternalJavaScriptError", `Internal JavaScript error: ${e.message}`, -1, -1));
+            this.errout(new FS3Error("InternalJavaScriptError", `Internal JavaScript error: ${e.message}`, {line: -1, col: -1, value: "" }));
             throw e;
         }
         this.onError(e);
@@ -1565,9 +1565,7 @@ class FroggyScript3 {
                 throw new FS3Error(
                     "ReferenceError",
                     `Unknown keyword [${keyword}]`,
-                    line[0].line,
-                    line[0].col,
-                    line
+                    line[0]
                 );
             }
 
@@ -1583,9 +1581,7 @@ class FroggyScript3 {
                             throw new FS3Error(
                                 "ArgumentError",
                                 `Expected arg [${i + 1}] for keyword [${keyword}] to be of type [${expected.map(e => e.replace("?", "")).join(" or ")}], but found none`,
-                                line[0].line,
-                                line[0].col,
-                                line
+                                line[0]
                             );
                         }
                         continue;
@@ -1595,9 +1591,7 @@ class FroggyScript3 {
                         throw new FS3Error(
                             "TypeError",
                             `Invalid type for arg [${i + 1}] for keyword [${keyword}]: expected [${expected.map(e => e.replace("?", "")).join(" or ")}], got [${actual.type}]`,
-                            actual.line,
-                            actual.col,
-                            line
+                            actual
                         );
                     }
                 }
@@ -1643,7 +1637,7 @@ class FroggyScript3 {
                 } else if (t.type === "block_end") {
                     // End of block
                     if (!stack.length) {
-                        throw new FS3Error("SyntaxError", "Unmatched closing bracket for block", t.line, t.col, t);
+                        throw new FS3Error("SyntaxError", "Unmatched closing bracket for block", t);
                     }
                     // Push any remaining tokens on this line before closing block
                     pushLine(stack[stack.length - 1].body, currentLine);
@@ -1674,7 +1668,7 @@ class FroggyScript3 {
             // Push any trailing line after finishing tokens
             if (stack.length) {
                 const u = stack.pop().start;
-                throw new FS3Error("SyntaxError", "Unmatched opening bracket for block", u.line, u.col, u);
+                throw new FS3Error("SyntaxError", "Unmatched opening bracket for block", u);
             }
             pushLine(result, currentLine);
 
@@ -1735,9 +1729,7 @@ class FroggyScript3 {
                     throw new FS3Error(
                         "ReferenceError",
                         `Variable [${token.value}] is not defined`,
-                        token.line,
-                        token.col,
-                        line
+                        token
                     );
                 }
                 token.type = variable.type;
@@ -1777,9 +1769,7 @@ class FroggyScript3 {
                         throw new FS3Error(
                             "ReferenceError",
                             `Unknown method [${method.name}] for type [${token.type}]`,
-                            method.line,
-                            method.col,
-                            line
+                            method
                         );
                     }
 
@@ -1819,9 +1809,7 @@ class FroggyScript3 {
                                 throw new FS3Error(
                                     "TypeError",
                                     `Invalid type for argument [${idx + 1}] for method [${method.name}]: expected [${expected.type.join(" or ")}], got [${actual.type}]`,
-                                    actual.line ?? method.line,
-                                    actual.col ?? method.col,
-                                    method
+                                    actual
                                 );
                             }
                         }
@@ -1832,9 +1820,7 @@ class FroggyScript3 {
                         throw new FS3Error(
                             "TypeError",
                             `Invalid parent type for method [${method.name}]: expected [${def.parentTypes.join(" or ")}], got [${token.type}]`,
-                            token.line,
-                            token.col,
-                            method
+                            token,
                         );
                     }
 
@@ -1853,8 +1839,6 @@ class FroggyScript3 {
                             throw new FS3Error(
                                 "InternalJavaScriptError",
                                 `Error executing method [${method.name}]: ${e.message}`,
-                                method.line,
-                                method.col,
                                 method
                             );
                         }
@@ -1883,7 +1867,7 @@ class FroggyScript3 {
                     throw new FS3Error(
                         "ReferenceError",
                         `Unknown method [${method.name}] for type [${parent.type}]`,
-                        parent.line, parent.col, method
+                        method
                     );
                 }
 
@@ -1945,7 +1929,7 @@ class FroggyScript3 {
                     }
                 } else if (t.type === "comma" && depth === 1) {
                     if (!currentArg.length) {
-                        return new FS3Error("SyntaxError", "Empty argument in method call", t.line, t.col, t);
+                        return new FS3Error("SyntaxError", "Empty argument in method call", t);
                     }
                     const parsed = this.compact(currentArg);
                     args.push(parsed);
@@ -1955,7 +1939,7 @@ class FroggyScript3 {
                 }
             }
 
-            throw new FS3Error("SyntaxError", "Unclosed parenthesis in method call", tokens[startIndex - 1].line, tokens[startIndex - 1].col, tokens[startIndex - 1]);
+            throw new FS3Error("SyntaxError", "Unclosed parenthesis in method call", tokens[startIndex - 1]);
         };
 
         const attachMethod = (parent, methodToken, args = []) => {
@@ -1992,7 +1976,7 @@ class FroggyScript3 {
                     if (t.type === "method_indicator") {
                         const next = lineTokens[i + 1];
                         if (!next || next.type !== "method") {
-                            throw new FS3Error("SyntaxError", "method_indicator has no following method", t.line, t.col);
+                            throw new FS3Error("SyntaxError", "method_indicator has no following method", t);
                         }
                         const methodTok = next;
                         i += 2;
@@ -2013,7 +1997,7 @@ class FroggyScript3 {
                     }
                 }
             } else {
-                throw new FS3Error("SyntaxError", `Unexpected token [${token.value}]`, token.line, token.col);
+                throw new FS3Error("SyntaxError", `Unexpected token [${token.value}]`, token);
             }
         }
 
@@ -2054,7 +2038,7 @@ class FroggyScript3 {
                 }
 
                 if (!matched) {
-                    throw new FS3Error("TokenizationError", `Unrecognized token [${line[pos]}]`, lineNo, pos, tokens);
+                    throw new FS3Error("TokenizationError", `Unrecognized token [${line[pos]}]`, {line: lineNo, col: pos});
                 }
             }
 

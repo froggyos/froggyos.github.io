@@ -180,10 +180,22 @@
         "1.16"
     ];
 
-    terminal.innerHTML += `<div class="line-container"><span style="white-space: pre"> </span<div>* Current froggyOS Versions *</div></div>`;
+    function line(message, prefix="\u00A0"){
+        return `<div class="line-container"><span style="white-space: pre">${prefix}</span><div>${message}</div></div>`;
+    }
+
+    function selectorLine(message, version, prefix="\u00A0"){
+        return `<div class="line-container" data-version="${version}"><span style="white-space: pre">${prefix}</span><div>${message}</div></div>`;
+    }
+
+    terminal.innerHTML += line("Welcome to froggyOS!", "");
+    terminal.innerHTML += line("froggyOS is a frog-themed OS simulation written in JavaScript, HTML, and CSS.", "");
+    terminal.innerHTML += line("It also includes FroggyScript, it's own programming language!", "");
+    terminal.innerHTML += line("Use the arrow keys to select a version, then press enter to open it.", "");
+    terminal.innerHTML += line("* Current versions *", "");
 
     versionList.forEach((version, i) => {
-        terminal.innerHTML += `<div class="line-container" data-version><span>></span><div>${version}${i == versionList.length - 1 && indev ? "-indev" : ""}</div></div>`;
+        terminal.innerHTML += selectorLine(`${version}${i == versionList.length - 1 ? "-indev" : ""}`, version, ">");
     });
 
     let currentSelected = versionList.length - 1;
