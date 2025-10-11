@@ -1,3 +1,6 @@
 pfunc @meow ['meow:S'] {
+    ou
     out meow
 }
+
+pcall @meow ['Hello, World!']
