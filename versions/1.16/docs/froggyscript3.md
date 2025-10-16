@@ -480,24 +480,37 @@ string|number|array>type => string
 10>type        # 'number'
 [1, 2, 3]>type # 'array'
 ```
+### String Methods
 #### length
-Returns the length of the parent. For strings, this is the number of characters. For arrays, this is the number of elements.
+Returns the number of characters in the string.
 ```
-string|array>length => number
-
+string>length => number
 'Hello, World!'>length # 13
-[1, 2, 3, 4, 5]>length # 5
 ```
 #### index
-Returns the element at the specified index in an array or string. Indexing is zero-based. If the index is out of bounds, `RangeError` is raised.
+Returns the character at the specified index in a string. Indexing is zero-based. If the index is out of bounds, `RangeError` is raised.
 ```
 string>index(number) => string
-array>index(number) => *
 
 'Hello'>index(1) # 'e'
-[10, 20, 30]>index(2) # 30
 ```
-### String Methods
+#### startsWith
+Returns `<<1>>` if the string starts with the specified substring, `<<0>>` if it does not.
+```
+string>startsWith(string) => condition_statement
+
+'starts_the_string'>startsWith('starts_') # <<1>>
+'ends_the_string'>startsWith('starts_') # <<0>>
+```
+#### endsWith
+Returns `<<1>>` if the string ends with the specified substring, `<<0>>` if it does not.
+```
+string>endsWith(string) => condition_statement
+
+'ends_the_string'>endsWith('_string') # <<1>>
+'starts_the_string'>endsWith('_string') # <<0>>
+```
+#### replaceAt
 #### concat
 Concatenates two strings.
 ```
@@ -528,6 +541,14 @@ string>toNumber => number
 
 '123'>toNumber # 123
 'abc'>toNumber # 0
+```
+#### n
+Alias for `toNumber`.
+```
+string>n => number
+
+'123'>n # 123
+'abc'>n # 0
 ```
 #### wrap
 Wraps the string with the specified character(s). If zero arguments are given, it defaults to wrapping with double quotes. If one argument is given, it wraps with that argument on both sides. If two arguments are given, it wraps with the first argument on the left and the second argument on the right.
@@ -605,7 +626,60 @@ number>toString => string
 
 123>toString # '123'
 ```
+#### s
+Alias for `toString`.
+```
+number>s => string
+
+123>s # '123'
+```
 ### Array Methods
+#### length
+Returns the number of elements in the array.
+```
+array>length => number
+
+[1, 2, 3, 4, 5]>length # 5
+```
+#### index
+Returns the element at the specified index in an array. Indexing is zero-based. If the index is out of bounds, `RangeError` is raised.
+```
+array>index(number) => *
+
+[10, 20, 30]>index(1) # 20
+```
+#### replaceAt
+Replaces the element at the specified index in an array with a new value. Indexing is zero-based. If the index is out of bounds, `RangeError` is raised.
+```
+
+array>replaceAt(number, *) => array
+
+[1, 2, 3]>replaceAt(1, 20) # [1, 20, 3]
+```
+#### push
+Adds one or more elements to the end of the array.
+```
+array>push(*) => array
+
+[1, 2]>push(3)        # [1, 2, 3]
+[1, 2]>push(3, 4, 5)  # [1, 2, 3, 4, 5]
+```
+#### splice
+Removes elements from an array starting at a specified index. The first argument is the starting index (0-based). The second argument is the number of elements to remove (optional, defaults to removing all elements from the starting index to the end of the array). If the starting index is out of bounds or the delete count is negative, `RangeError` is raised.
+```
+array>splice(number, number?) => array
+
+[1, 2, 3, 4, 5]>splice(1, 2) # [1, 4, 5]
+[1, 2, 3, 4, 5]>splice(2)    # [1, 2]
+```
+#### shift
+Removes the first element from the array and returns the array. If the array is empty, `RangeError` is raised.
+```
+array>shift => array
+
+[1, 2, 3]>shift # [2, 3]
+[]>shift        # RangeError
+```
 #### join
 Joins all elements of the array into a single string, with an optional separator.
 ```
@@ -638,6 +712,23 @@ array>first => *
 
 [1, 2, 3]>first # 1
 []>first        # RangeError
+```
+### Condition Statement Methods
+#### not
+Returns the opposite of the condition statement. `<<1>>` becomes `<<0>>` and vice versa.
+```
+condition_statement>not => condition_statement
+
+<<true>>>not # <<0>>
+<<false>>>not # <<1>>
+```
+
+#### !
+Alias for `not`.
+```
+condition_statement>! => condition_statement
+<<true>>>! # <<0>>
+<<false>>>! # <<1>>
 ```
 ## Types of Errors
 | Error                     | Description                                                                                                                                                                                                                |

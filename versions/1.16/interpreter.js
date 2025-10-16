@@ -110,6 +110,31 @@ const imports = {
         }, false);
     },
     keyboard: (interp) => {
+        new Keyword("anykeydown", ["block"], (args, interpreter) => {
+            let block = args[0].body;
+            async function handler(e) {
+                interpreter.variables["__key__"] = { value: "", type: "string", mut: true, freeable: false };
+                interpreter.variables["__key__"].value = e.key;
+                try {
+                    await interpreter.executeBlock(block);
+                } catch (e) {
+                    if (
+                        e instanceof SkipBlock ||
+                        e instanceof BreakLoop ||
+                        e instanceof ExitFunction ||
+                        e instanceof ContinueLoop
+                    ) {
+                        // ignore loop/function flow controls
+                    } else {
+                        interpreter.errout(e);
+                    }
+                }
+                delete interpreter.variables["__key__"];
+            }
+            document.body.addEventListener("keydown", handler);
+            interpreter.keyListeners.push({ type: "keydown", handler });
+        }, false);
+
         new Keyword("keydown", ["string", "block"], (args, interpreter) => {
             let key = args[0].value.toLowerCase();
             let block = args[1].body;
@@ -243,7 +268,6 @@ new Method("splice", ["array"], [{type: ['number'], optional: false}, {type: ['n
     return parent;
 });
 
-// document
 new Method("shift", ["array"], [], (parent, args, interpreter) => {
     if(parent.value.length === 0){
         throw new FS3Error("RangeError", `Cannot shift from an empty array`, parent);
@@ -257,7 +281,7 @@ new Method("shift", ["array"], [], (parent, args, interpreter) => {
     return parent;
 });
 
-// document
+
 new Method('replaceAt', ['string', 'array'], [{type: ['number'], optional: false}, {type: ['string'], optional: false}], (parent, args, interpreter) => {
     if(parent.type === "array"){
         let index = args[0].value;
@@ -279,7 +303,7 @@ new Method('replaceAt', ['string', 'array'], [{type: ['number'], optional: false
 });
 
 
-// document
+
 new Method('last', ['array'], [], (parent, args, interpreter) => {
     if(parent.value.length === 0){
         throw new FS3Error("RangeError", `Cannot get last element of an empty array`, parent);
@@ -287,7 +311,7 @@ new Method('last', ['array'], [], (parent, args, interpreter) => {
     return parent.value[parent.value.length - 1];
 });
 
-// document
+
 new Method('first', ['array'], [], (parent, args, interpreter) => {
     if(parent.value.length === 0){
         throw new FS3Error("RangeError", `Cannot get first element of an empty array`, parent);
@@ -295,7 +319,7 @@ new Method('first', ['array'], [], (parent, args, interpreter) => {
     return parent.value[0];
 });
 
-// document
+
 new Method("push", ["array"], [{type: ["string", "number", "array"], optional: false}], (parent, args, interpreter) => {
     parent.value.push(args[0]);
     return parent;
@@ -432,11 +456,26 @@ new Method("toNumber", ["string"], [], (parent, args, interpreter) => {
 
     parent.value = num;
     parent.type = "number";
+    return parent;
+});
 
+new Method("n", ["string"], [], (parent, args, interpreter) => {
+    let num = Number(parent.value);
+    if(isNaN(num)){
+        num = 0;
+    }
+    parent.value = num;
+    parent.type = "number";
     return parent;
 });
 
 new Method("toString", ["number"], [], (parent, args, interpreter) => {
+    parent.value = String(parent.value);
+    parent.type = "string";
+    return parent;
+});
+
+new Method("s", ["number"], [], (parent, args, interpreter) => {
     parent.value = String(parent.value);
     parent.type = "string";
     return parent;
@@ -487,7 +526,7 @@ new Method("indexOf", ["array"], [{type: ["string", "number", "array"], optional
     }
 });
 
-// document
+
 new Keyword("clearterminal", [], (args, interpreter) => {
     document.getElementById('terminal').innerHTML = "";
 });
