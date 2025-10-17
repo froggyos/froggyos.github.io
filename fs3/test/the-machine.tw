@@ -43,6 +43,7 @@ As I stare into the darkness of my room, I see a faint light coming from the dir
 
 I get up, and I walk to it. The machine is on.[linebreak]
 
+[color 251 251 4]
 The screen glows a faint white, from where it says:[linebreak][sleep 10][sleep]
 
 [sleep 700][speed 150]"What is your favorite vegetable?"[speeddefault][linebreak][sleep 1400][function]
