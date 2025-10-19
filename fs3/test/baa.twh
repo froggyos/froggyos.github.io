@@ -1,0 +1,19 @@
+Token: [sleep 1400]
+Speed: 1400 ms
+Foreground color: none
+Background color: none
+
+Token: (space)
+Speed: 40 ms
+Foreground color: default
+Background color: default
+
+Token: f
+Speed: 40 ms
+Foreground color: default
+Background color: default
+
+Token: i
+Speed: 50 ms
+Foreground color: #ffff00
+Background color: default

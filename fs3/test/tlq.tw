@@ -1,3 +1,16 @@
+{{#timecalc
+    char: 40
+    newline: 700
+    custom: {
+        ",": 280
+        ".": 370
+        "?": 370
+        "!": 370
+        "—": 750
+        ";": 200
+        ":": 350
+    }
+#}}
 Press SPACE to pause.[sleep 2400][newpage]
 
 [sleep 800]The last question was asked for the first time, half in jest, on May 21, 2061, at a time when humanity first stepped into the light. The question came about as a result of a five\-dollar bet over highballs, and it happened this way:[linebreak]

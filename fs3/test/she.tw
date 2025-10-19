@@ -1,7 +1,7 @@
 {{# written 8 oct. 2025 #}}
 {{#timecalc
-    char: 100
-    newline: 500
+    newline: 100
+    char: 50
     custom: {
         ",": 350
         ".": 600
@@ -13,6 +13,6 @@ She does not wish to fly away.[newline]
 With the dangers of helium \*mining,[newline]
 it is always a possibility.[newline]
 Her shoes, filled with lead,[newline]
-slowly poison her.[newline]
+slowly [color 255 255 0]poison her.[newline]
 But she does not know.[newline]
-All she knows is the droning of the mine.[linebreak][sleep 700][function]
+All she knows is the droning of the [resetcolor]mine.[linebreak][sleep 700][function]
