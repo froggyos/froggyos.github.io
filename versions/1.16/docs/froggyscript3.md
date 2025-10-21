@@ -518,6 +518,12 @@ string>concat(string) => string
 
 'Hello, '>concat('World!') # 'Hello, World!'
 ```
+Long strings of concatenations can be hard to read, so you can alteratively use the `" . "` operator to concatenate strings. You can use this to concatenate numbers to strings, but not strings to numbers.
+```
+out 'Hello, ' . 'World!' # 'Hello, World!'
+out 'The number is: ' . 10 # 'The number is: 10'
+
+```
 #### eq
 Compares if two strings are equal. Returns `:1:` if true, `:0:` if false.
 ```

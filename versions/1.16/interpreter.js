@@ -1202,6 +1202,7 @@ class FroggyScript3 {
         ["literal_in", / in /],
         ["number", /[0-9]+(?:\.[0-9]+)?/],
         ["variable", /[A-Za-z_][A-Za-z0-9_]*/],
+        ["string_concat", / \. /],
         ["function_reference", /@[A-Za-z_][A-Za-z0-9_]*/],
         ["variable_reference", /\$[A-Za-z_][A-Za-z0-9_]*/],
         ["string", /"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'/],
@@ -1385,7 +1386,8 @@ class FroggyScript3 {
             const line = block[i];
 
 
-            const compacted = this.compact(line);
+            let compacted = this.compact(line);
+
             const resolvedMethods = this.methodResolver(compacted);
 
             try {
@@ -1424,6 +1426,33 @@ class FroggyScript3 {
         }
 
         return node;
+    }
+
+    handleDotConcatOperator(line){
+        for(let j = 0; j < line.length; j++){
+            // concat string literals separated by string_concat tokens
+            if(line[j].type === "string_concat"){
+                if(j === 0 || j === line.length - 1){
+                    throw new FS3Error("SyntaxError", "String concatenation operator cannot be at the start or end of a line", line[j]);
+                }
+                let left = line[j - 1];
+                let right = line[j + 1];
+
+                if(left.type !== "string"){
+                    throw new FS3Error("TypeError", `Left operand of string concatenation must be of type [string], got [${left.type}]`, left);
+                }
+
+                if(right.type !== "string" && right.type !== "number"){
+                    throw new FS3Error("TypeError", `Right operand of string concatenation must be of type [string or number], got [${right.type}]`, right);
+                }
+
+                left.value = left.value + right.value.toString();
+                line.splice(j, 2);
+                j--;
+            }
+        }
+
+        return line;
     }
 
     mergeDanglingBlocks(lines) {
@@ -1536,7 +1565,7 @@ class FroggyScript3 {
 
         // Variable substitution + method resolution
         for (let i = 0; i < compressed.length; i++) {
-            const line = compressed[i];
+            let line = compressed[i];
 
             line.forEach((t, idx) => {
                 if (t.type === "variable") {
@@ -1563,6 +1592,8 @@ class FroggyScript3 {
                     });
                 }
             });
+
+            line = this.handleDotConcatOperator(line);
 
             compressed[i] = this.methodResolver(this.compact(line));
 
@@ -1790,7 +1821,7 @@ class FroggyScript3 {
 
     executeMethods(line) {
         // Ensure we always work on an array of tokens
-        const tokens = Array.isArray(line) ? line : [line];
+        let tokens = Array.isArray(line) ? line : [line];
 
         for (let i = 0; i < tokens.length; i++) {
             let token = tokens[i];
@@ -1925,6 +1956,9 @@ class FroggyScript3 {
 
             tokens[i].methods = [];
         }
+
+
+        tokens = this.handleDotConcatOperator(tokens);
 
         return tokens;
     }
