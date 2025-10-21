@@ -522,7 +522,6 @@ Long strings of concatenations can be hard to read, so you can alteratively use 
 ```
 out 'Hello, ' . 'World!' # 'Hello, World!'
 out 'The number is: ' . 10 # 'The number is: 10'
-
 ```
 #### eq
 Compares if two strings are equal. Returns `:1:` if true, `:0:` if false.
