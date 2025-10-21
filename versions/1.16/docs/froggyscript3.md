@@ -217,7 +217,7 @@ ask [$variable] [string]
 
 var name = ''
 ask $name 'What is your name?'
-out 'Hello, '>concat(name)>concat('!')
+out 'Hello, ' . name . '!'
 
 -----
 
@@ -327,7 +327,7 @@ foreach [$variable] [block]
 
 var array = ['item1', 'item2', 'item3']
 foreach $array {
-    set __item__ = __item__>concat('_modified')
+    set __item__ = __item__ . '_modified'
 }
 out array>join
 
@@ -444,7 +444,7 @@ Functions can return values with the `return` keyword. The return value is store
 return [string|number|array]
 
 pfunc @getGreeting ['getGreeting_name:S'] {
-    return 'Hello, '>concat(getGreeting_name)>concat('!')
+    return 'Hello, ' . getGreeting_name . '!'
 }
 pcall @getGreeting ['Alice']
 out fReturn
