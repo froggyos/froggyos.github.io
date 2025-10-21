@@ -239,10 +239,13 @@ out 'You selected: '>concat(choice)
 What do you choose?
 [option 1] • option 2 • option 3
 (user presses right arrow key)
+
 option 1 • [option 2] • option 3
 (user presses left arrow key)
+
 [option 1] • option 2 • option 3
 (user presses Enter)
+
 You selected: option 1
 ```
 ### File Arguments
