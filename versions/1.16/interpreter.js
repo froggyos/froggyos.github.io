@@ -560,6 +560,30 @@ new Method("indexOf", ["array"], [{type: ["string", "number", "array"], optional
     }
 });
 
+new Method("startsWith", ["string"], [{type: ["string"], optional: false}], (parent, args, interpreter) => {
+    let parentValue = parent.value;
+    let argValue = args[0].value;
+    return {
+        type: "condition_statement",
+        value: `:${parentValue.startsWith(argValue) ? 1 : 0}:`,
+        line: parent.line,
+        col: parent.col,
+        methods: parent.methods
+    }
+});
+
+new Method("endsWith", ["string"], [{type: ["string"], optional: false}], (parent, args, interpreter) => {
+    let parentValue = parent.value;
+    let argValue = args[0].value;
+    return {
+        type: "condition_statement",
+        value: `:${parentValue.endsWith(argValue) ? 1 : 0}:`,
+        line: parent.line,
+        col: parent.col,
+        methods: parent.methods
+    }
+});
+
 
 new Keyword("clearterminal", [], (args, interpreter) => {
     document.getElementById('terminal').innerHTML = "";
