@@ -2280,6 +2280,7 @@ let dateTimeInterval = setInterval(() => {
 
 const onStart = () => {
     //sendCommand("/", ["set-US-time-format"])
+    sendCommand("st", ["test"])
 }
 
 function ready(){

@@ -36,9 +36,9 @@ There are also three other types: `function_reference`, `condition_statement`, a
 @myFunction
 
 # condition_statement
-<< 1 > 2 >>
-<<true>>
-<<'hello'>eq('world')>>
+: 1 > 2 :
+:true:
+'hello'>eq('world')
 
 # variable_reference
 $myVariable
@@ -89,7 +89,7 @@ func @myFunction {
     out 'Hello, World!'
 }
 
-if <<true>> {
+if :true: {
     out 'This is true!'
 }
 ```
@@ -277,7 +277,7 @@ if [condition_statement] [block]
 else [block]
 
 var number = 5
-if <<number > 3>> {
+if :number > 3: {
     out 'Number is greater than 3'
 }
 # note: this CANNOT be on the same line as the closing brace of the if block
@@ -306,7 +306,7 @@ Hello, World!
 If given a condition statement, the loop will execute until the condition is false.
 ```
 var count = 0
-loop <<count < 5>> {
+loop :count < 5: {
     out count
     set count = count>inc
 }
@@ -341,7 +341,7 @@ The `skip` keyword immediately ends the current block. Has no effect on loops.
 ```
 skip
 
-if <<true>> {
+if :true: {
     out 'Hello, World!'
     skip
     out 'This will never be printed.'
@@ -391,7 +391,7 @@ The `exit` keyword immediately ends the current function.
 exit
 
 pfunc @myFunction ['myfunc_num:N'] {
-    if <<myfunc_num < 5>> {
+    if :myfunc_num < 5: {
         out 'Number must be greater than or equal to 5'
         exit
     }
@@ -474,7 +474,7 @@ string>stringMethod(string? = "default") => string
 #### type
 Returns the type of the parent as a string.
 ```
-string|number|array>type => string
+*>type => string
 
 'Hello'>type   # 'string'
 10>type        # 'number'
@@ -495,20 +495,20 @@ string>index(number) => string
 'Hello'>index(1) # 'e'
 ```
 #### startsWith
-Returns `<<1>>` if the string starts with the specified substring, `<<0>>` if it does not.
+Returns `:1:` if the string starts with the specified substring, `:0:` if it does not.
 ```
 string>startsWith(string) => condition_statement
 
-'starts_the_string'>startsWith('starts_') # <<1>>
-'ends_the_string'>startsWith('starts_') # <<0>>
+'starts_the_string'>startsWith('starts_') # :1:
+'ends_the_string'>startsWith('starts_') # :0:
 ```
 #### endsWith
-Returns `<<1>>` if the string ends with the specified substring, `<<0>>` if it does not.
+Returns `:1:` if the string ends with the specified substring, `:0:` if it does not.
 ```
 string>endsWith(string) => condition_statement
 
-'ends_the_string'>endsWith('_string') # <<1>>
-'starts_the_string'>endsWith('_string') # <<0>>
+'ends_the_string'>endsWith('_string') # :1:
+'starts_the_string'>endsWith('_string') # :0:
 ```
 #### replaceAt
 #### concat
@@ -519,36 +519,29 @@ string>concat(string) => string
 'Hello, '>concat('World!') # 'Hello, World!'
 ```
 #### eq
-Compares if two strings are equal. Returns `<<1>>` if true, `<<0>>` if false.
+Compares if two strings are equal. Returns `:1:` if true, `:0:` if false.
 ```
 string>eq(string) => condition_statement
 
-"equal">eq("equal") # <<1>>
-"not">eq("equal")   # <<0>>
+"equal">eq("equal") # :1:
+"not">eq("equal")   # :0:
 ```
 #### neq
-Compares if two strings are not equal. Returns `<<1>>` if true, `<<0>>` if false.
+Compares if two strings are not equal. Returns `:1:` if true, `:0:` if false.
 ```
 string>neq(string) => condition_statement
 
-"equal">eq("equal") # <<0>>
-"not">eq("equal")   # <<1>>
+"equal">eq("equal") # :0:
+"not">eq("equal")   # :1:
 ```
 #### toNumber
-Converts a string to a number. If the string cannot be converted, it returns 0.
+Converts a string to a number. If the string cannot be converted, it returns 0.  
+Alias: `n`
 ```
 string>toNumber => number
 
 '123'>toNumber # 123
 'abc'>toNumber # 0
-```
-#### n
-Alias for `toNumber`.
-```
-string>n => number
-
-'123'>n # 123
-'abc'>n # 0
 ```
 #### wrap
 Wraps the string with the specified character(s). If zero arguments are given, it defaults to wrapping with double quotes. If one argument is given, it wraps with that argument on both sides. If two arguments are given, it wraps with the first argument on the left and the second argument on the right.
@@ -620,18 +613,12 @@ number>mod(number) => number
 10>mod(0) # MathError
 ```
 #### toString
-Converts a number to a string.
+Converts a number to a string.  
+Alias: `s`
 ```
 number>toString => string
 
 123>toString # '123'
-```
-#### s
-Alias for `toString`.
-```
-number>s => string
-
-123>s # '123'
 ```
 ### Array Methods
 #### length
@@ -715,21 +702,32 @@ array>first => *
 ```
 ### Condition Statement Methods
 #### not
-Returns the opposite of the condition statement. `<<1>>` becomes `<<0>>` and vice versa.
+Returns the opposite of the condition statement. `:1:` becomes `:0:` and vice versa.
 ```
 condition_statement>not => condition_statement
 
-<<true>>>not # <<0>>
-<<false>>>not # <<1>>
+:true:>not # :0:
+:false:>not # :1:
+```
+#### toString
+Converts the condition statement to a string. `:1:` becomes `'true'` and `:0:` becomes `'false'`.  
+Alias: `s`
+```
+condition_statement>toString => string
+
+:true:>toString  # '1'
+:false:>toString # '0'
+```
+#### toNumber
+Converts the condition statement to a number. `:1:` becomes `1` and `:0:` becomes `0`.  
+Alias: `n`
+```
+condition_statement>toNumber => number
+
+:true:>toNumber  # 1
+:false:>toNumber # 0
 ```
 
-#### !
-Alias for `not`.
-```
-condition_statement>! => condition_statement
-<<true>>>! # <<0>>
-<<false>>>! # <<1>>
-```
 ## Types of Errors
 | Error                     | Description                                                                                                                                                                                                                |
 | ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

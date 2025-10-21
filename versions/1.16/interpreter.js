@@ -336,7 +336,7 @@ new Method("eq", ["string"], [{type: ["string"], optional: false}], (parent, arg
 
     return {
         type: "condition_statement",
-        value: `<<${parentValue === argValue ? 1 : 0}>>`,
+        value: `:${parentValue === argValue ? 1 : 0}:`,
         line: parent.line,
         col: parent.col,
         methods: parent.methods
@@ -349,7 +349,7 @@ new Method("neq", ["string"], [{type: ["string"], optional: false}], (parent, ar
 
     return {
         type: "condition_statement",
-        value: `<<${parentValue !== argValue ? 1 : 0}>>`,
+        value: `:${parentValue !== argValue ? 1 : 0}:`,
         line: parent.line,
         col: parent.col,
         methods: parent.methods
@@ -448,37 +448,71 @@ new Method("join", ["array"], [{type: ["string"], optional: true}], (parent, arg
     return parent;
 });
 
-new Method("toNumber", ["string"], [], (parent, args, interpreter) => {
-    let num = Number(parent.value);
-    if(isNaN(num)){
-        num = 0;
-    }
-
-    parent.value = num;
-    parent.type = "number";
+new Method("not", ["condition_statement"], [], (parent, args, interpreter) => {
+    let condValue = parent.value;
+    condValue = interpreter.evaluateMathExpression(condValue);
+    parent.value = `:${condValue === 1 ? 0 : 1}:`;
     return parent;
 });
 
-new Method("n", ["string"], [], (parent, args, interpreter) => {
-    let num = Number(parent.value);
-    if(isNaN(num)){
-        num = 0;
+new Method("toNumber", ["string", "condition_statement"], [], (parent, args, interpreter) => {
+    if(parent.type == "string"){
+        let num = Number(parent.value);
+        if(isNaN(num)){
+            num = 0;
+        }
+
+        parent.value = num;
+        parent.type = "number";
+        return parent;
+    } else {
+        let num = interpreter.evaluateMathExpression(parent.value);
+        parent.value = num;
+        parent.type = "number";
+        return parent;
     }
-    parent.value = num;
-    parent.type = "number";
-    return parent;
 });
 
-new Method("toString", ["number"], [], (parent, args, interpreter) => {
-    parent.value = String(parent.value);
-    parent.type = "string";
-    return parent;
+new Method("n", ["string", "condition_statement"], [], (parent, args, interpreter) => {
+    if(parent.type == "string"){
+        let num = Number(parent.value);
+        if(isNaN(num)){
+            num = 0;
+        }
+
+        parent.value = num;
+        parent.type = "number";
+        return parent;
+    } else {
+        let num = interpreter.evaluateMathExpression(parent.value);
+        parent.value = num;
+        parent.type = "number";
+        return parent;
+    }
+});
+
+new Method("toString", ["number", "condition_statement"], [], (parent, args, interpreter) => {
+    if(parent.type == "number"){
+        parent.value = String(parent.value);
+        parent.type = "string";
+        return parent;
+    } else {
+        parent.value = String(interpreter.evaluateMathExpression(parent.value));
+        parent.type = "string";
+        return parent;
+    }
 });
 
 new Method("s", ["number"], [], (parent, args, interpreter) => {
-    parent.value = String(parent.value);
-    parent.type = "string";
-    return parent;
+    if(parent.type == "number"){
+        parent.value = String(parent.value);
+        parent.type = "string";
+        return parent;
+    } else {
+        parent.value = String(interpreter.evaluateMathExpression(parent.value));
+        parent.type = "string";
+        return parent;
+    }
 });
 
 new Method("wrap", ["string"], [{type: ["string"], optional: true}, {type: ["string"], optional: true}], (parent, args, interpreter) => {
@@ -1171,7 +1205,7 @@ class FroggyScript3 {
         ["function_reference", /@[A-Za-z_][A-Za-z0-9_]*/],
         ["variable_reference", /\$[A-Za-z_][A-Za-z0-9_]*/],
         ["string", /"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'/],
-        ["condition_statement", /<<[^\r\n]*?>>/],
+        ["condition_statement", /:[^\r\n]*?:/],
         ["block_start", /\{/],
         ["block_end", /\}/],
         ["paren_start", /\(/],
@@ -1259,7 +1293,7 @@ class FroggyScript3 {
     }
 
     evaluateMathExpression(expression){
-        expression = expression.slice(2, -2).trim();
+        expression = expression.slice(1, -1).trim();
 
         let scope = {};
         for(const [key, val] of Object.entries(this.variables)){
