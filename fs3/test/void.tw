@@ -1,0 +1,21 @@
+{{# written 20 oct, 2025 #}}
+{{#timecalc
+    char: 50
+    newline: 250
+    custom: {
+        ",": 350
+        ".": 600
+    }
+#}}
+Ever since the [color 255 60 60]/fire/[resetcolor], I've been[newline]
+missing a part of me. It's[newline]
+like there's a hole inside of me.[newline]
+One could say, there's a "[invert]void[invert]".[linebreak]
+[sleep 800]a void sounds like "avoid", which is[newline]
+how /they/ treated me after the fact,[newline]
+saying I caused the fire. I didn't. I swear.
+[linebreak]
+[speed 1]\*\*\*[speeddefault][sleep 1000]
+[linebreak]
+Or did I? I don't remember.[linebreak]
+I can't remember. I don't remember /how/ to remember.[newline]
