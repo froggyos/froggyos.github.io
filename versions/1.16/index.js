@@ -1148,8 +1148,7 @@ function sendCommand(command, args, createEditableLineAfter){
                 break;
             }
 
-
-            let macroData = JSON.parse(JSON.stringify(macro.getData()));
+            let macroData = structuredClone(macro.data);
             let totalFileArguments = 0;
 
             macroData.forEach(line => {
@@ -2280,7 +2279,7 @@ let dateTimeInterval = setInterval(() => {
 }, 100);
 
 const onStart = () => {
-    //sendCommand("st", ["test"])
+    //sendCommand("/", ["set-US-time-format"])
 }
 
 function ready(){
