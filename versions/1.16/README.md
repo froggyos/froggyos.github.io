@@ -76,7 +76,6 @@ There are no defined file types in froggyOS. Instead, file types are determined 
 The user file is located at `Config:/user`. It holds user-specific settings. Here is the default file contents:
 ```
 KEY language TYPE String VALUE eng END
-KEY debugMode TYPE Boolean VALUE false END
 KEY colorPalette TYPE String VALUE standard END
 KEY version TYPE String VALUE 1.16-indev END
 KEY showSpinner TYPE Boolean VALUE false END

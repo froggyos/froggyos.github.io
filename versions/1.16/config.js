@@ -573,7 +573,7 @@ const presetLanguagesMap = {
         nmt: "[[BULLFROG]]showspinner [0/1] - togela supinär",
         jpn: "[[BULLFROG]]showspinner [0/1] - ローディングスピナーの表示を切り替える"
     },
-    "T_bullfrog_commands_debugmode": {
+    "T_UNUSED_bullfrog_commands_debugmode": {
         eng: "[[BULLFROG]]debugmode [0/1] - Toggles debug mode",
         nmt: "[[BULLFROG]]debugmode [0/1] - togela debug módi",
         jpn: "[[BULLFROG]]debugmode [0/1] - デバッグモードを切り替える"
@@ -1021,7 +1021,6 @@ const FroggyFileSystem = new fs({
         ] },
         { name: "user", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
             "KEY language TYPE String VALUE eng END",
-            "KEY debugMode TYPE Boolean VALUE false END",
             "KEY colorPalette TYPE String VALUE standard END",
             "KEY version TYPE String VALUE 1.16-indev END",
             "KEY showSpinner TYPE Boolean VALUE false END",
@@ -1497,10 +1496,6 @@ const FroggyFileSystem = new fs({
             "!ep",
             "h D:/Palettes",
             "m $1",
-        ] },
-        { name: "debug", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
-            "!d",
-            "[[BULLFROG]]debugmode 1",
         ] },
         { name: "set-US-time-format", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
             "ft w. mn/d/y H:m:s a",

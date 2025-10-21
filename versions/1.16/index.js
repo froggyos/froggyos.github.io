@@ -43,7 +43,6 @@ function setUserConfigFromFile(){
         return;
     }
     
-    config.debugMode = getSetting("debugMode")
     config.version = getSetting("version");
     config.colorPalette = getSetting("colorPalette");
     config.showSpinner = getSetting("showSpinner");
@@ -1592,7 +1591,6 @@ function sendCommand(command, args, createEditableLineAfter){
             createTerminalLine("T_bullfrog_commands_setstatbar", ">");
             createTerminalLine("T_bullfrog_commands_statbarlock", ">");
             createTerminalLine("T_bullfrog_commands_showspinner", ">");
-            createTerminalLine("T_bullfrog_commands_debugmode", ">");
             createTerminalLine("T_bullfrog_commands_setspinner", ">");
             createTerminalLine("T_bullfrog_commands_usavestate", ">");
             createTerminalLine("T_bullfrog_commands_uloadstate", ">");
@@ -1635,45 +1633,6 @@ function sendCommand(command, args, createEditableLineAfter){
                 createTerminalLine("T_invalid_args_provide_1_0", config.errorText);
                 hadError = true;
             }
-            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
-        } break;
-        
-        case "[[BULLFROG]]debugmode": {
-            let bool = args[0];
-            if(bool == "1") {
-                setSetting("debugMode", true);
-                config.stepThroughProgram = true;
-            }
-            else if(bool == "0") {
-                setSetting("debugMode", false);
-                config.stepThroughProgram = false;
-            }
-            else {
-                createTerminalLine("T_invalid_args_provide_1_0", config.errorText);
-                hadError = true;
-            }
-
-            let debugWindow = window.open("debug.html", "debugWindow", "width=1920,height=1080,scrollbars=yes,resizable=yes");
-            // let debugWindow = window.open("debug.html")
-
-            debugWindow.onload = () => {
-                debugWindow.postMessage({ config }, '*');
-                debugWindow.postMessage({ fs: config.fileSystem }, '*');
-                setInterval(() => {
-                    debugWindow.postMessage({ config }, '*');
-                }, 400)
-                
-                setInterval(() => {
-                    debugWindow.postMessage({ fs: config.fileSystem }, '*');
-                }, 400)
-            };
-
-            window.onbeforeunload = () => {
-                debugWindow.postMessage({ loseConnection: true }, '*');
-            }
-
-            window.debugWindow = debugWindow;
-
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         } break;
 
