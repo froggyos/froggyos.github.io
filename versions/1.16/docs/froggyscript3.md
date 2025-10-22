@@ -47,7 +47,7 @@ Variable references are used to reference a variable without resolving the varia
 ### Literals
 Literals are non-variables with special use cases.
 ```
-in # literal_in
+in  # literal_in
  =  # literal_assignment
 ```
 ### Keyword Type Annotations
@@ -741,9 +741,9 @@ condition_statement>toNumber => number
 | Error                     | Description                                                                                                                                                                                                                |
 | ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `AccessError`             |  Raised when a valid symbol (such as a function or variable) exists but is used incorrectly in its access context. Example: attempting to call a parameterized function with `call` when it must be invoked with `pcall`. |
-| `ArgumentError`           | Raised when arguments provided to a keyword or method are invalid or incomplete. For example, passing too few or incorrectly typed arguments.                                                                              |
+| `ArgumentError`           | Raised when arguments provided to a keyword or method are invalid or incomplete.                                                                              |
 | `InternalJavaScriptError` | It's not you, it's me.                                                                                                                                                                                                     |
-| `MathError`               | Raised when mathematical evaluation fails. Examples include divide-by-zero detection.                                                                                                                                      |
+| `MathError`               | Raised when mathematical evaluation fails. Examples include divide-by-zero.                                                                                                                                      |
 | `RangeError`              | Raised when a value is outside the permitted range for an operation. For example, accessing an array index that does not exist or a numeric overflow/underflow check.                                                                  |
 | `ReferenceError`          | Raised when accessing an undefined identifier such as a variable, function, or method. Example: using `foo` without declaring `var foo`.                                                                                   |
 | `RuntimeError`            | A catch-all for errors during program execution that don’t fall into a more specific category. e.g., a failed I/O operation or unexpected control flow issue.                                                              |
