@@ -1226,7 +1226,7 @@ class FroggyScript3 {
         ["literal_in", / in /],
         ["number", /[0-9]+(?:\.[0-9]+)?/],
         ["variable", /[A-Za-z_][A-Za-z0-9_]*/],
-        ["string_concat", / \. /],
+        ["string_concat", / \+ /],
         ["function_reference", /@[A-Za-z_][A-Za-z0-9_]*/],
         ["variable_reference", /\$[A-Za-z_][A-Za-z0-9_]*/],
         ["string", /"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'/],

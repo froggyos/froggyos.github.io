@@ -217,7 +217,7 @@ ask [$variable] [string]
 
 var name = ''
 ask $name 'What is your name?'
-out 'Hello, ' . name . '!'
+out 'Hello, ' + name + '!'
 
 -----
 
@@ -255,7 +255,7 @@ filearg [$variable] [number]
 
 var arg = ''
 filearg $arg 0
-out 'The first command line argument is: '>concat(arg)
+out 'The first command line argument is: ' + arg
 
 -----
 (in command line)
@@ -330,7 +330,7 @@ foreach [$variable] [block]
 
 var array = ['item1', 'item2', 'item3']
 foreach $array {
-    set __item__ = __item__ . '_modified'
+    set __item__ = __item__ + '_modified'
 }
 out array>join
 
@@ -447,7 +447,7 @@ Functions can return values with the `return` keyword. The return value is store
 return [string|number|array]
 
 pfunc @getGreeting ['getGreeting_name:S'] {
-    return 'Hello, ' . getGreeting_name . '!'
+    return 'Hello, ' + getGreeting_name + '!'
 }
 pcall @getGreeting ['Alice']
 out fReturn
@@ -521,10 +521,11 @@ string>concat(string) => string
 
 'Hello, '>concat('World!') # 'Hello, World!'
 ```
-Long strings of concatenations can be hard to read, so you can alteratively use the `" . "` operator to concatenate strings. You can use this to concatenate numbers to strings, but not strings to numbers.
+Long strings of concatenations can be hard to read, so you can alteratively use the `" + "` operator to concatenate strings. You can use this to concatenate numbers to strings, but not strings to numbers.
 ```
-out 'Hello, ' . 'World!' # 'Hello, World!'
-out 'The number is: ' . 10 # 'The number is: 10'
+out 'Hello, ' + 'World!' # 'Hello, World!'
+out 'The number is: ' + 10 # 'The number is: 10'
+out 10 + ' is the number' # TypeError
 ```
 #### eq
 Compares if two strings are equal. Returns `:1:` if true, `:0:` if false.
