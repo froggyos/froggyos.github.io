@@ -1,5 +1,5 @@
 var meow = ''
-filearg $meow 1
+filearg $meow 0
 
-var type = meow>type
+var type = meow
 out type + ' is the first file argument.'

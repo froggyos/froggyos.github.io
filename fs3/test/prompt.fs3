@@ -4,10 +4,14 @@ import 'math'
 var meow = '10'
 
 keydown 'a' {
-    th
+    out 10
+}
+
+anykeydown {
+
 }
 
 
-out 'meow'
+out 'meow'>index(0)>type
 
 wait 10
