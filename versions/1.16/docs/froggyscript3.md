@@ -1,11 +1,14 @@
-## General Utilities & Info
+# Introduction
+Froggyscript is a dynamically typed, interpreted programming language designed for simplicity and ease of use. It is the primary scripting language for FroggyOS.
+# Documentation
+## Conventions & General Info
 Five hyphens (`-----`) inside of documentation denotes that below is the output of the code above.
 ```
 out 'Hello, World!'
 
 -----
 
-Hello, World!
+> Hello, World!
 ```
 ### Comments
 ```
@@ -198,7 +201,7 @@ out myArray>join
 
 -----
 
-10,two,3
+> 10,two,3
 ```
 #### Setting Properties of an Object
 Use the `.` operator to set a property of an object variable. The type of the value being set does not have to match the type of the existing value at that property.
@@ -218,7 +221,7 @@ out $myObject.'nestedProperty'.'innerName'
 
 -----
 
-Modified!
+> Modified!
 ```
 The `+` operator doesn't play well with objects. Use the `>concat` method inside of objects, for example:
 ```
@@ -302,7 +305,7 @@ out 'Hello, ' + name + '!'
 -----
 
 What is your name? Alice (user types "Alice" and presses Enter)
-Hello, Alice!
+> Hello, Alice!
 ```
 ### Prompt
 The `prompt` keyword prompts the user to select an option from a list and stores the selected option in a variable. The variable must be of type `string`. The second argument is the index of the default selected option (0-based). The third argument is an array of options to choose from. Navigate the options with the left and right arrow keys, and select an option with the Enter key.
@@ -316,7 +319,7 @@ out 'You selected: '>concat(choice)
 
 -----
 
-What do you choose?
+> What do you choose?
 [option 1] • option 2 • option 3
 (user presses right arrow key)
 
@@ -326,10 +329,10 @@ option 1 • [option 2] • option 3
 [option 1] • option 2 • option 3
 (user presses Enter)
 
-You selected: option 1
+> You selected: option 1
 ```
 ### File Arguments
-The `filearg` keyword retrieves a command line argument passed to the program and stores it in a variable. The variable must be of type `string`. The `0`th file argument is always the file name, so the first user-provided argument is at index `1`.
+The `filearg` keyword retrieves a command line argument passed to the program and stores it in a variable. The variable must be of type `string`. The `0`th file argument is always the file name, so the first user-provided argument is at index `1`. Type `\_` to represent spaces in command line arguments.
 ```
 filearg [$variable] [number]
 
@@ -344,7 +347,7 @@ out 'The first user provided command line argument is: ' + arg
 (in command line)
 C:/Home> st program cool\_argument
 
-The first command line argument is: cool argument
+> The first user provided command line argument is: cool argument
 ```
 ## Program Termination
 The `kill` keyword immediately stops program execution by raising a `RuntimeError`.
@@ -383,11 +386,11 @@ loop 5 {
 
 -----
 
-Hello, World!
-Hello, World!
-Hello, World!
-Hello, World!
-Hello, World!
+> Hello, World!
+> Hello, World!
+> Hello, World!
+> Hello, World!
+> Hello, World!
 ```
 If given a condition statement, the loop will execute until the condition is false.
 ```
@@ -399,11 +402,11 @@ loop :count < 5: {
 
 -----
 
-0
-1
-2
-3
-4
+> 0
+> 1
+> 2
+> 3
+> 4
 ```
 
 ### For-Each
@@ -419,7 +422,7 @@ out array>join
 
 -----
 
-item1_modified,item2_modified,item3_modified
+> item1_modified,item2_modified,item3_modified
 ```
 ### Block Control Keywords
 #### skip
@@ -435,7 +438,7 @@ if :true: {
 
 -----
 
-Hello, World!
+> Hello, World!
 ```
 #### break
 The `break` keyword immediately ends the current loop.
@@ -450,7 +453,7 @@ loop 5 {
 
 -----
 
-Hello, World!
+> Hello, World!
 ```
 #### continue
 The `continue` keyword immediately ends the current iteration of a loop and begins the next iteration.
@@ -465,11 +468,11 @@ loop 5 {
 
 -----
 
-Hello, World!
-Hello, World!
-Hello, World!
-Hello, World!
-Hello, World!
+> Hello, World!
+> Hello, World!
+> Hello, World!
+> Hello, World!
+> Hello, World!
 ```
 #### exit
 The `exit` keyword immediately ends the current function.
@@ -489,8 +492,8 @@ pcall @myFunction [5]
 
 -----
 
-Number must be greater than or equal to 5
-You passed!
+> Number must be greater than or equal to 5
+> You passed!
 ```
 ## Functions
 ### No Parameters
@@ -522,7 +525,7 @@ pcall @addTwo [3, 5]
 
 -----
 
-8
+> 8
 ```
 ### Return Values
 Functions can return values with the `return` keyword. The return value is stored in the default variable `fReturn`. `return` does NOT end the function early.
@@ -537,7 +540,7 @@ out fReturn
 
 -----
 
-Hello, Alice!
+> Hello, Alice!
 ```
 
 ### Importing Modules

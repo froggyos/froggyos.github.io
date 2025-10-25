@@ -2239,7 +2239,7 @@ let dateTimeInterval = setInterval(() => {
 
 const onStart = () => {
     //sendCommand("/", ["set-US-time-format"])
-    sendCommand("st", ["test"])
+    sendCommand("st", ["test", "file\\_arg\\_1"])
 }
 
 function ready(){
