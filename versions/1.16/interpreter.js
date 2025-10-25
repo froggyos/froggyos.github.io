@@ -591,7 +591,7 @@ new Keyword("foreach", ["variable_reference", "block"], async (args, interpreter
     let block = args[1].body;
 
     interpreter.variables["__item__"] = { value: "", type: "string", mut: true, freeable: false };
-    interpreter.variables["__loop_index__"] = { value: 0, type: "number", mut: true, freeable: false };
+    interpreter.variables["__index__"] = { value: 0, type: "number", mut: true, freeable: false };
 
     if(!interpreter.variables[targetArrayName]){
         throw new FS3Error("ReferenceError", `Variable [${targetArrayName}] is not defined`, args[2]);
@@ -608,7 +608,7 @@ new Keyword("foreach", ["variable_reference", "block"], async (args, interpreter
 
         let el = array[i];
 
-        interpreter.variables["__loop_index__"].value = i;
+        interpreter.variables["__index__"].value = i;
         interpreter.variables["__item__"].value = el.value;
         interpreter.variables["__item__"].type = el.type;
 
@@ -624,11 +624,11 @@ new Keyword("foreach", ["variable_reference", "block"], async (args, interpreter
         
 
         interpreter.variables[targetArrayName].value[i].value = interpreter.variables["__item__"].value;
-        interpreter.variables[targetArrayName].value[i].type = interpreter.variables["__loop_index__"].type;
+        interpreter.variables[targetArrayName].value[i].type = interpreter.variables["__index__"].type;
     }
 
     delete interpreter.variables["__item__"];
-    delete interpreter.variables["__loop_index__"];
+    delete interpreter.variables["__index__"];
 });
 
 new Keyword("filearg", ["variable_reference", "number"], (args, interpreter) => {
@@ -1177,7 +1177,7 @@ new Keyword("loop", ["number|condition_statement", "block"], async (args, interp
     if(cond.type === "number"){
         let count = cond.value;
         for(let i = 0; i < count; i++){
-            interpreter.variables["__loop_index__"] = {value: i, type: "number", mut: false, freeable: false};
+            interpreter.variables["__index__"] = {value: i, type: "number", mut: false, freeable: false};
             interpreter.checkInterrupt();
             let blockCopy = structuredClone(block);
             try {

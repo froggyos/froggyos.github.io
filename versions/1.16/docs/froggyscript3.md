@@ -383,7 +383,7 @@ else {
 ```
 loop [number|condition_statement] [block]
 ```
-If given a number, the loop will execute that many times.
+If given a number, the loop will execute that many times. Use the variable `__index__` to get the current index of the loop (0-based).
 ```
 loop 5 {
     out 'Hello, World!'
@@ -415,7 +415,7 @@ loop :count < 5: {
 ```
 
 ### For-Each
-The `foreach` keyword iterates over each element in an array. The variable specified will be assigned to each element in the array for the duration of the block. The array must be of type `array`. You can use the variable `__loop_index__` to get the current index of the loop (0-based). You can use the variable `__item__` to get or set the current item in the loop. If you set `__item__`, it will update the value in the original array.
+The `foreach` keyword iterates over each element in an array. The variable specified will be assigned to each element in the array for the duration of the block. The array must be of type `array`. You can use the variable `__index__` to get the current index of the loop (0-based). You can use the variable `__item__` to get or set the current item in the loop. If you set `__item__`, it will update the value in the original array.
 ```
 foreach [$variable] [block]
 
