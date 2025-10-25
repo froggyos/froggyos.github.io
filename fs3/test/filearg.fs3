@@ -1,5 +1,7 @@
-var meow = ''
-filearg $meow 0
+var fileName = ''
+var arg = ''
+filearg $fileName 0
+filearg $arg 1
 
-var type = meow
-out type + ' is the first file argument.'
+out 'The program file name is: ' + fileName
+out 'The first user provided command line argument is: ' + arg

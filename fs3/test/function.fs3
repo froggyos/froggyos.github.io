@@ -1,5 +1,5 @@
 pfunc @meow ['meow:S'] {
-    ou
+    out ' wow!'
     out meow
 }
 

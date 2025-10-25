@@ -333,9 +333,12 @@ The `filearg` keyword retrieves a command line argument passed to the program an
 ```
 filearg [$variable] [number]
 
+var fileName = ''
 var arg = ''
-filearg $arg 0
-out 'The first command line argument is: ' + arg
+filearg $fileName 0
+filearg $arg 1
+out 'The program file name is: ' + fileName
+out 'The first user provided command line argument is: ' + arg
 
 -----
 (in command line)

@@ -1470,6 +1470,8 @@ class FroggyScript3 {
 
             let compacted = this.compact(line);
 
+            if(!Array.isArray(compacted)) compacted = [compacted];
+
             if(compacted.some(t => t.type === "object_indicator")){
                 const clone = structuredClone(compacted)
                 const methodsToApply = clone[clone.length -1].methods;
@@ -1610,8 +1612,7 @@ class FroggyScript3 {
             if (!def.defaultKeyword) delete Keyword.table[keyword];
         }
 
-        this.fileName = fileName;
-        this.fileArguments = fileArguments;
+        this.fileArguments = [fileName, ...fileArguments];
 
         if (code.length == 0) {
             throw new FS3Error("SyntaxError", "No code to process", { line: -1, col: -1 });
