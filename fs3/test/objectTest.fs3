@@ -13,5 +13,5 @@ var object = {
    }
 }
 
-set $object.'number' = $object.'number'>add(7)
+set $object.'number' = 20
 out $object.'number'

@@ -1473,6 +1473,7 @@ class FroggyScript3 {
             if(compacted.some(t => t.type === "object_indicator")){
                 const clone = structuredClone(compacted)
                 const methodsToApply = clone[clone.length -1].methods;
+
                 compacted = this.mergeObjectReferences(compacted);
 
                 for(let j = 0; j < compacted.length; j++){
@@ -1527,7 +1528,7 @@ class FroggyScript3 {
         return node;
     }
 
-    handleDotConcatOperator(line){
+    handleConcatOperator(line){
         for(let j = 0; j < line.length; j++){
             // concat string literals separated by string_concat tokens
             if(line[j].type === "string_concat"){
@@ -1539,6 +1540,19 @@ class FroggyScript3 {
 
                 if(left.type !== "string"){
                     throw new FS3Error("TypeError", `Left operand of string concatenation must be of type [string], got [${left.type}]`, left);
+                }
+
+                if(right.type === "variable_reference" && this.variables[right.value.slice(1)]?.type === "object"){
+                    right.type = "object_reference";
+                }
+
+                if(right.type === "variable_reference"){
+                    const varName = right.value.slice(1);
+                    if(!this.variables[varName]){
+                        throw new FS3Error("ReferenceError", `Variable [${varName}] is not defined`, right);
+                    }
+                    right.type = this.variables[varName].type;
+                    right.value = this.variables[varName].value;
                 }
 
                 if(right.type !== "string" && right.type !== "number"){
@@ -1692,8 +1706,6 @@ class FroggyScript3 {
                 }
             });
 
-            line = this.handleDotConcatOperator(line);
-
             if(line.some(t => t.type === "object_indicator")){
                 line = this.mergeObjectReferences(line);
                 for(let j = 0; j < line.length; j++){
@@ -1711,6 +1723,8 @@ class FroggyScript3 {
                     }
                 }
             }
+
+            line = this.handleConcatOperator(line);
 
             compressed[i] = this.methodResolver(this.compact(line));
 
@@ -1883,8 +1897,6 @@ class FroggyScript3 {
                     if(keyword === "set" && actual.objectReference !== undefined){
                         lineArgs[i].originalType = structuredClone(actual.type);
                         actual.type = "object_reference"
-
-                        console.log(actual)
                     }
 
                     if (!expected.includes(actual.type) && !expected.includes("any")) {
@@ -2151,8 +2163,44 @@ class FroggyScript3 {
             tokens[i].methods = [];
         }
 
+        if(tokens.some(t => t.type === "object_indicator")){
+            tokens = this.mergeObjectReferences(tokens);
+            for(let j = 0; j < tokens.length; j++){
+                let token = tokens[j];
+                if(token.type === "object_reference"){
+                    let objectReference = structuredClone(token.value);
+                    let resolved = this.resolveObjectReference(token.value, this.variables);
+                    if(resolved === undefined){
+                        throw new FS3Error("ReferenceError", `Object reference [${token.value.join(".")}] is not defined`, token);
+                    }
+                    token.type = resolved.type;
+                    token.value = resolved.value;
+                    token.objectReference = objectReference;
+                    token.methods = [];
+                }
+            }
+        }
 
-        tokens = this.handleDotConcatOperator(tokens);
+
+        // if(line.some(t => t.type === "object_indicator")){
+        //     line = this.mergeObjectReferences(line);
+        //     for(let j = 0; j < line.length; j++){
+        //         let token = line[j];
+        //         if(token.type === "object_reference"){
+        //             let objectReference = structuredClone(token.value);
+        //             let resolved = this.resolveObjectReference(token.value, this.variables);
+        //             if(resolved === undefined){
+        //                 throw new FS3Error("ReferenceError", `Object reference [${token.value.join(".")}] is not defined`, token);
+        //             }
+        //             token.type = resolved.type;
+        //             token.value = resolved.value;
+        //             token.objectReference = objectReference;
+        //             token.methods = [];
+        //         }
+        //     }
+        // }
+
+        tokens = this.handleConcatOperator(tokens);
 
         return tokens;
     }
