@@ -657,23 +657,64 @@ new Keyword("filearg", ["variable_reference", "number"], (args, interpreter) => 
     interpreter.variables[variableName].value = argValue;
 });
 
-new Keyword("set", ["variable_reference", "literal_assignment", "string|number|array"], (args, interpreter) => {
-    let variableName = args[0].value.slice(1);
-    let variableValue = args[2].value;
+new Keyword("set", ["variable_reference|object_reference", "literal_assignment", "string|number|array|object_reference"], (args, interpreter) => {
+    if(args[0].type == "variable_reference"){
+        let variableName = args[0].value.slice(1);
+        let variableValue = args[2].value;
 
-    if(!interpreter.variables[variableName]){
-        throw new FS3Error("ReferenceError", `Variable [${variableName}] is not defined`, args[0]);
-    } 
+        if(!interpreter.variables[variableName]){
+            throw new FS3Error("ReferenceError", `Variable [${variableName}] is not defined`, args[0]);
+        } 
 
-    if(interpreter.variables[variableName].type !== args[2].type){
-        throw new FS3Error("TypeError", `Cannot set variable [${variableName}] of type [${interpreter.variables[variableName].type}] to value of type [${args[2].type}]`, args[0]);
+        if(interpreter.variables[variableName].type !== args[2].type){
+            throw new FS3Error("TypeError", `Cannot set variable [${variableName}] of type [${interpreter.variables[variableName].type}] to value of type [${args[2].type}]`, args[0]);
+        }
+
+        if(!interpreter.variables[variableName].mut){
+            throw new FS3Error("AccessError", `Variable [${variableName}] is immutable and cannot be changed`, args[0]);
+        }
+        
+        interpreter.variables[variableName].value = variableValue;
+    } else {
+        let variableName = args[0].objectReference[0];
+        
+        if(!interpreter.variables[variableName]){
+            throw new FS3Error("ReferenceError", `Variable [${variableName}] is not defined`, args[0]);
+        }
+
+        if(!interpreter.variables[variableName].mut){
+            throw new FS3Error("AccessError", `Variable [${variableName}] is immutable and cannot be changed`, args[0]);
+        }
+
+        if(interpreter.variables[variableName].type !== "object"){
+            throw new FS3Error("TypeError", `Variable [${variableName}] must be of type [object] to use object reference assignment`, args[0]);
+        }
+
+        let obj = interpreter.variables[variableName].value;
+
+        let current = obj;
+
+        for(let i = 1; i < args[0].objectReference.length; i++){
+            let prop = args[0].objectReference[i];
+            if(i == args[0].objectReference.length - 1){
+                if(current[prop] === undefined){
+                    throw new FS3Error("ReferenceError", `Property [${prop}] does not exist on object [${variableName}]`, args[0]);
+                }
+                current[prop] = {
+                    type: args[2].originalType ?? args[2].type,
+                    value: args[2].value,
+                    line: current[prop].line,
+                    col: current[prop].col,
+                    methods: []
+                };
+            } else {
+                if(current[prop] === undefined){
+                    throw new FS3Error("ReferenceError", `Property [${prop}] does not exist on object [${variableName}]`, args[0]);
+                }
+                current = current[prop].value;
+            }
+        }
     }
-
-    if(!interpreter.variables[variableName].mut){
-        throw new FS3Error("AccessError", `Variable [${variableName}] is immutable and cannot be changed`, args[0]);
-    }
-    
-    interpreter.variables[variableName].value = variableValue;
 });
 
 // ["string", "string|number", "any?"]
@@ -1804,7 +1845,7 @@ class FroggyScript3 {
             // Resolve variables
             this.checkInterrupt();
             if(this.clockLengthMs != 0) await new Promise(resolve => setTimeout(resolve, this.clockLengthMs));
-            let keyword = line[0]?.type === "keyword" ? line[0].value : null;
+            const keyword = line[0]?.type === "keyword" ? line[0].value : null;
             if (!keyword) return;
             
             let executedMethodTokens = this.executeMethods(line)
@@ -1837,6 +1878,13 @@ class FroggyScript3 {
                             );
                         }
                         continue;
+                    }
+
+                    if(keyword === "set" && actual.objectReference !== undefined){
+                        lineArgs[i].originalType = structuredClone(actual.type);
+                        actual.type = "object_reference"
+
+                        console.log(actual)
                     }
 
                     if (!expected.includes(actual.type) && !expected.includes("any")) {

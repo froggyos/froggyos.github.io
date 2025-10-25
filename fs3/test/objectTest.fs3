@@ -1,16 +1,17 @@
 var arrayVariable = ['apple', 'banana', 'cherry']
 var string = 'FroggyOS'
+var string2 = 'meow!'
 var object = {
    'string' = 'FroggyOS'
-   'number' = 1.16
+   'number' = 1
     string = 'wow!'
-   'array' = ['frog', 'dog', 'cat']
-   'arrayVariable' = arrayVariable
+   'array' = ['frog', 'dog', 'cat'>type]
+   'arrayVariable' = arrayVariable>type
    'nestedObject' = {
-       'key' = 'value'
-       'anotherKey' = 42>type
+       string2 = 'value'
+       'anotherKey' = 42
    }
 }
 
+set $object.'number' = $object.'number'>add(7)
 out $object.'number'
-out 'meow'

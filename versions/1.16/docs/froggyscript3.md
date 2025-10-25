@@ -14,6 +14,7 @@ Hello, World!
 ```
 
 ### Types
+#### Primary Types
 There are 4 main types in FroggyScript3: `string`, `number`, `array`, and `object`.
 ```
 # string
@@ -44,7 +45,31 @@ var myObject = {
 
 out $myObject.'name'
 ```
+You can also use variables to name and access properties.
+```
+var propertyName = 'name'
 
+var myObject = {
+    propertyName = 'FroggyScript3'
+    'version' = 1.16
+}
+
+out $myObject.propertyName
+```
+You can nest objects within objects.
+```
+var myObject = {
+    'name' = 'FroggyScript3'
+    'version' = 1.16
+    'nestedProperty' = {
+        'innerName' = 'Inner'
+    }
+}
+out $myObject.'nestedProperty'.'innerName'
+```
+When a parameter can be an object, it will be specified in documentation as `object`, rather than `block`.
+
+#### Other Types
 There are also 4 other types: `function_reference`, `condition_statement`, `variable_reference`, and `object_reference`.
 ```
 # function_reference
@@ -96,6 +121,7 @@ This is a block:
     # Hello!
 }
 ```
+Blocks hold lines of FroggyScript3 code and are used in various keywords such as functions, conditionals, and loops.  
 When a keyword specifies in documentation it requires a block like this:
 ```
 func [function_reference] [block]
@@ -174,7 +200,26 @@ out myArray>join
 
 10,two,3
 ```
+#### Setting a Property of an Object
+Use the `.` operator to set a property of an object variable. The type of the value being set does not have to match the type of the existing value at that property.
+```
+set [$variable].'property' = [string|number|array|object]
 
+var myObject = {
+    'name' = 'FroggyScript3'
+    'version' = 1.16
+    'nestedProperty' = {
+        'innerName' = 'Inner'
+    }
+}
+
+set $myObject.'nestedProperty'.'innerName' = 'Modified!'
+out $myObject.'nestedProperty'.'innerName'
+
+-----
+
+Modified!
+```
 ### Deletion
 Variables can be deleted with the `free` keyword.
 ```
