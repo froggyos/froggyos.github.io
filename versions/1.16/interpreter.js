@@ -187,68 +187,6 @@ const imports = {
             document.body.addEventListener("keyup", handler);
             interpreter.keyListeners.push({ type: "keyup", handler });
         }, false);
-    },
-    objects: (interp) => {
-        if(interp){
-            if (interp.variables["Object"]) {
-                throw new FS3Error("ReferenceError", `Variable [Object] is already defined`, {line: -1, col: -1, value: "" });
-            }
-
-            interp.variables["Object"] = {
-                value: "{}",
-                tree: {},
-                type: "object",
-                mut: false,
-                freeable: false
-            }
-        }
-
-
-        Method.table.type.parentTypes.push("object")
-        Keyword.table.var.scheme[2] += "|object"
-        Keyword.table.cvar.scheme[2] += "|object"
-
-        new Method("new", ["object"], [], (parent, args, interpreter) => {
-            return {
-                type: "object",
-                value: {},
-                line: parent.line,
-                col: parent.col,
-                methods: parent.methods,
-            }
-        }, false);
-
-        new Method("get", ["object"], [{type: ["string"], optional: false}], (parent, args, interpreter) => {
-            let key = args[0].value;
-
-            if(!(key in parent.value)){
-                throw new FS3Error("ReferenceError", `Key [${key}] does not exist on object`, args[0]);
-            }
-            return parent.value[key];
-        }, false);
-
-        new Keyword("objset", ["variable_reference", "string", "literal_assignment" ,"string|number|array|object"], (args, interpreter) => {
-            let variableName = args[0].value.slice(1);
-            let key = args[1].value;
-            let newValue = args[3];
-            if(!interpreter.variables[variableName]){
-                throw new FS3Error("ReferenceError", `Variable [${variableName}] is not defined`, args[0]);
-            }
-            if(!interpreter.variables[variableName].mut){
-                throw new FS3Error("AccessError", `Variable [${variableName}] is immutable and cannot be changed`, args[0]);
-            }
-            if(interpreter.variables[variableName].type !== "object"){
-                throw new FS3Error("TypeError", `Variable [${variableName}] must be of type [object] to use [objset] keyword`, args[0]);
-            }
-
-            interpreter.variables[variableName].value[key] = {
-                type: newValue.type,
-                value: newValue.value,
-                line: args[1].line,
-                col: args[1].col,
-                methods: []
-            }
-        }, false);
     }
 }
 
@@ -416,7 +354,7 @@ new Method("index", ["array", "string"], [{type: ["number"], optional: false}], 
     if(parent.type === "array"){
         let index = args[0].value;
         if(index < 0 || index >= parent.value.length){
-            throw new FS3Error("RangeError", `Index [${index}] is out of bounds for array of length [${parent.value.length}]`, args);
+            throw new FS3Error("RangeError", `Index [${index}] is out of bounds for array of length [${parent.value.length}]`, args[0]);
         }
 
         return parent.value[index]
@@ -424,7 +362,7 @@ new Method("index", ["array", "string"], [{type: ["number"], optional: false}], 
         let str = parent.value;
         let index = args[0].value;
         if(index < 0 || index >= str.length){
-            throw new FS3Error("RangeError", `Index [${index}] is out of bounds for string of length [${str.length}]`, args);
+            throw new FS3Error("RangeError", `Index [${index}] is out of bounds for string of length [${str.length}]`, args[0]);
         }
 
         return {
@@ -902,7 +840,6 @@ new Keyword("wait", ["number"], async (args, interpreter) => {
     });
 });
 
-
 new Keyword("call", ["function_reference"], async (args, interpreter) => {
     let functionName = args[0].value;
     let functionBody = interpreter.functions[functionName];
@@ -921,25 +858,61 @@ new Keyword("call", ["function_reference"], async (args, interpreter) => {
         else throw e;
     }
 });
-    
 
-new Keyword("var", ["variable_reference", "literal_assignment", "string|number|array"], (args, interpreter) => {
+new Keyword("cvar", ["variable_reference", "literal_assignment", "string|number|array|block"], (args, interpreter) => {
     let name = args[0].value;
     let value = args[2].value;
     let type = args[2].type;
 
-    if(interpreter.variables[name]){
-        throw new FS3Error("ReferenceError", `Variable [${name}] is already defined`, args[0]);
-    }
+    if(interpreter.variables[name]) throw new FS3Error("ReferenceError", `Variable [${name}] is already defined`, args[0]);
 
-    interpreter.variables[name] = {
-        value: value,
-        type: type,
-        mut: true,
-        freeable: true
-    }
+    if(type !== "block"){
+        interpreter.variables[name] = {
+            value: value,
+            type: type,
+            mut: false,
+            freeable: false
+        }
+        
+    } else {
+        let block = args[2].body;
+        let object = interpreter.parseObject(name, block);
 
-    if(type === "object") interpreter.variables[name].tree = {};
+        interpreter.variables[name] = {
+            value: object,
+            type: "object",
+            mut: false,
+            freeable: false
+        }
+    }
+})
+
+new Keyword("var", ["variable_reference", "literal_assignment", "string|number|array|block"], (args, interpreter) => {
+    let name = args[0].value;
+    let value = args[2].value;
+    let type = args[2].type;
+
+    if(interpreter.variables[name]) throw new FS3Error("ReferenceError", `Variable [${name}] is already defined`, args[0]);
+
+    if(type !== "block"){
+        interpreter.variables[name] = {
+            value: value,
+            type: type,
+            mut: true,
+            freeable: true
+        }
+
+    } else {
+        let block = args[2].body;
+        let object = interpreter.parseObject(name, block);
+
+        interpreter.variables[name] = {
+            value: object,
+            type: "object",
+            mut: true,
+            freeable: true
+        };
+    }
 })
 
 new Keyword("prompt", ["variable_reference", "number", "array"], (args, interpreter) => {
@@ -1117,23 +1090,6 @@ new Keyword("ask", ["variable_reference", "string"], async (args, interpreter) =
     });
 });
 
-new Keyword("cvar", ["variable_reference", "literal_assignment", "string|number|array"], (args, interpreter) => {
-    let name = args[0].value;
-    let value = args[2].value;
-    let type = args[2].type;
-
-    if(interpreter.variables[name]) throw new FS3Error("ReferenceError", `Variable [${name}] is already defined`, args[0]);
-
-    interpreter.variables[name] = {
-        value: value,
-        type: type,
-        mut: false,
-        freeable: true
-    }
-
-    if(type === "object") interpreter.variables[name].tree = {};
-})
-
 new Keyword("free", ["variable_reference"], (args, interpreter) => {
     let name = args[0].value.slice(1);
     let variable = interpreter.variables[name];
@@ -1222,11 +1178,12 @@ new Keyword("loop", ["number|condition_statement", "block"], async (args, interp
 
 class FroggyScript3 {
     static matches = [
-        ["comment", /# .*/],
+        ["comment", /#.*/],
         ["literal_in", / in /],
         ["number", /[0-9]+(?:\.[0-9]+)?/],
         ["variable", /[A-Za-z_][A-Za-z0-9_]*/],
         ["string_concat", / \+ /],
+        ["object_indicator", /\./],
         ["function_reference", /@[A-Za-z_][A-Za-z0-9_]*/],
         ["variable_reference", /\$[A-Za-z_][A-Za-z0-9_]*/],
         ["string", /"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'/],
@@ -1376,6 +1333,66 @@ class FroggyScript3 {
         this.debug = value;
     }
 
+    parseObject(variableName, block){
+        const obj = {};
+        for(let i = 0; i < block.length; i++){
+            block[i] = this.methodResolver(this.compact(block[i]));
+
+            for(let j = 0; j < block[i].length; j++){
+                let token = block[i][j];
+
+                if(token.type === "keyword" || token.type === "variable") {
+                    if(this.variables[token.value]){
+                        let variable = this.variables[token.value];
+                        token.type = variable.type;
+                        token.value = variable.value;
+                    } else {
+                        throw new FS3Error("ReferenceError", `In object [${variableName}]: Variable [${token.value}] is not defined`, token);
+                    }
+                }
+
+                if(token.methods.length > 0){
+                    token = this.executeMethods(token)[0];
+                    block[i][j] = token;
+                }
+
+                if(token.type === "block"){
+                    token.body = this.parseObject(variableName, token.body);
+                    block[i][j] = token;
+                }
+            }
+
+            if(block[i][0]?.type !== "string"){
+                throw new FS3Error("SyntaxError", `In object [${variableName}]: Object property names must be strings`, block[i][0]);
+            }
+            if(block[i][1]?.type !== "literal_assignment"){
+                throw new FS3Error("SyntaxError", `In object [${variableName}]: Expected assignment operator ' = ' after property name`, block[i][1]);
+            }
+            const allowedTypes = ["string", "number", "array", "block"];
+
+            if(block[i][2]?.type === undefined){
+                throw new FS3Error("SyntaxError", `In object [${variableName}]: Object property values must be of type [${allowedTypes.join(" or ")}], got none`, block[i][2]);
+            }
+
+            if(!allowedTypes.includes(block[i][2].type)){
+                throw new FS3Error("TypeError", `In object [${variableName}]: Object property values must be of type [${allowedTypes.join(" or ")}], got [${block[i][2].type}]`, block[i][2]);
+            }
+        }
+
+        for(let i = 0; i < block.length; i++){
+            let propName = block[i][0].value;
+            let propValue = block[i][2];
+
+            if(propValue.type === "block"){
+                propValue = propValue.body;
+            }
+
+            obj[propName] = propValue;
+        }
+
+        return obj;
+    }
+
     walkMethods(node, callback) {
         // If this node is a list of arguments (array), walk each element.
         if (Array.isArray(node)) {
@@ -1411,6 +1428,23 @@ class FroggyScript3 {
 
 
             let compacted = this.compact(line);
+
+            if(compacted.some(t => t.type === "object_indicator")){
+                const clone = structuredClone(compacted)
+                const methodsToApply = clone[clone.length -1].methods;
+                compacted = this.mergeObjectReferences(compacted);
+
+                for(let j = 0; j < compacted.length; j++){
+                    let token = compacted[j];
+                    if(token.type === "object_reference") {
+                        const resolved = this.resolveObjectReference(token.value, this.variables);
+
+                        compacted[j].type = resolved.type;
+                        compacted[j].value = resolved.value;
+                        compacted[j].methods = methodsToApply;
+                    }
+                }
+            }
 
             const resolvedMethods = this.methodResolver(compacted);
 
@@ -1619,6 +1653,24 @@ class FroggyScript3 {
 
             line = this.handleDotConcatOperator(line);
 
+            if(line.some(t => t.type === "object_indicator")){
+                line = this.mergeObjectReferences(line);
+                for(let j = 0; j < line.length; j++){
+                    let token = line[j];
+                    if(token.type === "object_reference"){
+                        let objectReference = structuredClone(token.value);
+                        let resolved = this.resolveObjectReference(token.value, this.variables);
+                        if(resolved === undefined){
+                            throw new FS3Error("ReferenceError", `Object reference [${token.value.join(".")}] is not defined`, token);
+                        }
+                        token.type = resolved.type;
+                        token.value = resolved.value;
+                        token.objectReference = objectReference;
+                        token.methods = [];
+                    }
+                }
+            }
+
             compressed[i] = this.methodResolver(this.compact(line));
 
             if(executeKeywords){
@@ -1631,6 +1683,78 @@ class FroggyScript3 {
         }
 
         return compressed;
+    }
+
+    resolveObjectReference(refChain, objectTree) {
+        let current = objectTree;
+
+        for (const key of refChain) {
+            if (current == null) return undefined;
+
+            // if current is an object with `value` field that is itself a key
+            if (current.value && typeof current.value === "string" && current.value in objectTree) {
+                current = objectTree[current.value];
+            }
+
+            if (key in current) {
+                current = current[key];
+            } else if (current.value && typeof current.value === "object" && key in current.value) {
+                current = current.value[key];
+            } else {
+                return undefined;
+            }
+        }
+
+        if(current.type == undefined) current.type = "object"
+
+        return current;
+    }
+
+    mergeObjectReferences(tokens) {
+        const result = [];
+        let i = 0;
+
+        let rootLine = null;
+        let rootCol = null;
+
+        while (i < tokens.length) {
+            const t = tokens[i];
+
+            if (t.type === "variable_reference") {
+                let chain = [t.value.replace(/^\$/, "")];
+                rootLine = rootLine === null ? t.line : rootLine;
+                rootCol = rootCol === null ? t.col : rootCol;
+
+                let j = i + 1;
+                while (
+                    j + 1 < tokens.length &&
+                    tokens[j].type === "object_indicator" &&
+                    ["string", "variable_reference"].includes(tokens[j + 1].type)
+                ) {
+                    const nextVal = tokens[j + 1].value.replace(/^['"]|['"]$/g, ""); // remove quotes
+                    chain.push(nextVal);
+                    j += 2;
+                }
+
+                if (chain.length > 1) {
+                    result.push({
+                        type: "object_reference",
+                        value: chain,
+                        line: rootLine,
+                        col: rootCol,
+                    });
+                    i = j;
+                } else {
+                    result.push(t);
+                    i++;
+                }
+            } else {
+                result.push(t);
+                i++;
+            }
+        }
+
+        return result;
     }
 
     async interpret(code, fileName, fileArguments) {
@@ -1922,8 +2046,6 @@ class FroggyScript3 {
                                     throw new FS3Error(
                                         "ArgumentError",
                                         `Expected argument [${idx + 1}] for method [${method.name}] of type [${expected.type.join(" or ")}], but found none`,
-                                        method.line,
-                                        method.col,
                                         method
                                     );
                                 }

@@ -1147,7 +1147,7 @@ function sendCommand(command, args, createEditableLineAfter){
                 break;
             }
 
-            let macroData = structuredClone(macro.data);
+            let macroData = structuredClone(FroggyFileSystem.getFile("D:/Macros/" + macro.getName()).getData());
             let totalFileArguments = 0;
 
             macroData.forEach(line => {

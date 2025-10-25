@@ -1,0 +1,16 @@
+var arrayVariable = ['apple', 'banana', 'cherry']
+var string = 'FroggyOS'
+var object = {
+   'string' = 'FroggyOS'
+   'number' = 1.16
+    string = 'wow!'
+   'array' = ['frog', 'dog', 'cat']
+   'arrayVariable' = arrayVariable
+   'nestedObject' = {
+       'key' = 'value'
+       'anotherKey' = 42>type
+   }
+}
+
+out $object.'number'
+out 'meow'

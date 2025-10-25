@@ -173,6 +173,7 @@ idk
 # 1.16
 ```
 ~ rewrote FroggyScript AGAIN
+    + Added objects :D
     - now called FroggyScript3
     - read the documentation
 ```

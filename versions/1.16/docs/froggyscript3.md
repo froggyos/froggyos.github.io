@@ -14,7 +14,7 @@ Hello, World!
 ```
 
 ### Types
-There are 3 main types in FroggyScript3: `string`, `number`, and `array`.
+There are 4 main types in FroggyScript3: `string`, `number`, `array`, and `object`.
 ```
 # string
 'Hello, World!'
@@ -28,9 +28,24 @@ There are 3 main types in FroggyScript3: `string`, `number`, and `array`.
 [1, 2, 3]
 ['h', 'e', 'l', 'l', 'o']
 [1, 'two', 3.0, "four", variable]
+
+# object
+{
+    name = 'FroggyScript3'
+    version = 1.16
+}
+```
+Objects can **only** be defined in variables. See more in the Variables section. You can access object properties with the `.` operator.
+```
+var myObject = {
+    'name' = 'FroggyScript3'
+    'version' = 1.16
+}
+
+out $myObject.'name'
 ```
 
-There are also three other types: `function_reference`, `condition_statement`, and `variable_reference`.
+There are also 4 other types: `function_reference`, `condition_statement`, `variable_reference`, and `object_reference`.
 ```
 # function_reference
 @myFunction
@@ -42,6 +57,10 @@ There are also three other types: `function_reference`, `condition_statement`, a
 
 # variable_reference
 $myVariable
+
+# object_reference
+out $myObject.'name'
+# note: $myObject is a variable_reference
 ```
 Variable references are used to reference a variable without resolving the variable itself. This is used to pass variables as arguments to keywords.
 ### Literals
@@ -107,12 +126,21 @@ There are a few default variables that exist in every FroggyScript3 program:
 ### Creation
 Variables are created with the `var` keyword and do not need a type to be specifically declared. Instead, the type is assigned based on the value given to the variable. This cannot be changed later.
 ```
-var [variable] = [string|number|array]
+var [variable] = [string|number|array|block]
 
 var myString = 'Hello, World!' # string
 var myNumber = 10              # number
 var myArray = [1, 2, 3]        # array
 ```
+To create an object variable, use object notation inside of the block:
+```
+var [variable] = {
+    'property1' = [string|number|array|block]
+    'property2' = [string|number|array|block]
+    ...
+}
+```
+Properties can only be strings. Values can be any type, including other objects.
 #### Constants
 You can create constant variables with the `cvar` keyword. These cannot be reassigned or deleted.
 ```
