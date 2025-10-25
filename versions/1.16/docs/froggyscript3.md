@@ -17,7 +17,7 @@ out 'Hello, World!'
 ```
 
 ### Types
-#### Primary Types
+#### Primary
 There are 4 main types in FroggyScript3: `string`, `number`, `array`, and `object`.
 ```
 # string
@@ -72,7 +72,7 @@ out $myObject.'nestedProperty'.'innerName'
 ```
 When a parameter can be an object, it will be specified in documentation as `object`, rather than `block`.
 
-#### Other Types
+#### Other
 There are also 4 other types: `function_reference`, `condition_statement`, `variable_reference`, and `object_reference`.
 ```
 # function_reference
@@ -96,26 +96,6 @@ Literals are non-variables with special use cases.
 ```
 in  # literal_in
  =  # literal_assignment
-```
-### Keyword Type Annotations
-Keywords can take only specific types as arguments. In documentation, this is how it is notated:
-```
-keyword [arg1_type] [arg2_type] ...
-
-# Example:
-out [string|number] # accepts either a string or number
-```
-If there is something that requires a variable, it is notated like so:
-```
-keyword [variable]
-
-# Example:
-set [variable] = [string|number|array]
-set myVar = 'Hello, World!'
-```
-If there is something that requires a variable reference, it is notated like so:
-```
-keyword [$variable]
 ```
 ### Blocks
 This is a block:
@@ -143,7 +123,26 @@ if :true: {
 ```
 ### User Interrupt
 A user interrupt can be triggered by pressing `Ctrl+C` while the program is running. This will immediately stop execution and raise a `RuntimeError`.
+### Keyword Type Annotations
+Keywords can take only specific types as arguments. In documentation, this is how it is notated:
+```
+keyword [arg1_type] [arg2_type] ...
 
+# Example:
+out [string|number] # accepts either a string or number
+```
+If there is something that requires a variable, it is notated like so:
+```
+keyword [variable]
+
+# Example:
+set [variable] = [string|number|array]
+set myVar = 'Hello, World!'
+```
+If there is something that requires a variable reference, it is notated like so:
+```
+keyword [$variable]
+```
 ## Variables
 ### Default Variables
 There are a few default variables that exist in every FroggyScript3 program:
@@ -179,7 +178,7 @@ cvar myConstant = "I am constant."
 free $myConstant  # AccessError
 set myConstant = "Try to change me."  # AccessError
 ```
-### Reassignment
+### Value Reassignment
 #### Setting a Variable to a New Value
 Variable values can be reassigned with the `set` keyword. The type will not be changed.
 ```
@@ -189,7 +188,7 @@ var myString = 'Hello, World!'    # string
 set $myString = 'Goodbye, World!' # Still a string
 set $myString = 10                # TypeError
 ```
-#### Setting an Index of an Array
+#### Setting the Index of an Array
 The `arrset` keyword sets the value at a specific index of an array variable. The type of the value being set does not have to match the type of the existing value at that index.
 ```
 arrset [$variable] [number] = [string|number|array]
@@ -238,6 +237,12 @@ free [$variable]
 var myString = 'Hello, World!'
 free $myString
 out myString  # ReferenceError
+```
+Some variables, such as constants, cannot be deleted.
+```
+cvar myConstant = "I am constant."
+free $myConstant  # AccessError
+free $true        # AccessError
 ```
 
 ## Output
