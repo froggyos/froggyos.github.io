@@ -1,0 +1,13 @@
+var a = 0
+var b = 1
+var temp = 0
+var times = ''
+
+ask $times 'How many Fibonacci numbers would you like to generate? '
+
+loop times>n {
+   out __index__>s + ": " + a
+   set $b = a>add(b)
+   set $a = temp
+   set $temp = b
+}

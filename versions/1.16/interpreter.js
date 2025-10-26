@@ -609,6 +609,7 @@ new Keyword("foreach", ["variable_reference", "block"], async (args, interpreter
         let el = array[i];
 
         interpreter.variables["__index__"].value = i;
+        interpreter.variables["__index__"].type = "number";
         interpreter.variables["__item__"].value = el.value;
         interpreter.variables["__item__"].type = el.type;
 
