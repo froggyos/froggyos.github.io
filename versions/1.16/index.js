@@ -1490,10 +1490,12 @@ function sendCommand(command, args, createEditableLineAfter){
                             }()
                         };
 
-                        createTerminalLine(String(token.value), "\u00A0", {translate: false, formatting: [formatting]});
+                        token.value = token.value.replaceAll(/(?<!\\)`n/g, '\n');
+
+                        createTerminalLine(String(token.value), ">", {translate: false, formatting: [formatting]});
                         
                     },
-                    errout: (err) => {;
+                    errout: (err) => {
                         createTerminalLine("\u00A0", config.programErrorText.replace("{{}}", err.type), {translate: false});
                         createTerminalLine("\u00A0", "", {translate: false});
                         createTerminalLine(err.message, "", {translate: false});

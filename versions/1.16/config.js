@@ -1291,12 +1291,7 @@ const FroggyFileSystem = new fs({
         //     "",
         //    "set $object.'string' = $object.'string' + ' is cool!'",
         //    "out $object",
-        "var fileName = ''",
-        "var arg1 = ''",
-        "filearg $fileName 0",
-        "filearg $arg1 1",
-        "out 'File Name: ' + fileName",
-        "out 'Argument 1: ' + arg1",
+        "out 'hello,`nworld!'"
         ] },
         { name: "snake", properties: {transparent: false, read: true, write: true, hidden: false }, data: [
             "import 'keyboard'",

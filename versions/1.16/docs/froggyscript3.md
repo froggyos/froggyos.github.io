@@ -253,7 +253,15 @@ out [string|number]
 
 out 'Hello, World!'
 ```
+type `\`n` to write a newline.
+```
+out 'Hello,`nWorld!'
 
+-----
+
+> Hello,
+  World!
+``` 
 ### Warnings
 The `warn` keyword outputs a value to the console as a warning.
 ```
