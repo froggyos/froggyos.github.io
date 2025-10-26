@@ -557,14 +557,18 @@ out fReturn
 ```
 
 ### Importing Modules
-The `import` keyword imports predefined modules that extend functionality of FroggyScript3. Modules can define new keywords, functions, and methods.
+The `import` keyword imports extra keywords and methods that extend functionality of FroggyScript3. Modules can define new keywords and methods.
 ```
 import [string]
 
-import 'objects'
+import 'keyboard'
 ```
+Current imports:
+- [keyboard](keyboard.md)
+- [math](math.md)
+
 ## Methods
-Methods are functions that are called on a value using the `>` operator. The value to the left of the `>` is called the `parent`. If the method has no arguments, parentheses can be omitted. If the method has arguments, parentheses are required. Methods can be chained together. Method parameters can be optional, which is denoted by `?`. In documentation, `=> return_type` indicates what type the method returns.
+Methods are functions that are called on a value using the `>` operator. The value to the left of the `>` is called the `parent`. If the method has no arguments, parentheses can be omitted. If the method has arguments, parentheses are required. Methods can be chained together. Method parameters can be optional, which is denoted by `?`. In documentation, `=> return_type` indicates what type the method returns. Descriptors can be added onto arguments to make their function clear.
 ```
 [parent_type]>[method_name]([arg1, arg2, ...]) => [return_type]
 ```
@@ -752,17 +756,16 @@ array>replaceAt(number, *) => array
 [1, 2, 3]>replaceAt(1, 20) # [1, 20, 3]
 ```
 #### push
-Adds one or more elements to the end of the array.
+Adds one element to the end of the array.
 ```
 array>push(*) => array
 
-[1, 2]>push(3)        # [1, 2, 3]
-[1, 2]>push(3, 4, 5)  # [1, 2, 3, 4, 5]
+[1, 2]>push(3) # [1, 2, 3]
 ```
 #### splice
 Removes elements from an array starting at a specified index. The first argument is the starting index (0-based). The second argument is the number of elements to remove (optional, defaults to removing all elements from the starting index to the end of the array). If the starting index is out of bounds or the delete count is negative, `RangeError` is raised.
 ```
-array>splice(number, number?) => array
+array>splice(startingIndex: number, deleteCount: number?) => array
 
 [1, 2, 3, 4, 5]>splice(1, 2) # [1, 4, 5]
 [1, 2, 3, 4, 5]>splice(2)    # [1, 2]
@@ -778,7 +781,7 @@ array>shift => array
 #### join
 Joins all elements of the array into a single string, with an optional separator.
 ```
-array>join([string? = ","]) => string
+array>join(string? = ",") => string
 
 [1, 2, 3]>join                # '1,2,3'
 [1, 2, 3]>join(", ")          # '1, 2, 3'

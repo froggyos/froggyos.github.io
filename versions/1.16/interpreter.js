@@ -81,19 +81,15 @@ class Keyword {
 
 const imports = {
     math: (interp) => {
-        if (interp.variables["math"]) {
-            throw new FS3Error("ReferenceError", `Variable [math] is already defined`, {line: -1, col: -1, value: "" });
-        }
-
         interp.variables["math"] = {
-            value: "Math Module",
-            type: "module_math",
+            value: "Math Import",
+            type: "import_math",
             mut: false,
             freeable: false
         }
 
 
-        new Method("random", ["module_math"], [{type: ["number"], optional: false}, {type: ["number"], optional: false}], (parent, args, interpreter) => {
+        new Method("random", ["import_math"], [{type: ["number"], optional: false}, {type: ["number"], optional: false}], (parent, args, interpreter) => {
             let min = args[0].value;
             let max = args[1].value;
             if(min >= max){
@@ -258,7 +254,7 @@ new Method('first', ['array'], [], (parent, args, interpreter) => {
 });
 
 
-new Method("push", ["array"], [{type: ["string", "number", "array"], optional: false}], (parent, args, interpreter) => {
+new Method("push", ["array"], [{type: ["string", "number", "array", "object"], optional: false}], (parent, args, interpreter) => {
     parent.value.push(args[0]);
     return parent;
 });
@@ -522,6 +518,22 @@ new Method("endsWith", ["string"], [{type: ["string"], optional: false}], (paren
     }
 });
 
+new Keyword("selfset", ["any"], (args, interpreter, line) => {
+    if(args[0].wasVariable === undefined){
+        throw new FS3Error("SyntaxError", `[selfset] can only be used with variables`, args[0]);
+    }
+    let variableName = args[0].wasVariable;
+    if(!interpreter.variables[variableName]){
+        throw new FS3Error("ReferenceError", `Variable [${variableName}] is not defined`, args[0]);
+    }
+    if(!interpreter.variables[variableName].mut){
+        throw new FS3Error("AccessError", `Variable [${variableName}] is immutable and cannot be changed`, args[0]);
+    }
+    if(interpreter.variables[variableName].type !== args[0].type){
+        throw new FS3Error("TypeError", `Cannot set variable [${variableName}] of type [${interpreter.variables[variableName].type}] to value of type [${args[0].type}]`, args[0]);
+    }
+    interpreter.variables[variableName].value = args[0].value;
+})
 
 new Keyword("clearterminal", [], (args, interpreter) => {
     document.getElementById('terminal').innerHTML = "";
@@ -1226,6 +1238,7 @@ class FroggyScript3 {
         ["variable", /[A-Za-z_][A-Za-z0-9_]*/],
         ["string_concat", / \+ /],
         ["object_indicator", /\./],
+        ["self_set", /^>\$/],
         ["function_reference", /@[A-Za-z_][A-Za-z0-9_]*/],
         ["variable_reference", /\$[A-Za-z_][A-Za-z0-9_]*/],
         ["string", /"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'/],
@@ -1556,6 +1569,7 @@ class FroggyScript3 {
                     }
                     right.type = this.variables[varName].type;
                     right.value = this.variables[varName].value;
+                    right.wasVariable = varName;
                 }
 
                 if(right.type !== "string" && right.type !== "number"){
@@ -1685,9 +1699,11 @@ class FroggyScript3 {
             line.forEach((t, idx) => {
                 if (t.type === "variable") {
                     const v = this.variables[t.value];
+                    const name = structuredClone(t.value);
                     if (v) {
                         line[idx].type = v.type;
                         line[idx].value = v.value;
+                        line[idx].wasVariable = name;
                     } else {
                         throw new FS3Error("ReferenceError", `Variable [${t.value}] is not defined`, t);
                     }
@@ -1698,10 +1714,11 @@ class FroggyScript3 {
                         if (Array.isArray(el) && el.length === 1) el = el[0];
                         if (el && el.type === "variable") {
                             const v = this.variables[el.value];
+                            const variableName = el.value;
                             if (!v) {
                                 throw new FS3Error("ReferenceError", `Variable [${el.value}] is not defined`, el);
                             }
-                            return { ...el, type: v.type, value: v.value };
+                            return { ...el, type: v.type, value: v.value, wasVariable: variableName };
                         }
                         return el;
                     });
@@ -2046,6 +2063,7 @@ class FroggyScript3 {
                         token
                     );
                 }
+                token.wasVariable = structuredClone(token.value);
                 token.type = variable.type;
                 token.value = variable.value;
             }
@@ -2060,7 +2078,7 @@ class FroggyScript3 {
                         resolved = resolved[0];
                     }
 
-                    // ⚡ NEW: if element still has methods, execute them too
+                    // if element still has methods, execute them too
                     if (resolved && resolved.methods && resolved.methods.length > 0) {
                         let executed = this.executeMethods([resolved]);
                         if (Array.isArray(executed) && executed.length === 1) {
@@ -2182,25 +2200,6 @@ class FroggyScript3 {
                 }
             }
         }
-
-
-        // if(line.some(t => t.type === "object_indicator")){
-        //     line = this.mergeObjectReferences(line);
-        //     for(let j = 0; j < line.length; j++){
-        //         let token = line[j];
-        //         if(token.type === "object_reference"){
-        //             let objectReference = structuredClone(token.value);
-        //             let resolved = this.resolveObjectReference(token.value, this.variables);
-        //             if(resolved === undefined){
-        //                 throw new FS3Error("ReferenceError", `Object reference [${token.value.join(".")}] is not defined`, token);
-        //             }
-        //             token.type = resolved.type;
-        //             token.value = resolved.value;
-        //             token.objectReference = objectReference;
-        //             token.methods = [];
-        //         }
-        //     }
-        // }
 
         tokens = this.handleConcatOperator(tokens);
 
