@@ -253,7 +253,7 @@ out [string|number]
 
 out 'Hello, World!'
 ```
-type `\`n` to write a newline.
+type `` `n `` to write a newline.
 ```
 out 'Hello,`nWorld!'
 
