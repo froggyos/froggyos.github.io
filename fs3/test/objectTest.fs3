@@ -13,5 +13,4 @@ var object = {
    }
 }
 
-set $object.'number' = 20
-out $object.'number'
+set object>type
