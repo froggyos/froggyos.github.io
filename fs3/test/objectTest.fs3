@@ -13,4 +13,4 @@ var object = {
    }
 }
 
-set object>type
+out object>keys>join
