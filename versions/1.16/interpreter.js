@@ -186,6 +186,23 @@ const imports = {
     }
 }
 
+new Method("keys", ["object"], [], (parent, args, interpreter) => {
+    let obj = parent.value;
+    let keys = Object.keys(obj);
+    let resultArray = keys.map(key => {
+        return {
+            type: "string",
+            value: key,
+            line: parent.line,
+            col: parent.col,
+            methods: []
+        }
+    });
+    parent.value = resultArray;
+    parent.type = "array";
+    return parent;
+});
+
 // {type: ['number'], optional: false}
 new Method("splice", ["array"], [{type: ['number'], optional: false}, {type: ['number'], optional: true}], (parent, args, interpreter) => {
     let start = args[0].value;

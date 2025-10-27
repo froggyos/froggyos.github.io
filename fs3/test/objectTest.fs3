@@ -13,4 +13,6 @@ var object = {
    }
 }
 
-out object>keys>join
+var arraya = [1,2,3]
+selfset arraya>push(4)
+out arraya>join

@@ -13,7 +13,7 @@ out 'Hello, World!'
 ### Comments
 ```
 # Comment!
-#Not a comment.
+#Also a comment.
 ```
 
 ### Types
@@ -34,9 +34,9 @@ There are 4 main types in FroggyScript3: `string`, `number`, `array`, and `objec
 [1, 'two', 3.0, "four", variable]
 
 # object
-{
-    name = 'FroggyScript3'
-    version = 1.16
+var variable = {
+    'name' = 'FroggyScript3'
+    'version' = 1.16
 }
 ```
 Objects can **only** be defined in variables. See more in the Variables section. You can access object properties with the `.` operator.
@@ -576,7 +576,7 @@ Methods are functions that are called on a value using the `>` operator. The val
 ```
 string>stringMethod(string? = "default") => string
 ```
-### Multi-type Methods
+### Multi-Type
 #### type
 Returns the type of the parent as a string.
 ```
@@ -586,7 +586,7 @@ Returns the type of the parent as a string.
 10>type        # 'number'
 [1, 2, 3]>type # 'array'
 ```
-### String Methods
+### String
 #### length
 Returns the number of characters in the string.
 ```
@@ -672,7 +672,7 @@ string>repeat(number) => string
 'Ha'>repeat(3) # 'HaHaHa'
 'Ha'>repeat(0) # ''
 ```
-### Number Methods
+### Number
 #### inc
 Increments the parent by 1.
 ```
@@ -732,7 +732,7 @@ number>toString => string
 
 123>toString # '123'
 ```
-### Array Methods
+### Array
 #### length
 Returns the number of elements in the array.
 ```
@@ -811,7 +811,20 @@ array>first => *
 [1, 2, 3]>first # 1
 []>first        # RangeError
 ```
-### Condition Statement Methods
+### Object
+#### keys
+Returns an array of the object's property names.
+```
+object>keys => array
+
+var myObject = {
+    'name' = 'FroggyScript3'
+    'version' = 1.16
+}
+
+myObject>keys # ['name', 'version']
+```
+### Condition Statement
 #### not
 Returns the opposite of the condition statement. `:1:` becomes `:0:` and vice versa.
 ```
