@@ -1,4 +1,13 @@
 import 'graphics'
-createscreen 70 70
-createscreen 70 70
-createscreen 70 70
+
+createscreen 50 50
+var rect = rectConstructor>new(10, 10, 10, 10)
+
+render
+
+selfset rect>fill('red')
+selfset rect>move(20, 20)
+
+wait 2000
+
+render
