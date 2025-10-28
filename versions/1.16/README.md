@@ -137,6 +137,9 @@ The all instances of the following characters (or character sequences) will be r
 * second
     * `s` - second (00, 01)
     * `su` - second unpadded (0, 1)
+* millisecond
+    * `l` - millisecond (000, 001)
+    * `lu` - millisecond unpadded (0, 1)
 * `a` - AM/PM
 * `z` - timezone
 
