@@ -334,6 +334,9 @@ function parseTimeFormat(text){
     const second = String(now.getSeconds()).padStart(2, '0');
     const secondUnpadded = String(now.getSeconds());
 
+    const millisecond = String(now.getMilliseconds()).padStart(3, '0');
+    const millisecondUnpadded = String(now.getMilliseconds());
+
     const ampm = now.getHours() >= 12 ? 'PM' : 'AM';
 
     const timezone = new Date().toLocaleString(["en-US"], {timeZoneName: "short"}).split(" ").pop();
@@ -380,6 +383,9 @@ function parseTimeFormat(text){
 
         { char: 's', value: second },
         { char: 'su', value: secondUnpadded },
+
+        { char: 'l', value: millisecond },
+        { char: 'lu', value: millisecondUnpadded },
 
         { char: 'a', value: ampm },
 
