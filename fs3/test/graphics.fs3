@@ -1,13 +1,18 @@
 import 'graphics'
 
 createscreen 50 50
-var rect = rectConstructor>new(10, 10, 10, 10)
-
+var rect = rectConstructor>new("rect", 2, 2, 5, 5)
+wait 1000
 render
 
-selfset rect>fill('red')
+selfset rect>fill('#ff0000')
+wait 1000
+render
+
 selfset rect>move(20, 20)
-
-wait 2000
-
+wait 1000
 render
+
+selfset rect>width(20)
+render
+
