@@ -1,3 +1,7 @@
+/**
+ * @namespace FS3
+ */
+
 class FS3Error {
     constructor(type, message, token){
         this.type = type;
@@ -49,37 +53,142 @@ class ContinueLoop {
     }
 }
 
-class Method {
+class FS3Method {
     static table = {};
+    /**
+     * 
+     * @param {string} name 
+     * @param {Array<{type: string, optional: boolean}>} parentTypes 
+     * @param {Token[]} args the argument scheme for this method
+     * @param {(parent: any, args: any[], interpreter: FroggyScript3) => any} fn
+     * @param {boolean} defaultMethod 
+     */
     constructor(name, parentTypes, args, fn, defaultMethod = true){
         this.parentTypes = parentTypes;
         this.args = args;
         this.fn = fn;
         this.defaultMethod = defaultMethod;
 
-        Method.table[name] = this;
+        FS3Method.table[name] = this;
     }
 
     static get(name){
-        return Method.table[name] || null;
+        return FS3Method.table[name] || null;
     }
 }
 
-class Keyword {
+class FS3Keyword {
     static table = {};
+    /**
+     * 
+     * @param {string} name
+     * @param {Array<string>} scheme
+    * @param {(args: any[], interpreter: FroggyScript3, line: any[]) => any} fn - 
+     * The function executed when this keyword is called.
+     * Receives:
+     *  - `args`: the arguments passed to the keyword,
+     *  - `interpreter`: the interpreter instance executing the keyword,
+     *  - `line`: the full line of tokens where the keyword was called.
+     * @param {boolean} defaultKeyword
+     */
     constructor(name, scheme, fn, defaultKeyword = true){
         this.scheme = scheme;
         this.fn = fn;
-        Keyword.table[name] = this;
+        FS3Keyword.table[name] = this;
         this.defaultKeyword = defaultKeyword;
     }
 
     static get(name){
-        return Keyword.table[name] || null;
+        return FS3Keyword.table[name] || null;
     }
 }
 
 const imports = {
+    graphics: (interp) => {
+        interp.shared.graphics = {
+            maxWidth: 79,
+            maxHeight: 58,
+            frontStack: [],
+            backStack: [],
+            objects: {},
+            initialized: false,
+            width: null,
+            height: null,
+            bg: "c15",
+            fg: "c00"
+        }
+        interp.variables["rectConstructor"] = {
+            value: "Rect Constructor",
+            type: "rect_constructor",
+            mut: false,
+            freeable: false
+        }
+
+        new FS3Keyword("initgraphics", ["number", "number"], (args, interpreter, line) => {
+            if(interpreter.shared.graphics.initialized){
+                throw new FS3Error("RuntimeError", "Graphics have already been initialized", args[0]);
+            }
+
+            let width = args[0].value;
+            let height = args[1].value;
+
+            if(width <= 0 || width > interpreter.shared.graphics.maxWidth){
+                throw new FS3Error("RangeError", `Graphics width [${width}] must be between 1 and ${interpreter.shared.graphics.maxWidth}`, args[0]);
+            }
+            if(height <= 0 || height > interpreter.shared.graphics.maxHeight){
+                throw new FS3Error("RangeError", `Graphics height [${height}] must be between 1 and ${interpreter.shared.graphics.maxHeight}`, args[1]);
+            }
+            interpreter.shared.graphics.width = width;
+            interpreter.shared.graphics.height = height;
+            interpreter.shared.graphics.initialized = true;
+
+            for(let i = 0; i < height; i++){
+                let rowHtml = '';
+                for(let j = 0; j < width; j++){
+                    let style = `"background-color: var(--${interpreter.shared.graphics.bg}); color: var(--${interpreter.shared.graphics.fg})"`;
+                    rowHtml += `<span id="screen-${interpreter.fileArguments[0]}-${i}-${j}" style=${style}>\u00A0</span>`;
+                }
+                let lineContainer = document.createElement('div');
+                let terminalLine = document.createElement('div');
+                lineContainer.classList.add('line-container');
+                terminalLine.innerHTML = rowHtml;
+                lineContainer.appendChild(terminalLine);
+                terminal.appendChild(lineContainer);
+            }
+        }, false);
+
+        new FS3Method("new", ["rect_constructor"], [
+            {type: ["string"], optional: false}, // id
+            {type: ["number"], optional: false}, // x
+            {type: ["number"], optional: false}, // y
+            {type: ["number"], optional: false}, // width
+            {type: ["number"], optional: false} // height
+        ], (parent, args, interpreter) => {
+            let id = args[0].value;
+            let x = args[1].value;
+            let y = args[2].value;
+            let width = args[3].value;
+            let height = args[4].value;
+
+            if(interpreter.shared.graphics.objects[id]){
+                throw new FS3Error("ReferenceError", `Graphics object with id [${id}] already exists`, args[0]);
+            }
+
+            if(interpreter.shared.graphics.frontStack.includes(id) || interpreter.shared.graphics.backStack.includes(id)){
+                throw new FS3Error("ReferenceError", `Graphics object with id [${id}] already exists in rendering stack`, args[0]);
+            }
+
+            interpreter.shared.graphics.objects[id] = {
+                type: "rect",
+                x: x,
+                y: y,
+                width: width,
+                height: height,
+                fill: "transparent",
+                border: "#000000"
+            };
+        }, false);
+    },
     math: (interp) => {
         interp.variables["math"] = {
             value: "Math Import",
@@ -89,7 +198,7 @@ const imports = {
         }
 
 
-        new Method("random", ["import_math"], [{type: ["number"], optional: false}, {type: ["number"], optional: false}], (parent, args, interpreter) => {
+        new FS3Method("random", ["import_math"], [{type: ["number"], optional: false}, {type: ["number"], optional: false}], (parent, args, interpreter) => {
             let min = args[0].value;
             let max = args[1].value;
             if(min >= max){
@@ -106,7 +215,7 @@ const imports = {
         }, false);
     },
     keyboard: (interp) => {
-        new Keyword("anykeydown", ["block"], (args, interpreter) => {
+        new FS3Keyword("anykeydown", ["block"], (args, interpreter) => {
             let block = args[0].body;
             async function handler(e) {
                 interpreter.variables["__key__"] = { value: "", type: "string", mut: true, freeable: false };
@@ -131,7 +240,7 @@ const imports = {
             interpreter.keyListeners.push({ type: "keydown", handler });
         }, false);
 
-        new Keyword("keydown", ["string", "block"], (args, interpreter) => {
+        new FS3Keyword("keydown", ["string", "block"], (args, interpreter) => {
             let key = args[0].value.toLowerCase();
             let block = args[1].body;
 
@@ -158,7 +267,7 @@ const imports = {
             interpreter.keyListeners.push({ type: "keydown", handler });
         }, false);
 
-        new Keyword("keyup", ["string", "block"], (args, interpreter) => {
+        new FS3Keyword("keyup", ["string", "block"], (args, interpreter) => {
             let key = args[0].value.toLowerCase();
             let block = args[1].body;
 
@@ -186,7 +295,7 @@ const imports = {
     }
 }
 
-new Method("keys", ["object"], [], (parent, args, interpreter) => {
+new FS3Method("keys", ["object"], [], (parent, args, interpreter) => {
     let obj = parent.value;
     let keys = Object.keys(obj);
     let resultArray = keys.map(key => {
@@ -204,7 +313,7 @@ new Method("keys", ["object"], [], (parent, args, interpreter) => {
 });
 
 // {type: ['number'], optional: false}
-new Method("splice", ["array"], [{type: ['number'], optional: false}, {type: ['number'], optional: true}], (parent, args, interpreter) => {
+new FS3Method("splice", ["array"], [{type: ['number'], optional: false}, {type: ['number'], optional: true}], (parent, args, interpreter) => {
     let start = args[0].value;
     let deleteCount = args[1] ? args[1].value : parent.value.length - start;
     if(start < 0 || start >= parent.value.length){
@@ -219,7 +328,7 @@ new Method("splice", ["array"], [{type: ['number'], optional: false}, {type: ['n
     return parent;
 });
 
-new Method("shift", ["array"], [], (parent, args, interpreter) => {
+new FS3Method("shift", ["array"], [], (parent, args, interpreter) => {
     if(parent.value.length === 0){
         throw new FS3Error("RangeError", `Cannot shift from an empty array`, parent);
     }
@@ -233,7 +342,7 @@ new Method("shift", ["array"], [], (parent, args, interpreter) => {
 });
 
 
-new Method('replaceAt', ['string', 'array'], [{type: ['number'], optional: false}, {type: ['string'], optional: false}], (parent, args, interpreter) => {
+new FS3Method('replaceAt', ['string', 'array'], [{type: ['number'], optional: false}, {type: ['string'], optional: false}], (parent, args, interpreter) => {
     if(parent.type === "array"){
         let index = args[0].value;
         let replacement = args[1];
@@ -255,7 +364,7 @@ new Method('replaceAt', ['string', 'array'], [{type: ['number'], optional: false
 
 
 
-new Method('last', ['array'], [], (parent, args, interpreter) => {
+new FS3Method('last', ['array'], [], (parent, args, interpreter) => {
     if(parent.value.length === 0){
         throw new FS3Error("RangeError", `Cannot get last element of an empty array`, parent);
     }
@@ -263,7 +372,7 @@ new Method('last', ['array'], [], (parent, args, interpreter) => {
 });
 
 
-new Method('first', ['array'], [], (parent, args, interpreter) => {
+new FS3Method('first', ['array'], [], (parent, args, interpreter) => {
     if(parent.value.length === 0){
         throw new FS3Error("RangeError", `Cannot get first element of an empty array`, parent);
     }
@@ -271,17 +380,17 @@ new Method('first', ['array'], [], (parent, args, interpreter) => {
 });
 
 
-new Method("push", ["array"], [{type: ["string", "number", "array", "object"], optional: false}], (parent, args, interpreter) => {
+new FS3Method("push", ["array"], [{type: ["string", "number", "array", "object"], optional: false}], (parent, args, interpreter) => {
     parent.value.push(args[0]);
     return parent;
 });
 
-new Method('concat', ['string'], [{type: ['string'], optional: false}], (parent, args, interpreter) => {
+new FS3Method('concat', ['string'], [{type: ['string'], optional: false}], (parent, args, interpreter) => {
     parent.value = parent.value + args[0].value;
     return parent;
 });
 
-new Method("eq", ["string"], [{type: ["string"], optional: false}], (parent, args, interpreter) => {
+new FS3Method("eq", ["string"], [{type: ["string"], optional: false}], (parent, args, interpreter) => {
     let parentValue = parent.value;
     let argValue = args[0].value;
 
@@ -294,7 +403,7 @@ new Method("eq", ["string"], [{type: ["string"], optional: false}], (parent, arg
     }
 });
 
-new Method("neq", ["string"], [{type: ["string"], optional: false}], (parent, args, interpreter) => {
+new FS3Method("neq", ["string"], [{type: ["string"], optional: false}], (parent, args, interpreter) => {
     let parentValue = parent.value;
     let argValue = args[0].value;
 
@@ -307,7 +416,7 @@ new Method("neq", ["string"], [{type: ["string"], optional: false}], (parent, ar
     }
 });
 
-new Method("type", ["string", "number", "array", "object"], [], (parent, args, interpreter) => {
+new FS3Method("type", ["string", "number", "array", "object"], [], (parent, args, interpreter) => {
     let type = structuredClone(parent.type);
     
     parent.value = type;
@@ -316,38 +425,38 @@ new Method("type", ["string", "number", "array", "object"], [], (parent, args, i
     return parent;
 });
 
-new Method("length", ["string", "array"], [], (parent, args, interpreter) => {
+new FS3Method("length", ["string", "array"], [], (parent, args, interpreter) => {
     parent.value = parent.value.length;
     parent.type = "number";
     return parent;
 });
 
-new Method("inc", ["number"], [], (parent, args, interpreter) => {
+new FS3Method("inc", ["number"], [], (parent, args, interpreter) => {
     parent.value = parent.value + 1;
     return parent;
 });
 
-new Method("dec", ["number"], [], (parent, args, interpreter) => {
+new FS3Method("dec", ["number"], [], (parent, args, interpreter) => {
     parent.value = parent.value - 1;
     return parent;
 });
 
-new Method("add", ["number"], [{type: ["number"], optional: false}], (parent, args, interpreter) => {
+new FS3Method("add", ["number"], [{type: ["number"], optional: false}], (parent, args, interpreter) => {
     parent.value = parent.value + args[0].value;
     return parent;
 });
 
-new Method("sub", ["number"], [{type: ["number"], optional: false}], (parent, args, interpreter) => {
+new FS3Method("sub", ["number"], [{type: ["number"], optional: false}], (parent, args, interpreter) => {
     parent.value = parent.value - args[0].value;
     return parent;
 });
 
-new Method("mul", ["number"], [{type: ["number"], optional: false}], (parent, args, interpreter) => {
+new FS3Method("mul", ["number"], [{type: ["number"], optional: false}], (parent, args, interpreter) => {
     parent.value = parent.value * args[0].value;
     return parent;
 });
 
-new Method("div", ["number"], [{type: ["number"], optional: false}], (parent, args, interpreter) => {
+new FS3Method("div", ["number"], [{type: ["number"], optional: false}], (parent, args, interpreter) => {
     if(args[0].value === 0){
         throw new FS3Error("MathError", "Division by zero is not permitted", args[0]);
     }
@@ -355,7 +464,7 @@ new Method("div", ["number"], [{type: ["number"], optional: false}], (parent, ar
     return parent;
 });
 
-new Method("mod", ["number"], [{type: ["number"], optional: false}], (parent, args, interpreter) => {
+new FS3Method("mod", ["number"], [{type: ["number"], optional: false}], (parent, args, interpreter) => {
     if(args[0].value === 0){
         throw new FS3Error("MathError", "Modulo by zero is not permitted", args[0]);
     }
@@ -363,7 +472,7 @@ new Method("mod", ["number"], [{type: ["number"], optional: false}], (parent, ar
     return parent;
 });
 
-new Method("index", ["array", "string"], [{type: ["number"], optional: false}], (parent, args, interpreter) => {
+new FS3Method("index", ["array", "string"], [{type: ["number"], optional: false}], (parent, args, interpreter) => {
     if(parent.type === "array"){
         let index = args[0].value;
         if(index < 0 || index >= parent.value.length){
@@ -388,7 +497,7 @@ new Method("index", ["array", "string"], [{type: ["number"], optional: false}], 
     }
 });
 
-new Method("join", ["array"], [{type: ["string"], optional: true}], (parent, args, interpreter) => {
+new FS3Method("join", ["array"], [{type: ["string"], optional: true}], (parent, args, interpreter) => {
     let separator = args[0] ? args[0].value : ",";
 
     parent.value = parent.value.map(el => {
@@ -399,14 +508,14 @@ new Method("join", ["array"], [{type: ["string"], optional: true}], (parent, arg
     return parent;
 });
 
-new Method("not", ["condition_statement"], [], (parent, args, interpreter) => {
+new FS3Method("not", ["condition_statement"], [], (parent, args, interpreter) => {
     let condValue = parent.value;
     condValue = interpreter.evaluateMathExpression(condValue);
     parent.value = `:${condValue === 1 ? 0 : 1}:`;
     return parent;
 });
 
-new Method("toNumber", ["string", "condition_statement"], [], (parent, args, interpreter) => {
+new FS3Method("toNumber", ["string", "condition_statement"], [], (parent, args, interpreter) => {
     if(parent.type == "string"){
         let num = Number(parent.value);
         if(isNaN(num)){
@@ -424,7 +533,7 @@ new Method("toNumber", ["string", "condition_statement"], [], (parent, args, int
     }
 });
 
-new Method("n", ["string", "condition_statement"], [], (parent, args, interpreter) => {
+new FS3Method("n", ["string", "condition_statement"], [], (parent, args, interpreter) => {
     if(parent.type == "string"){
         let num = Number(parent.value);
         if(isNaN(num)){
@@ -442,7 +551,7 @@ new Method("n", ["string", "condition_statement"], [], (parent, args, interprete
     }
 });
 
-new Method("toString", ["number", "condition_statement"], [], (parent, args, interpreter) => {
+new FS3Method("toString", ["number", "condition_statement"], [], (parent, args, interpreter) => {
     if(parent.type == "number"){
         parent.value = String(parent.value);
         parent.type = "string";
@@ -454,7 +563,7 @@ new Method("toString", ["number", "condition_statement"], [], (parent, args, int
     }
 });
 
-new Method("s", ["number"], [], (parent, args, interpreter) => {
+new FS3Method("s", ["number"], [], (parent, args, interpreter) => {
     if(parent.type == "number"){
         parent.value = String(parent.value);
         parent.type = "string";
@@ -466,7 +575,7 @@ new Method("s", ["number"], [], (parent, args, interpreter) => {
     }
 });
 
-new Method("wrap", ["string"], [{type: ["string"], optional: true}, {type: ["string"], optional: true}], (parent, args, interpreter) => {
+new FS3Method("wrap", ["string"], [{type: ["string"], optional: true}, {type: ["string"], optional: true}], (parent, args, interpreter) => {
     let left = '"';
     let right = '"';
 
@@ -483,7 +592,7 @@ new Method("wrap", ["string"], [{type: ["string"], optional: true}, {type: ["str
     return parent;
 });
 
-new Method("repeat", ["string"], [{type: ["number"], optional: false}], (parent, args, interpreter) => {
+new FS3Method("repeat", ["string"], [{type: ["number"], optional: false}], (parent, args, interpreter) => {
     let times = args[0].value;
     if(times < 0){
         throw new FS3Error("RangeError", `Cannot repeat a string a negative number of times`, args[0]);
@@ -492,7 +601,7 @@ new Method("repeat", ["string"], [{type: ["number"], optional: false}], (parent,
     return parent;
 });
 
-new Method("indexOf", ["array"], [{type: ["string", "number", "array"], optional: false}], (parent, args, interpreter) => {
+new FS3Method("indexOf", ["array"], [{type: ["string", "number", "array"], optional: false}], (parent, args, interpreter) => {
     let searchValue = args[0];
     let index = -1;
     parent.value.forEach((el, i) => {
@@ -511,7 +620,7 @@ new Method("indexOf", ["array"], [{type: ["string", "number", "array"], optional
     }
 });
 
-new Method("startsWith", ["string"], [{type: ["string"], optional: false}], (parent, args, interpreter) => {
+new FS3Method("startsWith", ["string"], [{type: ["string"], optional: false}], (parent, args, interpreter) => {
     let parentValue = parent.value;
     let argValue = args[0].value;
     return {
@@ -523,7 +632,7 @@ new Method("startsWith", ["string"], [{type: ["string"], optional: false}], (par
     }
 });
 
-new Method("endsWith", ["string"], [{type: ["string"], optional: false}], (parent, args, interpreter) => {
+new FS3Method("endsWith", ["string"], [{type: ["string"], optional: false}], (parent, args, interpreter) => {
     let parentValue = parent.value;
     let argValue = args[0].value;
     return {
@@ -535,7 +644,7 @@ new Method("endsWith", ["string"], [{type: ["string"], optional: false}], (paren
     }
 });
 
-new Keyword("selfset", ["any"], (args, interpreter, line) => {
+new FS3Keyword("selfset", ["any"], (args, interpreter, line) => {
     if(args[0].wasVariable === undefined){
         throw new FS3Error("SyntaxError", `[selfset] can only be used with variables`, args[0]);
     }
@@ -552,11 +661,11 @@ new Keyword("selfset", ["any"], (args, interpreter, line) => {
     interpreter.variables[variableName].value = args[0].value;
 })
 
-new Keyword("clearterminal", [], (args, interpreter) => {
+new FS3Keyword("clearterminal", [], (args, interpreter) => {
     document.getElementById('terminal').innerHTML = "";
 });
 
-new Keyword("import", ["string"], (args, interpreter) => {
+new FS3Keyword("import", ["string"], (args, interpreter) => {
     let moduleName = args[0].value;
     if(!imports[moduleName]){
         throw new FS3Error("ReferenceError", `Import [${moduleName}] does not exist`, args[0]);
@@ -564,27 +673,27 @@ new Keyword("import", ["string"], (args, interpreter) => {
     imports[moduleName](interpreter);
 });
 
-// new Keyword("do", [], (args, interpreter, line) => {
+// new FS3Keyword("do", [], (args, interpreter, line) => {
 //     console.log(line)
 // });
 
-new Keyword("skip", [], (args, interpreter, line) => {
+new FS3Keyword("skip", [], (args, interpreter, line) => {
     throw new SkipBlock(line[0].line, line[0].col);
 });
 
-new Keyword("break", [], (args, interpreter, line) => {
+new FS3Keyword("break", [], (args, interpreter, line) => {
     throw new BreakLoop(line[0].line, line[0].col);
 });
 
-new Keyword("exit", [], (args, interpreter, line) => {
+new FS3Keyword("exit", [], (args, interpreter, line) => {
     throw new ExitFunction(line[0].line, line[0].col);
 });
 
-new Keyword("continue", [], (args, interpreter, line) => {
+new FS3Keyword("continue", [], (args, interpreter, line) => {
     throw new ContinueLoop(line[0].line, line[0].col);
 });
 
-new Keyword("arrset", ["variable_reference", "number", "literal_assignment", "string|number|array"], (args, interpreter) => {
+new FS3Keyword("arrset", ["variable_reference", "number", "literal_assignment", "string|number|array"], (args, interpreter) => {
     let variableName = args[0].value.slice(1);
     let index = args[1].value;
     let newValue = args[3];
@@ -614,7 +723,7 @@ new Keyword("arrset", ["variable_reference", "number", "literal_assignment", "st
     }
 });
 
-new Keyword("foreach", ["variable_reference", "block"], async (args, interpreter) => {
+new FS3Keyword("foreach", ["variable_reference", "block"], async (args, interpreter) => {
     let targetArrayName = args[0].value.slice(1);
 
     let block = args[1].body;
@@ -661,7 +770,7 @@ new Keyword("foreach", ["variable_reference", "block"], async (args, interpreter
     delete interpreter.variables["__index__"];
 });
 
-new Keyword("filearg", ["variable_reference", "number"], (args, interpreter) => {
+new FS3Keyword("filearg", ["variable_reference", "number"], (args, interpreter) => {
     let variableName = args[0].value.slice(1);
     let argIndex = args[1].value;
     let argValue = interpreter.fileArguments[argIndex];
@@ -687,7 +796,7 @@ new Keyword("filearg", ["variable_reference", "number"], (args, interpreter) => 
     interpreter.variables[variableName].value = argValue;
 });
 
-new Keyword("set", ["variable_reference|object_reference", "literal_assignment", "string|number|array|object_reference"], (args, interpreter) => {
+new FS3Keyword("set", ["variable_reference|object_reference", "literal_assignment", "string|number|array|object_reference"], (args, interpreter) => {
     if(args[0].type == "variable_reference"){
         let variableName = args[0].value.slice(1);
         let variableValue = args[2].value;
@@ -748,39 +857,39 @@ new Keyword("set", ["variable_reference|object_reference", "literal_assignment",
 });
 
 // ["string", "string|number", "any?"]
-new Keyword("out", ["string|number"], (args, interpreter) => {
+new FS3Keyword("out", ["string|number"], (args, interpreter) => {
     interpreter.out(args[0]);
 });
 
-new Keyword("warn", ["string"], (args, interpreter) => {
+new FS3Keyword("warn", ["string"], (args, interpreter) => {
     interpreter.smallwarnout(args[0].value);
 });
 
-new Keyword("error", ["string"], (args, interpreter) => {
+new FS3Keyword("error", ["string"], (args, interpreter) => {
     interpreter.smallerrout(args[0].value);
 });
 
-new Keyword("longwarn", ["string", "string"], (args, interpreter) => {
+new FS3Keyword("longwarn", ["string", "string"], (args, interpreter) => {
     let warningName = args[0].value;
     let warningMessage = args[1].value;
     interpreter.warnout(new FS3Warn(warningName, warningMessage, args[0].line, args[0].col));
 });
 
-new Keyword("longerr", ["string", "string"], (args, interpreter) => {
+new FS3Keyword("longerr", ["string", "string"], (args, interpreter) => {
     let errorName = args[0].value; 
     let errorMessage = args[1].value;
     interpreter.errout(new FS3Error(errorName, errorMessage, args[1].line, args[1].col, args[1]));
 });
 
-new Keyword("kill", [], (args, interpreter, line) => {
+new FS3Keyword("kill", [], (args, interpreter, line) => {
     throw new FS3Error("RuntimeError", "Program terminated with [kill] keyword", line[0].line, line[0].col, args);
 });
 
-new Keyword("quietkill", [], (args, interpreter) => {
+new FS3Keyword("quietkill", [], (args, interpreter) => {
     throw new FS3Error("quietKill", "", -1, -1, args);
 });
 
-new Keyword("func", ["function_reference", "block"], (args, interpreter) => {
+new FS3Keyword("func", ["function_reference", "block"], (args, interpreter) => {
     let functionName = args[0].value;
     let functionBody = args[1].body;
 
@@ -790,7 +899,7 @@ new Keyword("func", ["function_reference", "block"], (args, interpreter) => {
     interpreter.functions[functionName] = functionBody;
 })
 
-new Keyword("pfunc", ["function_reference", "array", "block"], (args, interpreter) => {
+new FS3Keyword("pfunc", ["function_reference", "array", "block"], (args, interpreter) => {
     let functionName = args[0].value;
     let functionParams = args[1].value.flat();
     let functionBody = args[2].body;
@@ -828,7 +937,7 @@ new Keyword("pfunc", ["function_reference", "array", "block"], (args, interprete
     };
 });
 
-new Keyword("pcall", ["function_reference", "array"], async (args, interpreter) => {
+new FS3Keyword("pcall", ["function_reference", "array"], async (args, interpreter) => {
     let functionName = args[0].value;
     let functionArgs = args[1].value;
     
@@ -878,7 +987,7 @@ new Keyword("pcall", ["function_reference", "array"], async (args, interpreter) 
     
 });
 
-new Keyword("wait", ["number"], async (args, interpreter) => {
+new FS3Keyword("wait", ["number"], async (args, interpreter) => {
     let duration = args[0].value;
 
     if(duration < 0){
@@ -911,7 +1020,7 @@ new Keyword("wait", ["number"], async (args, interpreter) => {
     });
 });
 
-new Keyword("call", ["function_reference"], async (args, interpreter) => {
+new FS3Keyword("call", ["function_reference"], async (args, interpreter) => {
     let functionName = args[0].value;
     let functionBody = interpreter.functions[functionName];
 
@@ -930,7 +1039,7 @@ new Keyword("call", ["function_reference"], async (args, interpreter) => {
     }
 });
 
-new Keyword("cvar", ["variable_reference", "literal_assignment", "string|number|array|block"], (args, interpreter) => {
+new FS3Keyword("cvar", ["variable_reference", "literal_assignment", "string|number|array|block"], (args, interpreter) => {
     let name = args[0].value;
     let value = args[2].value;
     let type = args[2].type;
@@ -958,7 +1067,7 @@ new Keyword("cvar", ["variable_reference", "literal_assignment", "string|number|
     }
 })
 
-new Keyword("var", ["variable_reference", "literal_assignment", "string|number|array|block"], (args, interpreter) => {
+new FS3Keyword("var", ["variable_reference", "literal_assignment", "string|number|array|block"], (args, interpreter) => {
     let name = args[0].value;
     let value = args[2].value;
     let type = args[2].type;
@@ -986,7 +1095,7 @@ new Keyword("var", ["variable_reference", "literal_assignment", "string|number|a
     }
 })
 
-new Keyword("prompt", ["variable_reference", "number", "array"], (args, interpreter) => {
+new FS3Keyword("prompt", ["variable_reference", "number", "array"], (args, interpreter) => {
     let variable = args[0].value.slice(1);
     let selectedIndex = args[1].value;
     let options = args[2].value.map(o => o.value);
@@ -1086,7 +1195,7 @@ new Keyword("prompt", ["variable_reference", "number", "array"], (args, interpre
 });
 
 // variable name, input type (string or number)
-new Keyword("ask", ["variable_reference", "string"], async (args, interpreter) => {
+new FS3Keyword("ask", ["variable_reference", "string"], async (args, interpreter) => {
     let variableName = args[0].value.slice(1);
     let prefix = args[1].value;
 
@@ -1161,7 +1270,7 @@ new Keyword("ask", ["variable_reference", "string"], async (args, interpreter) =
     });
 });
 
-new Keyword("free", ["variable_reference"], (args, interpreter) => {
+new FS3Keyword("free", ["variable_reference"], (args, interpreter) => {
     let name = args[0].value.slice(1);
     let variable = interpreter.variables[name];
     if(!variable){
@@ -1176,13 +1285,13 @@ new Keyword("free", ["variable_reference"], (args, interpreter) => {
     delete interpreter.variables[name];
 });
 
-new Keyword("return", ["string|number|array"], (args, interpreter) => {
+new FS3Keyword("return", ["string|number|array"], (args, interpreter) => {
     interpreter.variables["fReturn"].value = args[0].value;
     interpreter.variables["fReturn"].type = args[0].type;
 });
 
 
-new Keyword("if", ["condition_statement", "block"], async (args, interpreter) => {
+new FS3Keyword("if", ["condition_statement", "block"], async (args, interpreter) => {
     let conditionResult = interpreter.evaluateMathExpression(args[0].value)
 
     if(conditionResult){
@@ -1193,14 +1302,14 @@ new Keyword("if", ["condition_statement", "block"], async (args, interpreter) =>
     }
 });
 
-new Keyword("else", ["block"], async (args, interpreter) => {
+new FS3Keyword("else", ["block"], async (args, interpreter) => {
     if(!interpreter.lastIfExecuted){
         await interpreter.executeBlock(args[0].body);
     }
     interpreter.lastIfExecuted = false;
 });
 
-new Keyword("loop", ["number|condition_statement", "block"], async (args, interpreter) => {
+new FS3Keyword("loop", ["number|condition_statement", "block"], async (args, interpreter) => {
     let cond = args[0];
     let block = args[1].body;
 
@@ -1305,6 +1414,7 @@ class FroggyScript3 {
         this._onInterrupt = null;
         this.promptCount = 0;
         this.keyListeners = [];
+        this.shared = {};
 
         function interruptHandler(e) {
             if (e.key === "c" && (e.ctrlKey || e.metaKey)) {
@@ -1627,21 +1737,21 @@ class FroggyScript3 {
         for(let imp in imports){
             imports[imp]();
         }
-        return Object.keys(Keyword.table).join("|");
+        return Object.keys(FS3Keyword.table).join("|");
     }
 
     async _process(code, fileName, fileArguments, executeKeywords = false) {
         this.cleanupKeyListeners();
         this._interrupt = false;
 
-        for (let method in Method.table) {
-            let def = Method.table[method];
-            if (!def.defaultMethod) delete Method.table[method];
+        for (let method in FS3Method.table) {
+            let def = FS3Method.table[method];
+            if (!def.defaultMethod) delete FS3Method.table[method];
         }
 
-        for (let keyword in Keyword.table) {
-            let def = Keyword.table[keyword];
-            if (!def.defaultKeyword) delete Keyword.table[keyword];
+        for (let keyword in FS3Keyword.table) {
+            let def = FS3Keyword.table[keyword];
+            if (!def.defaultKeyword) delete FS3Keyword.table[keyword];
         }
 
         this.fileArguments = [fileName, ...fileArguments];
@@ -1902,7 +2012,7 @@ class FroggyScript3 {
 
             const lineArgs = executedMethodTokens.slice(1);
 
-            const keywordDef = Keyword.get(keyword);
+            const keywordDef = FS3Keyword.get(keyword);
 
             if (!keywordDef) {
                 throw new FS3Error(
@@ -2113,7 +2223,7 @@ class FroggyScript3 {
             if (token.methods && token.methods.length > 0) {
                 let methodIndex = 0;
                 for (const method of token.methods) {
-                    const def = Method.get(method.name);
+                    const def = FS3Method.get(method.name);
                     if (!def) {
                         throw new FS3Error(
                             "ReferenceError",
@@ -2229,7 +2339,7 @@ class FroggyScript3 {
             const tokensArray = Array.isArray(lineTokens) ? lineTokens : [lineTokens];
 
             this.walkMethods(tokensArray, (method, parent) => {
-                const def = Method.get(method.name);
+                const def = FS3Method.get(method.name);
                 if (!def) {
                     throw new FS3Error(
                         "ReferenceError",
