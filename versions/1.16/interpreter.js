@@ -58,8 +58,8 @@ class FS3Method {
     /**
      * 
      * @param {string} name 
-     * @param {Array<{type: string, optional: boolean}>} parentTypes 
-     * @param {Token[]} args the argument scheme for this method
+     * @param {Array<string>} parentTypes 
+     * @param {Array<{type: string, optional: boolean}>} args the argument scheme for this method
      * @param {(parent: any, args: any[], interpreter: FroggyScript3) => any} fn
      * @param {boolean} defaultMethod 
      */
@@ -110,13 +110,37 @@ const imports = {
             maxHeight: 58,
             frontStack: [],
             backStack: [],
-            objects: {},
             initialized: false,
             width: null,
             height: null,
             bg: "c15",
             fg: "c00"
         }
+
+        /**
+         * 
+         * @param {Array<string>} scope - ["front"], ["back"], or ["front", "back"]
+         */
+        function render(scope){
+            if(scope.includes("front")){
+                let renderedFrontPixels = document.querySelectorAll(`[data-render-front]`);
+
+                renderedFrontPixels.forEach(pixel => {
+                    pixel.style.color = `var(--${interp.shared.graphics.fg})`;
+                    pixel.textContent = '\u00A0';
+                    pixel.removeAttribute("data-render-front");
+                })
+            } else if(scope.includes("back")){
+                let renderedBackPixels = document.querySelectorAll(`[data-render-back]`);
+
+                renderedBackPixels.forEach(pixel => {
+                    pixel.style.color = `var(--${interp.shared.graphics.bg})`;
+                    pixel.textContent = '\u00A0';
+                    pixel.removeAttribute("data-render-back");
+                })
+            }
+        }
+
         interp.variables["rectConstructor"] = {
             value: "Rect Constructor",
             type: "rect_constructor",
@@ -170,22 +194,22 @@ const imports = {
             let width = args[3].value;
             let height = args[4].value;
 
-            if(interpreter.shared.graphics.objects[id]){
-                throw new FS3Error("ReferenceError", `Graphics object with id [${id}] already exists`, args[0]);
+            if(interpreter.variables[id]){
+                throw new FS3Error("ReferenceError", `Variable with id [${id}] already exists`, args[0]);
             }
 
             if(interpreter.shared.graphics.frontStack.includes(id) || interpreter.shared.graphics.backStack.includes(id)){
                 throw new FS3Error("ReferenceError", `Graphics object with id [${id}] already exists in rendering stack`, args[0]);
             }
 
-            interpreter.shared.graphics.objects[id] = {
+            interpreter.variables[id] = {
                 type: "rect",
                 x: x,
                 y: y,
                 width: width,
                 height: height,
                 fill: "transparent",
-                border: "#000000"
+                border: "c00"
             };
         }, false);
     },
