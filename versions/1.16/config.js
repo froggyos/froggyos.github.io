@@ -1276,7 +1276,7 @@ const FroggyFileSystem = new fs({
             // "var meow = {",
             // "    'name' = 'meow'",
             // "}",
-            "out object.'meow'.'name$||' ' w'",
+            "out object.'meow'.'name' + ' w'",
             // "try {",
             // "   out notAVariable",
             // "}",
