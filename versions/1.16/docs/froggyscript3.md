@@ -1,3 +1,6 @@
+# Bugs
+ - chaining `.` and `+` dont work properly
+ - cant set object properties
 # Introduction
 Froggyscript is a dynamically typed, interpreted programming language designed for simplicity and ease of use. It is the primary scripting language for FroggyOS.
 # Documentation
@@ -202,7 +205,7 @@ out myArray>join
 
 > 10,two,3
 ```
-#### Setting Properties of an Object ** NOT WORK**
+#### Setting Properties of an Object
 Use the `.` operator to set a property of an object variable. The type of the value being set does not have to match the type of the existing value at that property.
 ```
 set [$variable].'property' = [string|number|array|object]
