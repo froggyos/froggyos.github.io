@@ -1496,7 +1496,7 @@ function sendCommand(command, args, createEditableLineAfter){
                             }()
                         };
 
-                        token.value = token.value.replaceAll(/(?<!\\)`n/g, '\n');
+                        token.value = String(token.value).replaceAll(/(?<!\\)`n/g, '\n');
 
                         createTerminalLine(String(token.value), ">", {translate: false, formatting: [formatting]});
                         
@@ -1505,8 +1505,8 @@ function sendCommand(command, args, createEditableLineAfter){
                         createTerminalLine("\u00A0", config.programErrorText.replace("{{}}", err.type), {translate: false});
                         createTerminalLine("\u00A0", "", {translate: false});
                         createTerminalLine(err.message, "", {translate: false});
-                        createTerminalLine(`\u00A0in line: ${err.line}`, "", {translate: false})
-                        createTerminalLine(`\u00A0at position: ${err.col}`, "", {translate: false})
+                        createTerminalLine(`\u00A0in line: ${err.line+1}`, "", {translate: false})
+                        createTerminalLine(`\u00A0at position: ${err.col+1}`, "", {translate: false})
 
                         if(err.type == "InternalJavaScriptError"){
                             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
@@ -2246,7 +2246,7 @@ let dateTimeInterval = setInterval(() => {
 }, 100);
 
 const onStart = () => {
-    //sendCommand("/", ["set-US-time-format"])
+    //sendCommand("st", ["fs3help"])
     sendCommand("st", ["test", "file\\_arg\\_1"])
 }
 

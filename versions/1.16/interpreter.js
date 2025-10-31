@@ -89,13 +89,16 @@ class FS3Keyword {
      *  - `args`: the arguments passed to the keyword,
      *  - `interpreter`: the interpreter instance executing the keyword,
      *  - `line`: the full line of tokens where the keyword was called.
-     * @param {boolean} defaultKeyword
+     * @param {Object} extraOptions
+     * @param {boolean} [extraOptions.defaultKeyword=false] - Whether this is a default keyword.
+     * @param {boolean} [extraOptions.isAssigner=false] - Whether this keyword is an assignment keyword.
      */
-    constructor(name, scheme, fn, defaultKeyword = true){
+    constructor(name, scheme, fn, extraOptions){
         this.scheme = scheme;
         this.fn = fn;
         FS3Keyword.table[name] = this;
-        this.defaultKeyword = defaultKeyword;
+        this.defaultKeyword = extraOptions?.defaultKeyword ?? true;
+        this.isAssigner = extraOptions?.isAssigner ?? false;
     }
 
     static get(name){
@@ -113,9 +116,31 @@ const imports = {
             initialized: false,
             width: null,
             height: null,
-            bg: "c15",
+            bg: "transparent",
             fg: "c00"
         }
+
+        interp.variables["graphics"] = {
+            value: "Graphics Import",
+            type: "import_graphics",
+            mut: false,
+            freeable: false
+        }
+
+        new FS3Method("getBackRenderStack", ["import_graphics"], [], (parent, args, interpreter) => {
+            let stack = interpreter.shared.graphics.backStack;
+            parent.type = "array";
+            parent.value = stack.map(id => {
+                return {
+                    type: "string",
+                    value: id,
+                    line: parent.line,
+                    col: parent.col,
+                    methods: []
+                }
+            });
+            return parent;
+        }, false);
 
         /**
          * 
@@ -130,23 +155,46 @@ const imports = {
                     pixel.textContent = '\u00A0';
                     pixel.removeAttribute("data-render-front");
                 })
-            } else if(scope.includes("back")){
+            } 
+            if(scope.includes("back")){
                 let renderedBackPixels = document.querySelectorAll(`[data-render-back]`);
 
                 renderedBackPixels.forEach(pixel => {
-                    pixel.style.color = `var(--${interp.shared.graphics.bg})`;
-                    pixel.textContent = '\u00A0';
+                    pixel.style.backgroundColor = `var(--${interp.shared.graphics.bg})`;
                     pixel.removeAttribute("data-render-back");
+                })
+
+                interp.shared.graphics.backStack.forEach(id => {
+                    let obj = interp.variables[id];
+                    if(obj.type === "rect"){
+                        for(let i = obj.value.y; i < obj.value.y + obj.value.height; i++){
+                            for(let j = obj.value.x; j < obj.value.x + obj.value.width; j++){
+                                let pixel = document.getElementById(`screen-${interp.fileArguments[0]}-${i}-${j}`);
+                                if(pixel == null) continue;
+                                let color = obj.value.fill;
+                                if(i == obj.value.y || i == obj.value.y + obj.value.height - 1 || j == obj.value.x || j == obj.value.x + obj.value.width - 1) color = obj.value.border;
+                                if(color != "transparent") pixel.style.backgroundColor = `var(--${color})`;
+                                pixel.setAttribute("data-render-back", "true");
+                            }
+                        }
+                    }
                 })
             }
         }
 
-        interp.variables["rectConstructor"] = {
-            value: "Rect Constructor",
-            type: "rect_constructor",
-            mut: false,
-            freeable: false
-        }
+        new FS3Keyword("render", ["string?"], (args, interpreter, line) => {
+            let scope = args[0];
+
+            if(["front", "back"].includes(scope) && scope !== undefined){
+                throw new FS3Error("TypeError", `render argument must be [front], [back], or omitted for both`, args[0] || line[0]);
+            }
+
+            if(scope === undefined) scope = ["front", "back"];
+
+            render(scope);
+        }, {
+            defaultKeyword: false
+        });
 
         new FS3Keyword("initgraphics", ["number", "number"], (args, interpreter, line) => {
             if(interpreter.shared.graphics.initialized){
@@ -170,7 +218,7 @@ const imports = {
                 let rowHtml = '';
                 for(let j = 0; j < width; j++){
                     let style = `"background-color: var(--${interpreter.shared.graphics.bg}); color: var(--${interpreter.shared.graphics.fg})"`;
-                    rowHtml += `<span id="screen-${interpreter.fileArguments[0]}-${i}-${j}" style=${style}>\u00A0</span>`;
+                    rowHtml += `<span id="screen-${interpreter.fileArguments[0]}-${i}-${j}" style=${style} data-default="true">\u00A0</span>`;
                 }
                 let lineContainer = document.createElement('div');
                 let terminalLine = document.createElement('div');
@@ -179,38 +227,138 @@ const imports = {
                 lineContainer.appendChild(terminalLine);
                 terminal.appendChild(lineContainer);
             }
+        }, {
+            defaultKeyword: false
+        });
+
+        FS3Method.table.type.parentTypes.push("rect");
+
+        new FS3Keyword("rect", ["variable_reference", "literal_assignment", "number", "number", "number", "number"], (args, interpreter) => {
+            let varName = args[0].value;
+
+            if(interpreter.variables[varName]){
+                throw new FS3Error("ReferenceError", `Variable [${varName}] is already defined`, args[0]);
+            }
+
+            let x = args[2].value;
+            let y = args[3].value;
+            let width = args[4].value;
+            let height = args[5].value;
+            interpreter.variables[varName] = {
+                type: "rect",
+                value: {
+                    x: x,
+                    y: y,
+                    width: width,
+                    height: height,
+                    border: interpreter.shared.graphics.fg,
+                    fill: interpreter.shared.graphics.bg
+                },
+                mut: true,
+                freeable: true
+            }
+
+            interpreter.shared.graphics.backStack.push(varName);
+        }, {
+            defaultKeyword: false,
+            isAssigner: true
+        });
+
+        new FS3Method("move", ["rect"], [{type: ["number"], optional: false}, {type: ["number"], optional: false}], (parent, args, interpreter) => {
+            let newX = args[0].value;
+            let newY = args[1].value;
+            parent.value.x = newX;
+            parent.value.y = newY;
+            return parent;
         }, false);
 
-        new FS3Method("new", ["rect_constructor"], [
-            {type: ["string"], optional: false}, // id
-            {type: ["number"], optional: false}, // x
-            {type: ["number"], optional: false}, // y
-            {type: ["number"], optional: false}, // width
-            {type: ["number"], optional: false} // height
-        ], (parent, args, interpreter) => {
-            let id = args[0].value;
-            let x = args[1].value;
-            let y = args[2].value;
-            let width = args[3].value;
-            let height = args[4].value;
+        new FS3Method("dmove", ["rect"], [{type: ["number"], optional: false}, {type: ["number"], optional: false}], (parent, args, interpreter) => {
+            let deltaX = args[0].value;
+            let deltaY = args[1].value;
+            parent.value.x += deltaX;
+            parent.value.y += deltaY;
+            return parent;
+        }, false);
 
-            if(interpreter.variables[id]){
-                throw new FS3Error("ReferenceError", `Variable with id [${id}] already exists`, args[0]);
+        new FS3Method("x", ["rect"], [{type: ["number"], optional: true}], (parent, args, interpreter) => {
+            let newX = args[0]?.value;
+
+            if(newX == undefined) return {
+                type: "number",
+                value: parent.value.x,
+                line: parent.line,
+                col: parent.col,
+                methods: []
             }
+            parent.value.x = newX;
+            return parent;
+        }, false);
 
-            if(interpreter.shared.graphics.frontStack.includes(id) || interpreter.shared.graphics.backStack.includes(id)){
-                throw new FS3Error("ReferenceError", `Graphics object with id [${id}] already exists in rendering stack`, args[0]);
+        new FS3Method("y", ["rect"], [{type: ["number"], optional: true}], (parent, args, interpreter) => {
+            let newY = args[0]?.value;
+            if(newY == undefined) return {
+                type: "number",
+                value: parent.value.y,
+                line: parent.line,
+                col: parent.col,
+                methods: []
             }
+            parent.value.y = newY;
+            return parent;
+        }, false);
 
-            interpreter.variables[id] = {
-                type: "rect",
-                x: x,
-                y: y,
-                width: width,
-                height: height,
-                fill: "transparent",
-                border: "c00"
-            };
+
+
+        new FS3Method("width", ["rect"], [{type: ["number"], optional: true}], (parent, args, interpreter) => {
+            let newWidth = args[0]?.value;
+            if(newWidth == undefined) return {
+                type: "number",
+                value: parent.value.width,
+                line: parent.line,
+                col: parent.col,
+                methods: []
+            }
+            parent.value.width = newWidth;
+            return parent;
+        }, false);
+
+        new FS3Method("height", ["rect"], [{type: ["number"], optional: true}], (parent, args, interpreter) => {
+            let newHeight = args[0]?.value;
+            if(newHeight == undefined) return {
+                type: "number",
+                value: parent.value.height,
+                line: parent.line,
+                col: parent.col,
+                methods: []
+            }
+            parent.value.height = newHeight;
+            return parent;
+        }, false);
+
+        new FS3Method("border", ["rect"], [{type: ["string"], optional: true}], (parent, args, interpreter) => {
+            let color = args[0]?.value;
+            if(color == undefined) return {
+                type: "string",
+                value: parent.value.border,
+                line: parent.line,
+                col: parent.col,
+                methods: []
+            }
+            parent.value.border = color;
+            return parent;
+        }, false);
+
+        new FS3Method("fill", ["rect"], [{type: ["string"], optional: true}], (parent, args, interpreter) => {
+            let color = args[0]?.value;
+            if(color == undefined) return {
+                type: "string",
+                value: parent.value.fill,
+                line: parent.line,
+                col: parent.col,
+                methods: []
+            }
+            parent.value.fill = color;
+            return parent;
         }, false);
     },
     math: (interp) => {
@@ -236,7 +384,9 @@ const imports = {
                 col: parent.col,
                 methods: []
             }
-        }, false);
+        }, {
+            defaultKeyword: false
+        });
     },
     keyboard: (interp) => {
         new FS3Keyword("anykeydown", ["block"], (args, interpreter) => {
@@ -262,7 +412,9 @@ const imports = {
             }
             document.body.addEventListener("keydown", handler);
             interpreter.keyListeners.push({ type: "keydown", handler });
-        }, false);
+        }, {
+            defaultKeyword: false
+        });
 
         new FS3Keyword("keydown", ["string", "block"], (args, interpreter) => {
             let key = args[0].value.toLowerCase();
@@ -289,7 +441,9 @@ const imports = {
 
             document.body.addEventListener("keydown", handler);
             interpreter.keyListeners.push({ type: "keydown", handler });
-        }, false);
+        }, {
+            defaultKeyword: false
+        });
 
         new FS3Keyword("keyup", ["string", "block"], (args, interpreter) => {
             let key = args[0].value.toLowerCase();
@@ -315,7 +469,9 @@ const imports = {
             }
             document.body.addEventListener("keyup", handler);
             interpreter.keyListeners.push({ type: "keyup", handler });
-        }, false);
+        }, {
+            defaultKeyword: false
+        });
     }
 }
 
@@ -575,8 +731,10 @@ new FS3Method("n", ["string", "condition_statement"], [], (parent, args, interpr
     }
 });
 
-new FS3Method("toString", ["number", "condition_statement"], [], (parent, args, interpreter) => {
-    if(parent.type == "number"){
+new FS3Method("toString", ["number", "condition_statement", "string"], [], (parent, args, interpreter) => { 
+    if(parent.type == "string"){
+        return parent;
+    } if(parent.type == "number"){
         parent.value = String(parent.value);
         parent.type = "string";
         return parent;
@@ -667,6 +825,76 @@ new FS3Method("endsWith", ["string"], [{type: ["string"], optional: false}], (pa
         methods: parent.methods
     }
 });
+
+new FS3Method("key", ["object"], [{type: ["string"], optional: false}], (parent, args, interpreter) => {
+    let key = args[0].value;
+    if(!(key in parent.value)){
+        throw new FS3Error("ReferenceError", `Key [${key}] does not exist in object`, args[0]);
+    }
+
+    return parent.value[key];
+});
+
+// keyword ==========================================================================================================================================
+
+new FS3Keyword("catch", ["block"], async (args, interpreter, line) => {
+    let e = interpreter.lastCaughtError;
+    if(e  !== null){
+        interpreter.variables["__error__"] = {
+            type: "object",
+            freeable: false,
+            mut: false,
+            value: {
+                type: {
+                    type: "string",
+                    value: e.type,
+                    line: line[0].line,
+                    col: line[0].col,
+                    methods: []
+                },
+                message: {
+                    type: "string",
+                    value: e.message,
+                    line: line[0].line,
+                    col: line[0].col,
+                    methods: []
+                },
+                line: {
+                    type: "number",
+                    value: e.line,
+                    line: line[0].line,
+                    col: line[0].col,
+                    methods: []
+                },
+                col: {
+                    type: "number",
+                    value: e.col,
+                    line: line[0].line,
+                    col: line[0].col,
+                    methods: []
+                }
+            }
+        }
+
+        let block = args[0].body;
+        await interpreter.executeBlock(block);
+
+        delete interpreter.variables["__error__"];
+
+        interpreter.lastCaughtError = null;
+    }
+});
+
+new FS3Keyword("try", ["block"], (args, interpreter, line) => {
+    let block = args[0].body;
+    interpreter.catchErrors = true;
+
+    interpreter.executeBlock(block).catch((e) => {
+        interpreter.lastCaughtError = e;
+    });
+
+    interpreter.catchErrors = false;
+})
 
 new FS3Keyword("selfset", ["any"], (args, interpreter, line) => {
     if(args[0].wasVariable === undefined){
@@ -800,7 +1028,8 @@ new FS3Keyword("filearg", ["variable_reference", "number"], (args, interpreter) 
     let argValue = interpreter.fileArguments[argIndex];
 
     if(argValue === undefined){
-        throw new FS3Error("RuntimeError", `No command line argument found at index [${argIndex}]`, args[1]);
+        interpreter.variables[variableName].value = "";
+        return;
     }
 
     if(!interpreter.variables[variableName]){
@@ -1089,6 +1318,8 @@ new FS3Keyword("cvar", ["variable_reference", "literal_assignment", "string|numb
             freeable: false
         }
     }
+}, {
+    isAssigner: true
 })
 
 new FS3Keyword("var", ["variable_reference", "literal_assignment", "string|number|array|block"], (args, interpreter) => {
@@ -1117,6 +1348,8 @@ new FS3Keyword("var", ["variable_reference", "literal_assignment", "string|numbe
             freeable: true
         };
     }
+}, {
+    isAssigner: true
 })
 
 new FS3Keyword("prompt", ["variable_reference", "number", "array"], (args, interpreter) => {
@@ -1190,8 +1423,20 @@ new FS3Keyword("prompt", ["variable_reference", "number", "array"], (args, inter
             option.textContent = options[i];
             option.style.paddingLeft = 0;
             lineContainer.appendChild(option);
-            if(i != options.length-1) lineContainer.appendChild(document.createTextNode(" • "));
+            if(i != options.length-1) {
+                let delimiter = document.createElement('span');
+                delimiter.textContent = " •\u00A0";
+                delimiter.style.whiteSpace = "pre";
+                lineContainer.appendChild(delimiter);
+            }
         }
+
+        lineContainer.style.display = "inline-block";
+        lineContainer.style.whiteSpace = "normal";
+        lineContainer.style.wordBreak = "keep-all";
+        lineContainer.style.overflowWrap = "break-word";
+        lineContainer.style.maxWidth = "100%";
+
 
         function promptHandler(e){
             e.preventDefault();
@@ -1384,7 +1629,7 @@ class FroggyScript3 {
     static matches = [
         ["comment", /#.*/],
         ["literal_in", / in /],
-        ["number", /[0-9]+(?:\.[0-9]+)?/],
+        ["number", /-?[0-9]+(?:\.[0-9]+)?/],
         ["variable", /[A-Za-z_][A-Za-z0-9_]*/],
         ["string_concat", / \+ /],
         ["object_indicator", /\./],
@@ -1432,7 +1677,12 @@ class FroggyScript3 {
         };
         this.functions = {};
         this.debug = false;
+
         this.lastIfExecuted = false;
+
+        this.catchErrors = false;
+        this.lastCaughtError = null;
+
         this._interrupt = false;
         this.clockLengthMs = 0;
         this._onInterrupt = null;
@@ -1590,11 +1840,15 @@ class FroggyScript3 {
             let propValue = block[i][2];
 
             if(propValue.type === "block"){
-                propValue = propValue.body;
+                propValue.type = "object";
+                propValue.value = propValue.body;
+                delete propValue.body;
             }
 
             obj[propName] = propValue;
         }
+
+        console.log(obj)
 
         return obj;
     }
@@ -1630,32 +1884,10 @@ class FroggyScript3 {
     async executeBlock(block){
         for(let i = 0; i < block.length; i++){
             this.checkInterrupt();
-            const line = block[i];
 
+            let line = this.handleMethodShorthands(block[i]);
 
-            let compacted = this.compact(line);
-
-            if(!Array.isArray(compacted)) compacted = [compacted];
-
-            if(compacted.some(t => t.type === "object_indicator")){
-                const clone = structuredClone(compacted)
-                const methodsToApply = clone[clone.length -1].methods;
-
-                compacted = this.mergeObjectReferences(compacted);
-
-                for(let j = 0; j < compacted.length; j++){
-                    let token = compacted[j];
-                    if(token.type === "object_reference") {
-                        const resolved = this.resolveObjectReference(token.value, this.variables);
-
-                        compacted[j].type = resolved.type;
-                        compacted[j].value = resolved.value;
-                        compacted[j].methods = methodsToApply;
-                    }
-                }
-            }
-
-            const resolvedMethods = this.methodResolver(compacted);
+            const resolvedMethods = this.methodResolver(this.compact(line));
 
             try {
                 await this.keywordExecutor(resolvedMethods);
@@ -1876,25 +2108,7 @@ class FroggyScript3 {
                 }
             });
 
-            if(line.some(t => t.type === "object_indicator")){
-                line = this.mergeObjectReferences(line);
-                for(let j = 0; j < line.length; j++){
-                    let token = line[j];
-                    if(token.type === "object_reference"){
-                        let objectReference = structuredClone(token.value);
-                        let resolved = this.resolveObjectReference(token.value, this.variables);
-                        if(resolved === undefined){
-                            throw new FS3Error("ReferenceError", `Object reference [${token.value.join(".")}] is not defined`, token);
-                        }
-                        token.type = resolved.type;
-                        token.value = resolved.value;
-                        token.objectReference = objectReference;
-                        token.methods = [];
-                    }
-                }
-            }
-
-            line = this.handleConcatOperator(line);
+            line = this.handleMethodShorthands(line);
 
             compressed[i] = this.methodResolver(this.compact(line));
 
@@ -1910,78 +2124,46 @@ class FroggyScript3 {
         return compressed;
     }
 
-    resolveObjectReference(refChain, objectTree) {
-        let current = objectTree;
-
-        for (const key of refChain) {
-            if (current == null) return undefined;
-
-            // if current is an object with `value` field that is itself a key
-            if (current.value && typeof current.value === "string" && current.value in objectTree) {
-                current = objectTree[current.value];
-            }
-
-            if (key in current) {
-                current = current[key];
-            } else if (current.value && typeof current.value === "object" && key in current.value) {
-                current = current.value[key];
-            } else {
-                return undefined;
+    handleMethodShorthands(line){
+        if(line.some(t => t.type === "object_indicator")){
+            for(let j = 0; j < line.length; j++){
+                let token = line[j];
+                if(token.type === "object_indicator") {
+                    let _line = structuredClone(token.line);
+                    let _col = structuredClone(token.col);
+                    line.splice(j, 1, ...[
+                        {type: "method_indicator", value: ">", line: _line, col: _col, methods: []},
+                        {type: "method", value: "key", line: _line, col: _col, methods: []},
+                        {type: "paren_start", value: "(", line: _line, col: _col, methods: []},
+                    ]);
+                    line.splice(j + 4, 0, {type: "paren_end", value: ")", line: _line, col: _col, methods: []});
+                }
             }
         }
 
-        if(current.type == undefined) current.type = "object"
-
-        return current;
-    }
-
-    mergeObjectReferences(tokens) {
-        const result = [];
-        let i = 0;
-
-        let rootLine = null;
-        let rootCol = null;
-
-        while (i < tokens.length) {
-            const t = tokens[i];
-
-            if (t.type === "variable_reference") {
-                let chain = [t.value.replace(/^\$/, "")];
-                rootLine = rootLine === null ? t.line : rootLine;
-                rootCol = rootCol === null ? t.col : rootCol;
-
-                let j = i + 1;
-                while (
-                    j + 1 < tokens.length &&
-                    tokens[j].type === "object_indicator" &&
-                    ["string", "variable_reference"].includes(tokens[j + 1].type)
-                ) {
-                    const nextVal = tokens[j + 1].value.replace(/^['"]|['"]$/g, ""); // remove quotes
-                    chain.push(nextVal);
-                    j += 2;
+        if(line.some(t => t.type === "string_concat")){
+            for(let j = 0; j < line.length; j++){
+                let token = line[j];
+                if(token.type === "string_concat") {
+                    let _line = structuredClone(token.line);
+                    let _col = structuredClone(token.col);
+                    line.splice(j, 1, ...[
+                        {type: "method_indicator", value: ">", line: _line, col: _col, methods: []},
+                        {type: "method", value: "concat", line: _line, col: _col, methods: []},
+                        {type: "paren_start", value: "(", line: _line, col: _col, methods: []},
+                    ]);
+                    line.splice(j + 4, 0, ...[
+                        {type: "method_indicator", value: ">", line: _line, col: _col, methods: []},
+                        {type: "method", value: "toString", line: _line, col: _col, methods: []},
+                        {type: "paren_end", value: ")", line: _line, col: _col, methods: []},
+                    ]);
                 }
-
-                if (chain.length > 1) {
-                    result.push({
-                        type: "object_reference",
-                        value: chain,
-                        line: rootLine,
-                        col: rootCol,
-                    });
-                    i = j;
-                } else {
-                    result.push(t);
-                    i++;
-                }
-            } else {
-                result.push(t);
-                i++;
             }
         }
 
-        return result;
+        return line;
     }
-
+    
     async interpret(code, fileName, fileArguments) {
         try {
             await this._process(code, fileName, fileArguments, true).catch(e => { throw e; });
@@ -2004,13 +2186,15 @@ class FroggyScript3 {
     }
 
     _handleError(e) {
-        if (e instanceof FS3Error) {
+        if (e instanceof FS3Error && this.catchErrors == false) {
             this.cleanupKeyListeners();
             if (e.type === "quietKill") {
                 this.onError(e);
                 return;
             }
             this.errout(e);
+        } else if (e instanceof FS3Error && this.catchErrors == true) {
+            this.lastCaughtError = e;
         } else if (
             !(e instanceof SkipBlock ||
             e instanceof BreakLoop ||
@@ -2334,26 +2518,6 @@ class FroggyScript3 {
             tokens[i].methods = [];
         }
 
-        if(tokens.some(t => t.type === "object_indicator")){
-            tokens = this.mergeObjectReferences(tokens);
-            for(let j = 0; j < tokens.length; j++){
-                let token = tokens[j];
-                if(token.type === "object_reference"){
-                    let objectReference = structuredClone(token.value);
-                    let resolved = this.resolveObjectReference(token.value, this.variables);
-                    if(resolved === undefined){
-                        throw new FS3Error("ReferenceError", `Object reference [${token.value.join(".")}] is not defined`, token);
-                    }
-                    token.type = resolved.type;
-                    token.value = resolved.value;
-                    token.objectReference = objectReference;
-                    token.methods = [];
-                }
-            }
-        }
-
-        tokens = this.handleConcatOperator(tokens);
-
         return tokens;
     }
 
@@ -2597,16 +2761,25 @@ class FroggyScript3 {
             }
         }
 
+        tokens.forEach((t, i) => {
+            if(t[0].type == "keyword" && t[0].value == "import"){
+                FS3Keyword.get("import").fn(t.slice(1), this, t);
+            }
+        });
+
         for(let i = 0; i < tokens.length; i++){
             for(let j = 0; j < tokens[i].length; j++){
-                let token = tokens[i][j];
-
-                if(token.type === "variable" && tokens[i][j-1]?.type === "keyword" && tokens[i][j-1]?.value === "var"){
-                    tokens[i][j].type = "variable_reference";
+                if(tokens[i][j-1]?.type === "keyword" && FS3Keyword.get(tokens[i][j-1].value)){
+                    if(FS3Keyword.get(tokens[i][j-1].value).isAssigner){
+                        tokens[i][j].type = "variable_reference";
+                    }
                 }
             }
         }
-
         return tokens;
     }
+}
+
+function isKeyword(token, keyword){
+    return token?.type === "keyword" && token?.value === keyword;
 }

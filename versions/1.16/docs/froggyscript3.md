@@ -202,7 +202,7 @@ out myArray>join
 
 > 10,two,3
 ```
-#### Setting Properties of an Object
+#### Setting Properties of an Object ** NOT WORK**
 Use the `.` operator to set a property of an object variable. The type of the value being set does not have to match the type of the existing value at that property.
 ```
 set [$variable].'property' = [string|number|array|object]
@@ -222,12 +222,14 @@ out $myObject.'nestedProperty'.'innerName'
 
 > Modified!
 ```
-The `+` operator doesn't play well with objects. Use the `>concat` method inside of objects, for example:
+The `+` and `.` operators dont really like each other.
 ```
 var myObject = {
-    'greeting' = 'Hello,'
-    'farewell' = 'Goodbye,'>concat(' my friend!') # instead of 'Goodbye, ' + 'my friend!'
+    'friend' = 'John'
+    'farewell' = 'Goodbye,' + ' my friend!' # works!
 }
+
+out 'my friend' + ' is named ' + myObject.'greeting' # errors out
 ```
 ### Deletion
 Variables can be deleted with the `free` keyword.
@@ -360,6 +362,7 @@ out 'The first user provided command line argument is: ' + arg
 (in command line)
 C:/Home> st program cool\_argument
 
+> The program file name is: program
 > The first user provided command line argument is: cool argument
 ```
 ## Program Termination
@@ -436,6 +439,23 @@ out array>join
 -----
 
 > item1_modified,item2_modified,item3_modified
+```
+### Try-Catch
+The `try` keyword executes a block of code and catches any errors that occur within that block. The `catch` block is executed if an error occurs in the `try` block. The error object is stored in the default variable `__error__`. It has keys `type`, `message`, `line`, and `col`.
+```
+try [block]
+catch [block]
+
+try {
+    out notAVariable
+}
+catch {
+    out 'An error occurred: ' + __error__.'message'
+}
+
+-----
+
+> An error occurred: ReferenceError: Variable [notAVariable] is not defined
 ```
 ### Block Control Keywords
 #### skip
@@ -617,6 +637,7 @@ string>endsWith(string) => condition_statement
 'starts_the_string'>endsWith('_string') # :0:
 ```
 #### replaceAt
+TODOC
 #### concat
 Concatenates two strings.
 ```
@@ -812,6 +833,18 @@ array>first => *
 []>first        # RangeError
 ```
 ### Object
+#### key
+Returns the value of the specified property in the object.
+```
+object>key(string) => *
+
+var myObject = {
+    'name' = 'FroggyScript3'
+    'version' = 1.16
+}
+myObject>key('name') # 'FroggyScript3'
+```
+
 #### keys
 Returns an array of the object's property names.
 ```
@@ -855,7 +888,7 @@ condition_statement>toNumber => number
 ## Types of Errors
 | Error                     | Description                                                                                                                                                                                                                |
 | ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `AccessError`             |  Raised when a valid symbol (such as a function or variable) exists but is used incorrectly in its access context. Example: attempting to call a parameterized function with `call` when it must be invoked with `pcall`. |
+| `AccessError`             |  Raised when a valid symbol (such as a function or variable) exists but is used incorrectly in its access context. Examples include attempting to call a parameterized function with `call` when it must be invoked with `pcall` and trying to change a constant variable. |
 | `ArgumentError`           | Raised when arguments provided to a keyword or method are invalid or incomplete.                                                                              |
 | `InternalJavaScriptError` | It's not you, it's me.                                                                                                                                                                                                     |
 | `MathError`               | Raised when mathematical evaluation fails. Examples include divide-by-zero.                                                                                                                                      |
