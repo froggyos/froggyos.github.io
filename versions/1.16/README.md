@@ -167,7 +167,7 @@ Properties:
 If you edit the `Settings:` drive directly, some settings won't apply until you reload the froggyOS state. An easy way to do this would be to run the `reload` macro.
 
 ## Trusting Programs
-To trust a program, you must add its file name in the `D:/trusted_files` file. This will allow the program to have extended control over the operating system. Trusted programs are refreshed **only** on hard restarts (reload the page).
+To trust a program, you must add its file name in the `D:/trusted_programs` file. This will allow the program to have extended control over the operating system. This must be done **manually** and cannot be done through a program.
 
 ## froggyOS Structured Data Storage (fSDS)
 fSDS is a way to store key-value pairs in a file. A value can be one of four types: `String`, `Number`, or `Array`. fSDS is most prominently used to store file data in the `Config:/program_data` directory, but may be used in other places as well. You cannot store arrays inside of arrays.

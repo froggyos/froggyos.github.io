@@ -2206,8 +2206,10 @@ function createLilypadLine(path, linetype, filename){
     updateLinePrefixes(linetype);
 }
 
-function setTrustedFiles(){
-    config.trustedFiles = FroggyFileSystem.getFile("Config:/trusted_programs").getData();
+function setTrustedPrograms(){
+    setInterval(() => {
+        config.trustedPrograms = FroggyFileSystem.getFile("Config:/trusted_programs").getData();
+    }, 100);
 }
 
 setUserConfigFromFile()
@@ -2217,7 +2219,7 @@ updateProgramList();
 updateDateTime();
 changeColorPalette(config.colorPalette);
 createColorTestBar();
-setTrustedFiles();
+setTrustedPrograms();
 sendCommand('[[BULLFROG]]validatelanguage', [], false);
 
 let configInterval = setInterval(() => {
@@ -2248,14 +2250,16 @@ let dateTimeInterval = setInterval(() => {
 }, 100);
 
 const onStart = () => {
-    sendCommand("st", ["fs3help", "var"])
+    sendCommand("st", ["fs3help", "pfunc"])
     //sendCommand("st", ["test", "file\\_arg\\_1"])
 }
 
 function ready(){
     document.getElementById("blackout").remove()
     sendCommand('[[BULLFROG]]greeting', []);
-    onStart();
+    setTimeout(() => {
+        onStart();
+    }, 100)
 }
 
 // literally all of this is just for the animation

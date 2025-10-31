@@ -1140,7 +1140,10 @@ new FS3Keyword("kill", [], (args, interpreter, line) => {
     throw new FS3Error("RuntimeError", "Program terminated with [kill] keyword", line[0].line, line[0].col, args);
 });
 
-new FS3Keyword("quietkill", [], (args, interpreter) => {
+new FS3Keyword("quietkill", [], (args, interpreter, line) => {
+    if(!interpreter.trustedPrograms.includes(interpreter.fileArguments[0])){
+        throw new FS3Error("SecurityError", "[quietKill] can only be used in trusted programs", line[0]);
+    }
     throw new FS3Error("quietKill", "", -1, -1, args);
 });
 
@@ -1698,6 +1701,8 @@ class FroggyScript3 {
         this.catchErrors = false;
         this.lastCaughtError = null;
 
+        this.trustedPrograms = config.trustedPrograms;
+
         this._interrupt = false;
         this.clockLengthMs = 0;
         this._onInterrupt = null;
@@ -2213,7 +2218,7 @@ class FroggyScript3 {
     }
 
     _handleError(e) {
-        if (e instanceof FS3Error && this.catchErrors == false) {
+        if ((e instanceof FS3Error && e.type == "SecurityError") || (e instanceof FS3Error && this.catchErrors == false)) {
             this.cleanupKeyListeners();
             if (e.type === "quietKill") {
                 this.onError(e);

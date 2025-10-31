@@ -373,7 +373,7 @@ The `kill` keyword immediately stops program execution by raising a `RuntimeErro
 ```
 kill
 ```
-the `quietkill` keyword immediately stops program execution without any error message or output.
+the `quietkill` keyword immediately stops program execution without any error message or output. The program must be trusted in order to use this keyword.
 ```
 quietkill
 ```
@@ -889,15 +889,16 @@ condition_statement>toNumber => number
 ```
 
 ## Types of Errors
-| Error                     | Description                                                                                                                                                                                                                |
-| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Error                     | Description                                                                                                                                                                                                                                                                |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `AccessError`             |  Raised when a valid symbol (such as a function or variable) exists but is used incorrectly in its access context. Examples include attempting to call a parameterized function with `call` when it must be invoked with `pcall` and trying to change a constant variable. |
-| `ArgumentError`           | Raised when arguments provided to a keyword or method are invalid or incomplete.                                                                              |
-| `InternalJavaScriptError` | It's not you, it's me.                                                                                                                                                                                                     |
-| `MathError`               | Raised when mathematical evaluation fails. Examples include divide-by-zero.                                                                                                                                      |
-| `RangeError`              | Raised when a value is outside the permitted range for an operation. For example, accessing an array index that does not exist or a numeric overflow/underflow check.                                                                  |
-| `ReferenceError`          | Raised when accessing an undefined identifier such as a variable, function, or method. Example: using `foo` without declaring `var foo`.                                                                                   |
-| `RuntimeError`            | A catch-all for errors during program execution that don’t fall into a more specific category. e.g., a failed I/O operation or unexpected control flow issue.                                                              |
-| `SyntaxError`             | Raised when the program’s structure is malformed. This is detected after tokenization but before execution. Examples include unclosed blocks, unexpected tokens, or mismatched delimiters.                                 |
-| `TokenizationError`       | Raised when the tokenizer cannot recognize a sequence of characters as a valid token. This happens during the lexical analysis phase before parsing.                                                                       |
-| `TypeError`               | Raised when a value of the wrong type is provided. For example, passing a number where a string is expected or calling a string-specific method on an array.                                                               |
+| `ArgumentError`           | Raised when arguments provided to a keyword or method are invalid or incomplete.                                                                                                                                                                                           |
+| `InternalJavaScriptError` | It's not you, it's me.                                                                                                                                                                                                                                                     |
+| `MathError`               | Raised when mathematical evaluation fails. Examples include divide-by-zero.                                                                                                                                                                                                |
+| `RangeError`              | Raised when a value is outside the permitted range for an operation. For example, accessing an array index that does not exist or a numeric overflow/underflow check.                                                                                                      |
+| `ReferenceError`          | Raised when accessing an undefined identifier such as a variable, function, or method. Example: using `foo` without declaring `var foo`.                                                                                                                                   |
+| `RuntimeError`            | A catch-all for errors during program execution that don’t fall into a more specific category. e.g., a failed I/O operation or unexpected control flow issue.                                                                                                              |
+| `SecurityError`           |Raised when a security violation occurs, such as attempting to access restricted resources or keywords. This is particularly relevant when dealing with trusted vs untrusted files. These will **not** be caught by try-catch blocks.                                       |
+| `SyntaxError`             | Raised when the program’s structure is malformed. This is detected after tokenization but before execution. Examples include unclosed blocks, unexpected tokens, or mismatched delimiters.                                                                                 |
+| `TokenizationError`       | Raised when the tokenizer cannot recognize a sequence of characters as a valid token. This happens during the lexical analysis phase before parsing.                                                                                                                       |
+| `TypeError`               | Raised when a value of the wrong type is provided. For example, passing a number where a string is expected or calling a string-specific method on an array.                                                                                                               |
