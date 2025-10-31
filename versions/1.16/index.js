@@ -1481,7 +1481,7 @@ function sendCommand(command, args, createEditableLineAfter){
                 setSetting("currentSpinner", getSetting("defaultSpinner"));
                 setSetting("showSpinner", false)
 
-                const fs3 = new FroggyScript3({
+                const options = {
                     out: (token) => {
                         let formatting = {
                             type: 'blanket',
@@ -1533,10 +1533,12 @@ function sendCommand(command, args, createEditableLineAfter){
 
                     onError: (error) => {
                         let command = `[[BULLFROG]]gotoprogramline ${args[0]} ${error.line} ${error.col}`;
-                        addToCommandHistory(command);
+                        if(error.type != "quietKill" && error.type != "kill") addToCommandHistory(command);
                         if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                     }
-                })
+                }
+
+                const fs3 = new FroggyScript3(options)
 
                 fs3.interpret(file.getData(), file.getName(), fileArguments);
             }
@@ -2246,8 +2248,8 @@ let dateTimeInterval = setInterval(() => {
 }, 100);
 
 const onStart = () => {
-    //sendCommand("st", ["fs3help"])
-    sendCommand("st", ["test", "file\\_arg\\_1"])
+    sendCommand("st", ["fs3help", "var"])
+    //sendCommand("st", ["test", "file\\_arg\\_1"])
 }
 
 function ready(){

@@ -838,8 +838,10 @@ new FS3Method("key", ["object"], [{type: ["string"], optional: false}], (parent,
 // keyword ==========================================================================================================================================
 
 new FS3Keyword("catch", ["block"], async (args, interpreter, line) => {
+    // sleep for a few ms
+    await new Promise(resolve => setTimeout(resolve, 10));
     let e = interpreter.lastCaughtError;
-    if(e  !== null){
+    if(e !== null){
         interpreter.variables["__error__"] = {
             type: "object",
             freeable: false,
@@ -882,6 +884,7 @@ new FS3Keyword("catch", ["block"], async (args, interpreter, line) => {
         delete interpreter.variables["__error__"];
 
         interpreter.lastCaughtError = null;
+        interpreter.catchErrors = false;
     }
 });
 
@@ -891,9 +894,8 @@ new FS3Keyword("try", ["block"], (args, interpreter, line) => {
 
     interpreter.executeBlock(block).catch((e) => {
         interpreter.lastCaughtError = e;
+        interpreter.catchErrors = false;
     });
-
-    interpreter.catchErrors = false;
 })
 
 new FS3Keyword("selfset", ["any"], (args, interpreter, line) => {
@@ -1571,12 +1573,25 @@ new FS3Keyword("if", ["condition_statement", "block"], async (args, interpreter)
     }
 });
 
+new FS3Keyword("elseif", ["condition_statement", "block"], async (args, interpreter) => {
+    if(!interpreter.lastIfExecuted){
+        let conditionResult = interpreter.evaluateMathExpression(args[0].value)
+        if(conditionResult){
+            await interpreter.executeBlock(args[1].body);
+            interpreter.lastIfExecuted = true;
+        } else {
+            interpreter.lastIfExecuted = false;
+        }
+    }
+});
+
 new FS3Keyword("else", ["block"], async (args, interpreter) => {
     if(!interpreter.lastIfExecuted){
         await interpreter.executeBlock(args[0].body);
     }
     interpreter.lastIfExecuted = false;
 });
+
 
 new FS3Keyword("loop", ["number|condition_statement", "block"], async (args, interpreter) => {
     let cond = args[0];
@@ -1848,8 +1863,6 @@ class FroggyScript3 {
             obj[propName] = propValue;
         }
 
-        console.log(obj)
-
         return obj;
     }
 
@@ -1885,9 +1898,13 @@ class FroggyScript3 {
         for(let i = 0; i < block.length; i++){
             this.checkInterrupt();
 
-            let line = this.handleMethodShorthands(block[i]);
+            let compacted = this.compact(block[i]);
 
-            const resolvedMethods = this.methodResolver(this.compact(line));
+            if(!Array.isArray(compacted)) compacted = [compacted];
+
+            let line = this.handleMethodShorthands(compacted);
+
+            const resolvedMethods = this.methodResolver(line);
 
             try {
                 await this.keywordExecutor(resolvedMethods);
@@ -2108,9 +2125,13 @@ class FroggyScript3 {
                 }
             });
 
-            line = this.handleMethodShorthands(line);
+            let compacted = this.compact(line);
 
-            compressed[i] = this.methodResolver(this.compact(line));
+            if(!Array.isArray(compacted)) compacted = [compacted];
+
+            line = this.handleMethodShorthands(compacted);
+
+            compressed[i] = this.methodResolver(line);
 
             if(executeKeywords){
                 await this.keywordExecutor(compressed[i]);
@@ -2131,12 +2152,15 @@ class FroggyScript3 {
                 if(token.type === "object_indicator") {
                     let _line = structuredClone(token.line);
                     let _col = structuredClone(token.col);
-                    line.splice(j, 1, ...[
-                        {type: "method_indicator", value: ">", line: _line, col: _col, methods: []},
-                        {type: "method", value: "key", line: _line, col: _col, methods: []},
-                        {type: "paren_start", value: "(", line: _line, col: _col, methods: []},
-                    ]);
-                    line.splice(j + 4, 0, {type: "paren_end", value: ")", line: _line, col: _col, methods: []});
+
+                    line[j-1].methods.push({
+                        name: "key",
+                        args: [line[j + 1]],
+                        line: _line,
+                        col: _col
+                    });
+                    line.splice(j, 2)
+                    j--;
                 }
             }
         }
@@ -2147,16 +2171,19 @@ class FroggyScript3 {
                 if(token.type === "string_concat") {
                     let _line = structuredClone(token.line);
                     let _col = structuredClone(token.col);
-                    line.splice(j, 1, ...[
-                        {type: "method_indicator", value: ">", line: _line, col: _col, methods: []},
-                        {type: "method", value: "concat", line: _line, col: _col, methods: []},
-                        {type: "paren_start", value: "(", line: _line, col: _col, methods: []},
-                    ]);
-                    line.splice(j + 4, 0, ...[
-                        {type: "method_indicator", value: ">", line: _line, col: _col, methods: []},
-                        {type: "method", value: "toString", line: _line, col: _col, methods: []},
-                        {type: "paren_end", value: ")", line: _line, col: _col, methods: []},
-                    ]);
+                    line[j-1].methods.push(...[{
+                        name: "concat",
+                        args: [line[j + 1]],
+                        line: _line,
+                        col: _col
+                    }, {
+                        name: "toString",
+                        args: [],
+                        line: _line,
+                        col: _col
+                    }]);
+                    line.splice(j, 2)
+                    j--;
                 }
             }
         }
