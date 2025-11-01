@@ -277,6 +277,51 @@ const presetLanguagesMap = {
         nmt: "fiyala nggave mana'a",
         jpn: "ファイルを削除しました"
     },
+    "T_file_info_intro": {
+        eng: "File Information:",
+        nmt: "T_file_info_intro",
+        jpn: "T_file_info_intro"
+    },
+    "T_file_info_size {{}}": {
+        eng: "Size: {{}}",
+        nmt: "T_file_info_size {{}}",
+        jpn: "T_file_info_size {{}}"
+    },
+    "T_file_info_properties {{}}": {
+        eng: "Properties: {{}}",
+        nmt: "T_file_info_properties {{}}",
+        jpn: "T_file_info_properties {{}}"
+    },
+    "T_file_info_type_text": {
+        eng: "File Type: Text",
+        nmt: "T_file_info_type_text",
+        jpn: "T_file_info_type_text"
+    },
+    "T_file_info_type_program": {
+        eng: "File Type: FroggyScript3",
+        nmt: "T_file_info_type_program",
+        jpn: "T_file_info_type_program"
+    },
+    "T_file_info_type_palette": {
+        eng: "File Type: Color Palette",
+        nmt: "T_file_info_type_palette",
+        jpn: "T_file_info_type_palette"
+    },
+    "T_file_info_type_macro": {
+        eng: "File Type: Command Macro",
+        nmt: "T_file_info_type_macro",
+        jpn: "T_file_info_type_macro"
+    },
+    "T_file_info_type_spinner": {
+        eng: "File Type: Loading Spinner",
+        nmt: "T_file_info_type_spinner",
+        jpn: "T_file_info_type_spinner"
+    },
+    "T_file_info_type_program_data": {
+        eng: "File Type: froggyOS Structured Data Storage",
+        nmt: "T_file_info_type_program_data",
+        jpn: "T_file_info_type_program_data"
+    },
 
     // time format ====================================
     "T_provide_time_format": {
@@ -966,16 +1011,22 @@ class FroggyFile {
     #name
     #properties
     #data
+    #size
     static filePropertyDefaults = {
         transparent: false,
         read: true,
         write: true,
         hidden: false
     }
+
     constructor(name, properties = FroggyFile.filePropertyDefaults, data = [""]) {
         this.#name = name;
         this.#properties = properties;
         this.#data = data;
+        this.#size = 0;
+        data.forEach(line => {
+            this.#size += line.length + 1;
+        });
     }
 
 
@@ -1003,6 +1054,10 @@ class FroggyFile {
 
     getProperty(name) {
         return this.#properties[name];
+    }
+
+    getSize() {
+        return this.#size;
     }
 
     setProperty(name, value) {
@@ -1300,7 +1355,8 @@ const FroggyFileSystem = new fs({
             // "wait 500",
             // "out 'gagagaga'",
         ] },
-            { name: "fs3help", properties: {transparent: true, read: true, write: false, hidden: false }, data: [
+            { name: "fs3help", properties: {transparent: false, read: true, write: false, hidden: false }, data: [
+                "out ''",
                 "out 'FroggyScript3 Help Program'",
                 "var command = ''",
                 "cvar commandObject = {",
@@ -1308,25 +1364,25 @@ const FroggyFileSystem = new fs({
                 "        'description' = 'Used to declare a variable.'",
                 "        'usage' = 'var [variable] = [string|number|array|block (object)]'",
                 "        'example' = 'var myVar = 10'",
-                "        'note' = 'Some imports may add additional types that can be assigned to variables.`n       See object syntax in official docs'",
+                "        'note' = 'Some imports may add additional types that can be assigned to variables. See object syntax in official docs.'",
                 "    }",
                 "    'cvar' = {",
                 "        'description' = 'Used to declare a constant variable (cannot be reassigned after declaration).'",
                 "        'usage' = 'cvar [variable] = [string|number|array|block (object)]'",
                 "        'example' = 'cvar myConstVar = 20'",
-                "        'note' = 'Some imports may add additional types that can be assigned to constant variables.`n       See object syntax in official docs'",
+                "        'note' = 'Some imports may add additional types that can be assigned to constant variables. See object syntax in official docs.'",
                 "    }",
                 "    'set' = {",
                 "        'description' = 'Used to assign a new value to an existing variable.'",
                 "        'usage' = 'set $[variable] = [string|number|array|block (object)]'",
                 "        'example' = 'set $myVar = 15'",
-                "        'note' = 'Some imports may add additional types that can be assigned to variables.`n       See object syntax in official docs'",
+                "        'note' = 'Some imports may add additional types that can be assigned to variables. See object syntax in official docs.'",
                 "    }",
                 "    'arrset' = {",
                 "        'description' = 'Used to set a value at a specific index in an array.'",
                 "        'usage' = 'arrset $[array] [index] = [string|number|array|block (object)]'",
                 "        'example' = 'arrset $myArray 0 = \"newValue\"'",
-                "        'note' = 'Some imports may add additional types that can be assigned to arrays.`n       See object syntax in official docs'",
+                "        'note' = 'Some imports may add additional types that can be assigned to arrays. See object syntax in official docs.'",
                 "    }",
                 "    'free' = {",
                 "        'description' = 'Frees up memory by deleting a variable. Some variables cannot be deleted, such as constants.'",
@@ -1433,7 +1489,7 @@ const FroggyFileSystem = new fs({
                 "        'description' = 'Returns a value from a function. This value is stored in the fReturn variable. return does NOT end the function early.'",
                 "        'usage' = 'return [string|number|array|block (object)]'",
                 "        'example' = 'func @add [\"a:N\", \"b:N\"] { `n               return a>add(b) `n           }'",
-                "        'note' = 'Some imports may add additional types that can be returned from functions.`n       See object syntax in official docs'",
+                "        'note' = 'Some imports may add additional types that can be returned from functions. See object syntax in official docs.'",
                 "    }",
                 "    'import' = {",
                 "        'description' = 'Imports a FroggyScript3 module, making its functions and variables available for use in the current program. Current modules are: math, keyboard, graphics.'",
@@ -1442,11 +1498,6 @@ const FroggyFileSystem = new fs({
                 "    }",
                 "}",
                 "filearg $command 1",
-                "if command>eq('--list') {",
-                "    out 'Available commands:'",
-                "    out commandObject>keys>join(', ')",
-                "    quietkill",
-                "}",
                 "if command>neq('') {",
                 "    try {",
                 "        out 'Selected command: ' + command",
@@ -1470,26 +1521,12 @@ const FroggyFileSystem = new fs({
                 "    out '~'>repeat(77)",
                 "    quietkill",
                 "}",
-                "# no command specified, show general help",
-                "out 'visit the documentation (docs command) to get more detailed information.'",
-                "out 'Alternatively, pass the command name as a file argument to get help on a specific command, or pass \"--list\" to see a list of all commands.'",
-                "out ''",
-                "out 'Choose a category:'",
-                "var categoryChoice = ''",
-                "prompt $categoryChoice 0 ['Variables', 'Output', 'User Input', 'Program Termination', 'Control Flow', 'Functions', 'Methods']",
-                "out ''",
-                "out '~'>repeat(30)",
-                'out ""',
-                "if categoryChoice>eq('Variables') {",
-                "    out 'Variables are used to store data. You can create variables using the \"var\" keyword.'",
-                "    out 'Example: var myVar = 10'",
-                '    out "Variables can hold different types of data, including strings, numbers, arrays, and objects."',
-                "}",
-                "elseif categoryChoice>eq('Output') {",
-                "    out 'The \"out\" command is used to display output to the terminal.'",
-                "    out 'Example: out \"Hello, World!\"'",
-                "}",
-
+                "# no command specified",
+                "out 'This is the help program for FroggyScript3, the scripting language used in FroggyOS.'",
+                "out 'To get help on a specific command, run \"fs3help [command]\"'",
+                "out 'Visit the documentation (docs command) to get more detailed information.'",
+                "out 'Available commands:'",
+                "out commandObject>keys>join(', ')",
         ] },
         { name: "snake", properties: {transparent: false, read: true, write: true, hidden: false }, data: [
             "import 'keyboard'",

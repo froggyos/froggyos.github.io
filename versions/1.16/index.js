@@ -296,6 +296,10 @@ function updateProgramList(){
     }
 }
 
+function getFileType(file){
+
+}
+
 function parseTimeFormat(text){
     const now = new Date();
 
@@ -1417,6 +1421,22 @@ function sendCommand(command, args, createEditableLineAfter){
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 break;
             }
+            createTerminalLine("T_file_info_intro", "");
+            createTerminalLine("T_file_info_size {{"+file.getSize()+"}}", "");
+            let fileType = "T_file_info_type_text";
+            config.allowedProgramDirectories.forEach(dir => {
+                let programFile = FroggyFileSystem.getFile(`${dir}/${file.getName()}`);
+                if(programFile != undefined && programFile.getProperty('hidden') == false){
+                    fileType = "T_file_info_type_program";
+                }
+            });
+            if(config.currentPath == "D:/Palettes") fileType = "T_file_info_type_palette";
+            if(config.currentPath == "Config:/langs") fileType = "T_file_info_type_language";
+            if(config.currentPath == "D:/Macros") fileType = "T_file_info_type_macro";
+            if(config.currentPath == "D:/Spinners") fileType = "T_file_info_type_spinner";
+            if(config.currentPath == "Config:/program_data") fileType = "T_file_info_type_program_data";
+            createTerminalLine(fileType, "");
+            createTerminalLine("~".repeat(77), ">", {translate: false});
             file.getData().forEach(line => {
                 createTerminalLine(line, ">", {translate: false})
             });
@@ -2250,7 +2270,7 @@ let dateTimeInterval = setInterval(() => {
 }, 100);
 
 const onStart = () => {
-    sendCommand("st", ["fs3help", "pfunc"])
+    //sendCommand("st", ["fs3help", "pfunc"])
     //sendCommand("st", ["test", "file\\_arg\\_1"])
 }
 
