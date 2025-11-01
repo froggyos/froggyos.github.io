@@ -145,7 +145,7 @@ const presetLanguagesMap = {
         jpn: "spawn [ディレクトリ] . . ディレクトリを作成する"
     },
     "T_basic_commands_spy": {
-        eng: "spy [file] . . . . . . . . . . . . Reads the file and outputs it to the :sp35:terminal.",
+        eng: "spy [file] . . . . . . . . . . . . Reads the file and outputs it to the :sp35:terminal. Will also output certain :sp35:statistics about the file.",
         nmt: "spy [fiyala]. . . . . . . . . . . . sensa fiyala nam nenta lu taminalu wa",
         jpn: "spy [ファイル] . . ファイルを読み取る"
     },

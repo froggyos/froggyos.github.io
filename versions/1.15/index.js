@@ -1310,7 +1310,7 @@ function sendCommand(command, args, createEditableLineAfter){
         case "docs":
         case "opendocumentation": {
 
-            new MarkdownParser("url", `https://froggyos.github.io/versions/${config.version.replace("-indev", "")}/README.md`)
+            new MarkdownParser("url", `https://froggyos.xyz/versions/${config.version.replace("-indev", "")}/README.md`)
             .newWindowArgs("height=850,width=1100")
             .toc(true)
             .title(`froggyOS v. ${config.version} Documentation`)
