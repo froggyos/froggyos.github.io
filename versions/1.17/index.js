@@ -1021,6 +1021,7 @@ async function sendCommand(command, args, createEditableLineAfter){
             createTerminalLine("T_basic_commands_loadstate", ">");
             createTerminalLine("T_basic_commands_meta", ">");
             createTerminalLine("T_basic_commands_metaprop", ">");
+            createTerminalLine("T_basic_commands_pond", ">");
             createTerminalLine("T_basic_commands_opendoc", ">");
             createTerminalLine("T_basic_commands_rename", ">");
             createTerminalLine("T_basic_commands_ribbit", ">");
@@ -1308,31 +1309,47 @@ async function sendCommand(command, args, createEditableLineAfter){
         } break;
 
         case "pond": {
-            await fetch("https://roari.bpai.us/pond/ping/").then(response => {
-                if(response.ok){
-                    response.json().then(data => {
-                        createTerminalLine("T_pond_server_ok", ">");
-                        if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
-                    });
-                } else {
-                    createTerminalLine("T_pond_server_error", config.errorText);
-                    createTerminalLine(`${response.status} - ${response.statusText}`, config.errorText);
-                    if(response.body != null){
-                            response.text().then(bodyText => {
-                            createTerminalLine(`T_pond_server_response_body`, "");
-                            createTerminalLine(bodyText, ">", {translate: false});
+            if(args.length == 0){
+                const startTime = performance.now();
+                createTerminalLine("T_pond_command_intro_do_h", "");
+                createTerminalLine("~~~", "", {translate: false});
+                createTerminalLine("T_pond_checking", ">");
+                await fetch("https://roari.bpai.us/pond/ping/").then(response => {
+                    if(response.ok){
+                        response.json().then(data => {
+                            createTerminalLine("T_pond_server_ok", ">");
+                            createTerminalLine(`T_pond_server_response_time {{${Math.round(performance.now() - startTime)}}}`, ">")
                             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                         });
                     } else {
-                        if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
-                    }
+                        createTerminalLine("T_pond_server_error", config.errorText);
+                        createTerminalLine(`${response.status} - ${response.statusText}`, config.errorText);
+                        if(response.body != null){
+                                response.text().then(bodyText => {
+                                createTerminalLine(`T_pond_server_response_body`, "");
+                                createTerminalLine(bodyText, ">", {translate: false});
+                                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                            });
+                        } else {
+                            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                        }
 
-                    
-                }
-            }).catch(error => {
-                createTerminalLine("T_pond_server_unreachable", config.errorText);
+                        
+                    }
+                }).catch(error => {
+                    createTerminalLine("T_pond_server_unreachable", config.errorText);
+                    if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                });
+            } else if(args[0] == "-login" || args[0] == "-l") {
+
+            } else if(args[0] == "-register" || args[0] == "-r") {
+
+            } else if(args[0] == "-help" || args[0] == "-h") {
+                createTerminalLine("T_pond_command_help_intro", "");
+                createTerminalLine("T_pond_command_help_login", ">");
+                createTerminalLine("T_pond_command_help_register", ">");
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
-            });
+            }
 
         } break;
         

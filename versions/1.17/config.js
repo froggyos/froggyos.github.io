@@ -119,6 +119,11 @@ const presetLanguagesMap = {
         nmt: "metaprop [fiyala] [popatí] [0/1]. . lohi fiyala oәpopatí me",
         jpn: "metaprop [file] [property] [0/1] . . ファイルのプロパティを変更する"
     },
+    "T_basic_commands_pond": {
+        eng: "pond [options] . . . . . . . . . . Connects to the pond server.",
+        nmt: "T_basic_commands_pond",
+        jpn: "T_basic_commands_pond",
+    },
     "T_basic_commands_opendoc": {
         eng: "opendocumentation. . . . . . . . . Opens the froggyOS documentation.",
         nmt: "opendocumentation . . . . . . . . . ndo dokumenndasiyon o-froggyOS",
@@ -858,6 +863,11 @@ const presetLanguagesMap = {
 
     // pond ============================================
 
+    "T_pond_checking": {
+        eng: "Checking Pond server...",
+        nmt: "T_pond_checking",
+        jpn: "T_pond_checking"
+    },
     "T_pond_server_ok": {
         eng: "Pond server is up!",
         nmt: "T_pond_server_ok",
@@ -878,7 +888,31 @@ const presetLanguagesMap = {
         nmt: "T_pond_server_response_body",
         jpn: "T_pond_server_response_body"
     },
-
+    "T_pond_server_response_time {{}}": {
+        eng: "response time: {{}} ms",
+        nmt: "T_pond_server_response_time {{}}",
+        jpn: "T_pond_server_response_time {{}}"
+    },
+    "T_pond_command_intro_do_h": {
+        eng: "Run \"pond -h\" for more information on Pond commands.",
+        nmt: "T_pond_command_intro_do_h",
+        jpn: "T_pond_command_intro_do_h"
+    },
+    "T_pond_command_help_intro": {
+        eng: "* Pond Command Help *",
+        nmt: "T_pond_command_help_intro",
+        jpn: "T_pond_command_help_intro"
+    },
+    "T_pond_command_help_login": {
+        eng: "pond -l [username] [password] - Log in to your Pond account",
+        nmt: "T_pond_command_help_login",
+        jpn: "T_pond_command_help_login"
+    },
+    "T_pond_command_help_register": {
+        eng: "pond -r [username] [password] - Register a new Pond account",
+        nmt: "T_pond_command_help_register",
+        jpn: "T_pond_command_help_register"
+    },
     // uncategorized messages ==========================
 
 };
@@ -1136,7 +1170,8 @@ const FroggyFileSystem = new fs({
             "KEY Ribbit TYPE String VALUE woof END",
             "KEY shit TYPE Number VALUE 1.2 END"
         ] },
-    ],  "C:": [],
+    ],
+    "C:": [],
     "C:/Home": [
         { name: "welcome!", properties: {transparent: false, read: true, write: true, hidden: false}, data: ['Hello!', "Welcome to FroggyOS.", "Type 'help' for a list of commands.", "Have fun! ^v^"] },
     ],
