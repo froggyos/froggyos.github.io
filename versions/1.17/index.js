@@ -1308,7 +1308,7 @@ async function sendCommand(command, args, createEditableLineAfter){
         } break;
 
         case "pond": {
-            await fetch("http://roari.bpai.us/pond/ping/").then(response => {
+            await fetch("https://roari.bpai.us/pond/ping/").then(response => {
                 if(response.ok){
                     response.json().then(data => {
                         createTerminalLine("T_pond_server_ok", ">");
