@@ -1,0 +1,904 @@
+# Bugs
+ - chaining `.` and `+` dont work properly
+ - cant set object properties
+# Introduction
+Froggyscript is a dynamically typed, interpreted programming language designed for simplicity and ease of use. It is the primary scripting language for FroggyOS.
+# Documentation
+## Conventions & General Info
+Five hyphens (`-----`) inside of documentation denotes that below is the output of the code above.
+```
+out 'Hello, World!'
+
+-----
+
+> Hello, World!
+```
+### Comments
+```
+# Comment!
+#Also a comment.
+```
+
+### Types
+#### Primary
+There are 4 main types in FroggyScript3: `string`, `number`, `array`, and `object`.
+```
+# string
+'Hello, World!'
+"Hello, World!"
+
+# number
+10
+3.14
+
+# array
+[1, 2, 3]
+['h', 'e', 'l', 'l', 'o']
+[1, 'two', 3.0, "four", variable]
+
+# object
+var variable = {
+    'name' = 'FroggyScript3'
+    'version' = 1.17
+}
+```
+Objects can **only** be defined in variables. See more in the Variables section. You can access object properties with the `.` operator.
+```
+var myObject = {
+    'name' = 'FroggyScript3'
+    'version' = 1.17
+}
+
+out $myObject.'name'
+```
+You can also use variables to name and access properties.
+```
+var propertyName = 'name'
+
+var myObject = {
+    propertyName = 'FroggyScript3'
+    'version' = 1.17
+}
+
+out $myObject.propertyName
+```
+You can nest objects within objects.
+```
+var myObject = {
+    'name' = 'FroggyScript3'
+    'version' = 1.17
+    'nestedProperty' = {
+        'innerName' = 'Inner'
+    }
+}
+out $myObject.'nestedProperty'.'innerName'
+```
+When a parameter can be an object, it will be specified in documentation as `object`, rather than `block`.
+
+#### Other
+There are also 4 other types: `function_reference`, `condition_statement`, `variable_reference`, and `object_reference`.
+```
+# function_reference
+@myFunction
+
+# condition_statement
+: 1 > 2 :
+:true:
+'hello'>eq('world')
+
+# variable_reference
+$myVariable
+
+# object_reference
+out $myObject.'name'
+# note: $myObject is a variable_reference
+```
+Variable references are used to reference a variable without resolving the variable itself. This is used to pass variables as arguments to keywords.
+### Literals
+Literals are non-variables with special use cases.
+```
+in  # literal_in
+ =  # literal_assignment
+```
+### Blocks
+This is a block:
+```
+{
+    # Hello!
+}
+```
+Blocks hold lines of FroggyScript3 code and are used in various keywords such as functions, conditionals, and loops.  
+When a keyword specifies in documentation it requires a block like this:
+```
+func [function_reference] [block]
+
+if [condition_statement] [block]
+```
+It should be done like so:
+```
+func @myFunction {
+    out 'Hello, World!'
+}
+
+if :true: {
+    out 'This is true!'
+}
+```
+### User Interrupt
+A user interrupt can be triggered by pressing `Ctrl+C` while the program is running. This will immediately stop execution and raise a `RuntimeError`.
+### Keyword Type Annotations
+Keywords can take only specific types as arguments. In documentation, this is how it is notated:
+```
+keyword [arg1_type] [arg2_type] ...
+
+# Example:
+out [string|number] # accepts either a string or number
+```
+If there is something that requires a variable, it is notated like so:
+```
+keyword [variable]
+
+# Example:
+set [variable] = [string|number|array]
+set myVar = 'Hello, World!'
+```
+If there is something that requires a variable reference, it is notated like so:
+```
+keyword [$variable]
+```
+## Variables
+### Default Variables
+There are a few default variables that exist in every FroggyScript3 program:
+```
+# fReturn - holds the return value of the last called function
+# true    - 1
+# false   - 0
+```
+### Creation
+Variables are created with the `var` keyword and do not need a type to be specifically declared. Instead, the type is assigned based on the value given to the variable. This cannot be changed later.
+```
+var [variable] = [string|number|array|block]
+
+var myString = 'Hello, World!' # string
+var myNumber = 10              # number
+var myArray = [1, 2, 3]        # array
+```
+To create an object variable, use object notation inside of the block:
+```
+var [variable] = {
+    'property1' = [string|number|array|block]
+    'property2' = [string|number|array|block]
+    ...
+}
+```
+Properties can only be strings. Values can be any type, including other objects.
+#### Constants
+You can create constant variables with the `cvar` keyword. These cannot be reassigned or deleted.
+```
+cvar [variable] = [string|number|array]
+
+cvar myConstant = "I am constant."
+free $myConstant  # AccessError
+set myConstant = "Try to change me."  # AccessError
+```
+### Value Reassignment
+#### Setting a Variable to a New Value
+Variable values can be reassigned with the `set` keyword. The type will not be changed.
+```
+set [$variable] = [string|number|array]
+
+var myString = 'Hello, World!'    # string
+set $myString = 'Goodbye, World!' # Still a string
+set $myString = 10                # TypeError
+```
+#### Setting the Index of an Array
+The `arrset` keyword sets the value at a specific index of an array variable. The type of the value being set does not have to match the type of the existing value at that index.
+```
+arrset [$variable] [number] = [string|number|array]
+
+var myArray = [1, 2, 3]
+arrset $myArray 0 = 10      # myArray is now [10, 2, 3]
+arrset $myArray 1 = 'two'   # myArray is now [10, 'two', 3]
+out myArray>join
+
+-----
+
+> 10,two,3
+```
+#### Setting Properties of an Object
+Use the `.` operator to set a property of an object variable. The type of the value being set does not have to match the type of the existing value at that property.
+```
+set [$variable].'property' = [string|number|array|object]
+
+var myObject = {
+    'name' = 'FroggyScript3'
+    'version' = 1.17
+    'nestedProperty' = {
+        'innerName' = 'Inner'
+    }
+}
+
+set $myObject.'nestedProperty'.'innerName' = 'Modified!'
+out $myObject.'nestedProperty'.'innerName'
+
+-----
+
+> Modified!
+```
+The `+` and `.` operators dont really like each other.
+```
+var myObject = {
+    'friend' = 'John'
+    'farewell' = 'Goodbye,' + ' my friend!' # works!
+}
+
+out 'my friend' + ' is named ' + myObject.'greeting' # errors out
+```
+### Deletion
+Variables can be deleted with the `free` keyword.
+```
+free [$variable]
+
+var myString = 'Hello, World!'
+free $myString
+out myString  # ReferenceError
+```
+Some variables, such as constants, cannot be deleted.
+```
+cvar myConstant = "I am constant."
+free $myConstant  # AccessError
+free $true        # AccessError
+```
+
+## Output
+### Standard Output
+The `out` keyword outputs a value to the console.
+```
+out [string|number]
+
+out 'Hello, World!'
+```
+type `` `n `` to write a newline.
+```
+out 'Hello,`nWorld!'
+
+-----
+
+> Hello,
+  World!
+``` 
+### Warnings
+The `warn` keyword outputs a value to the console as a warning.
+```
+warn [string]
+
+warn 'This is a warning!'
+```
+
+The `longwarn` keyword outputs a value to the console as a warning, with additional details.
+```
+longwarn [string] [string]
+
+longwarn "Warning!" "This is a detailed warning message."
+
+-----
+
+Warning!
+This is a detailed warning message.
+    at line (line number)
+    at col (column number)
+```
+
+### Errors
+The `error` keyword raises an error but does not stop program execution. Follow with `kill` to stop execution.
+```
+error [string]
+
+error 'This is an error!'
+```
+
+The `longerr` keyword raises an error with additional details but does not stop program execution.
+```
+longerr [string] [string]
+
+longerr "Error!" "This is a detailed error message."
+
+-----
+
+Error!
+This is a detailed error message.
+    at line (line number)
+    at col (column number)
+```
+## User Input
+### Ask
+The `ask` keyword prompts the user for input and stores the result in a variable. The variable must be of type `string`.
+```
+ask [$variable] [string]
+
+var name = ''
+ask $name 'What is your name?'
+out 'Hello, ' + name + '!'
+
+-----
+
+What is your name? Alice (user types "Alice" and presses Enter)
+> Hello, Alice!
+```
+### Prompt
+The `prompt` keyword prompts the user to select an option from a list and stores the selected option in a variable. The variable must be of type `string`. The second argument is the index of the default selected option (0-based). The third argument is an array of options to choose from. Navigate the options with the left and right arrow keys, and select an option with the Enter key.
+```
+prompt [$variable] [number] [array]
+
+var choice = ''
+out 'What do you choose?'
+prompt $choice 0 ['option 1', 'option 2', 'option 3']
+out 'You selected: '>concat(choice)
+
+-----
+
+> What do you choose?
+[option 1] • option 2 • option 3
+(user presses right arrow key)
+
+option 1 • [option 2] • option 3
+(user presses left arrow key)
+
+[option 1] • option 2 • option 3
+(user presses Enter)
+
+> You selected: option 1
+```
+### File Arguments
+The `filearg` keyword retrieves a command line argument passed to the program and stores it in a variable. The variable must be of type `string`. The `0`th file argument is always the file name, so the first user-provided argument is at index `1`. Type `\_` to represent spaces in command line arguments.
+```
+filearg [$variable] [number]
+
+var fileName = ''
+var arg = ''
+filearg $fileName 0
+filearg $arg 1
+out 'The program file name is: ' + fileName
+out 'The first user provided command line argument is: ' + arg
+
+-----
+(in command line)
+C:/Home> st program cool\_argument
+
+> The program file name is: program
+> The first user provided command line argument is: cool argument
+```
+## Program Termination
+The `kill` keyword immediately stops program execution by raising a `RuntimeError`.
+```
+kill
+```
+the `quietkill` keyword immediately stops program execution without any error message or output. The program must be trusted in order to use this keyword.
+```
+quietkill
+```
+## Control Flow
+### Conditionals
+The `if` keyword executes a block of code if a condition is true. An optional `else` block can be provided to execute if the condition is false.
+```
+if [condition_statement] [block]
+else [block]
+
+var number = 5
+if :number > 3: {
+    out 'Number is greater than 3'
+}
+# note: this CANNOT be on the same line as the closing brace of the if block
+else {
+    out 'Number is 3 or less'
+}
+```
+### Loops
+```
+loop [number|condition_statement] [block]
+```
+If given a number, the loop will execute that many times. Use the variable `__index__` to get the current index of the loop (0-based).
+```
+loop 5 {
+    out 'Hello, World!'
+}
+
+-----
+
+> Hello, World!
+> Hello, World!
+> Hello, World!
+> Hello, World!
+> Hello, World!
+```
+If given a condition statement, the loop will execute until the condition is false.
+```
+var count = 0
+loop :count < 5: {
+    out count
+    set count = count>inc
+}
+
+-----
+
+> 0
+> 1
+> 2
+> 3
+> 4
+```
+
+### For-Each
+The `foreach` keyword iterates over each element in an array. The variable specified will be assigned to each element in the array for the duration of the block. The array must be of type `array`. You can use the variable `__index__` to get the current index of the loop (0-based). You can use the variable `__item__` to get or set the current item in the loop. If you set `__item__`, it will update the value in the original array.
+```
+foreach [$variable] [block]
+
+var array = ['item1', 'item2', 'item3']
+foreach $array {
+    set __item__ = __item__ + '_modified'
+}
+out array>join
+
+-----
+
+> item1_modified,item2_modified,item3_modified
+```
+### Try-Catch
+The `try` keyword executes a block of code and catches any errors that occur within that block. The `catch` block is executed if an error occurs in the `try` block. The error object is stored in the default variable `__error__`. It has keys `type`, `message`, `line`, and `col`.
+```
+try [block]
+catch [block]
+
+try {
+    out notAVariable
+}
+catch {
+    out 'An error occurred: ' + __error__.'message'
+}
+
+-----
+
+> An error occurred: ReferenceError: Variable [notAVariable] is not defined
+```
+### Block Control Keywords
+#### skip
+The `skip` keyword immediately ends the current block. Has no effect on loops.
+```
+skip
+
+if :true: {
+    out 'Hello, World!'
+    skip
+    out 'This will never be printed.'
+}
+
+-----
+
+> Hello, World!
+```
+#### break
+The `break` keyword immediately ends the current loop.
+```
+break
+
+loop 5 {
+    out 'Hello, World!'
+    break
+    out 'This will never be printed.'
+}
+
+-----
+
+> Hello, World!
+```
+#### continue
+The `continue` keyword immediately ends the current iteration of a loop and begins the next iteration.
+```
+continue
+
+loop 5 {
+    out 'Hello, World!'
+    continue
+    out 'This will never be printed.'
+}
+
+-----
+
+> Hello, World!
+> Hello, World!
+> Hello, World!
+> Hello, World!
+> Hello, World!
+```
+#### exit
+The `exit` keyword immediately ends the current function.
+```
+exit
+
+pfunc @myFunction ['myfunc_num:N'] {
+    if :myfunc_num < 5: {
+        out 'Number must be greater than or equal to 5'
+        exit
+    }
+    out 'You passed!'
+}
+
+pcall @myFunction [2]
+pcall @myFunction [5]
+
+-----
+
+> Number must be greater than or equal to 5
+> You passed!
+```
+## Functions
+### No Parameters
+Functions without parameters are defined with the `func` keyword and called with the `call` keyword.
+```
+func [function_reference] [block]
+call [function_reference]
+
+func @greet {
+    out 'Hello there!'
+}
+call @greet
+```
+### 1 or More Parameters
+Functions with parameters are defined with the `pfunc` keyword and called with the `pcall` keyword. Parameters are defined inside of the array, with their name and type separated by a colon. Types are abbreviated as follows:
+- `S` = `string`
+- `N` = `number`
+- `A` = `array`
+
+If the type is missing, `SyntaxError` is raised. `AccessError` will be raised if a parameterized function is called with `call`, and vice versa. Parameter variables are scoped to the entire program, so treat them as any other variable. They are automatically freed when the function ends. Its good practice to prefix parameter names with the function name to avoid naming collisions.
+```
+pfunc [function_reference] [array] [block]
+pcall [function_reference] [array]
+
+pfunc @addTwo ['addTwo_num1:N', 'addTwo_num2:N'] {
+    out addTwo_num1>add(addTwo_num2)
+}
+pcall @addTwo [3, 5]
+
+-----
+
+> 8
+```
+### Return Values
+Functions can return values with the `return` keyword. The return value is stored in the default variable `fReturn`. `return` does NOT end the function early.
+```
+return [string|number|array]
+
+pfunc @getGreeting ['getGreeting_name:S'] {
+    return 'Hello, ' + getGreeting_name + '!'
+}
+pcall @getGreeting ['Alice']
+out fReturn
+
+-----
+
+> Hello, Alice!
+```
+
+### Importing Modules
+The `import` keyword imports extra keywords and methods that extend functionality of FroggyScript3. Modules can define new keywords and methods.
+```
+import [string]
+
+import 'keyboard'
+```
+Current imports:
+- [keyboard](keyboard.md)
+- [math](math.md)
+
+## Methods
+Methods are functions that are called on a value using the `>` operator. The value to the left of the `>` is called the `parent`. If the method has no arguments, parentheses can be omitted. If the method has arguments, parentheses are required. Methods can be chained together. Method parameters can be optional, which is denoted by `?`. In documentation, `=> return_type` indicates what type the method returns. Descriptors can be added onto arguments to make their function clear.
+```
+[parent_type]>[method_name]([arg1, arg2, ...]) => [return_type]
+```
+`?` indicates an optional argument, and `= default_value` indicates a default value for an optional argument. `*` as a return type indicates the return type can vary (ususally because of array values).
+```
+string>stringMethod(string? = "default") => string
+```
+### Multi-Type
+#### type
+Returns the type of the parent as a string.
+```
+*>type => string
+
+'Hello'>type   # 'string'
+10>type        # 'number'
+[1, 2, 3]>type # 'array'
+```
+### String
+#### length
+Returns the number of characters in the string.
+```
+string>length => number
+'Hello, World!'>length # 13
+```
+#### index
+Returns the character at the specified index in a string. Indexing is zero-based. If the index is out of bounds, `RangeError` is raised.
+```
+string>index(number) => string
+
+'Hello'>index(1) # 'e'
+```
+#### startsWith
+Returns `:1:` if the string starts with the specified substring, `:0:` if it does not.
+```
+string>startsWith(string) => condition_statement
+
+'starts_the_string'>startsWith('starts_') # :1:
+'ends_the_string'>startsWith('starts_') # :0:
+```
+#### endsWith
+Returns `:1:` if the string ends with the specified substring, `:0:` if it does not.
+```
+string>endsWith(string) => condition_statement
+
+'ends_the_string'>endsWith('_string') # :1:
+'starts_the_string'>endsWith('_string') # :0:
+```
+#### replaceAt
+TODOC
+#### concat
+Concatenates two strings.
+```
+string>concat(string) => string
+
+'Hello, '>concat('World!') # 'Hello, World!'
+```
+Long strings of concatenations can be hard to read, so you can alteratively use the `" + "` operator to concatenate strings. You can use this to concatenate numbers to strings, but not strings to numbers.
+```
+out 'Hello, ' + 'World!' # 'Hello, World!'
+out 'The number is: ' + 10 # 'The number is: 10'
+out 10 + ' is the number' # TypeError
+```
+#### eq
+Compares if two strings are equal. Returns `:1:` if true, `:0:` if false.
+```
+string>eq(string) => condition_statement
+
+"equal">eq("equal") # :1:
+"not">eq("equal")   # :0:
+```
+#### neq
+Compares if two strings are not equal. Returns `:1:` if true, `:0:` if false.
+```
+string>neq(string) => condition_statement
+
+"equal">eq("equal") # :0:
+"not">eq("equal")   # :1:
+```
+#### toNumber
+Converts a string to a number. If the string cannot be converted, it returns 0.  
+Alias: `n`
+```
+string>toNumber => number
+
+'123'>toNumber # 123
+'abc'>toNumber # 0
+```
+#### wrap
+Wraps the string with the specified character(s). If zero arguments are given, it defaults to wrapping with double quotes. If one argument is given, it wraps with that argument on both sides. If two arguments are given, it wraps with the first argument on the left and the second argument on the right.
+```
+string>wrap(string?, string?) => string
+
+'Hello'>wrap          # "Hello"
+'Hello'>wrap('*')     # *Hello*
+'Hello'>wrap('<', '>') # <Hello>
+```
+#### repeat
+Repeats the string a specified number of times. Cannot be negative.
+```
+string>repeat(number) => string
+
+'Ha'>repeat(3) # 'HaHaHa'
+'Ha'>repeat(0) # ''
+```
+### Number
+#### inc
+Increments the parent by 1.
+```
+number>inc => number
+
+1>inc # 2
+```
+#### dec
+Decrements the parent by 1.
+```
+number>dec => number
+
+5>dec # 4
+```
+#### add
+Adds two numbers together.
+```
+number>add(number) => number
+
+1>add(2) # 3
+```
+#### sub
+Subtracts the argument from the parent.
+```
+number>sub(number) => number
+
+5>sub(3) # 2
+```
+#### mul
+Multiplies two numbers together.
+```
+number>mul(number) => number
+
+3>mul(4) # 12
+```
+#### div
+Divides the parent by the argument. If dividing by zero, `MathError` is raised.
+```
+number>div(number) => number
+
+10>div(2) # 5
+10>div(0) # MathError
+```
+#### mod
+Returns the remainder of the parent divided by the argument. If dividing by zero, `MathError` is raised.
+```
+number>mod(number) => number
+
+10>mod(3) # 1
+10>mod(0) # MathError
+```
+#### toString
+Converts a number to a string.  
+Alias: `s`
+```
+number>toString => string
+
+123>toString # '123'
+```
+### Array
+#### length
+Returns the number of elements in the array.
+```
+array>length => number
+
+[1, 2, 3, 4, 5]>length # 5
+```
+#### index
+Returns the element at the specified index in an array. Indexing is zero-based. If the index is out of bounds, `RangeError` is raised.
+```
+array>index(number) => *
+
+[10, 20, 30]>index(1) # 20
+```
+#### replaceAt
+Replaces the element at the specified index in an array with a new value. Indexing is zero-based. If the index is out of bounds, `RangeError` is raised.
+```
+
+array>replaceAt(number, *) => array
+
+[1, 2, 3]>replaceAt(1, 20) # [1, 20, 3]
+```
+#### push
+Adds one element to the end of the array.
+```
+array>push(*) => array
+
+[1, 2]>push(3) # [1, 2, 3]
+```
+#### splice
+Removes elements from an array starting at a specified index. The first argument is the starting index (0-based). The second argument is the number of elements to remove (optional, defaults to removing all elements from the starting index to the end of the array). If the starting index is out of bounds or the delete count is negative, `RangeError` is raised.
+```
+array>splice(startingIndex: number, deleteCount: number?) => array
+
+[1, 2, 3, 4, 5]>splice(1, 2) # [1, 4, 5]
+[1, 2, 3, 4, 5]>splice(2)    # [1, 2]
+```
+#### shift
+Removes the first element from the array and returns the array. If the array is empty, `RangeError` is raised.
+```
+array>shift => array
+
+[1, 2, 3]>shift # [2, 3]
+[]>shift        # RangeError
+```
+#### join
+Joins all elements of the array into a single string, with an optional separator.
+```
+array>join(string? = ",") => string
+
+[1, 2, 3]>join                # '1,2,3'
+[1, 2, 3]>join(", ")          # '1, 2, 3'
+['a', 'b', 'c']>join(" and ") # 'a and b and c'
+```
+#### indexOf
+Returns the index of the first occurrence of the specified value in the array. If the value is not found, it returns -1.
+```
+array>indexOf(*) => number
+
+[10, 20, 30]>indexOf(20) # 1
+[10, 20, 30]>indexOf(40) # -1
+```
+#### last
+Returns the last element of the array. If the array is empty, `RangeError` is raised.
+```
+array>last => *
+
+[1, 2, 3]>last # 3
+[]>last        # RangeError
+```
+#### first
+Returns the first element of the array. If the array is empty, `RangeError` is raised.
+```
+array>first => *
+
+[1, 2, 3]>first # 1
+[]>first        # RangeError
+```
+### Object
+#### key
+Returns the value of the specified property in the object.
+```
+object>key(string) => *
+
+var myObject = {
+    'name' = 'FroggyScript3'
+    'version' = 1.17
+}
+myObject>key('name') # 'FroggyScript3'
+```
+
+#### keys
+Returns an array of the object's property names.
+```
+object>keys => array
+
+var myObject = {
+    'name' = 'FroggyScript3'
+    'version' = 1.17
+}
+
+myObject>keys # ['name', 'version']
+```
+### Condition Statement
+#### not
+Returns the opposite of the condition statement. `:1:` becomes `:0:` and vice versa.
+```
+condition_statement>not => condition_statement
+
+:true:>not # :0:
+:false:>not # :1:
+```
+#### toString
+Converts the condition statement to a string. `:1:` becomes `'true'` and `:0:` becomes `'false'`.  
+Alias: `s`
+```
+condition_statement>toString => string
+
+:true:>toString  # '1'
+:false:>toString # '0'
+```
+#### toNumber
+Converts the condition statement to a number. `:1:` becomes `1` and `:0:` becomes `0`.  
+Alias: `n`
+```
+condition_statement>toNumber => number
+
+:true:>toNumber  # 1
+:false:>toNumber # 0
+```
+
+## Types of Errors
+| Error                     | Description                                                                                                                                                                                                                                                                |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `AccessError`             |  Raised when a valid symbol (such as a function or variable) exists but is used incorrectly in its access context. Examples include attempting to call a parameterized function with `call` when it must be invoked with `pcall` and trying to change a constant variable. |
+| `ArgumentError`           | Raised when arguments provided to a keyword or method are invalid or incomplete.                                                                                                                                                                                           |
+| `InternalJavaScriptError` | It's not you, it's me.                                                                                                                                                                                                                                                     |
+| `MathError`               | Raised when mathematical evaluation fails. Examples include divide-by-zero.                                                                                                                                                                                                |
+| `RangeError`              | Raised when a value is outside the permitted range for an operation. For example, accessing an array index that does not exist or a numeric overflow/underflow check.                                                                                                      |
+| `ReferenceError`          | Raised when accessing an undefined identifier such as a variable, function, or method. Example: using `foo` without declaring `var foo`.                                                                                                                                   |
+| `RuntimeError`            | A catch-all for errors during program execution that don’t fall into a more specific category. e.g., a failed I/O operation or unexpected control flow issue.                                                                                                              |
+| `SecurityError`           |Raised when a security violation occurs, such as attempting to access restricted resources or keywords. This is particularly relevant when dealing with trusted vs untrusted files. These will **not** be caught by try-catch blocks.                                       |
+| `SyntaxError`             | Raised when the program’s structure is malformed. This is detected after tokenization but before execution. Examples include unclosed blocks, unexpected tokens, or mismatched delimiters.                                                                                 |
+| `TokenizationError`       | Raised when the tokenizer cannot recognize a sequence of characters as a valid token. This happens during the lexical analysis phase before parsing.                                                                                                                       |
+| `TypeError`               | Raised when a value of the wrong type is provided. For example, passing a number where a string is expected or calling a string-specific method on an array.                                                                                                               |

@@ -1306,6 +1306,35 @@ async function sendCommand(command, args, createEditableLineAfter){
             createTerminalLine("T_documentation_opened", ">");
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         } break;
+
+        case "pond": {
+            await fetch("http://roari.bpai.us/pond/ping/").then(response => {
+                if(response.ok){
+                    response.json().then(data => {
+                        createTerminalLine("T_pond_server_ok", ">");
+                        if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                    });
+                } else {
+                    createTerminalLine("T_pond_server_error", config.errorText);
+                    createTerminalLine(`${response.status} - ${response.statusText}`, config.errorText);
+                    if(response.body != null){
+                            response.text().then(bodyText => {
+                            createTerminalLine(`T_pond_server_response_body`, "");
+                            createTerminalLine(bodyText, ">", {translate: false});
+                            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                        });
+                    } else {
+                        if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                    }
+
+                    
+                }
+            }).catch(error => {
+                createTerminalLine("T_pond_server_unreachable", config.errorText);
+                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+            });
+
+        } break;
         
         case "rename": {
             if(args.length < 2){

@@ -177,7 +177,8 @@
         "1.13",
         "1.14",
         "1.15",
-        "1.16"
+        "1.16",
+        "1.17"
     ];
 
     function line(message, prefix="\u00A0"){
@@ -215,7 +216,7 @@
             versions[currentSelected].classList.add("selected");
         } else if (e.key == "Enter"){
             let version = versionList[currentSelected];
-            window.location.href = `https://froggyos.github.io/versions/${version}/`;
+            window.location.href = `https://froggyos.xyz/versions/${version}/`;
         }
     })
 
