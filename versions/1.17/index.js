@@ -1306,7 +1306,9 @@ async function sendCommand(command, args, createEditableLineAfter){
 
         case "pond": {
             // roari: make it so only requests from froggyos.xyz and localhost are allowed
-            // also add ip banning
+            // roari: check for malformed requests
+            // roari: also add ip banning
+            // roari: on login, before checking if someone is banned, check to see if their ban has expired. If so, revoke the ban and add it to their moderation history
             if(args.length == 0){
                 const startTime = performance.now();
                 createTerminalLine("T_pond_command_intro_do_h", "");
