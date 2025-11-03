@@ -1367,8 +1367,7 @@ async function sendCommand(command, args, createEditableLineAfter){
                             createTerminalLine(data.error, "", {translate: false});
                             createTerminalLine("", "\u00A0", {translate: false});
                             if(response.status == 403){
-                                const bannedOn = data.bannedOn;
-                                createTerminalLine(`T_pond_banned_on {{${parseTimeFormat(config.timeFormat, bannedOn)}}}`, "");
+                                createTerminalLine(`T_pond_banned_on {{${parseTimeFormat(config.timeFormat, data.bannedOn)}}}`, "");
                                 createTerminalLine(`T_pond_banned_until {{${data.bannedUntil == Infinity ? localize("T_pond_ban_permanent") : parseTimeFormat(config.timeFormat, data.bannedUntil)}}}`, "");
 
                                 createTerminalLine(`T_pond_ban_reason {{${data.bannedReason}}}`, "");
