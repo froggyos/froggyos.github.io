@@ -296,12 +296,8 @@ function updateProgramList(){
     }
 }
 
-function getFileType(file){
-
-}
-
-function parseTimeFormat(text){
-    const now = new Date();
+function parseTimeFormat(text, timestamp){
+    const now = timestamp != null ? new Date(Number(timestamp)) : new Date();
 
     let dowListShort = ['T_date_short_sunday', 'T_date_short_monday', 'T_date_short_tuesday', 'T_date_short_wednesday', 'T_date_short_thursday', 'T_date_short_friday', 'T_date_short_saturday'];
     let dowListLong = ['T_date_long_sunday', 'T_date_long_monday', 'T_date_long_tuesday', 'T_date_long_wednesday', 'T_date_long_thursday', 'T_date_long_friday', 'T_date_long_saturday'];
@@ -1341,11 +1337,89 @@ async function sendCommand(command, args, createEditableLineAfter){
                     if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 });
             } else if(args[0] == "-login" || args[0] == "-l") {
+                const username = args[1];
+                const password = args[2];
+
+                if(username == undefined || password == undefined){
+                    createTerminalLine("T_pond_provide_username_password", config.errorText);
+                    if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                    break;
+                }
+
+                await fetch("https://roari.bpai.us/pond/login/", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        username: username,
+                        password: password
+                    })
+                }).then(response => {
+                    if(response.ok){
+                        response.json().then(data => {
+                            createTerminalLine("T_pond_login_successful", ">");
+                            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                        });
+                    } else {
+                        response.json().then(data => {
+                            createTerminalLine("T_pond_login_failed", config.errorText);
+                            createTerminalLine(data.error, "", {translate: false});
+                            createTerminalLine("", "\u00A0", {translate: false});
+                            if(response.status == 403){
+                                const bannedOn = data.bannedOn;
+                                createTerminalLine(`T_pond_banned_on {{${parseTimeFormat(config.timeFormat, bannedOn)}}}`, "");
+                                createTerminalLine(`T_pond_banned_until {{${data.bannedUntil == Infinity ? localize("T_pond_ban_permanent") : parseTimeFormat(config.timeFormat, data.bannedUntil)}}}`, "");
+
+                                createTerminalLine(`T_pond_ban_reason {{${data.bannedReason}}}`, "");
+                            }
+                            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                        });
+                    }
+                }).catch(error => {
+                    createTerminalLine("T_pond_server_unreachable", config.errorText);
+                    if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                });
 
             } else if(args[0] == "-register" || args[0] == "-r") {
+                const username = args[1];
+                const password = args[2];
+
+                if(username == undefined || password == undefined){
+                    createTerminalLine("T_pond_provide_username_password", config.errorText);
+                    if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                    break;
+                }
+                await fetch("https://roari.bpai.us/pond/register/", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        username: username,
+                        password: password
+                    })
+                }).then(response => {
+                    if(response.ok){
+                        response.json().then(data => {
+                            createTerminalLine("T_pond_registration_successful", ">");
+                            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                        });
+                    } else {
+                        response.json().then(data => {
+                            createTerminalLine("T_pond_registration_failed", config.errorText);
+                            createTerminalLine(data.error, "", {translate: false});
+                            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                        });
+                    }
+                }).catch(error => {
+                    createTerminalLine("T_pond_server_unreachable", config.errorText);
+                    if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                });
 
             } else if(args[0] == "-help" || args[0] == "-h") {
                 createTerminalLine("T_pond_command_help_intro", "");
+                createTerminalLine("T_pond_command_help_ping", ">");
                 createTerminalLine("T_pond_command_help_login", ">");
                 createTerminalLine("T_pond_command_help_register", ">");
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);

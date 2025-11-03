@@ -913,6 +913,56 @@ const presetLanguagesMap = {
         nmt: "T_pond_command_help_register",
         jpn: "T_pond_command_help_register"
     },
+    "T_pond_command_help_ping": {
+        eng: "pond - Ping the Pond server to check its status",
+        nmt: "T_pond_command_help_ping",
+        jpn: "T_pond_command_help_ping"
+    },
+    "T_pond_provide_username_password": {
+        eng: "Please provide a username and/or password.",
+        nmt: "T_pond_provide_username_password",
+        jpn: "T_pond_provide_username_password"
+    },
+    "T_pond_registration_successful": {
+        eng: "Registration successful! You can now log in with your credentials.",
+        nmt: "T_pond_registration_successful",
+        jpn: "T_pond_registration_successful"
+    },
+    "T_pond_registration_failed": {
+        eng: "Registration failed",
+        nmt: "T_pond_registration_failed",
+        jpn: "T_pond_registration_failed"
+    },
+    "T_pond_login_successful": {
+        eng: "Login successful! Welcome back.",
+        nmt: "T_pond_login_successful",
+        jpn: "T_pond_login_successful"
+    },
+    "T_pond_login_failed": {
+        eng: "Login failed.",
+        nmt: "T_pond_login_failed",
+        jpn: "T_pond_login_failed"
+    },
+    "T_pond_banned_on {{}}": {
+        eng: "Banned on: {{}}",
+        nmt: "T_pond_banned_on {{}}",
+        jpn: "T_pond_banned_on {{}}"
+    },
+    "T_pond_banned_until {{}}": {
+        eng: "Banned until: {{}}",
+        nmt: "T_pond_banned_until {{}}",
+        jpn: "T_pond_banned_until {{}}"
+    },
+    "T_pond_ban_permanent": {
+        eng: "Permanent",
+        nmt: "T_pond_ban_permanent",
+        jpn: "T_pond_ban_permanent"
+    },
+    "T_pond_ban_reason {{}}": {
+        eng: "Reason: {{}}",
+        nmt: "T_pond_ban_reason {{}}",
+        jpn: "T_pond_ban_reason {{}}"
+    },
     // uncategorized messages ==========================
 
 };
