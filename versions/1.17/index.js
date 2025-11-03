@@ -1305,6 +1305,8 @@ async function sendCommand(command, args, createEditableLineAfter){
         } break;
 
         case "pond": {
+            // roari: make it so only requests from froggyos.xyz and localhost are allowed
+            // also add ip banning
             if(args.length == 0){
                 const startTime = performance.now();
                 createTerminalLine("T_pond_command_intro_do_h", "");
