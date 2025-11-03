@@ -874,7 +874,7 @@ const presetLanguagesMap = {
         jpn: "T_pond_server_ok" 
     },
     "T_pond_server_error": {
-        eng: "Error: Could not reach Pond server.",
+        eng: "Could not reach Pond server.",
         nmt: "T_pond_server_error",
         jpn: "T_pond_server_error"
     },
