@@ -1314,7 +1314,7 @@ async function sendCommand(command, args, createEditableLineAfter){
                 createTerminalLine("T_pond_command_intro_do_h", "");
                 createTerminalLine("~~~", "", {translate: false});
                 createTerminalLine("T_pond_checking", ">");
-                await fetch("https://roari.bpai.us/pond/ping/").then(response => {
+                await fetch(`${pondLink}/ping`).then(response => {
                     if(response.ok){
                         response.json().then(data => {
                             createTerminalLine("T_pond_server_ok", ">");
@@ -1350,14 +1350,14 @@ async function sendCommand(command, args, createEditableLineAfter){
                     break;
                 }
 
-                await fetch("https://roari.bpai.us/pond/login/", {
+                await fetch(`${pondLink}/login`, {
                     method: "POST",
                     headers: {
-                        "Content-Type": "application/json"
+                        "Content-Type": "application/json",
                     },
                     body: JSON.stringify({
                         username: username,
-                        password: password
+                        password: password,
                     })
                 }).then(response => {
                     if(response.ok){
@@ -1368,13 +1368,14 @@ async function sendCommand(command, args, createEditableLineAfter){
                     } else {
                         response.json().then(data => {
                             createTerminalLine("T_pond_login_failed", config.errorText);
+                            createTerminalLine(response.status + " - " + response.statusText, "", {translate: false});
                             createTerminalLine(data.error, "", {translate: false});
-                            createTerminalLine("", "\u00A0", {translate: false});
                             if(response.status == 403){
                                 createTerminalLine(`T_pond_banned_on {{${parseTimeFormat(config.timeFormat, data.bannedOn)}}}`, "");
                                 createTerminalLine(`T_pond_banned_until {{${data.bannedUntil == Infinity ? localize("T_pond_ban_permanent") : parseTimeFormat(config.timeFormat, data.bannedUntil)}}}`, "");
 
                                 createTerminalLine(`T_pond_ban_reason {{${data.bannedReason}}}`, "");
+                                createTerminalLine("", "\u00A0", {translate: false});
                             }
                             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                         });
@@ -1393,14 +1394,14 @@ async function sendCommand(command, args, createEditableLineAfter){
                     if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                     break;
                 }
-                await fetch("https://roari.bpai.us/pond/register/", {
+                await fetch(`${pondLink}/register`, {
                     method: "POST",
                     headers: {
-                        "Content-Type": "application/json"
+                        "Content-Type": "application/json",
                     },
                     body: JSON.stringify({
                         username: username,
-                        password: password
+                        password: password,
                     })
                 }).then(response => {
                     if(response.ok){
@@ -2437,6 +2438,9 @@ const SKIP_ANIMATION = true;
 
 let animSkipped = false;
 let innerBar = document.getElementById("inner-bar");
+
+const devMode = true;
+const pondLink = devMode ? "http://127.0.0.1:29329" : "roari.bpai.us/pond";
 
 if(!SKIP_ANIMATION) {
     innerBar.animate(...getTimings(0)).onfinish = () => {
