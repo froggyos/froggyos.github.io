@@ -1478,6 +1478,7 @@ async function sendCommand(command, args, createEditableLineAfter){
         break;
 
         // save state
+        // BUG:  files dont save?
         case "svs":
         case "savestate":
             localStorage.setItem(`froggyOS-state-${config.version}-config`, JSON.stringify(config));
