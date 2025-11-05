@@ -148,7 +148,7 @@ const mainMenu = {
 
         config.currentPath = "D:/Pond/drafts";
 
-        createTerminalLine("Writing new message...", "", {translate: false});
+        createTerminalLine("Composing new message...", "", {translate: false});
         createTerminalLine("", "\u00A0", {translate: false});
         createTerminalLine("Press [ESC] to save and exit", ">", {translate: false});
         createTerminalLine("Press [SHIFT + ESC] to exit without saving", ">", {translate: false});
@@ -185,7 +185,8 @@ const mainMenu = {
             const draftFiles = FroggyFileSystem.getDirectory("D:/Pond/drafts");
             
             let menu = {
-                "Drafts:": "text",
+                "Drafts": "text",
+                "": "newline",
                 "Press [DEL] to delect the selected draft.": "text",
                 "Drafts are stored locally in D:/Pond/drafts, make sure to save froggyOS in order to keep them.": "text",
                 "": "newline"
