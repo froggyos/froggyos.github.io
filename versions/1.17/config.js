@@ -1145,6 +1145,9 @@ class FroggyFile {
     write(data) {
     if(this.#name === "trusted_programs") throw new Error("You may not write to the 'trusted_programs' file.");
         this.#data = data;
+        data.forEach(line => {
+            this.#size += line.length + 1;
+        });
     }
 
     getData() {
@@ -1200,6 +1203,7 @@ const FroggyFileSystem = new fs({
             "2 TYPE String VALUE D:/Program-Data",
             "3 TYPE String VALUE D:/Palettes",
             "4 TYPE String VALUE D:/Spinners",
+            "5 TYPE String VALUE D:/Pond",
             "KEY dissallowSubdirectoriesIn TYPE Array END",
             "KEY validateLanguageOnStartup TYPE Boolean VALUE true END",
         ] },
@@ -1227,6 +1231,8 @@ const FroggyFileSystem = new fs({
     ],
     "C:/Docs": [],
     "D:": [], 
+    "D:/Pond": [],
+    "D:/Pond/drafts": [],
     "D:/Programs": [
         { name: "cli", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["quietkill"] },
         { name: "lilypad", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["quietkill"] },
