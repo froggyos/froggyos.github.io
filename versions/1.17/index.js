@@ -1483,6 +1483,8 @@ async function sendCommand(command, args, createEditableLineAfter){
         case "savestate":
             localStorage.setItem(`froggyOS-state-${config.version}-config`, JSON.stringify(config));
             localStorage.setItem(`froggyOS-state-${config.version}-fs`, FroggyFileSystem.stringify());
+
+            console.log(localStorage.getItem(`froggyOS-state-${config.version}-fs`));
             createTerminalLine("T_state_saved", ">")
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
@@ -2768,7 +2770,7 @@ let dateTimeInterval = setInterval(() => {
 }, 100);
 
 const onStart = () => {
-    sendCommand("pond", ["-l", "test", "test"])
+    //sendCommand("pond", ["-l", "test", "test"])
     //sendCommand("st", ["snake", "file\\_arg\\_1"])
 }
 
