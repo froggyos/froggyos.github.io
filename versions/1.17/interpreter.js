@@ -2794,6 +2794,7 @@ class FroggyScript3 {
         }
 
         tokens.forEach((t, i) => {
+            if(t.length == 0) return;
             if(t[0].type == "keyword" && t[0].value == "import"){
                 FS3Keyword.get("import").fn(t.slice(1), this, t);
             }

@@ -1700,21 +1700,28 @@ async function sendCommand(command, args, createEditableLineAfter){
             }
 
             let error1 = sendCommand("[[BULLFROG]]changepath", ["D:/Programs"], false)
-            if(error1 == false){
-                let error2 = sendCommand("m", [args[0]], false);
-                if(error2){
-                    if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
-                } else {
-                    let lines = document.querySelectorAll(`[data-program='lilypad-session-${config.programSession}']`);
-                    let targetLineNumber = parseInt(args[1]);
-
-                    lines[targetLineNumber].focus();
-                    moveCaretToPosition(lines[targetLineNumber], parseInt(args[2]));
-
-                    lines.forEach(line => line.classList.remove("highlighted-line"));
-                    lines[targetLineNumber].classList.add("highlighted-line");
-                }
+            let programFile = FroggyFileSystem.getFile(`D:/Programs/${args[0]}`);
+            if(programFile == undefined){
+                createTerminalLine("T_program_does_not_exist", config.errorText);
+                hadError = true;
+                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                break;
             }
+
+            if(programFile.getProperty('write') == false){
+                createTerminalLine("T_no_permission_to_edit_program", config.errorText);
+                hadError = true;
+                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                break;
+            }
+
+
+            if(hadError == false){
+                openLilypad(programFile, createEditableLineAfter);
+                const lines = document.querySelectorAll("[data-program='lilypad-session-3']");
+            }
+            
+            
         } break;
 
 
@@ -2346,7 +2353,6 @@ function createLilypadLine(path, linetype, filename){
 
 function createLilypadLinePondDerivative(path, filename, options){
     const exitMenu = options.exitMenu || null;
-    const allowSending = options.allowSending || false;
 
     config.currentProgram = "lilypad";
     let lineContainer = document.createElement('div');
@@ -2382,7 +2388,16 @@ function createLilypadLinePondDerivative(path, filename, options){
         })
     }
 
+    const previousSpinner = structuredClone(config.currentSpinner);
+
     window.terminalLineKeydownHandler = (e) => {
+        if (["Backspace", "Delete", "Enter", "Tab"].includes(e.key) ||
+            (e.key.length === 1 && !e.ctrlKey && !e.metaKey) 
+        ) {
+            setSetting("showSpinner", true);
+            setSetting("currentSpinner", "unsaved");
+        }
+
         function keybindCondition(key, meta = { shiftKey: false, ctrlKey: false, altKey: false }){
             meta.shiftKey = meta.shiftKey || false;
             meta.ctrlKey = meta.ctrlKey || false;
@@ -2423,7 +2438,7 @@ function createLilypadLinePondDerivative(path, filename, options){
 
             line.textContent = line.textContent.slice(0, cursorPosition);
 
-            createLilypadLinePondDerivative("", filename, { exitMenu: exitMenu, allowSending: allowSending });
+            createLilypadLinePondDerivative("", filename, { exitMenu: exitMenu });
             let newFocus = document.activeElement;
             newFocus.textContent = textAfterCursor;
             updateLinePrefixes();
@@ -2432,7 +2447,7 @@ function createLilypadLinePondDerivative(path, filename, options){
 
         if(keybindCondition("Enter", { shiftKey: true })){
             e.preventDefault();
-            createLilypadLinePondDerivative("", filename, { exitMenu: exitMenu, allowSending: allowSending });
+            createLilypadLinePondDerivative("", filename, { exitMenu: exitMenu });
             updateLinePrefixes();
             highlight(document.activeElement);
         }
@@ -2594,11 +2609,23 @@ function createLilypadLinePondDerivative(path, filename, options){
             }   
         }
 
+        if(keybindCondition("F1")){
+            e.preventDefault();
+            const file = FroggyFileSystem.getFile(`D:/Pond/drafts/${filename}`);
 
+            let dataToWrite = [];
+
+            for(let i = 0; i < lines.length; i++){
+                dataToWrite.push(lines[i].textContent);
+            }
+
+            file.write(dataToWrite);
+            setSetting("showSpinner", false)
+            setSetting("currentSpinner", previousSpinner)
+        }
 
         if(e.key == "Escape"){
             e.preventDefault();
-            config.currentProgram = "cli";
 
             let currentFile = FroggyFileSystem.getFile(`D:/Pond/drafts/${filename}`);
 
@@ -2615,6 +2642,10 @@ function createLilypadLinePondDerivative(path, filename, options){
                 createEditableTerminalLine(`${config.currentPath}>`);
             } else {
                 terminalLine.removeEventListener('keydown', terminalLineKeydownHandler);
+
+                setSetting("showSpinner", false)
+                setSetting("currentSpinner", previousSpinner)
+
                 if(e.shiftKey == false){
 
                     let dataLength = 0;
@@ -2628,7 +2659,15 @@ function createLilypadLinePondDerivative(path, filename, options){
 
                         setSetting("showSpinner", false)
                         currentFile.write(dataToWrite);
-                        console.log(dataToWrite.join("[][][]"));
+                        if(/^Recipient:(.+?)-----Subject:(.+?)-----/.test(dataToWrite.join(""))){
+                            const match = dataToWrite.join("").match(/^Recipient:(.+?)-----Subject:(.+?)-----/);
+                            const recipient = match[1].trim().replaceAll(" ", "-");
+                            const subject = match[2].trim().replaceAll(" ", "-");
+
+                            const timestamp = currentFile.getName().split("-")[1];
+
+                            currentFile.rename(`${recipient}-${subject}-${timestamp}`);
+                        }
 
                         try {
                             currentFile.write(dataToWrite);
@@ -2642,7 +2681,8 @@ function createLilypadLinePondDerivative(path, filename, options){
                         createPondMenu(exitMenu);
                     }, dataLength);
                 } else {
-                    createTerminalLine(`T_lilypad_exit_without_saving`, ">");
+                    setSetting("showSpinner", false)
+                    setSetting("currentSpinner", previousSpinner)
                     createPondMenu(exitMenu);
                 }
             }
@@ -2767,6 +2807,7 @@ function openLilypad(file, createEditableLineAfter){
         hadError = true;
         if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
     }
+
     for(let i = 0; i < file.getData().length; i++){
         if(config.allowedProgramDirectories.includes(config.currentPath)){
             createLilypadLine(String(i+1).padStart(3, "0"), "code", file.getName());
@@ -2803,254 +2844,6 @@ function openPondLilypad(file, options){
     let lines = document.querySelectorAll(`[data-program='lilypad-pond-session-${config.programSession}']`)
     lines[lines.length - 1].classList.add("highlighted-line");
 }
-
-/**
- * Creates a scrollable interactive Pond menu.
- *
- * @param {{ [key: string]: Function | "text" | "newline" }} object
- * - Keys are menu labels.
- * - Values can be:
- *    - A function → selectable/executable item
- *    - "text" → plain text, not selectable
- *    - "newline" → blank line for spacing
- */
-function createPondMenu(object) {
-    const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"));
-
-    if(error) {
-        throw new Error("Blocked attempt to open Pond from unauthorized context.");
-    }
-
-    // --- Remove any existing key listeners ---
-    window.onkeyup = null;
-
-    // --- Clear terminal before showing menu ---
-    terminal.innerHTML = "";
-
-    // --- Build menu items ---
-    const items = Object.entries(object);
-    const menuElements = [];
-    const prefixElements = [];
-    const selectable = [];
-
-    items.forEach(([key, value], index) => {
-        // Newline (spacing only)
-        if (value === "newline") {
-            terminal.appendChild(document.createElement("br"));
-            menuElements.push(null);
-            prefixElements.push(null);
-            return;
-        }
-
-        const lineContainer = document.createElement("div");
-        const terminalLine = document.createElement("div");
-
-        lineContainer.classList.add("line-container");
-        terminalLine.classList.add("terminal-line");
-
-        if (value === "text") {
-            // No prefix for non-selectable text entries
-            terminalLine.textContent = key;
-            terminalLine.classList.add("pond-menu-text");
-            lineContainer.appendChild(terminalLine);
-        } else {
-            // Selectable function entry
-            const prefix = document.createElement("span");
-            prefix.textContent = "~";
-            terminalLine.textContent = key;
-            terminalLine.classList.add("pond-menu-item");
-
-            lineContainer.appendChild(prefix);
-            lineContainer.appendChild(terminalLine);
-
-            prefixElements[index] = prefix;
-            selectable.push(index);
-        }
-
-        terminal.appendChild(lineContainer);
-        menuElements[index] = terminalLine;
-        prefixElements[index] = prefixElements[index] || null;
-    });
-
-    // --- Selection logic ---
-    if (selectable.length === 0) return; // nothing selectable
-
-    let pos = 0;
-    let selectedIndex = selectable[pos];
-    updateSelection();
-
-    function updateSelection() {
-        for (let i = 0; i < menuElements.length; i++) {
-            const el = menuElements[i];
-            const prefix = prefixElements[i];
-            if (!el) continue;
-
-            if (i === selectedIndex) {
-                el.classList.add("selected");
-                if (prefix) prefix.textContent = "~>";
-            } else {
-                el.classList.remove("selected");
-                if (prefix) prefix.textContent = "~";
-            }
-        }
-    }
-
-    // --- Handle keyboard navigation ---
-    window.onkeyup = (e) => {
-        if (e.key === "ArrowUp") {
-            pos = (pos - 1 + selectable.length) % selectable.length;
-            selectedIndex = selectable[pos];
-            updateSelection();
-            e.preventDefault();
-        } else if (e.key === "ArrowDown") {
-            pos = (pos + 1) % selectable.length;
-            selectedIndex = selectable[pos];
-            updateSelection();
-            e.preventDefault();
-        } else if (e.key === "Enter") {
-            const [, fn] = items[selectedIndex];
-            if (typeof fn === "function") fn();
-        }
-    };
-}
-
-const mainMenu = {
-    "Welcome to the Pond!": "text",
-    "Rules:": "text",
-    "1. Be nice!": "text",
-    "": "newline",
-    "Inbox": () => {
-        const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
-
-        if(error) {
-            throw new Error("Blocked attempt to open Pond from unauthorized context.");
-        }
-        console.log("Opening inbox...");
-    },
-    "New Message": () => {
-        const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
-
-        if(error) {
-            throw new Error("Blocked attempt to open Pond from unauthorized context.");
-        }
-        window.onkeyup = null;
-        terminal.innerHTML = "";
-        // create a new file in D:/Pond/Messages with a file name of new-msg-Date.now()
-        let newMsgFileName = `draft-${Date.now()}`;
-
-        const file = new FroggyFile(newMsgFileName);
-
-        file.write([
-            "Recipient:",
-            " ",
-            "-----",
-            "Subject:",
-            " ",
-            "-----",
-            "Body:",
-            " "
-        ]);
-        
-        FroggyFileSystem.addFileToDirectory("D:/Pond/drafts", file);
-
-        config.currentPath = "D:/Pond/drafts";
-
-        createTerminalLine("Writing new message...", "", {translate: false});
-        createTerminalLine("", "\u00A0", {translate: false});
-        createTerminalLine("Press [ESC] to save and exit", ">", {translate: false});
-        createTerminalLine("Press [SHIFT + ESC] to exit without saving", ">", {translate: false});
-        createTerminalLine("Press [F3] to send the last >>saved version of the file<<", ">", {translate: false});
-        createTerminalLine("", "~~~~~", {translate: false});
-        openPondLilypad(file, {
-            exitMenu: mainMenu
-        });
-    },
-    "Sent Messages": () => {
-        const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
-
-        if(error) {
-            throw new Error("Blocked attempt to open Pond from unauthorized context.");
-        }
-    },
-    "Drafts": () => {
-        const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
-
-        if(error) {
-            throw new Error("Blocked attempt to open Pond from unauthorized context.");
-        }
-
-        console.log("Opening drafts...");
-
-        window.onkeyup = null;
-
-        terminal.innerHTML = "";
-
-        config.currentPath = "D:/Pond/drafts";
-
-        // get all files in D:/Pond/drafts
-        const draftFiles = FroggyFileSystem.getDirectory("D:/Pond/drafts");
-
-        const menu = {
-            "Drafts:": "text",
-            "": "newline"
-        };
-
-        draftFiles.forEach(file => {
-            menu[file.getName()] = () => {
-                const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
-
-                if(error) {
-                    throw new Error("Blocked attempt to open Pond from unauthorized context.");
-                }
-
-                window.onkeyup = null;
-                terminal.innerHTML = "";
-
-                openPondLilypad(file, {
-                    exitMenu: menu,
-                    allowSending: false
-                });
-            };
-        })
-
-        menu["<< Back to Main Menu"] = () => {
-            const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
-            if(error) {
-                throw new Error("Blocked attempt to open Pond from unauthorized context.");
-            }
-            createPondMenu(mainMenu);
-        };
-        
-        createPondMenu(menu);
-    },
-    "Exit": () => {
-        const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
-
-        if(error) {
-            throw new Error("Blocked attempt to open Pond from unauthorized context.");
-        }
-        console.log("Exiting Pond...");
-        terminal.innerHTML = "";
-        createEditableTerminalLine(`${config.currentPath}>`);
-    }
-}
-
-async function openPond(){
-    // get a stack trace
-    const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
-
-    if(error) {
-        throw new Error("Blocked attempt to open Pond from unauthorized context.");
-    }
-
-    // promise for 1 second
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    terminal.innerHTML = "";
-
-    const entrancePath = structuredClone(config.currentPath)
-
-    createPondMenu(mainMenu)
-};
 
 if(!SKIP_ANIMATION) {
     innerBar.animate(...getTimings(0)).onfinish = () => {

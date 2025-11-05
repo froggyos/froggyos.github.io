@@ -2182,7 +2182,10 @@ const FroggyFileSystem = new fs({
         ] },
         { name: "securing-in-progress", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
             "§"
-        ] }
+        ] },
+        { name: "unsaved", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
+            "*"
+        ] },
     ],
 })
 
