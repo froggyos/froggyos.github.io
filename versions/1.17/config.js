@@ -963,6 +963,11 @@ const presetLanguagesMap = {
         nmt: "T_pond_ban_reason {{}}",
         jpn: "T_pond_ban_reason {{}}"
     },
+    "T_pond_draft_invalid_format": {
+        eng: "Invalid draft format. Must include a recipient, title, and body.",
+        nmt: "T_pond_draft_invalid_format",
+        jpn: "T_pond_draft_invalid_format"
+    }
     // uncategorized messages ==========================
 
 };
@@ -1790,7 +1795,7 @@ const FroggyFileSystem = new fs({
             "        out row",
             "    }",
             "    if :collision == true: {",
-            "        out 'Game Over! Final Score: ' + score",
+            "        out 'Game Over! Final Score: '>concat(score>s)",
             "        break",
             "    }",
             "    wait 200",

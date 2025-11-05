@@ -1320,6 +1320,9 @@ async function sendCommand(command, args, createEditableLineAfter){
                     if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                 });
             } else if(args[0] == "-login" || args[0] == "-l") {
+                const userRoles = ["user"];
+                openPond(userRoles);
+                return;
                 const username = args[1];
                 const password = args[2];
 
@@ -2352,7 +2355,7 @@ function createLilypadLine(path, linetype, filename){
 
 
 function createLilypadLinePondDerivative(path, filename, options){
-    const exitMenu = options.exitMenu || null;
+    let exitMenu = options.exitMenu || null;
 
     config.currentProgram = "lilypad";
     let lineContainer = document.createElement('div');
@@ -2624,6 +2627,24 @@ function createLilypadLinePondDerivative(path, filename, options){
             setSetting("currentSpinner", previousSpinner)
         }
 
+        if(keybindCondition("F3")){
+            e.preventDefault();
+            const file = FroggyFileSystem.getFile(`D:/Pond/drafts/${filename}`);
+
+            if(!file){
+                createTerminalLine(`T_file_does_not_exist`, config.errorText);
+                return;
+            }
+
+            if(!/^Recipient:(.+?)-----Subject:(.+?)-----(.+?)$/.test(file.getData().join("").trim())){
+                createTerminalLine(`T_pond_draft_invalid_format`, config.errorText);
+                setTimeout(() => {
+                    terminal.lastElementChild.remove();
+                }, 5000);
+                return;
+            }
+        }
+
         if(e.key == "Escape"){
             e.preventDefault();
 
@@ -2658,13 +2679,14 @@ function createLilypadLinePondDerivative(path, filename, options){
                     setTimeout(function(){
 
                         setSetting("showSpinner", false)
-                        currentFile.write(dataToWrite);
                         if(/^Recipient:(.+?)-----Subject:(.+?)-----/.test(dataToWrite.join(""))){
                             const match = dataToWrite.join("").match(/^Recipient:(.+?)-----Subject:(.+?)-----/);
                             const recipient = match[1].trim().replaceAll(" ", "-");
                             const subject = match[2].trim().replaceAll(" ", "-");
 
-                            const timestamp = currentFile.getName().split("-")[1];
+                            const nameParts = currentFile.getName().split("-");
+
+                            const timestamp = nameParts[nameParts.length - 1]; 
 
                             currentFile.rename(`${recipient}-${subject}-${timestamp}`);
                         }
@@ -2672,11 +2694,8 @@ function createLilypadLinePondDerivative(path, filename, options){
                         try {
                             currentFile.write(dataToWrite);
                         } catch (error) {
-                            createPondMenu(exitMenu);
                             createTerminalLine(`T_file_does_not_exist`, config.errorText);
-                            return;
                         }
-
 
                         createPondMenu(exitMenu);
                     }, dataLength);
@@ -2748,8 +2767,8 @@ let dateTimeInterval = setInterval(() => {
 }, 100);
 
 const onStart = () => {
-    //sendCommand("st", ["fs3help", "pfunc"])
-    //sendCommand("st", ["test", "file\\_arg\\_1"])
+    sendCommand("pond", ["-l", "test", "test"])
+    //sendCommand("st", ["snake", "file\\_arg\\_1"])
 }
 
 function ready(){

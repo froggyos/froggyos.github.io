@@ -28,7 +28,6 @@ function createPondMenu(object) {
     const selectable = [];
 
     items.forEach(([key, value], index) => {
-        // Newline (spacing only)
         if (value === "newline") {
             terminal.appendChild(document.createElement("br"));
             menuElements.push(null);
@@ -121,7 +120,7 @@ const mainMenu = {
         }
         console.log("Opening inbox...");
     },
-    "New Message": () => {
+    "Compose Message": () => {
         const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
 
         if(error) {
@@ -181,46 +180,89 @@ const mainMenu = {
         config.currentPath = "D:/Pond/drafts";
 
         // get all files in D:/Pond/drafts
-        const draftFiles = FroggyFileSystem.getDirectory("D:/Pond/drafts");
 
-        const menu = {
-            "Drafts:": "text",
-            "": "newline"
-        };
+        function draftMenu(){
+            const draftFiles = FroggyFileSystem.getDirectory("D:/Pond/drafts");
+            
+            let menu = {
+                "Drafts:": "text",
+                "Press [DEL] to delect the selected draft.": "text",
+                "Drafts are stored locally in D:/Pond/drafts, make sure to save froggyOS in order to keep them.": "text",
+                "": "newline"
+            };
 
-        draftFiles.forEach(file => {
-            menu[file.getName()] = () => {
+            draftFiles.forEach(file => {
+                menu[file.getName()] = () => {
+                    const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
+
+                    if(error) {
+                        throw new Error("Blocked attempt to open Pond from unauthorized context.");
+                    }
+
+                    window.onkeyup = null;
+                    terminal.innerHTML = "";
+
+                    createTerminalLine("Editing draft...", "", {translate: false});
+                    createTerminalLine("", "\u00A0", {translate: false});
+                    createTerminalLine("Press [ESC] to save and exit", ">", {translate: false});
+                    createTerminalLine("Press [SHIFT + ESC] to exit without saving", ">", {translate: false});
+                    createTerminalLine("Press [F1] to save", ">", {translate: false});
+                    createTerminalLine("Press [F3] to send the last >>saved version of the file<<", ">", {translate: false});
+                    createTerminalLine("", "~~~~~", {translate: false});
+
+                    openPondLilypad(file, {
+                        exitMenu: draftMenu(),
+                    });
+                };
+            })
+
+            menu["<< Back to Main Menu"] = () => {
                 const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
-
                 if(error) {
                     throw new Error("Blocked attempt to open Pond from unauthorized context.");
                 }
-
-                window.onkeyup = null;
-                terminal.innerHTML = "";
-
-                createTerminalLine("Editing draft...", "", {translate: false});
-                createTerminalLine("", "\u00A0", {translate: false});
-                createTerminalLine("Press [ESC] to save and exit", ">", {translate: false});
-                createTerminalLine("Press [SHIFT + ESC] to exit without saving", ">", {translate: false});
-                createTerminalLine("Press [F1] to save", ">", {translate: false});
-                createTerminalLine("Press [F3] to send the last >>saved version of the file<<", ">", {translate: false});
-                createTerminalLine("", "~~~~~", {translate: false});
-                openPondLilypad(file, {
-                    exitMenu: menu,
-                });
+                createPondMenu(mainMenu);
             };
-        })
+            
+            return menu;
+        }
 
-        menu["<< Back to Main Menu"] = () => {
-            const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
-            if(error) {
-                throw new Error("Blocked attempt to open Pond from unauthorized context.");
+        createPondMenu(draftMenu());
+
+        document.body.onkeydown = (e) => {
+            if (e.key === "Delete") {
+                const items = document.querySelectorAll(".pond-menu-item");
+                const selected = document.querySelector(".pond-menu-item.selected");
+
+                if (!selected) return; // nothing selected
+
+                // find which index corresponds to the selected item
+                const index = [...items].indexOf(selected);
+                const draftFiles = FroggyFileSystem.getDirectory("D:/Pond/drafts");
+                const file = draftFiles[index];
+
+                if (!file) return;
+
+                createPondMenu({
+                    "Are you sure you want to delete this draft?": "text",
+                    "No": () => {
+                        const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
+                        if(error) {
+                            throw new Error("Blocked attempt to open Pond from unauthorized context.");
+                        }
+                        createPondMenu(draftMenu());
+                    },
+                    "Yes": () => {
+                        const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
+                        if(error) {
+                            throw new Error("Blocked attempt to open Pond from unauthorized context.");
+                        }
+                        FroggyFileSystem.deleteFile(`D:/Pond/drafts/${file.getName()}`);
+                        createPondMenu(draftMenu());
+                    }
+                })
             }
-            createPondMenu(mainMenu);
         };
-        
-        createPondMenu(menu);
     },
     "Exit": () => {
         const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
@@ -228,25 +270,44 @@ const mainMenu = {
         if(error) {
             throw new Error("Blocked attempt to open Pond from unauthorized context.");
         }
-        console.log("Exiting Pond...");
         terminal.innerHTML = "";
+        window.onkeyup = null;
         createEditableTerminalLine(`${config.currentPath}>`);
     }
 }
 
-async function openPond(){
+async function openPond(userRoles = []) {
     // get a stack trace
     const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
-
-    if(error) {
-        throw new Error("Blocked attempt to open Pond from unauthorized context.");
-    }
+    if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
 
     // promise for 1 second
     await new Promise((resolve) => setTimeout(resolve, 1000));
     terminal.innerHTML = "";
 
     const entrancePath = structuredClone(config.currentPath)
+
+    if(userRoles.includes("admin")){
+        mainMenu["Admin Panel"] = () => {
+            const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
+            if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
+
+            const adminMenu = {
+                "Ban User": () => {
+                    const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
+                    if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
+
+                },
+                "<< Back to Main Menu": () => {
+                    const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
+                    if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
+                    createPondMenu(mainMenu);
+                }
+            }
+
+            createPondMenu(adminMenu);
+        };
+    }
 
     createPondMenu(mainMenu)
 };
