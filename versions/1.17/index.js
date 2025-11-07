@@ -1302,35 +1302,27 @@ async function sendCommand(command, args, createEditableLineAfter){
                 createTerminalLine("~~~", "", {translate: false});
                 createTerminalLine("T_pond_checking", ">");
                 setSetting("showSpinner", true)
-                await fetch(`${pondLink}/ping`).then(response => {
-                    if(response.ok){
-                        response.json().then(data => {
-                            setSetting("showSpinner", false)
-                            createTerminalLine("T_pond_server_ok", ">");
-                            createTerminalLine(`T_pond_server_response_time {{${Math.round(performance.now() - startTime)}}}`, ">")
-                            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
-                        });
-                    } else {
+
+                handleRequest("/ping", {
+                    method: "GET",
+                }, {
+                    "500": async (response, data) => {
+                        setSetting("showSpinner", false)
+                        createTerminalLine("T_pond_server_unreachable", config.errorText);
+                        if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                    },
+                    "200": async (response, data) => {
+                        setSetting("showSpinner", false)
+                        createTerminalLine("T_pond_server_ok", ">");
+                        createTerminalLine(`T_pond_server_response_time {{${Math.round(performance.now() - startTime)}}}`, ">")
+                        if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                    },
+                    "40x": async (response, data) => {
                         setSetting("showSpinner", false)
                         createTerminalLine("T_pond_server_error", config.errorText);
-                        createTerminalLine(`${response.status} - ${response.statusText}`, config.errorText);
-                        if(response.body != null){
-                                response.text().then(bodyText => {
-                                createTerminalLine(`T_pond_server_response_body`, "");
-                                createTerminalLine(bodyText, ">", {translate: false});
-                                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
-                            });
-                        } else {
-                            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
-                        }
-
-                        
+                        createTerminalLine(`${response.status} ${response.statusText}`, config.errorText);
                     }
-                }).catch(error => {
-                    setSetting("showSpinner", false)
-                    createTerminalLine("T_pond_server_unreachable", config.errorText);
-                    if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
-                });
+                })
             } else if(args[0] == "-login" || args[0] == "-l") {
                 const userRoles = ["user"];
                 const username = args[1];
@@ -1343,7 +1335,8 @@ async function sendCommand(command, args, createEditableLineAfter){
                 }
 
                 setSetting("showSpinner", true)
-                await fetch(`${pondLink}/login`, {
+
+                handleRequest("/login", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
@@ -1352,39 +1345,35 @@ async function sendCommand(command, args, createEditableLineAfter){
                         username: username,
                         password: password,
                     })
-                }).then(response => {
-                    if(response.ok){
-                        response.json().then(data => {
-                            setSetting("showSpinner", false)
-                            createTerminalLine(`T_pond_login_successful {{${username}}}`, ">");
+                }, {
+                    "40x": async (response, data) => {
+                        setSetting("showSpinner", false)
+                        createTerminalLine(response.status + " " + response.statusText, config.errorText, {translate: false});
+                        if(response.status == 403){
+                            createTerminalLine("T_pond_user_banned", config.errorText);
+                            createTerminalLine(`T_pond_banned_on {{${parseTimeFormat(config.timeFormat, data.bannedOn)}}}`, "");
+                            createTerminalLine(`T_pond_banned_until {{${data.bannedUntil == -1 ? localize("T_pond_ban_permanent") : parseTimeFormat(config.timeFormat, data.bannedUntil)}}}`, "");
+                            createTerminalLine(`T_pond_ban_reason {{${data.bannedReason}}}`, "");
+                        } else if(response.status == 404){
+                            createTerminalLine("T_invalid_name_password", config.errorText);
+                        }
+                        if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                    },
+                    "200": async (response, data) => {
+                        setSetting("showSpinner", false)
+                        createTerminalLine(`T_pond_login_successful {{${username}}}`, ">");
+                        let sessionTokenStore = FroggyFileSystem.getFile("D:/Pond/secret/e0ba59dd5c336adf");
 
-                            // create a file in D:/Pond called session_token
-                            let sessionTokenStore = FroggyFileSystem.getFile("D:/Pond/secret/e0ba59dd5c336adf");
+                        sessionTokenStore.write([data.sessionToken]);
 
-                            sessionTokenStore.write([data.sessionToken]);
-
-                            openPond(data.roles);
-                        });
-                    } else {
-                        response.json().then(data => {
-                            setSetting("showSpinner", false)
-                            createTerminalLine("T_pond_login_failed", config.errorText);
-                            createTerminalLine(response.status + " - " + response.statusText, "", {translate: false});
-                            createTerminalLine(data.error, "", {translate: false});
-                            if(response.status == 403){
-                                createTerminalLine(`T_pond_banned_on {{${parseTimeFormat(config.timeFormat, data.bannedOn)}}}`, "");
-                                createTerminalLine(`T_pond_banned_until {{${data.bannedUntil == -1 ? localize("T_pond_ban_permanent") : parseTimeFormat(config.timeFormat, data.bannedUntil)}}}`, "");
-
-                                createTerminalLine(`T_pond_ban_reason {{${data.bannedReason}}}`, "");
-                            }
-                            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
-                        });
+                        openPond(data.roles);
+                    },
+                    "500": async (response, data) => {
+                        setSetting("showSpinner", false)
+                        createTerminalLine("T_pond_server_unreachable", config.errorText);
+                        if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                     }
-                }).catch(error => {
-                    setSetting("showSpinner", false)
-                    createTerminalLine("T_pond_server_unreachable", config.errorText);
-                    if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
-                });
+                })
 
             } else if(args[0] == "-register" || args[0] == "-r") {
                 const username = args[1];
@@ -1397,7 +1386,7 @@ async function sendCommand(command, args, createEditableLineAfter){
                 }
 
                 setSetting("showSpinner", true)
-                await fetch(`${pondLink}/register`, {
+                handleRequest("/register", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
@@ -1406,25 +1395,29 @@ async function sendCommand(command, args, createEditableLineAfter){
                         username: username,
                         password: password,
                     })
-                }).then(response => {
-                    if(response.ok){
-                        response.json().then(data => {
-                            setSetting("showSpinner", false)
-                            createTerminalLine("T_pond_registration_successful", ">");
-                            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
-                        });
-                    } else {
-                        response.json().then(data => {
-                            setSetting("showSpinner", false)
-                            createTerminalLine("T_pond_registration_failed", config.errorText);
-                            createTerminalLine(data.error, "", {translate: false});
-                            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
-                        });
-                    }
-                }).catch(error => {
-                    setSetting("showSpinner", false)
-                    createTerminalLine("T_pond_server_unreachable", config.errorText);
-                    if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                }, {
+                    200: async (response, data) => {
+                        setSetting("showSpinner", false)
+                        createTerminalLine("T_pond_registration_successful", ">");
+                        if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                    },
+                    400: async (response, data) => {
+                        setSetting("showSpinner", false)
+                        createTerminalLine("T_pond_registration_failed", config.errorText);
+                        createTerminalLine(data.details, "", {translate: false});
+                        if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                    },
+                    409: async (response, data) => {
+                        setSetting("showSpinner", false)
+                        createTerminalLine("T_pond_registration_failed", config.errorText);
+                        createTerminalLine("T_pond_username_taken", config.errorText);
+                        if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                    },
+                    500: async (response, data) => {
+                        setSetting("showSpinner", false)
+                        createTerminalLine("T_pond_server_error", config.errorText);
+                        if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                    },
                 });
 
             } else if(args[0] == "-help" || args[0] == "-h") {
@@ -2666,32 +2659,45 @@ async function createLilypadLinePondDerivative(path, filename, options){
 
                 const sessionToken = FroggyFileSystem.getFile("D:/Pond/secret/e0ba59dd5c336adf").getData().join("").trim();
 
-                await fetch(`${pondLink}/send`, {
+                handleRequest("/send", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
+                        "Session-Token": sessionToken
                     },
                     body: JSON.stringify({
-                        session_token: sessionToken,
                         recipient: recipient,
                         subject: subject,
                         body: body,
                         timestamp: timestamp
-                    }),
-                }).then((response) => {
-                    if(response.status == 403){
+                    })
+                }, {
+                    401: (req, data) => {
                         terminal.innerHTML = "";
-                        createTerminalLine(`T_pond_session_expired`, config.errorText, {expire: 5000});
+                        createTerminalLine(`T_invalid_session`, config.errorText);
                         createEditableTerminalLine(`${config.currentPath}>`);
-                    } else if(response.ok){
+                    },
+                    403: (req, data) => {
+                        terminal.innerHTML = "";
+                        createTerminalLine(`T_session_forcefully_terminated`, config.errorText, {expire: 5000});
+                        createEditableTerminalLine(`${config.currentPath}>`);
+                    },
+                    404: (req, data) => {
+                        if(data.type == "recipient"){
+                            createTerminalLine(`T_additional_notes_user_not_found`, config.errorText, {expire: 5000});
+                        } else {
+                            createTerminalLine(`T_pond_error_sending_message {{${data.error}}}`, config.errorText, {expire: 5000});
+                        }
+                    },
+                    200: (req, data) => {
                         const file = structuredClone(FroggyFileSystem.getFile(`D:/Pond/drafts/${filename}`).toJSON());
-
 
                         const newFile = FroggyFile.from(file);
 
-                        const newName = "sent-" + (newFile.getName().replace(/^draft-/, ""))
+                        const newName = "sent-" + (file.name.replace(/^draft-/, ""))
 
                         newFile.rename(newName);
+
                         newFile.setProperty("write", false);
                         newFile.setProperty("read", true);
                         newFile.setProperty("hidden", false);
@@ -2701,12 +2707,8 @@ async function createLilypadLinePondDerivative(path, filename, options){
                         FroggyFileSystem.addFileToDirectory("D:/Pond/sent", newFile);
 
                         createPondMenu(mainMenu);
-                    } else {
-                        response.json().then(data => {
-                            createTerminalLine(`T_pond_error_sending_message {{${data.error}}}`, config.errorText, {expire: 5000});
-                        });
                     }
-                });
+                })
             }
         }
 

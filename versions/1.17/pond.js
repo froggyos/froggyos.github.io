@@ -6,36 +6,49 @@
  * @param {Object<number, (req: Request, resBody: any) => void>} handlers - 
  * An object whose keys are HTTP status codes and whose values are functions 
  * that receive the request object and the parsed response body.
+ * supports wildcard handlers like 40x, 50x for general error handling.
  */
 async function handleRequest(link, body, handlers) {
+    const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"));
+    if(error) throw new Error("Blocked attempt to make Pond request from unauthorized context.");
     try {
-
         const response = await fetch(`${pondLink}${link}`, body);
-        let resBody;
+        let data;
 
-        // Try parsing JSON safely
+        // Parse JSON safely
         try {
-            resBody = await response.json();
+            data = await response.json();
         } catch (e) {
             createTerminalLine("Error: Response could not be parsed as JSON.", "", { translate: false });
             throw new Error(`JSON Parse Error: ${e.message}`);
         }
 
-        // Handle known statuses
+        handlers[429] = handlers[429] || function (response, data) {
+            terminal.innerHTML = "";
+            createTerminalLine("T_pond_rate_limited", config.errorText);
+            createEditableTerminalLine(`${config.currentPath}>`);
+        }
+
+        // Try exact status handler first
         if (handlers[response.status]) {
-            handlers[response.status](response, resBody);
+            handlers[response.status](response, data);
+            return;
+        }
+
+        // Try fallback wildcard handler (e.g. 40x, 50x)
+        const wildcardKey = `${Math.floor(response.status / 10)}x`;
+        if (handlers[wildcardKey]) {
+            handlers[wildcardKey](response, data);
             return;
         }
 
         // Handle unexpected statuses
         const summary = `${response.status} ${response.statusText || ""}`.trim();
-        const bodyPreview = typeof resBody === "object" ? JSON.stringify(resBody).slice(0, 150) : String(resBody).slice(0, 150);
 
-        console.error(resBody);
-        throw new Error(`Unhandled response for link ${link}: ${summary} - ${resBody.type}`);
-
+        console.error(data);
+        throw new Error(`Unhandled response for link ${link}: ${summary} - ${data.type}`);
     } catch (e) {
-        throw e; // rethrow for higher-level debugging if needed
+        throw e; // rethrow for higher-level debugging
     }
 }
 
@@ -247,7 +260,7 @@ const mainMenu = {
                                     if (error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
 
                                     if(message.read == false) {
-                                        fetch(`${pondLink}/mark-as-read`, {
+                                        handleRequest("/mark-as-read", {
                                             method: "POST",
                                             headers: {
                                                 "Content-Type": "application/json",
@@ -256,12 +269,31 @@ const mainMenu = {
                                             body: JSON.stringify({
                                                 messageID: message.messageID,
                                             })
-                                        }).then((response) => {
-                                            if(response.ok){
+                                        }, {
+                                            200: (response, data) => {
                                                 inbox[index].read = true;
+                                            },
+                                            401: (response, data) => {
+                                                terminal.innerHTML = "";
+                                                createTerminalLine("T_invalid_session", config.errorText);
+                                                createEditableTerminalLine(`${config.currentPath}>`);
+                                            },
+                                            404: (response, data) => {
+                                                const type = data.type;
+
+                                                if(type === "message"){
+                                                    terminal.innerHTML = "";
+                                                    createTerminalLine(`T_session_forcefully_terminated_additional_notes {{${localize("T_additional_notes_message_not_found")}}}`, config.errorText);
+                                                    createEditableTerminalLine(`${config.currentPath}>`);
+                                                } else if (type === "user"){
+                                                    terminal.innerHTML = "";
+                                                    createTerminalLine(`T_session_forcefully_terminated_additional_notes {{${localize("T_additional_notes_user_not_found")}}}`, config.errorText);
+                                                    createEditableTerminalLine(`${config.currentPath}>`);
+                                                }
                                             }
                                         });
                                     }
+
                                     createPondMenu(createInboxMenu());
                                 };
                                 messageMenu[`Report this message`] = () => {
@@ -285,7 +317,8 @@ const mainMenu = {
                                             const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"));
                                             if (error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
 
-                                            fetch(`${pondLink}/report`, {
+
+                                            handleRequest("/report", {
                                                 method: "POST",
                                                 headers: {
                                                     "Content-Type": "application/json",
@@ -299,8 +332,8 @@ const mainMenu = {
                                                     subject: message.subject,
                                                     body: message.body
                                                 })
-                                            }).then((response) => {
-                                                if(response.ok){
+                                            }, {
+                                                200: (response, data) => {
                                                     createPondMenu({
                                                         "Message reported successfully.": "text",
                                                         "<< Back to Inbox": () => {
@@ -309,13 +342,21 @@ const mainMenu = {
                                                             createPondMenu(createInboxMenu());
                                                         }
                                                     });
-                                                } else {
-                                                    if(response.status == 401){
-                                                        terminal.innerHTML = "";
-                                                        createTerminalLine("T_invalid_session", config.errorText);
-                                                        createEditableTerminalLine(`${config.currentPath}>`);
-                                                        return;
-                                                    }
+                                                },
+                                                401: (response, data) => {
+                                                    terminal.innerHTML = "";
+                                                    createTerminalLine("T_invalid_session", config.errorText);
+                                                    createEditableTerminalLine(`${config.currentPath}>`);
+                                                },
+                                                403: (response, data) => {
+                                                    terminal.innerHTML = "";
+                                                    createTerminalLine("T_session_forcefully_terminated", config.errorText);
+                                                    createEditableTerminalLine(`${config.currentPath}>`);
+                                                },
+                                                404: (response, data) => {
+                                                    terminal.innerHTML = "";
+                                                    createTerminalLine(`T_session_forcefully_terminated_additional_notes {{${localize("T_additional_notes_user_not_found")}}}`, config.errorText);
+                                                    createEditableTerminalLine(`${config.currentPath}>`);
                                                 }
                                             });
                                         },
@@ -343,8 +384,27 @@ const mainMenu = {
                         return inboxMenu;
                     }
 
-
                     createPondMenu(createInboxMenu());
+                },
+                401: (response, data) => {
+                    terminal.innerHTML = "";
+                    createTerminalLine("T_invalid_session", config.errorText);
+                    createEditableTerminalLine(`${config.currentPath}>`);
+                },
+                403: (response, data) => {
+                    terminal.innerHTML = "";
+                    createTerminalLine("T_session_forcefully_terminated", config.errorText);
+                    createEditableTerminalLine(`${config.currentPath}>`);
+                },
+                404: (response, data) => {
+                    terminal.innerHTML = "";
+                    createTerminalLine("T_session_forcefully_terminated", config.errorText, {translate: false});
+                    createEditableTerminalLine(`${config.currentPath}>`);
+                },
+                500: (response, data) => {
+                    terminal.innerHTML = "";
+                    createTerminalLine("T_pond_server_unreachable", config.errorText, {translate: false});
+                    createEditableTerminalLine(`${config.currentPath}>`);
                 }
             }
         );
@@ -618,25 +678,53 @@ async function openPond(userRoles = []) {
                                 return;
                             }
 
-                            fetch(`${pondLink}/ban`, {
+                            const sessionToken = FroggyFileSystem.getFile("D:/Pond/secret/e0ba59dd5c336adf").getData()[0];
+
+                            handleRequest("/ban", {
                                 method: "POST",
                                 headers: {
                                     "Content-Type": "application/json",
-                                    "Session-Token": FroggyFileSystem.getFile("D:/Pond/secret/e0ba59dd5c336adf").getData()[0]
+                                    "Session-Token": sessionToken
                                 },
                                 body: JSON.stringify({
                                     username,
                                     duration: durationMs,
                                     reason
                                 })
-                            }).then((response) => {
-                                handleResponse(response);
-                                // if response if 400, cannot ban user of higher or equal role
-                                // if 401, invalid session
-                                // if 403, banned
-                                // if 404, user not found
+                            }, {
+                                200: (response, data) => {
+                                    createPondMenu({
+                                        "User banned successfully.": "text",
+                                        "<< Back to Admin Menu": () => {
+                                            const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
+                                            if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
+                                            createPondMenu(adminMenu);
+                                        }
+                                    });
+                                },
+                                401: (response, data) => {
+                                    terminal.innerHTML = "";
+                                    createTerminalLine("T_invalid_session", config.errorText);
+                                    createEditableTerminalLine(`${config.currentPath}>`);
+                                },
+                                403: (response, data) => {
+                                    if(data.type == "no_permission"){
+                                        createTerminalLine("You do not have permission to ban this user.", config.errorText, {translate: false, expire: 5000});
+                                    } else if (data.type == "banned"){
+                                        terminal.innerHTML = "";
+                                        createTerminalLine("T_session_forcefully_terminated", config.errorText);
+                                        createEditableTerminalLine(`${config.currentPath}>`);
+                                    }
+                                },
+                                404: (response, data) => {
+                                    terminal.innerHTML = "";
+                                    if(data.type == "user"){
+                                        createTerminalLine(`T_session_forcefully_terminated_additional_notes {{${localize("T_additional_notes_user_not_found")}}}`, config.errorText),
+                                        createTerminalLine("T_session_forcefully_terminated", config.errorText);
+                                    }
+                                    createEditableTerminalLine(`${config.currentPath}>`);
+                                }   
                             });
-
 
                         },
                         "<< Back to Admin Menu": () => {

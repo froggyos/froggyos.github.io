@@ -863,6 +863,11 @@ const presetLanguagesMap = {
 
     // pond ============================================
 
+    "T_pond_rate_limited": {
+        eng: "You are being rate limited. Please wait a moment and try again.",
+        nmt: "T_pond_rate_limited",
+        jpn: "T_pond_rate_limited"
+    },
     "T_pond_checking": {
         eng: "Checking Pond server...",
         nmt: "T_pond_checking",
@@ -874,7 +879,7 @@ const presetLanguagesMap = {
         jpn: "T_pond_server_ok" 
     },
     "T_pond_server_error": {
-        eng: "Could not reach Pond server.",
+        eng: "Internal Pond server serror.",
         nmt: "T_pond_server_error",
         jpn: "T_pond_server_error"
     },
@@ -938,10 +943,25 @@ const presetLanguagesMap = {
         nmt: "T_pond_login_successful {{}}",
         jpn: "T_pond_login_successful {{}}"
     },
+    "T_pond_username_taken": {
+        eng: "That username is already taken.",
+        nmt: "T_pond_username_taken",
+        jpn: "T_pond_username_taken"
+    },
     "T_pond_login_failed": {
         eng: "Login failed.",
         nmt: "T_pond_login_failed",
         jpn: "T_pond_login_failed"
+    },
+    "T_invalid_name_password": {
+        eng: "Invalid username or password.",
+        nmt: "T_invalid_name_password",
+        jpn: "T_invalid_name_password"
+    },
+    "T_pond_user_banned": {
+        eng: "You are banned from the Pond.",
+        nmt: "T_pond_user_banned",
+        jpn: "T_pond_user_banned"
     },
     "T_pond_banned_on {{}}": {
         eng: "Banned on: {{}}",
@@ -973,16 +993,41 @@ const presetLanguagesMap = {
         nmt: "T_pond_error_sending_message {{}}",
         jpn: "T_pond_error_sending_message {{}}"
     },
-    "T_pond_session_expired": {
-        eng: "Your session has expired.",
-        nmt: "T_pond_session_expired",
-        jpn: "T_pond_session_expired"
+    "T_session_forcefully_terminated": {
+        eng: "Your session was forcefully terminated.",
+        nmt: "T_session_forcefully_terminated",
+        jpn: "T_session_forcefully_terminated"
+    },
+    "T_session_forcefully_terminated_additional_notes {{}}": {
+        eng: "Your session was forcefully terminated. Additional notes: {{}}",
+        nmt: "T_session_forcefully_terminated_additional_notes {{}}",
+        jpn: "T_session_forcefully_terminated_additional_notes {{}}"
+    },
+    "T_additional_notes_message_not_found": {
+        eng: "Message not found",
+        nmt: "T_additional_notes_message_not_found",
+        jpn: "T_additional_notes_message_not_found"
+    },
+    "T_additional_notes_user_not_found": {
+        eng: "User not found",
+        nmt: "T_additional_notes_user_not_found",
+        jpn: "T_additional_notes_user_not_found"
     },
     "T_invalid_session": {
         eng: "Invalid session. Please log in again.",
         nmt: "T_invalid_session",
         jpn: "T_invalid_session"
-    }
+    },
+    "T_pond_inbox_not_found": {
+        eng: "The server could not find your user data.",
+        nmt: "T_pond_inbox_not_found",
+        jpn: "T_pond_inbox_not_found"
+    },
+    "T_pond_message_not_found": {
+        eng: "Message not found.",
+        nmt: "T_pond_message_not_found",
+        jpn: "T_pond_message_not_found"
+    },
     // uncategorized messages ==========================
 
 };
