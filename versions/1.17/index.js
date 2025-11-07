@@ -1364,7 +1364,7 @@ async function sendCommand(command, args, createEditableLineAfter){
                         createTerminalLine(`T_pond_login_successful {{${username}}}`, ">");
                         let sessionTokenStore = FroggyFileSystem.getFile("D:/Pond/secret/e0ba59dd5c336adf");
 
-                        sessionTokenStore.write([data.sessionToken]);
+                        sessionTokenStore.write([data.sessionToken, username]);
 
                         openPond(data.roles);
                     },
@@ -2647,17 +2647,38 @@ async function createLilypadLinePondDerivative(path, filename, options){
                 return;
             }
 
-            if(!messageValidationRegex.test(file.getData().join("").trim())){
+            const fileData = [];
+
+            for(let i = 0; i < file.getData().length; i++){
+                let line = file.getData()[i];
+                if(line.trim().length == 0){
+                    fileData.push("\u00a0");
+                } else {
+                    fileData.push(line);
+                }
+            }
+
+            if(!messageValidationRegex.test(fileData.join(""))){
                 createTerminalLine(`T_pond_draft_invalid_format`, config.errorText, {expire: 5000});
                 return;
             } else {
                 const match = file.getData().join("").trim().match(messageValidationRegex);
                 const recipient = match[1].trim();
                 const subject = match[2].trim();
-                const body = match[3].trim();
+                const body = getBody(fileData);
+
+                function getBody(arr) {
+                    for (let i = 0; i < arr.length - 1; i++) {
+                        if (arr[i] === "-----" && arr[i + 1] === "Body:") {
+                            return arr.slice(i + 2);
+                        }
+                    }
+                    return []; // not found
+                }
+
                 const timestamp = Date.now();
 
-                const sessionToken = FroggyFileSystem.getFile("D:/Pond/secret/e0ba59dd5c336adf").getData().join("").trim();
+                const sessionToken = FroggyFileSystem.getFile("D:/Pond/secret/e0ba59dd5c336adf").getData()[0].trim();
 
                 handleRequest("/send", {
                     method: "POST",
