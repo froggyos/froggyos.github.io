@@ -933,10 +933,10 @@ const presetLanguagesMap = {
         nmt: "T_pond_registration_failed",
         jpn: "T_pond_registration_failed"
     },
-    "T_pond_login_successful": {
-        eng: "Login successful! Welcome back.",
-        nmt: "T_pond_login_successful",
-        jpn: "T_pond_login_successful"
+    "T_pond_login_successful {{}}": {
+        eng: "Login successful! Welcome back {{}}.",
+        nmt: "T_pond_login_successful {{}}",
+        jpn: "T_pond_login_successful {{}}"
     },
     "T_pond_login_failed": {
         eng: "Login failed.",
@@ -967,6 +967,21 @@ const presetLanguagesMap = {
         eng: "Invalid draft format. Must include a recipient, title, and body.",
         nmt: "T_pond_draft_invalid_format",
         jpn: "T_pond_draft_invalid_format"
+    },
+    "T_pond_error_sending_message {{}}": {
+        eng: "Failed to send message: {{}}",
+        nmt: "T_pond_error_sending_message {{}}",
+        jpn: "T_pond_error_sending_message {{}}"
+    },
+    "T_pond_session_expired": {
+        eng: "Your session has expired.",
+        nmt: "T_pond_session_expired",
+        jpn: "T_pond_session_expired"
+    },
+    "T_invalid_session": {
+        eng: "Invalid session. Please log in again.",
+        nmt: "T_invalid_session",
+        jpn: "T_invalid_session"
     }
     // uncategorized messages ==========================
 
@@ -976,9 +991,8 @@ class UserKey { constructor() {} };
 
 class fs {
     #fs;
-    #functionHashes = ['381bf05bf93fffdf', "63f33591efffbfb3", "9af413c39bf77bcf", "943ee33ffefffb3f", "c9bf35d4cdffb7df", "12643adc16e67fdc", "c7e06200e7e4fa7e", "d921574adf257fff", "1838f0a69c3bf1af", "8a9767948bd7ff94", "27858ab87785febc", "bfd42740fffd7fca"]
-    #keywordHashes = ['eb6ebeffebfebfff']
-    #methodHashes = []
+    #functionHashes = ['381bf05bf93fffdf', 'a9dbba03a9ffba87', '9af413c39bf77bcf', '943ee33ffefffb3f', 'c9bf35d4cdffb7df', '12643adc16e67fdc', 'a335c440bf37ee4c', 'd4f8d605d6f9ff8d', '1838f0a69c3bf1af', '1f6906df9ffb4eff', '1a6ccb615e7fef77', 'bfd42740fffd7fca']
+    #fullPathHashes = ['c96c0ebfdf7fbfbf', 'e5a770acffff7aaf']
 
     #cache = new Map();
 
@@ -997,30 +1011,61 @@ class fs {
         this.#fs = data
     }
 
-    verifyMethod(method) {
-        let stack = new Error().stack.split("\n");
-        if(!stack[2].trim().startsWith("at Method.ffsProxy")) throw new Error(`You may not use verifyMethod() directly. You must use method.ffsProxy() instead.`); 
-        let id = method.getId();
+    // verifyMethod(method) {
+    //     let stack = new Error().stack.split("\n");
+    //     if(!stack[2].trim().startsWith("at Method.ffsProxy")) throw new Error(`You may not use verifyMethod() directly. You must use method.ffsProxy() instead.`); 
+    //     let id = method.getId();
 
-        if (!this.#methodHashes.includes(id)) throw new Error(`Access denied: Method "${method.name}" is not allowed to access the file system.`);
-        return this;
-    }
+    //     //if (!this.#methodHashes.includes(id)) throw new Error(`Access denied: Method "${method.name}" is not allowed to access the file system.`);
+    //     return this;
+    // }
 
     #verify() {
         return;
         let stack = new Error().stack.split("\n");
-        const caller = stack[stack.length - 2].trim().split(" ")[1];
+
+        const caller = stack[stack.length - 2].trim().match(/at (.+?) \(/)[1];
 
         // function verification
         // if any index of the stack has <anonymous> in it, it means the function is anonymous and we should not allow file system access
         if (stack.some(line => line.includes("at <anonymous>"))) throw new Error(`HAHA! NICE TRY! No.`);
-        if(eval(caller) === undefined && caller.startsWith("fs.")) return;
+
+        let returnEarly = false;
+
+        try {
+            if(eval(caller) === undefined && caller.startsWith("fs.")) return;
+        } catch {
+            function getFullPathStack(_0x_stk){
+                try{
+                    var _0x_clone = typeof structuredClone === "function" ? structuredClone(_0x_stk) : JSON.parse(JSON.stringify(_0x_stk));
+                }catch(_0xe){ var _0x_clone = JSON.parse(JSON.stringify(_0x_stk)); }
+                (function(_0xa){
+                    Array.prototype.shift.call(_0xa);
+                }(_0x_clone));
+                var _0x_joiner = String.fromCharCode(32,45,62,32); // " -> "
+                return Array.prototype.map.call(_0x_clone, function(_0y){
+                    return ("" + _0y).replace(/^\s+|\s+$/g, "").replace(/\s*\(.*?\)$/, "");
+                }).join(_0x_joiner);
+            }
+
+            const fullPathCaller = getFullPathStack(stack);
+
+            const fullPathHash = this.#cache.get(fullPathCaller) ?? this.hash(fullPathCaller);
+
+            if(this.#cache.get(fullPathCaller) === undefined) this.#cache.set(fullPathCaller, fullPathHash);
+
+            returnEarly = true;
+
+            if (!this.#fullPathHashes.includes(fullPathHash)) throw new Error(`Access denied: You may not access the file system through this method.`);
+        }
+
+        if(returnEarly) return;
 
         try { eval(caller) } catch (e) { throw new Error(`Access denied: You may not access the file system through an anonymous arrow function.`) }
 
         if(eval(caller) == undefined) throw new Error(`Access denied: You may not access the file system through an anonymous arrow function.`);
 
-        const callerHash = this.#cache.get(eval(caller).toString()) || this.hash(eval(caller).toString());
+        const callerHash = this.#cache.get(eval(caller).toString()) ?? this.hash(eval(caller).toString());
 
         if(this.#cache.get(eval(caller).toString()) === undefined) this.#cache.set(eval(caller).toString(), callerHash);
 
@@ -1034,6 +1079,11 @@ class fs {
         return fs[location]?.filter(f => f.getProperty("hidden") !== true) || undefined;
     }
 
+    /**
+     * 
+     * @param {string} fullPath 
+     * @returns {FroggyFile}
+     */
     getFile(fullPath) {
         this.#verify();
 
@@ -1048,6 +1098,12 @@ class fs {
         return retrievedFile;
     }
 
+    /**
+     * 
+     * @param {String} location - directory path
+     * @param {FroggyFile} file - FroggyFile instance
+     * @returns {void|undefined}
+     */
     addFileToDirectory(location, file) {
         this.#verify();
         const fs = this.#fs;
@@ -1102,16 +1158,15 @@ class fs {
 
     loadFromString(data, method = null) {
         this.#verify(method);
+        this.#fs = {};
         try {
             let parsedData = JSON.parse(data);
-            for (let directory in parsedData) {
-                if (!this.#fs[directory]) {
-                    this.#fs[directory] = [];
-                }
-                parsedData[directory].forEach(file => {
-                    let newFile = new FroggyFile(file.name, file.properties, file.data);
-                    this.addFileToDirectory(directory, newFile);
-                });
+            for(let directoryName in parsedData){
+                let dir = parsedData[directoryName];
+                this.createDirectory(directoryName);
+                dir.forEach(file => {
+                    this.addFileToDirectory(directoryName, FroggyFile.from(file));
+                })
             }
         } catch (e) {
             throw new Error("Invalid data format: " + e.message);
@@ -1131,6 +1186,11 @@ class FroggyFile {
         hidden: false
     }
 
+    static from(object) {
+        let file = new FroggyFile(object.name, object.properties, object.data);
+        return file;
+    }
+
     constructor(name, properties = FroggyFile.filePropertyDefaults, data = [""]) {
         this.#name = name;
         this.#properties = properties;
@@ -1141,14 +1201,22 @@ class FroggyFile {
         });
     }
 
-
     rename(newName){
         if(this.#name === "trusted_programs") throw new Error("You may not rename the 'trusted_programs' file.");
         this.#name = newName;
     }
 
+
+    toJSON(){
+        return {
+            name: this.#name,
+            properties: this.#properties,
+            data: this.#data
+        };
+    }
+
     write(data) {
-    if(this.#name === "trusted_programs") throw new Error("You may not write to the 'trusted_programs' file.");
+        if(this.#name === "trusted_programs") throw new Error("You may not write to the 'trusted_programs' file.");
         this.#data = data;
         data.forEach(line => {
             this.#size += line.length + 1;
@@ -1237,7 +1305,33 @@ const FroggyFileSystem = new fs({
     "C:/Docs": [],
     "D:": [], 
     "D:/Pond": [],
-    "D:/Pond/drafts": [],
+    "D:/Pond/drafts": [
+        { name: "test-lorem-ipsum-1762389259984", properties: {transparent: false, read: false, write: false, hidden: false }, data: [
+            "Recipient:",
+            "test",
+            "-----",
+            "Subject:",
+            "lorem ipsum",
+            "-----",
+            "Body:",
+            "this is a test message"
+        ] }
+    ],
+    "D:/Pond/sent": [
+        { name: "test-lorem-ipsum-1762389259984", properties: {transparent: false, read: false, write: false, hidden: false }, data: [
+            "Recipient:",
+            "test",
+            "-----",
+            "Subject:",
+            "lorem ipsum",
+            "-----",
+            "Body:",
+            "this is a test message"
+        ] }
+    ],
+    "D:/Pond/secret": [
+        { name: "e0ba59dd5c336adf", properties: {transparent: true, read: true, write: true, hidden: false}, data: [""] }
+    ],
     "D:/Programs": [
         { name: "cli", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["quietkill"] },
         { name: "lilypad", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["quietkill"] },

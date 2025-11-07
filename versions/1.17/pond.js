@@ -1,4 +1,45 @@
 /**
+ * Handles a request and routes the response to the appropriate status handler.
+ * 
+ * @param {string} link - The final part of the pond link, such as `/inbox` or `/send`.
+ * @param {Object} body - The body of the request to be sent.
+ * @param {Object<number, (req: Request, resBody: any) => void>} handlers - 
+ * An object whose keys are HTTP status codes and whose values are functions 
+ * that receive the request object and the parsed response body.
+ */
+async function handleRequest(link, body, handlers) {
+    try {
+
+        const response = await fetch(`${pondLink}${link}`, body);
+        let resBody;
+
+        // Try parsing JSON safely
+        try {
+            resBody = await response.json();
+        } catch (e) {
+            createTerminalLine("Error: Response could not be parsed as JSON.", "", { translate: false });
+            throw new Error(`JSON Parse Error: ${e.message}`);
+        }
+
+        // Handle known statuses
+        if (handlers[response.status]) {
+            handlers[response.status](response, resBody);
+            return;
+        }
+
+        // Handle unexpected statuses
+        const summary = `${response.status} ${response.statusText || ""}`.trim();
+        const bodyPreview = typeof resBody === "object" ? JSON.stringify(resBody).slice(0, 150) : String(resBody).slice(0, 150);
+
+        console.error(resBody);
+        throw new Error(`Unhandled response for link ${link}: ${summary} - ${resBody.type}`);
+
+    } catch (e) {
+        throw e; // rethrow for higher-level debugging if needed
+    }
+}
+
+/**
  * Creates a scrollable interactive Pond menu.
  *
  * @param {{ [key: string]: Function | "text" | "newline" }} object
@@ -7,6 +48,7 @@
  *    - A function → selectable/executable item
  *    - "text" → plain text, not selectable
  *    - "newline" → blank line for spacing
+ *    - "input" → text input, key should be "id:id prefix:prefix", final id will result as "pond-input-${id}"
  */
 function createPondMenu(object) {
     const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"));
@@ -28,6 +70,7 @@ function createPondMenu(object) {
     const selectable = [];
 
     items.forEach(([key, value], index) => {
+
         if (value === "newline") {
             terminal.appendChild(document.createElement("br"));
             menuElements.push(null);
@@ -41,9 +84,30 @@ function createPondMenu(object) {
         lineContainer.classList.add("line-container");
         terminalLine.classList.add("terminal-line");
 
-        if (value === "text") {
+        if(value === "input") {
+
+            const keyMatch = key.match(/^id:(\S+)\s+prefix:(.*)$/);
+
+            terminalLine.classList.add("pond-menu-item");
+            terminalLine.classList.add("pond-menu-input");
+            terminalLine.setAttribute('contenteditable', 'plaintext-only');
+            terminalLine.setAttribute('spellcheck', 'false');
+
+            const prefix = document.createElement("span");
+            prefix.textContent = keyMatch ? keyMatch[2] : "";
+
+            terminalLine.id = keyMatch ? `pond-input-${keyMatch[1]}` : "";
+            terminalLine.textContent = "";
+
+            lineContainer.appendChild(prefix);
+            lineContainer.appendChild(terminalLine);
+
+            selectable.push(index);
+            menuElements[index] = terminalLine;
+
+        } else if (value === "text") {
             // No prefix for non-selectable text entries
-            terminalLine.textContent = key;
+            terminalLine.innerHTML = key;
             terminalLine.classList.add("pond-menu-text");
             lineContainer.appendChild(terminalLine);
         } else {
@@ -81,9 +145,21 @@ function createPondMenu(object) {
             if (i === selectedIndex) {
                 el.classList.add("selected");
                 if (prefix) prefix.textContent = "~>";
+                if(el.classList.contains("pond-menu-input")) {
+                    el.focus();
+                    const range = document.createRange();
+                    range.selectNodeContents(el);
+                    range.collapse(false);
+                    const sel = window.getSelection();
+                    sel.removeAllRanges();
+                    sel.addRange(range);
+                }
             } else {
                 el.classList.remove("selected");
                 if (prefix) prefix.textContent = "~";
+                if(el.classList.contains("pond-menu-input")) {
+                    el.blur();
+                }
             }
         }
     }
@@ -118,7 +194,160 @@ const mainMenu = {
         if(error) {
             throw new Error("Blocked attempt to open Pond from unauthorized context.");
         }
-        console.log("Opening inbox...");
+
+        const sessionToken = FroggyFileSystem.getFile("D:/Pond/secret/e0ba59dd5c336adf").getData()[0];
+
+        handleRequest("/inbox", {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Session-Token": sessionToken
+                }
+            }, {
+                200: async (response, data) => {
+                    let inbox = data.inbox;
+
+                    function createInboxMenu(){
+                        let inboxMenu = {
+                            "Inbox:": "text",
+                            "": "newline",
+                        };
+                        inbox.forEach((message, index) => {
+                            inboxMenu[`${message.read == false ? "(!) " : ""}${message.subject} - From: ${message.sender}`] = () => {
+                                const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
+                                if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
+
+                                window.onkeyup = null;
+
+                                terminal.innerHTML = "";
+
+                                let userDecorations = "";
+
+                                message.senderDecorations.forEach(deco => {
+                                    if(decorations[deco]){
+                                        userDecorations += ` ${decorations[deco]}`;
+                                    }
+                                });
+
+                                let messageMenu = {
+                                    [`${"\u00A0".repeat(5)}FROM : ${message.sender}${userDecorations}`]: "text",
+                                    [`${"\u00A0".repeat(2)}SUBJECT : ${message.subject}`]: "text",
+                                    [`TIMESTAMP : ${parseTimeFormat(config.timeFormat, message.timestamp)}`]: "text",
+                                    "-----": "text",
+                                    "a": "newline",
+                                };
+                                if(!Array.isArray(message.body)) message.body = [message.body];
+                                message.body.forEach(line => {
+                                    messageMenu[line] = "text";
+                                })
+                                messageMenu["b"] = "newline";
+                                messageMenu["--\u200B---"] = "text";
+                                messageMenu["<< Back to Inbox"] = () => {
+                                    const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"));
+                                    if (error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
+
+                                    if(message.read == false) {
+                                        fetch(`${pondLink}/mark-as-read`, {
+                                            method: "POST",
+                                            headers: {
+                                                "Content-Type": "application/json",
+                                                "Session-Token": sessionToken
+                                            },
+                                            body: JSON.stringify({
+                                                messageID: message.messageID,
+                                            })
+                                        }).then((response) => {
+                                            if(response.ok){
+                                                inbox[index].read = true;
+                                            }
+                                        });
+                                    }
+                                    createPondMenu(createInboxMenu());
+                                };
+                                messageMenu[`Report this message`] = () => {
+                                    const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"));
+                                    if (error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
+
+                                    let confirmationMenu = {
+                                        "Write your report...": "text",
+                                        "": "newline",
+                                        "id:report-title prefix:Title of report:": "input",
+                                        "id:report-details prefix:Give some details (optional):": "input",
+                                        "Report": () => {
+                                            const title = document.getElementById("pond-input-report-title").textContent.trim();
+                                            const details = document.getElementById("pond-input-report-details").textContent.trim() || "No additional details provided.";
+
+                                            if(title.length == 0){
+                                                createTerminalLine("Please provide a title for the report.", config.errorText, {translate: false, expire: 5000});
+                                                return;
+                                            }
+
+                                            const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"));
+                                            if (error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
+
+                                            fetch(`${pondLink}/report`, {
+                                                method: "POST",
+                                                headers: {
+                                                    "Content-Type": "application/json",
+                                                    "Session-Token": sessionToken
+                                                },
+                                                body: JSON.stringify({
+                                                    title: title,
+                                                    details: details,
+                                                    messageID: message.messageID,
+                                                    sender: message.sender,
+                                                    subject: message.subject,
+                                                    body: message.body
+                                                })
+                                            }).then((response) => {
+                                                if(response.ok){
+                                                    createPondMenu({
+                                                        "Message reported successfully.": "text",
+                                                        "<< Back to Inbox": () => {
+                                                            const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"));
+                                                            if (error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
+                                                            createPondMenu(createInboxMenu());
+                                                        }
+                                                    });
+                                                } else {
+                                                    if(response.status == 401){
+                                                        terminal.innerHTML = "";
+                                                        createTerminalLine("T_invalid_session", config.errorText);
+                                                        createEditableTerminalLine(`${config.currentPath}>`);
+                                                        return;
+                                                    }
+                                                }
+                                            });
+                                        },
+                                        "<< Back to Message": () => {
+                                            const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"));
+                                            if (error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
+                                            createPondMenu(messageMenu);
+                                        }
+                                    }
+
+                                    createPondMenu(confirmationMenu);
+                                };
+
+                                createPondMenu(messageMenu);
+                            };
+                        });
+
+                        inboxMenu["<< Back to Main Menu"] = () => {
+                            const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
+                            if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
+
+                            createPondMenu(mainMenu);
+                        };
+
+                        return inboxMenu;
+                    }
+
+
+                    createPondMenu(createInboxMenu());
+                }
+            }
+        );
     },
     "Compose Message": () => {
         const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
@@ -161,17 +390,57 @@ const mainMenu = {
     },
     "Sent Messages": () => {
         const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
+        if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
 
-        if(error) {
-            throw new Error("Blocked attempt to open Pond from unauthorized context.");
+        window.onkeyup = null;
+
+        terminal.innerHTML = "";
+
+        config.currentPath = "D:/Pond/sent";
+
+        let menu = {
+            "Sent Messages": "text",
+            "Sent message records are stored locally in D:/Pond/sent, make sure to save froggyOS in order to keep them.": "text",
+            "": "newline",
         }
+
+        const sentMessages = FroggyFileSystem.getDirectory("D:/Pond/sent");
+
+        sentMessages.forEach(file => {
+            menu[file.getName()] = () => {
+                const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
+                if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
+
+                let sentMessageMenu = {}
+
+                window.onkeyup = null;
+                terminal.innerHTML = "";
+                let messageBody = "";
+                file.getData().forEach(line => {
+                    messageBody += "> "+line+"<br>";
+                });
+                sentMessageMenu[messageBody] = "text";
+                sentMessageMenu["<< Back to Sent Messages"] = () => {
+                    const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
+                    if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
+                    createPondMenu(menu);
+                }
+                createPondMenu(sentMessageMenu);
+            };
+        });
+
+        menu["<< Back to Main Menu"] = () => {
+            const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
+            if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
+            createPondMenu(mainMenu);
+        }
+
+        createPondMenu(menu);
     },
     "Drafts": () => {
         const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
 
-        if(error) {
-            throw new Error("Blocked attempt to open Pond from unauthorized context.");
-        }
+        if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
 
         window.onkeyup = null;
 
@@ -297,7 +566,108 @@ async function openPond(userRoles = []) {
                 "Ban User": () => {
                     const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
                     if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
+                    const banMenu = {
+                        "Ban user": "text",
+                        "provide the length in a format like this: 1y 6mo 7d 12h 30m": "text",
+                        "enter 0 for a permanent ban": "text",
+                        "": "newline",
+                        "id:username prefix:Enter username:": "input",
+                        "id:length prefix:Enter length:": "input",
+                        "id:reason prefix:Enter reason:": "input",
+                        "Ban": () => {
+                            const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
+                            if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
 
+                            function parseDuration(str) {
+                                const regex = /(\d+)(y|mo|d|h|m|s)/g;
+                                let ms = 0;
+
+                                if(str.trim() === "0") return -1; // permanent ban
+
+                                for (const [, num, unit] of str.matchAll(regex)) {
+                                    const n = +num;
+                                    switch (unit) {
+                                        case "y":  ms += n * 1000 * 60 * 60 * 24 * 365; break;
+                                        case "mo": ms += n * 1000 * 60 * 60 * 24 * 30;  break;
+                                        case "d":  ms += n * 1000 * 60 * 60 * 24;       break;
+                                        case "h":  ms += n * 1000 * 60 * 60;            break;
+                                        case "m":  ms += n * 1000 * 60;                 break;
+                                        case "s":  ms += n * 1000;                      break;
+                                    }
+                                }
+
+                                return ms;
+                            }
+
+                            const username = document.getElementById("pond-input-username").textContent.trim();
+                            const length = document.getElementById("pond-input-length").textContent.trim();
+                            const reason = document.getElementById("pond-input-reason").textContent.trim();
+
+                            if(username.length == 0){
+                                createTerminalLine("Please provide a username to ban.", config.errorText, {translate: false, expire: 5000});
+                                return;
+                            }
+                            if(length.length == 0){
+                                createTerminalLine("Please provide a length for the ban.", config.errorText, {translate: false, expire: 5000});
+                                return;
+                            }
+
+                            const durationMs = parseDuration(length);
+                            if(isNaN(durationMs)){
+                                createTerminalLine("Invalid length format. Please use the specified format.", config.errorText, {translate: false, expire: 5000});
+                                return;
+                            }
+
+                            fetch(`${pondLink}/ban`, {
+                                method: "POST",
+                                headers: {
+                                    "Content-Type": "application/json",
+                                    "Session-Token": FroggyFileSystem.getFile("D:/Pond/secret/e0ba59dd5c336adf").getData()[0]
+                                },
+                                body: JSON.stringify({
+                                    username,
+                                    duration: durationMs,
+                                    reason
+                                })
+                            }).then((response) => {
+                                handleResponse(response);
+                                // if response if 400, cannot ban user of higher or equal role
+                                // if 401, invalid session
+                                // if 403, banned
+                                // if 404, user not found
+                            });
+
+
+                        },
+                        "<< Back to Admin Menu": () => {
+                            const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
+                            if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
+                            createPondMenu(adminMenu);
+                        }
+                    }
+                    createPondMenu(banMenu);
+
+                },
+                "Unban User": () => {
+                    const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
+                    if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
+
+                    const unbanMenu = {
+                        "Unban user": "text",
+                        "": "newline",
+                        "id:username prefix:Enter username:": "input",
+                        "Unban": () => {
+                        },
+                        "<< Back to Admin Menu": () => {
+                            const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
+                            if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
+                            createPondMenu(adminMenu);
+                        }
+                    }
+
+                    createPondMenu(unbanMenu);
+                },
+                "View Reports": () => {
                 },
                 "<< Back to Main Menu": () => {
                     const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
@@ -312,3 +682,9 @@ async function openPond(userRoles = []) {
 
     createPondMenu(mainMenu)
 };
+
+
+const decorations = {
+    "admin": `<span style="color: var(--c12)">[ADMIN]</span>`,
+    "owner": `<span style="color: #f7a923">[OWNER]</span>`,
+}

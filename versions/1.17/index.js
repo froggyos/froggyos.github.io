@@ -614,6 +614,15 @@ function getCaretPosition(element) {
     return preCaretRange.toString().length;
 }
 
+/**
+ * 
+ * @param {string} text - the main text of the line
+ * @param {string} path - also called prefix, a line of text before the main text, separated by a whitespace character 
+ * @param {Object} other - other options
+ * @param {Array} other.formatting - an array of formatting objects
+ * @param {boolean} other.translate - whether to translate the text or not (default: true)
+ * @param {number} other.expire - time in milliseconds before the line is removed from the terminal (if undefined, will not expire)
+ */
 function createTerminalLine(text, path, other){
     
     let lineContainer = document.createElement('div');
@@ -709,6 +718,12 @@ function createTerminalLine(text, path, other){
     lineContainer.appendChild(terminalLine);
 
     terminal.appendChild(lineContainer);
+
+    if(other?.expire != undefined){
+        setTimeout(() => {
+            terminal.removeChild(lineContainer);
+        }, other.expire);
+    }
     terminal.scrollTop = terminal.scrollHeight;
 }
 
@@ -1103,6 +1118,7 @@ async function sendCommand(command, args, createEditableLineAfter){
         case "loadstate":
             let foundConfig = localStorage.getItem(`froggyOS-state-${config.version}-config`);
             let foundFs = localStorage.getItem(`froggyOS-state-${config.version}-fs`);
+
             if(foundConfig == null || foundFs == null){
                 createTerminalLine("T_no_state_found", config.errorText);
                 hadError = true;
@@ -1280,10 +1296,6 @@ async function sendCommand(command, args, createEditableLineAfter){
         } break;
 
         case "pond": {
-            // roari: make it so only requests from froggyos.xyz and localhost are allowed
-            // roari: check for malformed requests
-            // roari: also add ip banning
-            // roari: on login, before checking if someone is banned, check to see if their ban has expired. If so, revoke the ban and add it to their moderation history
             if(args.length == 0){
                 const startTime = performance.now();
                 createTerminalLine("T_pond_command_intro_do_h", "");
@@ -1321,8 +1333,6 @@ async function sendCommand(command, args, createEditableLineAfter){
                 });
             } else if(args[0] == "-login" || args[0] == "-l") {
                 const userRoles = ["user"];
-                openPond(userRoles);
-                return;
                 const username = args[1];
                 const password = args[2];
 
@@ -1346,8 +1356,14 @@ async function sendCommand(command, args, createEditableLineAfter){
                     if(response.ok){
                         response.json().then(data => {
                             setSetting("showSpinner", false)
-                            createTerminalLine("T_pond_login_successful", ">");
-                            openPond();
+                            createTerminalLine(`T_pond_login_successful {{${username}}}`, ">");
+
+                            // create a file in D:/Pond called session_token
+                            let sessionTokenStore = FroggyFileSystem.getFile("D:/Pond/secret/e0ba59dd5c336adf");
+
+                            sessionTokenStore.write([data.sessionToken]);
+
+                            openPond(data.roles);
                         });
                     } else {
                         response.json().then(data => {
@@ -1484,7 +1500,6 @@ async function sendCommand(command, args, createEditableLineAfter){
             localStorage.setItem(`froggyOS-state-${config.version}-config`, JSON.stringify(config));
             localStorage.setItem(`froggyOS-state-${config.version}-fs`, FroggyFileSystem.stringify());
 
-            console.log(localStorage.getItem(`froggyOS-state-${config.version}-fs`));
             createTerminalLine("T_state_saved", ">")
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         break;
@@ -1846,7 +1861,6 @@ async function sendCommand(command, args, createEditableLineAfter){
             let state = localStorage.getItem(`froggyOS-state-${config.version}-config`);
             let fsState = localStorage.getItem(`froggyOS-state-${config.version}-fs`);
 
-
             if(state != null && fsState != null){
                 for(let key in JSON.parse(state)){
                     config[key] = JSON.parse(state)[key];
@@ -1855,6 +1869,7 @@ async function sendCommand(command, args, createEditableLineAfter){
                 changeColorPalette(config.colorPalette);
                 createTerminalLine("Loaded froggyOS from memory.", config.alertText, {translate: false});
             }
+
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         } break;
 
@@ -2357,7 +2372,7 @@ function createLilypadLine(path, linetype, filename){
 }
 
 
-function createLilypadLinePondDerivative(path, filename, options){
+async function createLilypadLinePondDerivative(path, filename, options){
     let exitMenu = options.exitMenu || null;
 
     config.currentProgram = "lilypad";
@@ -2396,7 +2411,7 @@ function createLilypadLinePondDerivative(path, filename, options){
 
     const previousSpinner = structuredClone(config.currentSpinner);
 
-    window.terminalLineKeydownHandler = (e) => {
+    window.terminalLineKeydownHandler = async (e) => {
         if (["Backspace", "Delete", "Enter", "Tab"].includes(e.key) ||
             (e.key.length === 1 && !e.ctrlKey && !e.metaKey) 
         ) {
@@ -2639,12 +2654,59 @@ function createLilypadLinePondDerivative(path, filename, options){
                 return;
             }
 
-            if(!/^Recipient:(.+?)-----Subject:(.+?)-----(.+?)$/.test(file.getData().join("").trim())){
-                createTerminalLine(`T_pond_draft_invalid_format`, config.errorText);
-                setTimeout(() => {
-                    terminal.lastElementChild.remove();
-                }, 5000);
+            if(!messageValidationRegex.test(file.getData().join("").trim())){
+                createTerminalLine(`T_pond_draft_invalid_format`, config.errorText, {expire: 5000});
                 return;
+            } else {
+                const match = file.getData().join("").trim().match(messageValidationRegex);
+                const recipient = match[1].trim();
+                const subject = match[2].trim();
+                const body = match[3].trim();
+                const timestamp = Date.now();
+
+                const sessionToken = FroggyFileSystem.getFile("D:/Pond/secret/e0ba59dd5c336adf").getData().join("").trim();
+
+                await fetch(`${pondLink}/send`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        session_token: sessionToken,
+                        recipient: recipient,
+                        subject: subject,
+                        body: body,
+                        timestamp: timestamp
+                    }),
+                }).then((response) => {
+                    if(response.status == 403){
+                        terminal.innerHTML = "";
+                        createTerminalLine(`T_pond_session_expired`, config.errorText, {expire: 5000});
+                        createEditableTerminalLine(`${config.currentPath}>`);
+                    } else if(response.ok){
+                        const file = structuredClone(FroggyFileSystem.getFile(`D:/Pond/drafts/${filename}`).toJSON());
+
+
+                        const newFile = FroggyFile.from(file);
+
+                        const newName = "sent-" + (newFile.getName().replace(/^draft-/, ""))
+
+                        newFile.rename(newName);
+                        newFile.setProperty("write", false);
+                        newFile.setProperty("read", true);
+                        newFile.setProperty("hidden", false);
+                        newFile.setProperty("transparent", false);
+
+                        FroggyFileSystem.deleteFile(`D:/Pond/drafts/${filename}`);
+                        FroggyFileSystem.addFileToDirectory("D:/Pond/sent", newFile);
+
+                        createPondMenu(mainMenu);
+                    } else {
+                        response.json().then(data => {
+                            createTerminalLine(`T_pond_error_sending_message {{${data.error}}}`, config.errorText, {expire: 5000});
+                        });
+                    }
+                });
             }
         }
 
@@ -2682,8 +2744,8 @@ function createLilypadLinePondDerivative(path, filename, options){
                     setTimeout(function(){
 
                         setSetting("showSpinner", false)
-                        if(/^Recipient:(.+?)-----Subject:(.+?)-----/.test(dataToWrite.join(""))){
-                            const match = dataToWrite.join("").match(/^Recipient:(.+?)-----Subject:(.+?)-----/);
+                        if(messageValidationRegex.test(dataToWrite.join(""))){
+                            const match = dataToWrite.join("").match(messageValidationRegex);
                             const recipient = match[1].trim().replaceAll(" ", "-");
                             const subject = match[2].trim().replaceAll(" ", "-");
 
@@ -2770,7 +2832,14 @@ let dateTimeInterval = setInterval(() => {
 }, 100);
 
 const onStart = () => {
-    //sendCommand("pond", ["-l", "test", "test"])
+    //sendCommand("pond", ["-l", "ari", "I4mth3own3r!!!"]);
+    sendCommand("pond", ["-l", "test", "test"])
+    // setTimeout(() => {
+    //     createEditableTerminalLine(`${config.currentPath}>`);
+    // }, 2000)
+    // setTimeout(() => {
+    //     sendCommand("pond", ["-l", "ari", "I4mth3own3r!!!"])
+    // }, 3000)
     //sendCommand("st", ["snake", "file\\_arg\\_1"])
 }
 
@@ -2817,6 +2886,8 @@ let innerBar = document.getElementById("inner-bar");
 
 const devMode = true;
 const pondLink = devMode ? "http://127.0.0.1:29329" : "roari.bpai.us/pond";
+
+const messageValidationRegex = /^Recipient:(.+?)-----Subject:(.+?)-----Body:(.+?)$/;
 
 function openLilypad(file, createEditableLineAfter){
     if(file == undefined){
