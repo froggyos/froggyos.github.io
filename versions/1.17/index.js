@@ -721,7 +721,7 @@ function createTerminalLine(text, path, other){
 
     if(other?.expire != undefined){
         setTimeout(() => {
-            terminal.removeChild(lineContainer);
+            if(terminal.contains(lineContainer)) terminal.removeChild(lineContainer);
         }, other.expire);
     }
     terminal.scrollTop = terminal.scrollHeight;
@@ -1362,7 +1362,7 @@ async function sendCommand(command, args, createEditableLineAfter){
                     "200": async (response, data) => {
                         setSetting("showSpinner", false)
                         createTerminalLine(`T_pond_login_successful {{${username}}}`, ">");
-                        let sessionTokenStore = FroggyFileSystem.getFile("D:/Pond/secret/e0ba59dd5c336adf");
+                        let sessionTokenStore = FroggyFileSystem.getFile(`D:/Pond/secret/${tokenFile}`);
 
                         sessionTokenStore.write([data.sessionToken, username]);
 
@@ -2678,7 +2678,7 @@ async function createLilypadLinePondDerivative(path, filename, options){
 
                 const timestamp = Date.now();
 
-                const sessionToken = FroggyFileSystem.getFile("D:/Pond/secret/e0ba59dd5c336adf").getData()[0].trim();
+                const sessionToken = FroggyFileSystem.getFile(`D:/Pond/secret/${tokenFile}`).getData()[0].trim();
 
                 handleRequest("/send", {
                     method: "POST",
@@ -2699,6 +2699,10 @@ async function createLilypadLinePondDerivative(path, filename, options){
                         createEditableTerminalLine(`${config.currentPath}>`);
                     },
                     403: (req, data) => {
+                        if(data.type == "recipient_banned"){
+                            createTerminalLine(`T_pond_error_recipient_banned {{${recipient}}}`, config.errorText, {expire: 5000});
+                            return;
+                        }
                         terminal.innerHTML = "";
                         createTerminalLine(`T_session_forcefully_terminated`, config.errorText, {expire: 5000});
                         createEditableTerminalLine(`${config.currentPath}>`);
@@ -2855,8 +2859,8 @@ let dateTimeInterval = setInterval(() => {
 }, 100);
 
 const onStart = () => {
-    //sendCommand("pond", ["-l", "ari", "I4mth3own3r!!!"]);
-    sendCommand("pond", ["-l", "test", "test"])
+    sendCommand("pond", ["-l", "ari", "I4mth3own3r!!!"]);
+    //sendCommand("pond", ["-l", "test", "test"])
     // setTimeout(() => {
     //     createEditableTerminalLine(`${config.currentPath}>`);
     // }, 2000)

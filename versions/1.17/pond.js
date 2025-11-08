@@ -19,13 +19,18 @@ async function handleRequest(link, body, handlers) {
         try {
             data = await response.json();
         } catch (e) {
-            createTerminalLine("Error: Response could not be parsed as JSON.", "", { translate: false });
             throw new Error(`JSON Parse Error: ${e.message}`);
         }
 
         handlers[429] = handlers[429] || function (response, data) {
             terminal.innerHTML = "";
             createTerminalLine("T_pond_rate_limited", config.errorText);
+            createEditableTerminalLine(`${config.currentPath}>`);
+        }
+
+        handlers[500] = handlers[500] || function (response, data) {
+            terminal.innerHTML = "";
+            createTerminalLine("T_pond_server_unreachable", config.errorText);
             createEditableTerminalLine(`${config.currentPath}>`);
         }
 
@@ -45,10 +50,10 @@ async function handleRequest(link, body, handlers) {
         // Handle unexpected statuses
         const summary = `${response.status} ${response.statusText || ""}`.trim();
 
-        console.error(data);
-        throw new Error(`Unhandled response for link ${link}: ${summary} - ${data.type}`);
+        createTerminalLine(`Please check the developer console (CTRL+SHIFT+I)`, config.fatalErrorText, {translate: false});
+        throw new Error(`Unhandled response for ${link}: ${summary} - ${data.type}`);
     } catch (e) {
-        throw e; // rethrow for higher-level debugging
+        handlers[500]();
     }
 }
 
@@ -62,11 +67,11 @@ async function handleRequest(link, body, handlers) {
  *    - "text" → plain text, not selectable
  *    - "newline" → blank line for spacing
  *    - "input" → text input, key should be "id:id prefix:prefix", final id will result as "pond-input-${id}"
+ *    - "checkbox" → checkbox input, key should be "id:id prefix:prefix", final id will result as "pond-checkbox-${id}"
  */
 function createPondMenu(object) {
     const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"));
-
-    if(error) {
+    if (error) {
         throw new Error("Blocked attempt to open Pond from unauthorized context.");
     }
 
@@ -76,7 +81,6 @@ function createPondMenu(object) {
     // --- Clear terminal before showing menu ---
     terminal.innerHTML = "";
 
-    // --- Build menu items ---
     const items = Object.entries(object);
     const menuElements = [];
     const prefixElements = [];
@@ -93,22 +97,21 @@ function createPondMenu(object) {
 
         const lineContainer = document.createElement("div");
         const terminalLine = document.createElement("div");
-
         lineContainer.classList.add("line-container");
         terminalLine.classList.add("terminal-line");
 
-        if(value === "input") {
+        let prefix = document.createElement("span");
+        prefix.textContent = "~ "; // default prefix for all selectable items
 
+        if (value === "input") {
             const keyMatch = key.match(/^id:(\S+)\s+prefix:(.*)$/);
+            const userPrefix = keyMatch ? keyMatch[2] : "";
 
-            terminalLine.classList.add("pond-menu-item");
-            terminalLine.classList.add("pond-menu-input");
+            prefix.textContent = `~ ${userPrefix}`;
+
+            terminalLine.classList.add("pond-menu-item", "pond-menu-input");
             terminalLine.setAttribute('contenteditable', 'plaintext-only');
             terminalLine.setAttribute('spellcheck', 'false');
-
-            const prefix = document.createElement("span");
-            prefix.textContent = keyMatch ? keyMatch[2] : "";
-
             terminalLine.id = keyMatch ? `pond-input-${keyMatch[1]}` : "";
             terminalLine.textContent = "";
 
@@ -117,33 +120,53 @@ function createPondMenu(object) {
 
             selectable.push(index);
             menuElements[index] = terminalLine;
+            prefixElements[index] = prefix;
 
-        } else if (value === "text") {
-            // No prefix for non-selectable text entries
-            terminalLine.innerHTML = key;
-            terminalLine.classList.add("pond-menu-text");
-            lineContainer.appendChild(terminalLine);
-        } else {
-            // Selectable function entry
-            const prefix = document.createElement("span");
-            prefix.textContent = "~";
-            terminalLine.textContent = key;
-            terminalLine.classList.add("pond-menu-item");
+        } else if (value === "checkbox") {
+            const keyMatch = key.match(/^id:(\S+)\s+prefix:(.+?)(?:\s+checked)?$/);
+            const userPrefix = keyMatch ? keyMatch[2].trim() : "";
+            const checked = /\schecked$/.test(key);
+
+            prefix.textContent = `~ ${userPrefix}`;
+
+            terminalLine.classList.add("pond-menu-item", "pond-menu-checkbox");
+            terminalLine.id = keyMatch ? `pond-checkbox-${keyMatch[1]}` : "";
+            terminalLine.dataset.checked = checked ? "true" : "false";
+            terminalLine.textContent = checked ? "[X]" : "[ ]";
 
             lineContainer.appendChild(prefix);
             lineContainer.appendChild(terminalLine);
 
-            prefixElements[index] = prefix;
             selectable.push(index);
+            menuElements[index] = terminalLine;
+            prefixElements[index] = prefix;
+
+        } else if (value === "text") {
+            key = key.replace(/☼{{USERNAME}}☼/, FroggyFileSystem.getFile(`D:/Pond/secret/${tokenFile}`).getData()[1]);
+            terminalLine.innerHTML = key;
+            terminalLine.classList.add("pond-menu-text");
+            lineContainer.appendChild(terminalLine);
+
+            menuElements[index] = terminalLine;
+            prefixElements[index] = null;
+
+        } else {
+            terminalLine.classList.add("pond-menu-item");
+            terminalLine.textContent = key;
+
+            lineContainer.appendChild(prefix);
+            lineContainer.appendChild(terminalLine);
+
+            selectable.push(index);
+            menuElements[index] = terminalLine;
+            prefixElements[index] = prefix;
         }
 
         terminal.appendChild(lineContainer);
-        menuElements[index] = terminalLine;
-        prefixElements[index] = prefixElements[index] || null;
     });
 
     // --- Selection logic ---
-    if (selectable.length === 0) return; // nothing selectable
+    if (selectable.length === 0) return;
 
     let pos = 0;
     let selectedIndex = selectable[pos];
@@ -157,8 +180,13 @@ function createPondMenu(object) {
 
             if (i === selectedIndex) {
                 el.classList.add("selected");
-                if (prefix) prefix.textContent = "~>";
-                if(el.classList.contains("pond-menu-input")) {
+
+                if (prefix) {
+                    // convert "~ prefix" -> "~> prefix"
+                    prefix.textContent = prefix.textContent.replace(/^~(>?)\s*/, "~> ");
+                }
+
+                if (el.classList.contains("pond-menu-input")) {
                     el.focus();
                     const range = document.createRange();
                     range.selectNodeContents(el);
@@ -167,10 +195,16 @@ function createPondMenu(object) {
                     sel.removeAllRanges();
                     sel.addRange(range);
                 }
+
             } else {
                 el.classList.remove("selected");
-                if (prefix) prefix.textContent = "~";
-                if(el.classList.contains("pond-menu-input")) {
+
+                if (prefix) {
+                    // convert "~> prefix" -> "~ prefix"
+                    prefix.textContent = prefix.textContent.replace(/^~>\s*/, "~ ");
+                }
+
+                if (el.classList.contains("pond-menu-input")) {
                     el.blur();
                 }
             }
@@ -184,20 +218,194 @@ function createPondMenu(object) {
             selectedIndex = selectable[pos];
             updateSelection();
             e.preventDefault();
+
         } else if (e.key === "ArrowDown") {
             pos = (pos + 1) % selectable.length;
             selectedIndex = selectable[pos];
             updateSelection();
             e.preventDefault();
+
         } else if (e.key === "Enter") {
+            const el = menuElements[selectedIndex];
+
+            if (el?.classList.contains("pond-menu-checkbox")) {
+                const isChecked = el.dataset.checked === "true";
+                el.dataset.checked = isChecked ? "false" : "true";
+                el.textContent = isChecked ? "[ ]" : "[X]";
+                return;
+            }
+
             const [, fn] = items[selectedIndex];
             if (typeof fn === "function") fn();
         }
     };
 }
+// function createPondMenu(object) {
+//     const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"));
+
+//     if(error) {
+//         throw new Error("Blocked attempt to open Pond from unauthorized context.");
+//     }
+
+//     // --- Remove any existing key listeners ---
+//     window.onkeyup = null;
+
+//     // --- Clear terminal before showing menu ---
+//     terminal.innerHTML = "";
+
+//     // --- Build menu items ---
+//     const items = Object.entries(object);
+//     const menuElements = [];
+//     const prefixElements = [];
+//     const selectable = [];
+
+//     items.forEach(([key, value], index) => {
+
+//         if (value === "newline") {
+//             terminal.appendChild(document.createElement("br"));
+//             menuElements.push(null);
+//             prefixElements.push(null);
+//             return;
+//         }
+
+//         const lineContainer = document.createElement("div");
+//         const terminalLine = document.createElement("div");
+
+//         lineContainer.classList.add("line-container");
+//         terminalLine.classList.add("terminal-line");
+
+//         if(value === "input") {
+
+//             const keyMatch = key.match(/^id:(\S+)\s+prefix:(.*)$/);
+
+//             terminalLine.classList.add("pond-menu-item");
+//             terminalLine.classList.add("pond-menu-input");
+//             terminalLine.setAttribute('contenteditable', 'plaintext-only');
+//             terminalLine.setAttribute('spellcheck', 'false');
+
+//             const prefix = document.createElement("span");
+//             prefix.textContent = keyMatch ? keyMatch[2] : "";
+
+//             terminalLine.id = keyMatch ? `pond-input-${keyMatch[1]}` : "";
+//             terminalLine.textContent = "";
+
+//             lineContainer.appendChild(prefix);
+//             lineContainer.appendChild(terminalLine);
+
+//             selectable.push(index);
+//             menuElements[index] = terminalLine;
+//         } else if (value === "checkbox"){
+//             const keyMatch = key.match(/^id:(\S+)\s+prefix:(.*)\s+(checked)?$/);
+
+//             const checked = keyMatch && keyMatch[3] === "checked";
+
+//             const prefix = document.createElement("span");
+//             prefix.textContent = keyMatch ? keyMatch[2] : "";
+            
+//             terminalLine.classList.add("pond-menu-item");
+//             terminalLine.classList.add("pond-menu-checkbox");
+//             terminalLine.id = keyMatch ? `pond-checkbox-${keyMatch[1]}` : "";
+//             terminalLine.dataset.checked = checked ? "true" : "false";
+//             terminalLine.textContent = checked ? "[X]" : "[ ]";
+
+//             lineContainer.appendChild(prefix);
+//             lineContainer.appendChild(terminalLine);
+
+//             menuElements[index] = terminalLine;
+//             selectable.push(index);
+
+//         } else if (value === "text") {
+//             // No prefix for non-selectable text entries
+//             key = key.replace(/☼{{USERNAME}}☼/, FroggyFileSystem.getFile(`D:/Pond/secret/${tokenFile}`).getData()[1]);
+//             terminalLine.innerHTML = key;
+//             terminalLine.classList.add("pond-menu-text");
+//             lineContainer.appendChild(terminalLine);
+//         } else {
+//             // Selectable function entry
+//             const prefix = document.createElement("span");
+//             prefix.textContent = "~";
+//             terminalLine.textContent = key;
+//             terminalLine.classList.add("pond-menu-item");
+
+//             lineContainer.appendChild(prefix);
+//             lineContainer.appendChild(terminalLine);
+
+//             prefixElements[index] = prefix;
+//             selectable.push(index);
+//         }
+
+//         terminal.appendChild(lineContainer);
+//         menuElements[index] = terminalLine;
+//         prefixElements[index] = prefixElements[index] || null;
+//     });
+
+//     // --- Selection logic ---
+//     if (selectable.length === 0) return; // nothing selectable
+
+//     let pos = 0;
+//     let selectedIndex = selectable[pos];
+//     updateSelection();
+
+//     function updateSelection() {
+//         for (let i = 0; i < menuElements.length; i++) {
+//             const el = menuElements[i];
+//             const prefix = prefixElements[i];
+//             if (!el) continue;
+
+//             if (i === selectedIndex) {
+//                 el.classList.add("selected");
+//                 if (prefix) prefix.textContent = "~>";
+//                 if(el.classList.contains("pond-menu-input")) {
+//                     el.focus();
+//                     const range = document.createRange();
+//                     range.selectNodeContents(el);
+//                     range.collapse(false);
+//                     const sel = window.getSelection();
+//                     sel.removeAllRanges();
+//                     sel.addRange(range);
+//                 }
+//             } else {
+//                 el.classList.remove("selected");
+//                 if (prefix) prefix.textContent = "~";
+//                 if(el.classList.contains("pond-menu-input")) {
+//                     el.blur();
+//                 }
+//             }
+//         }
+//     }
+
+//     // --- Handle keyboard navigation ---
+//     window.onkeyup = (e) => {
+//         if (e.key === "ArrowUp") {
+//             pos = (pos - 1 + selectable.length) % selectable.length;
+//             selectedIndex = selectable[pos];
+//             updateSelection();
+//             e.preventDefault();
+
+//         } else if (e.key === "ArrowDown") {
+//             pos = (pos + 1) % selectable.length;
+//             selectedIndex = selectable[pos];
+//             updateSelection();
+//             e.preventDefault();
+
+//         } else if (e.key === "Enter") {
+//             const el = menuElements[selectedIndex];
+
+//             if (el?.classList.contains("pond-menu-checkbox")) {
+//                 const isChecked = el.dataset.checked === "true";
+//                 el.dataset.checked = isChecked ? "false" : "true";
+//                 el.textContent = isChecked ? "[ ]" : "[X]";
+//                 return;
+//             }
+
+//             const [, fn] = items[selectedIndex];
+//             if (typeof fn === "function") fn();
+//         }
+//     };
+// }
 
 const mainMenu = {
-    "Welcome to the Pond!": "text",
+    [`Welcome to the Pond, ☼{{USERNAME}}☼!`]: "text",
     "Rules:": "text",
     "1. Be nice!": "text",
     "": "newline",
@@ -208,7 +416,7 @@ const mainMenu = {
             throw new Error("Blocked attempt to open Pond from unauthorized context.");
         }
 
-        const sessionToken = FroggyFileSystem.getFile("D:/Pond/secret/e0ba59dd5c336adf").getData()[0];
+        const sessionToken = FroggyFileSystem.getFile(`D:/Pond/secret/${tokenFile}`).getData()[0];
 
         handleRequest("/inbox", {
                 method: "GET",
@@ -234,16 +442,45 @@ const mainMenu = {
 
                                 terminal.innerHTML = "";
 
-                                let userDecorations = "";
+                                let userDecorations = getDecorations(message.senderDecorations);
 
-                                message.senderDecorations.forEach(deco => {
-                                    if(decorations[deco]){
-                                        userDecorations += ` ${decorations[deco]}`;
-                                    }
-                                });
+                                if(message.read == false) {
+                                    handleRequest("/mark-as-read", {
+                                        method: "POST",
+                                        headers: {
+                                            "Content-Type": "application/json",
+                                            "Session-Token": sessionToken
+                                        },
+                                        body: JSON.stringify({
+                                            messageID: message.messageID,
+                                        })
+                                    }, {
+                                        200: (response, data) => {
+                                            inbox[index].read = true;
+                                        },
+                                        401: (response, data) => {
+                                            terminal.innerHTML = "";
+                                            createTerminalLine("T_invalid_session", config.errorText);
+                                            createEditableTerminalLine(`${config.currentPath}>`);
+                                        },
+                                        404: (response, data) => {
+                                            const type = data.type;
+
+                                            if(type === "message"){
+                                                terminal.innerHTML = "";
+                                                createTerminalLine(`T_session_forcefully_terminated_additional_notes {{${localize("T_additional_notes_message_not_found")}}}`, config.errorText);
+                                                createEditableTerminalLine(`${config.currentPath}>`);
+                                            } else if (type === "user"){
+                                                terminal.innerHTML = "";
+                                                createTerminalLine(`T_session_forcefully_terminated_additional_notes {{${localize("T_additional_notes_user_not_found")}}}`, config.errorText);
+                                                createEditableTerminalLine(`${config.currentPath}>`);
+                                            }
+                                        }
+                                    });
+                                }
 
                                 let messageMenu = {
-                                    [`${"\u00A0".repeat(5)}FROM : ${message.sender}${userDecorations}`]: "text",
+                                    [`${"\u00A0".repeat(5)}FROM : ${message.sender}\u00A0${userDecorations}`]: "text",
                                     [`${"\u00A0".repeat(2)}SUBJECT : ${message.subject}`]: "text",
                                     [`TIMESTAMP : ${parseTimeFormat(config.timeFormat, message.timestamp)}`]: "text",
                                     "-----": "text",
@@ -257,41 +494,6 @@ const mainMenu = {
                                     const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"));
                                     if (error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
 
-                                    if(message.read == false) {
-                                        handleRequest("/mark-as-read", {
-                                            method: "POST",
-                                            headers: {
-                                                "Content-Type": "application/json",
-                                                "Session-Token": sessionToken
-                                            },
-                                            body: JSON.stringify({
-                                                messageID: message.messageID,
-                                            })
-                                        }, {
-                                            200: (response, data) => {
-                                                inbox[index].read = true;
-                                            },
-                                            401: (response, data) => {
-                                                terminal.innerHTML = "";
-                                                createTerminalLine("T_invalid_session", config.errorText);
-                                                createEditableTerminalLine(`${config.currentPath}>`);
-                                            },
-                                            404: (response, data) => {
-                                                const type = data.type;
-
-                                                if(type === "message"){
-                                                    terminal.innerHTML = "";
-                                                    createTerminalLine(`T_session_forcefully_terminated_additional_notes {{${localize("T_additional_notes_message_not_found")}}}`, config.errorText);
-                                                    createEditableTerminalLine(`${config.currentPath}>`);
-                                                } else if (type === "user"){
-                                                    terminal.innerHTML = "";
-                                                    createTerminalLine(`T_session_forcefully_terminated_additional_notes {{${localize("T_additional_notes_user_not_found")}}}`, config.errorText);
-                                                    createEditableTerminalLine(`${config.currentPath}>`);
-                                                }
-                                            }
-                                        });
-                                    }
-
                                     createPondMenu(createInboxMenu());
                                 };
                                 messageMenu[`Report this message`] = () => {
@@ -302,7 +504,8 @@ const mainMenu = {
                                         "Write your report...": "text",
                                         "": "newline",
                                         "id:report-title prefix:Title of report:": "input",
-                                        "id:report-details prefix:Give some details (optional):": "input",
+                                        "id:report-details prefix:Details (optional):": "input",
+                                        "id:delete-message prefix:Delete message?: checked": "checkbox",
                                         "Report": () => {
                                             const title = document.getElementById("pond-input-report-title").textContent.trim();
                                             const details = document.getElementById("pond-input-report-details").textContent.trim() || "No additional details provided.";
@@ -314,6 +517,8 @@ const mainMenu = {
 
                                             const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"));
                                             if (error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
+
+                                            const deleteMessage = document.getElementById("pond-checkbox-delete-message").dataset.checked === "true";
 
 
                                             handleRequest("/report", {
@@ -328,10 +533,15 @@ const mainMenu = {
                                                     messageID: message.messageID,
                                                     sender: message.sender,
                                                     subject: message.subject,
-                                                    body: message.body
+                                                    body: message.body,
+                                                    deleteMessage: deleteMessage
                                                 })
                                             }, {
                                                 200: (response, data) => {
+                                                    // delete the message from inbox
+
+                                                    if(deleteMessage) inbox = inbox.filter(msg => msg.messageID !== message.messageID);
+
                                                     createPondMenu({
                                                         "Message reported successfully.": "text",
                                                         "<< Back to Inbox": () => {
@@ -396,12 +606,12 @@ const mainMenu = {
                 },
                 404: (response, data) => {
                     terminal.innerHTML = "";
-                    createTerminalLine("T_session_forcefully_terminated", config.errorText, {translate: false});
+                    createTerminalLine("T_session_forcefully_terminated", config.errorText);
                     createEditableTerminalLine(`${config.currentPath}>`);
                 },
                 500: (response, data) => {
                     terminal.innerHTML = "";
-                    createTerminalLine("T_pond_server_unreachable", config.errorText, {translate: false});
+                    createTerminalLine("T_pond_server_unreachable", config.errorText);
                     createEditableTerminalLine(`${config.currentPath}>`);
                 }
             }
@@ -592,6 +802,78 @@ const mainMenu = {
             }
         };
     },
+    "Username Search": () => {
+        const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
+        if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
+
+        window.onkeyup = null;
+
+        terminal.innerHTML = "";
+
+        let searchMenu = {
+            "id:search-query prefix:Enter username to search:": "input",
+            "Search": () => {
+                const query = document.getElementById("pond-input-search-query").textContent.trim();
+
+                const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
+                if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
+                const sessionToken = FroggyFileSystem.getFile(`D:/Pond/secret/${tokenFile}`).getData()[0];
+
+                handleRequest("/usernames", {
+                    method: "GET",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Session-Token": sessionToken,
+                        "searchTerm": query
+                    }
+                }, {
+                    200: (response, data) => {
+                        let results = data.usernames;
+
+                        const usernames = [];
+
+                        for(const [key, value] of Object.entries(results)){
+                           usernames.push(`${key} ${getDecorations(value)}`);
+                        }
+
+                        const resultsMenu = {
+                            "Search Results:": "text",
+                            "": "newline",
+                            [usernames.join("<br>")]: "text",
+                            "<< Back to Search": () => {
+                                const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
+                                if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
+                                createPondMenu(searchMenu);
+                            }
+                        };
+
+                        createPondMenu(resultsMenu);
+                    },
+                    401: (response, data) => {
+                        terminal.innerHTML = "";
+                        createTerminalLine("T_invalid_session", config.errorText);
+                        createEditableTerminalLine(`${config.currentPath}>`);
+                    },
+                    403: (response, data) => {
+                        terminal.innerHTML = "";
+                        createTerminalLine("T_session_forcefully_terminated", config.errorText);
+                        createEditableTerminalLine(`${config.currentPath}>`);
+                    },
+                });
+            },
+            "<< Back to Main Menu": () => {
+                const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
+                if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
+                createPondMenu(mainMenu);
+            }
+        };
+
+        createPondMenu(searchMenu);
+    },
+    "Settings": () => {
+        const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
+        if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
+    },
     "Exit": () => {
         const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
 
@@ -615,8 +897,8 @@ async function openPond(userRoles = []) {
 
     const entrancePath = structuredClone(config.currentPath)
 
-    if(userRoles.includes("admin")){
-        mainMenu["Admin Panel"] = () => {
+    if(userRoles.includes("mod")){
+        mainMenu["Mod Panel"] = () => {
             const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
             if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
 
@@ -672,7 +954,7 @@ async function openPond(userRoles = []) {
                         return false;
                     }
 
-                    const sessionToken = FroggyFileSystem.getFile("D:/Pond/secret/e0ba59dd5c336adf").getData()[0];
+                    const sessionToken = FroggyFileSystem.getFile(`D:/Pond/secret/${tokenFile}`).getData()[0];
 
                     handleRequest("/ban", {
                         method: "POST",
@@ -689,10 +971,10 @@ async function openPond(userRoles = []) {
                         200: (response, data) => {
                             createPondMenu({
                                 "User banned successfully.": "text",
-                                "<< Back to Admin Menu": () => {
+                                "<< Back to Mod Menu": () => {
                                     const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
                                     if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
-                                    createPondMenu(adminMenu);
+                                    createPondMenu(modMenu);
                                 }
                             });
                         },
@@ -721,14 +1003,14 @@ async function openPond(userRoles = []) {
                     });
 
                 },
-                "<< Back to Admin Menu": () => {
+                "<< Back to Mod Menu": () => {
                     const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
                     if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
-                    createPondMenu(adminMenu);
+                    createPondMenu(modMenu);
                 }
             }
 
-            const adminMenu = {
+            const modMenu = {
                 "Ban User": () => {
                     const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
                     if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
@@ -745,10 +1027,10 @@ async function openPond(userRoles = []) {
                         "id:username prefix:Enter username:": "input",
                         "Unban": () => {
                         },
-                        "<< Back to Admin Menu": () => {
+                        "<< Back to Mod Menu": () => {
                             const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
                             if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
-                            createPondMenu(adminMenu);
+                            createPondMenu(modMenu);
                         }
                     }
 
@@ -762,131 +1044,161 @@ async function openPond(userRoles = []) {
                         method: "GET",
                         headers: {
                             "Content-Type": "application/json",
-                            "Session-Token": FroggyFileSystem.getFile("D:/Pond/secret/e0ba59dd5c336adf").getData()[0]
+                            "Session-Token": FroggyFileSystem.getFile(`D:/Pond/secret/${tokenFile}`).getData()[0]
                         }
                     }, {
                         200: (response, data) => {
                             const reports = data.reports;
 
-                            const reportsMenu = {
-                                "User Reports": "text",
-                                "": "newline",
-                            };
 
-                            reports.forEach((report, index) => {
-                                reportsMenu[`${report.title} - From: ${report.reporter}`] = () => {
+                            function createReportsMenu(){
+
+                                const reportsMenu = {
+                                    "User Reports": "text",
+                                    "": "newline",
+                                };
+
+                                reports.forEach((report, index) => {
+                                    reportsMenu[`${report.title} - From: ${report.reporter}`] = () => {
+                                        const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
+                                        if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
+
+                                        terminal.innerHTML = "";
+
+                                        const reportMenu = {
+                                            [`${"\u00A0".repeat(4)}TITLE : ${report.title}`]: "text",
+                                            [`${"\u00A0".repeat(1)}REPORTER : ${report.reporter}`]: "text",
+                                            [`TIMESTAMP : ${parseTimeFormat(config.timeFormat, report.reportTimestamp)}`]: "text",
+                                            [`${"\u00A0".repeat(2)}DETAILS : ${report.details}`]: "text",
+                                            [`REPORT ID : ${report.reportID}`]: "text",
+                                            "": "newline",
+                                            "Reported Message:": "text",
+                                            " ": "newline",
+                                            [`${"\u00A0".repeat(3)}FROM : ${report.reportedMessage.sender}`]: "text",
+                                            [`SUBJECT : ${report.reportedMessage.subject}`]: "text",
+                                            "-----": "text",
+                                            "a": "newline",
+                                            [report.reportedMessage.body.join("<br>")]: "text",
+                                            "b": "newline",
+                                            "--\u200b---": "text",
+                                            "Take Action:": "text",
+                                            "": "newline",
+                                            "Ban": () => {
+                                                const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
+                                                if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
+
+                                                const oldBanFunction = banMenu["Ban"].bind(banMenu);
+
+                                                banMenu["Ban"] = () => {
+                                                    let result = oldBanFunction();
+                                                    if(result !== false){
+
+                                                        let banInput = document.getElementById("pond-input-length").textContent.trim();
+                                                        let reasonInput = document.getElementById("pond-input-reason").textContent.trim();
+
+                                                        const banLength = banInput === "0" ? "permanently" : `for ${banInput}`;
+                                                        const reason = reasonInput.length === 0 ? "Violation of Community Guidelines. (It's ONE rule.)" : reasonInput;
+
+                                                        handleRequest("/send", {
+                                                            method: "POST",
+                                                            headers: {
+                                                                "Content-Type": "application/json",
+                                                                "Session-Token": FroggyFileSystem.getFile(`D:/Pond/secret/${tokenFile}`).getData()[0]
+                                                            },
+                                                            body: JSON.stringify({
+                                                                recipient: report.reporter,
+                                                                subject: `Your report has been processed (AUTOMATIC)`,
+                                                                body: [
+                                                                    `Hello ${report.reporter},`,
+                                                                    "",
+                                                                    `This is to inform you that your report with the ID of ${report.reportID} has been processed by our moderation team.`,
+                                                                    `If you have any further questions or concerns, please feel free to reach out.`,
+                                                                    "",
+                                                                    `The user ${report.reportedMessage.sender} has been banned ${banLength} for the following reason:`,
+                                                                    `${reason}`,
+                                                                    "",
+                                                                    "Thank you for helping us maintain a safe community."
+                                                                ],
+                                                                timestamp: Date.now()
+                                                            })
+                                                        }, {
+                                                            200: (response, data) => {
+                                                                createPondMenu({
+                                                                    "User banned and reporter notified successfully.": "text",
+                                                                    "<< Back to Mod Menu": () => {
+                                                                        const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
+                                                                        if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
+                                                                        createPondMenu(modMenu);
+                                                                    }
+                                                                });
+                                                            },
+                                                            401: (response, data) => {
+                                                                terminal.innerHTML = "";
+                                                                createTerminalLine("T_invalid_session", config.errorText);
+                                                                createEditableTerminalLine(`${config.currentPath}>`);
+                                                            },
+                                                            403: (response, data) => {
+                                                                if(data.type == "recipient_banned"){
+                                                                    createTerminalLine("The reporter has been banned, could not send notification.", config.errorText, {translate: false, expire: 5000});
+                                                                    return;
+                                                                }
+                                                                terminal.innerHTML = "";
+                                                                createTerminalLine("T_session_forcefully_terminated", config.errorText);
+                                                                createEditableTerminalLine(`${config.currentPath}>`);
+                                                            },
+                                                            404: (response, data) => {
+                                                                terminal.innerHTML = "";
+                                                                createTerminalLine(`T_session_forcefully_terminated_additional_notes {{${localize("T_additional_notes_user_not_found")}}}`, config.errorText);
+                                                                createEditableTerminalLine(`${config.currentPath}>`);
+                                                            },
+                                                        });
+                                                    }
+                                                }
+                                                createPondMenu(banMenu);
+
+                                                document.getElementById("pond-input-username").textContent = report.reportedMessage.sender;
+                                                
+                                                banMenu["Ban"] = oldBanFunction;
+                                            },
+                                            ["<< Back to Reports"]: () => {
+                                                const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
+                                                if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.")
+                                                createPondMenu(createReportsMenu);
+                                            }
+                                        };
+                                        createPondMenu(reportMenu);
+                                    };
+                                });
+
+                                reportsMenu["<< Back to Mod Menu"] = () => {
                                     const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
                                     if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
-
-                                    terminal.innerHTML = "";
-
-                                    const reportMenu = {
-                                        [`REPORT ID : ${report.reportID}`]: "text",
-                                        [`${"\u00A0".repeat(4)}TITLE : ${report.title}`]: "text",
-                                        [`${"\u00A0".repeat(1)}REPORTER : ${report.reporter}`]: "text",
-                                        [`TIMESTAMP : ${parseTimeFormat(config.timeFormat, report.reportTimestamp)}`]: "text",
-                                        [`${"\u00A0".repeat(2)}DETAILS : ${report.details}`]: "text",
-                                        "": "newline",
-                                        "Reported Message:": "text",
-                                        " ": "newline",
-                                        [`${"\u00A0".repeat(5)}FROM : ${report.reportedMessage.sender}`]: "text",
-                                        [`${"\u00A0".repeat(2)}SUBJECT : ${report.reportedMessage.subject}`]: "text",
-                                        "-----": "text",
-                                        [report.reportedMessage.body.join("<br>")]: "text",
-                                        "--\u200b---": "text",
-                                        "Take Action:": "text",
-                                        "": "newline",
-                                        "Ban": () => {
-                                            const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
-                                            if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
-
-                                            const oldBanFunction = banMenu["Ban"].bind(banMenu);
-
-                                            banMenu["Ban"] = () => {
-                                                let result = oldBanFunction();
-                                                if(result !== false){
-
-                                                    let banInput = document.getElementById("pond-input-length").textContent.trim();
-                                                    let reasonInput = document.getElementById("pond-input-reason").textContent.trim();
-
-                                                    const banLength = banInput === "0" ? "permanently" : `for ${banInput}`;
-                                                    const reason = reasonInput.length === 0 ? "No reason provided." : reasonInput;
-
-                                                    handleRequest("/send", {
-                                                        method: "POST",
-                                                        headers: {
-                                                            "Content-Type": "application/json",
-                                                            "Session-Token": FroggyFileSystem.getFile("D:/Pond/secret/e0ba59dd5c336adf").getData()[0]
-                                                        },
-                                                        body: JSON.stringify({
-                                                            recipient: report.reporter,
-                                                            subject: `Your report (ID: ${report.reportID}) has been processed`,
-                                                            body: [
-                                                                `Hello ${report.reporter},`,
-                                                                "",
-                                                                `This is to inform you that your report with the ID of ${report.reportID} has been processed by our admin team.`,
-                                                                `If you have any further questions or concerns, please feel free to reach out to our support team.`,
-                                                                "",
-                                                                `The user ${report.reportedMessage.sender} has been banned ${banLength} for the following reason:`,
-                                                                `${reason}`,
-                                                                "",
-                                                                "Thank you for helping us maintain a safe community."
-                                                            ],
-                                                            timestamp: Date.now()
-                                                        })
-                                                    }, {
-                                                        200: (response, data) => {
-                                                            createPondMenu({
-                                                                "User banned and reporter notified successfully.": "text",
-                                                                "<< Back to Admin Menu": () => {
-                                                                    const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
-                                                                    if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
-                                                                    createPondMenu(adminMenu);
-                                                                }
-                                                            });
-                                                        },
-                                                        401: (response, data) => {
-                                                            terminal.innerHTML = "";
-                                                            createTerminalLine("T_invalid_session", config.errorText);
-                                                            createEditableTerminalLine(`${config.currentPath}>`);
-                                                        },
-                                                        403: (response, data) => {
-                                                            terminal.innerHTML = "";
-                                                            createTerminalLine("T_session_forcefully_terminated", config.errorText);
-                                                            createEditableTerminalLine(`${config.currentPath}>`);
-                                                        },
-                                                        404: (response, data) => {
-                                                            terminal.innerHTML = "";
-                                                            createTerminalLine(`T_session_forcefully_terminated_additional_notes {{${localize("T_additional_notes_user_not_found")}}}`, config.errorText);
-                                                            createEditableTerminalLine(`${config.currentPath}>`);
-                                                        },
-                                                    });
-                                                }
-                                            }
-                                            createPondMenu(banMenu);
-
-                                            document.getElementById("pond-input-username").textContent = report.reportedMessage.sender;
-
-                                            
-                                            banMenu["Ban"] = oldBanFunction;
-                                        },
-                                        ["<< Back to Reports"]: () => {
-                                            const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
-                                            if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.")
-                                            createPondMenu(reportsMenu);
-                                        }
-                                    };
-                                    createPondMenu(reportMenu);
+                                    createPondMenu(modMenu);
                                 };
-                            });
 
-                            reportsMenu["<< Back to Admin Menu"] = () => {
-                                const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
-                                if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
-                                createPondMenu(adminMenu);
+                                return reportsMenu;
                             }
-                            createPondMenu(reportsMenu);
+                            createPondMenu(createReportsMenu());
                         },
+                        401: (response, data) => {
+                            terminal.innerHTML = "";
+                            createTerminalLine("T_invalid_session", config.errorText);
+                            createEditableTerminalLine(`${config.currentPath}>`);
+                        },
+                        403: (response, data) => {
+                            if(data.type == "banned"){
+                                terminal.innerHTML = "";
+                                createTerminalLine("T_session_forcefully_terminated", config.errorText);
+                                createEditableTerminalLine(`${config.currentPath}>`);
+                            } else {
+                                createTerminalLine("You do not have permission to view reports.", config.errorText, {translate: false, expire: 5000});
+                            }
+                        },
+                        404: (response, data) => {
+                            terminal.innerHTML = "";
+                            createTerminalLine("T_session_forcefully_terminated", config.errorText);
+                            createEditableTerminalLine(`${config.currentPath}>`);
+                        }
                     },);
                 },
                 "<< Back to Main Menu": () => {
@@ -896,16 +1208,25 @@ async function openPond(userRoles = []) {
                 }
             }
 
-            createPondMenu(adminMenu);
+            createPondMenu(modMenu);
         };
     }
-
     createPondMenu(mainMenu)
 };
 
+function getDecorations(roles){
+    let result = " ";
+    roles.forEach(role => {
+        if(decorations[role]){
+            result += decorations[role] + " ";
+        }
+    });
+    return result.trim();
+}
 
 const decorations = {
     "admin": `<span style="color: var(--c12)">[ADMIN]</span>`,
     "owner": `<span style="color: #f7a923">[OWNER]</span>`,
+    "mod": `<span style="color: var(--c09)">[MOD]</span>`,
     "banned": `<span style="color: var(--c08)">[BANNED]</span>`,
 }

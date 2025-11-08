@@ -1,5 +1,9 @@
 //new AllSniffer({});
 
+
+// generate a 16 bit hex string
+const tokenFile = [...Array(16)].map(()=>Math.floor(Math.random()*16).toString(16)).join("");
+
 const presetLanguagesMap = {
     // general stuff ==========================
     "!LANGNAME: language build helper": {
@@ -1028,6 +1032,11 @@ const presetLanguagesMap = {
         nmt: "T_pond_message_not_found",
         jpn: "T_pond_message_not_found"
     },
+    "T_pond_error_recipient_banned {{}}": {
+        eng: "Cannot send message. Recipient '{{}}' is banned.",
+        nmt: "T_pond_error_recipient_banned {{}}",
+        jpn: "T_pond_error_recipient_banned {{}}"
+    }
     // uncategorized messages ==========================
 
 };
@@ -1375,7 +1384,7 @@ const FroggyFileSystem = new fs({
         ] }
     ],
     "D:/Pond/secret": [
-        { name: "e0ba59dd5c336adf", properties: {transparent: true, read: true, write: true, hidden: false}, data: [""] }
+        { name: tokenFile, properties: {transparent: true, read: true, write: true, hidden: false}, data: [""] }
     ],
     "D:/Programs": [
         { name: "cli", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["quietkill"] },
