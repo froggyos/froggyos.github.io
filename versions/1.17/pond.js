@@ -11,6 +11,18 @@
 async function handleRequest(link, body, handlers) {
     const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"));
     if(error) throw new Error("Blocked attempt to make Pond request from unauthorized context.");
+
+    handlers[500] = handlers[500] || function (response, data) {
+        terminal.innerHTML = "";
+        createTerminalLine("T_pond_server_unreachable", config.errorText);
+        createEditableTerminalLine(`${config.currentPath}>`);
+    }
+
+    handlers[429] = handlers[429] || function (response, data) {
+        terminal.innerHTML = "";
+        createTerminalLine("T_pond_rate_limited", config.errorText);
+        createEditableTerminalLine(`${config.currentPath}>`);
+    }
     try {
         const response = await fetch(`${pondLink}${link}`, body);
         let data;
@@ -19,19 +31,8 @@ async function handleRequest(link, body, handlers) {
         try {
             data = await response.json();
         } catch (e) {
+            console.error(response)
             throw new Error(`JSON Parse Error: ${e.message}`);
-        }
-
-        handlers[429] = handlers[429] || function (response, data) {
-            terminal.innerHTML = "";
-            createTerminalLine("T_pond_rate_limited", config.errorText);
-            createEditableTerminalLine(`${config.currentPath}>`);
-        }
-
-        handlers[500] = handlers[500] || function (response, data) {
-            terminal.innerHTML = "";
-            createTerminalLine("T_pond_server_unreachable", config.errorText);
-            createEditableTerminalLine(`${config.currentPath}>`);
         }
 
         // Try exact status handler first
@@ -53,6 +54,7 @@ async function handleRequest(link, body, handlers) {
         createTerminalLine(`Please check the developer console (CTRL+SHIFT+I)`, config.fatalErrorText, {translate: false});
         throw new Error(`Unhandled response for ${link}: ${summary} - ${data.type}`);
     } catch (e) {
+        console.error(e)
         handlers[500]();
     }
 }
@@ -873,6 +875,80 @@ const mainMenu = {
     "Settings": () => {
         const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
         if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
+
+
+        window.onkeyup = null;
+
+        terminal.innerHTML = "";
+
+        handleRequest("/get-settings", {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                "Session-Token": FroggyFileSystem.getFile(`D:/Pond/secret/${tokenFile}`).getData()[0]
+            }
+        }, {
+            200: (response, data) => {
+                const settings = data.settings;
+
+                let appearInSearches = settings.appearInSearches
+
+                const settingsMenu = {
+                    "Your Settings": "text",
+                    "": "newline",
+                    [`id:appearInSearches prefix:Appear in username searches? ${appearInSearches ? 'checked' : ''}`]: "checkbox",
+                    "Save": () => {
+                        handleRequest("/save-settings", {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                                "Session-Token": FroggyFileSystem.getFile(`D:/Pond/secret/${tokenFile}`).getData()[0]
+                            },
+                            body: JSON.stringify({
+                                appearInSearches: document.getElementById("pond-checkbox-appearInSearches").dataset.checked === "true"
+                            })
+                        }, {
+                            200: (response, data) => {
+                                createTerminalLine("T_pond_settings_saved", "", {expire: 5000});
+                            },
+                            401: (response, data) => {
+                                terminal.innerHTML = "";
+                                createTerminalLine("T_invalid_session", config.errorText);
+                                createEditableTerminalLine(`${config.currentPath}>`);
+                            },
+                            403: (response, data) => {
+                                terminal.innerHTML = "";
+                                createTerminalLine("T_session_forcefully_terminated", config.errorText);
+                                createEditableTerminalLine(`${config.currentPath}>`);
+                            },
+                            404: (response, data) => {
+                                terminal.innerHTML = "";
+                                createTerminalLine("T_session_forcefully_terminated", config.errorText);
+                                createEditableTerminalLine(`${config.currentPath}>`);
+                            }
+                        });
+
+                    },
+                    "<< Back to Main Menu": () => {
+                        const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
+                        if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
+                        createPondMenu(mainMenu);
+                    }
+                }
+
+                createPondMenu(settingsMenu);
+            },
+            401: (response, data) => {
+                terminal.innerHTML = "";
+                createTerminalLine("T_invalid_session", config.errorText);
+                createEditableTerminalLine(`${config.currentPath}>`);
+            },
+            404: (response, data) => {
+                terminal.innerHTML = "";
+                createTerminalLine("T_session_forcefully_terminated", config.errorText);
+                createEditableTerminalLine(`${config.currentPath}>`);
+            }
+        });
     },
     "Exit": () => {
         const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
@@ -1225,8 +1301,9 @@ function getDecorations(roles){
 }
 
 const decorations = {
-    "admin": `<span style="color: var(--c12)">[ADMIN]</span>`,
-    "owner": `<span style="color: #f7a923">[OWNER]</span>`,
-    "mod": `<span style="color: var(--c09)">[MOD]</span>`,
-    "banned": `<span style="color: var(--c08)">[BANNED]</span>`,
+    "admin" : `<span class="tag"        style="color: var(--c12)" >[ADMIN]</span>`,
+    "owner" : `<span class="tag"        style="color: #f7a923"  >[OWNER]</span>`,
+    "mod"   : `<span class="tag"        style="color: var(--c09)" >[MOD]</span>`,
+    "banned": `<span class="tag"        style="color: var(--c08)" >[BANNED]</span>`,
+    "spinny": `<span class="tag spinny" style="color: var(--c05)" ></span>`
 }

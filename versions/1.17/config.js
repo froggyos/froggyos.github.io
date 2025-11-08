@@ -1036,6 +1036,11 @@ const presetLanguagesMap = {
         eng: "Cannot send message. Recipient '{{}}' is banned.",
         nmt: "T_pond_error_recipient_banned {{}}",
         jpn: "T_pond_error_recipient_banned {{}}"
+    },
+    "T_pond_settings_saved": {
+        eng: "Settings saved.",
+        nmt: "T_pond_settings_saved",
+        jpn: "T_pond_settings_saved"
     }
     // uncategorized messages ==========================
 
