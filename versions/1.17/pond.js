@@ -462,7 +462,7 @@ const mainMenu = {
                                         },
                                         401: (response, data) => {
                                             terminal.innerHTML = "";
-                                            createTerminalLine("T_invalid_session", config.errorText);
+                                            createTerminalLine("T_pond_invalid_session", config.errorText);
                                             createEditableTerminalLine(`${config.currentPath}>`);
                                         },
                                         404: (response, data) => {
@@ -470,11 +470,11 @@ const mainMenu = {
 
                                             if(type === "message"){
                                                 terminal.innerHTML = "";
-                                                createTerminalLine(`T_session_forcefully_terminated_additional_notes {{${localize("T_additional_notes_message_not_found")}}}`, config.errorText);
+                                                createTerminalLine(`T_pond_session_forcefully_terminated_additional_notes {{${localize("T_pond_message_not_found")}}}`, config.errorText);
                                                 createEditableTerminalLine(`${config.currentPath}>`);
                                             } else if (type === "user"){
                                                 terminal.innerHTML = "";
-                                                createTerminalLine(`T_session_forcefully_terminated_additional_notes {{${localize("T_additional_notes_user_not_found")}}}`, config.errorText);
+                                                createTerminalLine(`T_pond_session_forcefully_terminated_additional_notes {{${localize("T_pond_user_not_found")}}}`, config.errorText);
                                                 createEditableTerminalLine(`${config.currentPath}>`);
                                             }
                                         }
@@ -555,17 +555,17 @@ const mainMenu = {
                                                 },
                                                 401: (response, data) => {
                                                     terminal.innerHTML = "";
-                                                    createTerminalLine("T_invalid_session", config.errorText);
+                                                    createTerminalLine("T_pond_invalid_session", config.errorText);
                                                     createEditableTerminalLine(`${config.currentPath}>`);
                                                 },
                                                 403: (response, data) => {
                                                     terminal.innerHTML = "";
-                                                    createTerminalLine("T_session_forcefully_terminated", config.errorText);
+                                                    createTerminalLine("T_pond_session_forcefully_terminated", config.errorText);
                                                     createEditableTerminalLine(`${config.currentPath}>`);
                                                 },
                                                 404: (response, data) => {
                                                     terminal.innerHTML = "";
-                                                    createTerminalLine(`T_session_forcefully_terminated_additional_notes {{${localize("T_additional_notes_user_not_found")}}}`, config.errorText);
+                                                    createTerminalLine(`T_pond_session_forcefully_terminated_additional_notes {{${localize("T_pond_user_not_found")}}}`, config.errorText);
                                                     createEditableTerminalLine(`${config.currentPath}>`);
                                                 }
                                             });
@@ -598,17 +598,17 @@ const mainMenu = {
                 },
                 401: (response, data) => {
                     terminal.innerHTML = "";
-                    createTerminalLine("T_invalid_session", config.errorText);
+                    createTerminalLine("T_pond_invalid_session", config.errorText);
                     createEditableTerminalLine(`${config.currentPath}>`);
                 },
                 403: (response, data) => {
                     terminal.innerHTML = "";
-                    createTerminalLine("T_session_forcefully_terminated", config.errorText);
+                    createTerminalLine("T_pond_session_forcefully_terminated", config.errorText);
                     createEditableTerminalLine(`${config.currentPath}>`);
                 },
                 404: (response, data) => {
                     terminal.innerHTML = "";
-                    createTerminalLine("T_session_forcefully_terminated", config.errorText);
+                    createTerminalLine("T_pond_session_forcefully_terminated", config.errorText);
                     createEditableTerminalLine(`${config.currentPath}>`);
                 },
                 500: (response, data) => {
@@ -853,12 +853,12 @@ const mainMenu = {
                     },
                     401: (response, data) => {
                         terminal.innerHTML = "";
-                        createTerminalLine("T_invalid_session", config.errorText);
+                        createTerminalLine("T_pond_invalid_session", config.errorText);
                         createEditableTerminalLine(`${config.currentPath}>`);
                     },
                     403: (response, data) => {
                         terminal.innerHTML = "";
-                        createTerminalLine("T_session_forcefully_terminated", config.errorText);
+                        createTerminalLine("T_pond_session_forcefully_terminated", config.errorText);
                         createEditableTerminalLine(`${config.currentPath}>`);
                     },
                 });
@@ -913,17 +913,17 @@ const mainMenu = {
                             },
                             401: (response, data) => {
                                 terminal.innerHTML = "";
-                                createTerminalLine("T_invalid_session", config.errorText);
+                                createTerminalLine("T_pond_invalid_session", config.errorText);
                                 createEditableTerminalLine(`${config.currentPath}>`);
                             },
                             403: (response, data) => {
                                 terminal.innerHTML = "";
-                                createTerminalLine("T_session_forcefully_terminated", config.errorText);
+                                createTerminalLine("T_pond_session_forcefully_terminated", config.errorText);
                                 createEditableTerminalLine(`${config.currentPath}>`);
                             },
                             404: (response, data) => {
                                 terminal.innerHTML = "";
-                                createTerminalLine("T_session_forcefully_terminated", config.errorText);
+                                createTerminalLine("T_pond_session_forcefully_terminated", config.errorText);
                                 createEditableTerminalLine(`${config.currentPath}>`);
                             }
                         });
@@ -940,12 +940,12 @@ const mainMenu = {
             },
             401: (response, data) => {
                 terminal.innerHTML = "";
-                createTerminalLine("T_invalid_session", config.errorText);
+                createTerminalLine("T_pond_invalid_session", config.errorText);
                 createEditableTerminalLine(`${config.currentPath}>`);
             },
             404: (response, data) => {
                 terminal.innerHTML = "";
-                createTerminalLine("T_session_forcefully_terminated", config.errorText);
+                createTerminalLine("T_pond_session_forcefully_terminated", config.errorText);
                 createEditableTerminalLine(`${config.currentPath}>`);
             }
         });
@@ -986,6 +986,7 @@ async function openPond(userRoles = []) {
                 "id:username prefix:Enter username:": "input",
                 "id:length prefix:Enter length:": "input",
                 "id:reason prefix:Enter reason:": "input",
+                // add option for IP ban
                 "Ban": () => {
                     const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
                     if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
@@ -1016,21 +1017,24 @@ async function openPond(userRoles = []) {
                     const reason = document.getElementById("pond-input-reason").textContent.trim();
 
                     if(username.length == 0){
-                        createTerminalLine("Please provide a username to ban.", config.errorText, {translate: false, expire: 5000});
+                        createTerminalLine("T_pond_provide_ban_user", config.errorText, {expire: 5000});
                         return false;
                     }
                     if(length.length == 0){
-                        createTerminalLine("Please provide a length for the ban.", config.errorText, {translate: false, expire: 5000});
+                        createTerminalLine("T_pond_provide_ban_duration", config.errorText, {expire: 5000});
                         return false;
                     }
 
                     const durationMs = parseDuration(length);
                     if(isNaN(durationMs)){
-                        createTerminalLine("Invalid length format. Please use the specified format.", config.errorText, {translate: false, expire: 5000});
+                        createTerminalLine("T_pond_invalid_length_format", config.errorText, {expire: 5000});
                         return false;
                     }
 
                     const sessionToken = FroggyFileSystem.getFile(`D:/Pond/secret/${tokenFile}`).getData()[0];
+
+                    // if ip banned, send request to /ip-ban as well
+                    //
 
                     handleRequest("/ban", {
                         method: "POST",
@@ -1055,24 +1059,24 @@ async function openPond(userRoles = []) {
                             });
                         },
                         401: (response, data) => {
+                            if(data.type == "no_permission"){
+                                createTerminalLine("T_pond_no_permission_to_ban_user", config.errorText, {expire: 5000});
+                                return
+                            }
                             terminal.innerHTML = "";
-                            createTerminalLine("T_invalid_session", config.errorText);
+                            createTerminalLine("T_pond_invalid_session", config.errorText);
                             createEditableTerminalLine(`${config.currentPath}>`);
                         },
                         403: (response, data) => {
-                            if(data.type == "no_permission"){
-                                createTerminalLine("You do not have permission to ban this user.", config.errorText, {translate: false, expire: 5000});
-                            } else if (data.type == "banned"){
-                                terminal.innerHTML = "";
-                                createTerminalLine("T_session_forcefully_terminated", config.errorText);
-                                createEditableTerminalLine(`${config.currentPath}>`);
-                            }
+                            terminal.innerHTML = "";
+                            createTerminalLine("T_pond_session_forcefully_terminated", config.errorText);
+                            createEditableTerminalLine(`${config.currentPath}>`);
                         },
                         404: (response, data) => {
                             terminal.innerHTML = "";
                             if(data.type == "user"){
-                                createTerminalLine(`T_session_forcefully_terminated_additional_notes {{${localize("T_additional_notes_user_not_found")}}}`, config.errorText),
-                                createTerminalLine("T_session_forcefully_terminated", config.errorText);
+                                createTerminalLine(`T_pond_session_forcefully_terminated_additional_notes {{${localize("T_pond_user_not_found")}}}`, config.errorText),
+                                createTerminalLine("T_pond_session_forcefully_terminated", config.errorText);
                             }
                             createEditableTerminalLine(`${config.currentPath}>`);
                         }   
@@ -1102,6 +1106,63 @@ async function openPond(userRoles = []) {
                         "": "newline",
                         "id:username prefix:Enter username:": "input",
                         "Unban": () => {
+                            const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
+                            if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
+
+                            const username = document.getElementById("pond-input-username").textContent.trim();
+
+                            if(username.length == 0){
+                                createTerminalLine("T_pond_provide_user_to_unban", config.errorText, {expire: 5000});
+                                return;
+                            }
+                            handleRequest("/unban", {
+                                method: "POST",
+                                headers: {
+                                    "Content-Type": "application/json",
+                                    "Session-Token": FroggyFileSystem.getFile(`D:/Pond/secret/${tokenFile}`).getData()[0]
+                                },
+                                body: JSON.stringify({
+                                    username
+                                })
+                            }, {
+                                200: (response, data) => {
+                                    createPondMenu({
+                                        "User unbanned successfully.": "text",
+                                        "<< Back to Mod Menu": () => {
+                                            const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
+                                            if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
+                                            createPondMenu(modMenu);
+                                        }
+                                    });
+                                },
+                                401: (response, data) => {
+                                    if(data.type == "no_permission"){
+                                        createTerminalLine("T_pond_no_permission_to_unban_user", config.errorText, {expire: 5000});
+                                    } else {
+                                        terminal.innerHTML = "";
+                                        createTerminalLine("T_pond_invalid_session", config.errorText);
+                                        createEditableTerminalLine(`${config.currentPath}>`);
+                                    }
+                                },
+                                403: (response, data) => {
+                                    terminal.innerHTML = "";
+                                    createTerminalLine("T_pond_session_forcefully_terminated", config.errorText);
+                                    createEditableTerminalLine(`${config.currentPath}>`);
+                                },
+                                404: (response, data) => {
+                                    if(data.type == "user"){
+                                        createTerminalLine("T_pond_user_not_found", config.errorText, {expire: 5000});
+                                    } else {
+                                        terminal.innerHTML = "";
+                                        if(data.type == "moderator"){
+                                            createTerminalLine(`T_pond_session_forcefully_terminated_additional_notes {{${localize("T_pond_user_not_found")}}}`, config.errorText)
+                                        } else {
+                                            createTerminalLine("T_pond_session_forcefully_terminated", config.errorText);
+                                        }
+                                        createEditableTerminalLine(`${config.currentPath}>`);
+                                    }
+                                }
+                            });
                         },
                         "<< Back to Mod Menu": () => {
                             const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
@@ -1135,11 +1196,47 @@ async function openPond(userRoles = []) {
                                 };
 
                                 reports.forEach((report, index) => {
-                                    reportsMenu[`${report.title} - From: ${report.reporter}`] = () => {
+                                    const reportStatus = report.resolved ? "[CLSD]" : "[OPEN]";
+                                    reportsMenu[`${reportStatus} - ${report.reportID}`] = () => {
                                         const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
                                         if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
 
                                         terminal.innerHTML = "";
+
+                                        function resolveReport(){
+                                            handleRequest("/resolve-report", {
+                                                method: "POST",
+                                                headers: {
+                                                    "Content-Type": "application/json",
+                                                    "Session-Token": FroggyFileSystem.getFile(`D:/Pond/secret/${tokenFile}`).getData()[0]
+                                                },
+                                                body: JSON.stringify({
+                                                    reportID: report.reportID
+                                                })
+                                            }, {
+                                                200: (response, data) => {
+                                                },
+                                                401: (response, data) => {
+                                                    if(data.type == "no_permission"){
+                                                        createTerminalLine("T_pond_no_permission_to_resolve_reports", config.errorText, {expire: 5000});
+                                                        return;
+                                                    }
+                                                    terminal.innerHTML = "";
+                                                    createTerminalLine("T_pond_invalid_session", config.errorText);
+                                                    createEditableTerminalLine(`${config.currentPath}>`);
+                                                },
+                                                403: (response, data) => {
+                                                    terminal.innerHTML = "";
+                                                    createTerminalLine("T_pond_session_forcefully_terminated", config.errorText);
+                                                    createEditableTerminalLine(`${config.currentPath}>`);
+                                                },
+                                                404: (response, data) => {
+                                                    terminal.innerHTML = "";
+                                                    createTerminalLine(`T_pond_session_forcefully_terminated_additional_notes {{${localize("T_pond_user_not_found")}}}`, config.errorText);
+                                                    createEditableTerminalLine(`${config.currentPath}>`);
+                                                }
+                                            });
+                                        }
 
                                         const reportMenu = {
                                             [`${"\u00A0".repeat(4)}TITLE : ${report.title}`]: "text",
@@ -1157,15 +1254,19 @@ async function openPond(userRoles = []) {
                                             [report.reportedMessage.body.join("<br>")]: "text",
                                             "b": "newline",
                                             "--\u200b---": "text",
+                                            [report.resolved ? 
+                                                "Resolved by : " +  report.resolvedBy + "<br>" +
+                                                "Resolution Timestamp : " + parseTimeFormat(config.timeFormat, report.resolutionTimestamp)
+                                                : ""]: "text",
                                             "Take Action:": "text",
                                             "": "newline",
-                                            "Ban": () => {
+                                            "Ban Sender": () => {
                                                 const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
                                                 if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
 
                                                 const oldBanFunction = banMenu["Ban"].bind(banMenu);
 
-                                                banMenu["Ban"] = () => {
+                                                banMenu["Ban"] = function(){
                                                     let result = oldBanFunction();
                                                     if(result !== false){
 
@@ -1187,8 +1288,7 @@ async function openPond(userRoles = []) {
                                                                 body: [
                                                                     `Hello ${report.reporter},`,
                                                                     "",
-                                                                    `This is to inform you that your report with the ID of ${report.reportID} has been processed by our moderation team.`,
-                                                                    `If you have any further questions or concerns, please feel free to reach out.`,
+                                                                    `This is to inform you that your report has been processed by our moderation team. If you have any further questions or concerns, please feel free to reach out.`,
                                                                     "",
                                                                     `The user ${report.reportedMessage.sender} has been banned ${banLength} for the following reason:`,
                                                                     `${reason}`,
@@ -1199,6 +1299,7 @@ async function openPond(userRoles = []) {
                                                             })
                                                         }, {
                                                             200: (response, data) => {
+                                                                resolveReport();
                                                                 createPondMenu({
                                                                     "User banned and reporter notified successfully.": "text",
                                                                     "<< Back to Mod Menu": () => {
@@ -1210,7 +1311,7 @@ async function openPond(userRoles = []) {
                                                             },
                                                             401: (response, data) => {
                                                                 terminal.innerHTML = "";
-                                                                createTerminalLine("T_invalid_session", config.errorText);
+                                                                createTerminalLine("T_pond_invalid_session", config.errorText);
                                                                 createEditableTerminalLine(`${config.currentPath}>`);
                                                             },
                                                             403: (response, data) => {
@@ -1219,29 +1320,115 @@ async function openPond(userRoles = []) {
                                                                     return;
                                                                 }
                                                                 terminal.innerHTML = "";
-                                                                createTerminalLine("T_session_forcefully_terminated", config.errorText);
+                                                                createTerminalLine("T_pond_session_forcefully_terminated", config.errorText);
                                                                 createEditableTerminalLine(`${config.currentPath}>`);
                                                             },
                                                             404: (response, data) => {
                                                                 terminal.innerHTML = "";
-                                                                createTerminalLine(`T_session_forcefully_terminated_additional_notes {{${localize("T_additional_notes_user_not_found")}}}`, config.errorText);
+                                                                createTerminalLine(`T_pond_session_forcefully_terminated_additional_notes {{${localize("T_pond_user_not_found")}}}`, config.errorText);
                                                                 createEditableTerminalLine(`${config.currentPath}>`);
                                                             },
                                                         });
                                                     }
-                                                }
+                                                };
+
                                                 createPondMenu(banMenu);
 
                                                 document.getElementById("pond-input-username").textContent = report.reportedMessage.sender;
                                                 
                                                 banMenu["Ban"] = oldBanFunction;
                                             },
+                                            "Ban Reporter": () => {
+                                                const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
+                                                if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
+
+                                                
+                                                const oldBanFunction = banMenu["Ban"].bind(banMenu);
+
+                                                banMenu["Ban"] = function(){
+                                                    let result = oldBanFunction();
+                                                    if(result !== false){
+                                                        resolveReport();
+                                                        createPondMenu({
+                                                            "Reporter banned successfully.": "text",
+                                                            "<< Back to Mod Menu": () => {
+                                                                const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
+                                                                if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
+                                                                createPondMenu(modMenu);
+                                                            }
+                                                        });
+                                                    }
+                                                };
+
+                                                createPondMenu(banMenu);
+
+                                                document.getElementById("pond-input-username").textContent = report.reporter;
+                                                document.getElementById("pond-input-reason").textContent = `Abuse of report system.`;
+
+                                                banMenu["Ban"] = oldBanFunction;
+                                            },
+                                            "Warn Sender": () => {
+                                            },
+                                            "Warn Reporter": () => {
+                                            },
+                                            "Dismiss": () => {
+                                                const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
+                                                if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
+
+                                                handleRequest("/dismiss-report", {
+                                                    method: "POST",
+                                                    headers: {
+                                                        "Content-Type": "application/json",
+                                                        "Session-Token": FroggyFileSystem.getFile(`D:/Pond/secret/${tokenFile}`).getData()[0]
+                                                    },
+                                                    body: JSON.stringify({
+                                                        reportID: report.reportID
+                                                    })
+                                                }, {
+                                                    200: (response, data) => {
+                                                        createPondMenu({
+                                                            "Report dismissed successfully.": "text",
+                                                            "<< Back to Mod Menu": () => {
+                                                                const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
+                                                                if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
+                                                                createPondMenu(modMenu);
+                                                            }
+                                                        });
+                                                    },
+                                                    401: (response, data) => {
+                                                        if(data.type == "no_permission"){
+                                                            createTerminalLine("T_pond_no_permission_to_resolve_reports", config.errorText, {expire: 5000});
+                                                            return;
+                                                        }
+                                                        terminal.innerHTML = "";
+                                                        createTerminalLine("T_pond_invalid_session", config.errorText);
+                                                        createEditableTerminalLine(`${config.currentPath}>`);
+                                                    },
+                                                    403: (response, data) => {
+                                                        terminal.innerHTML = "";
+                                                        createTerminalLine("T_pond_session_forcefully_terminated", config.errorText);
+                                                        createEditableTerminalLine(`${config.currentPath}>`);
+                                                    },
+                                                    404: (response, data) => {
+                                                        terminal.innerHTML = "";
+                                                        createTerminalLine("T_pond_message_not_found", config.errorText, {expire: 5000});
+                                                        createEditableTerminalLine(`${config.currentPath}>`);
+                                                    }
+                                                })
+                                            },
                                             ["<< Back to Reports"]: () => {
                                                 const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
                                                 if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.")
-                                                createPondMenu(createReportsMenu);
+                                                createPondMenu(createReportsMenu());
                                             }
                                         };
+
+                                        if(report.resolved){
+                                            delete reportMenu["Ban Sender"];
+                                            delete reportMenu["Ban Reporter"];
+                                            delete reportMenu["Warn Sender"];
+                                            delete reportMenu["Warn Reporter"];
+                                        }
                                         createPondMenu(reportMenu);
                                     };
                                 });
@@ -1258,13 +1445,13 @@ async function openPond(userRoles = []) {
                         },
                         401: (response, data) => {
                             terminal.innerHTML = "";
-                            createTerminalLine("T_invalid_session", config.errorText);
+                            createTerminalLine("T_pond_invalid_session", config.errorText);
                             createEditableTerminalLine(`${config.currentPath}>`);
                         },
                         403: (response, data) => {
                             if(data.type == "banned"){
                                 terminal.innerHTML = "";
-                                createTerminalLine("T_session_forcefully_terminated", config.errorText);
+                                createTerminalLine("T_pond_session_forcefully_terminated", config.errorText);
                                 createEditableTerminalLine(`${config.currentPath}>`);
                             } else {
                                 createTerminalLine("You do not have permission to view reports.", config.errorText, {translate: false, expire: 5000});
@@ -1272,7 +1459,7 @@ async function openPond(userRoles = []) {
                         },
                         404: (response, data) => {
                             terminal.innerHTML = "";
-                            createTerminalLine("T_session_forcefully_terminated", config.errorText);
+                            createTerminalLine("T_pond_session_forcefully_terminated", config.errorText);
                             createEditableTerminalLine(`${config.currentPath}>`);
                         }
                     },);

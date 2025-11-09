@@ -867,11 +867,8 @@ const presetLanguagesMap = {
 
     // pond ============================================
 
-    "T_pond_rate_limited": {
-        eng: "You are being rate limited. Please wait a moment and try again.",
-        nmt: "T_pond_rate_limited",
-        jpn: "T_pond_rate_limited"
-    },
+
+    // server connectivity =============================
     "T_pond_checking": {
         eng: "Checking Pond server...",
         nmt: "T_pond_checking",
@@ -902,15 +899,18 @@ const presetLanguagesMap = {
         nmt: "T_pond_server_response_time {{}}",
         jpn: "T_pond_server_response_time {{}}"
     },
-    "T_pond_command_intro_do_h": {
-        eng: "Run \"pond -h\" for more information on Pond commands.",
-        nmt: "T_pond_command_intro_do_h",
-        jpn: "T_pond_command_intro_do_h"
-    },
+
+
+    // command help ====================================
     "T_pond_command_help_intro": {
         eng: "* Pond Command Help *",
         nmt: "T_pond_command_help_intro",
         jpn: "T_pond_command_help_intro"
+    },
+    "T_pond_command_intro_do_h": {
+        eng: "Run \"pond -h\" for more information on Pond commands.",
+        nmt: "T_pond_command_intro_do_h",
+        jpn: "T_pond_command_intro_do_h"
     },
     "T_pond_command_help_login": {
         eng: "pond -l [username] [password] - Log in to your Pond account",
@@ -927,41 +927,132 @@ const presetLanguagesMap = {
         nmt: "T_pond_command_help_ping",
         jpn: "T_pond_command_help_ping"
     },
+
+
+    // rate limiting ===================================
+    "T_pond_rate_limited": {
+        eng: "You are being rate limited. Please wait a moment and try again.",
+        nmt: "T_pond_rate_limited",
+        jpn: "T_pond_rate_limited"
+    },
+
+
+    // missing input ===================================
     "T_pond_provide_username_password": {
         eng: "Please provide a username and/or password.",
         nmt: "T_pond_provide_username_password",
         jpn: "T_pond_provide_username_password"
     },
+    "T_pond_provide_ban_user": {
+        eng: "Please provide a username to ban.",
+        nmt: "T_pond_provide_ban_user",
+        jpn: "T_pond_provide_ban_user"
+    },
+    "T_pond_provide_user_to_unban": {
+        eng: "Please provide a username to unban.",
+        nmt: "T_pond_provide_user_to_unban",
+        jpn: "T_pond_provide_user_to_unban"
+    },
+    "T_pond_provide_ban_duration": {
+        eng: "Please provide a length for the ban.",
+        nmt: "T_pond_provide_ban_duration",
+        jpn: "T_pond_provide_ban_duration"
+    },
+
+
+    // invalid (format) ================================
+    "T_pond_invalid_name_password": {
+        eng: "Invalid username or password.",
+        nmt: "T_pond_invalid_name_password",
+        jpn: "T_pond_invalid_name_password"
+    },
+    "T_pond_draft_invalid_format": {
+        eng: "Invalid draft format. Must include a recipient, title, and body.",
+        nmt: "T_pond_draft_invalid_format",
+        jpn: "T_pond_draft_invalid_format"
+    },
+    "T_pond_invalid_length_format": {
+        eng: "Invalid length format. Please use the specified format.",
+        nmt: "T_pond_invalid_length_format",
+        jpn: "T_pond_invalid_length_format"
+    },
+
+
+    // no permission ===================================
+    "T_pond_no_permission_to_ban_user": {
+        eng: "You do not have permission to ban this user.",
+        nmt: "T_pond_no_permission_to_ban_user",
+        jpn: "T_pond_no_permission_to_ban_user"
+    },
+    "T_pond_no_permission_dismiss_reports": {
+        eng: "You do not have permission to dismiss reports.",
+        nmt: "T_pond_no_permission_dismiss_reports",
+        jpn: "T_pond_no_permission_dismiss_reports"
+    },
+
+
+    // successes =======================================
     "T_pond_registration_successful": {
         eng: "Registration successful! You can now log in with your credentials.",
         nmt: "T_pond_registration_successful",
         jpn: "T_pond_registration_successful"
-    },
-    "T_pond_registration_failed": {
-        eng: "Registration failed",
-        nmt: "T_pond_registration_failed",
-        jpn: "T_pond_registration_failed"
     },
     "T_pond_login_successful {{}}": {
         eng: "Login successful! Welcome back {{}}.",
         nmt: "T_pond_login_successful {{}}",
         jpn: "T_pond_login_successful {{}}"
     },
-    "T_pond_username_taken": {
-        eng: "That username is already taken.",
-        nmt: "T_pond_username_taken",
-        jpn: "T_pond_username_taken"
+    "T_pond_settings_saved": {
+        eng: "Settings saved.",
+        nmt: "T_pond_settings_saved",
+        jpn: "T_pond_settings_saved"
+    },
+
+
+    // failures ========================================
+    "T_pond_registration_failed": {
+        eng: "Registration failed",
+        nmt: "T_pond_registration_failed",
+        jpn: "T_pond_registration_failed"
     },
     "T_pond_login_failed": {
         eng: "Login failed.",
         nmt: "T_pond_login_failed",
         jpn: "T_pond_login_failed"
     },
-    "T_invalid_name_password": {
-        eng: "Invalid username or password.",
-        nmt: "T_invalid_name_password",
-        jpn: "T_invalid_name_password"
+    "T_pond_error_sending_message {{}}": {
+        eng: "Failed to send message: {{}}",
+        nmt: "T_pond_error_sending_message {{}}",
+        jpn: "T_pond_error_sending_message {{}}"
     },
+    "T_pond_error_recipient_banned {{}}": {
+        eng: "Cannot send message. Recipient '{{}}' is banned.",
+        nmt: "T_pond_error_recipient_banned {{}}",
+        jpn: "T_pond_error_recipient_banned {{}}"
+    },
+    "T_pond_inbox_not_found": {
+        eng: "The server could not find your user data.",
+        nmt: "T_pond_inbox_not_found",
+        jpn: "T_pond_inbox_not_found"
+    },
+    "T_pond_user_not_found": {
+        eng: "User not found",
+        nmt: "T_pond_user_not_found",
+        jpn: "T_pond_user_not_found"
+    },
+    "T_pond_message_not_found": {
+        eng: "Message not found.",
+        nmt: "T_pond_message_not_found",
+        jpn: "T_pond_message_not_found"
+    },
+    "T_pond_username_taken": {
+        eng: "That username is already taken.",
+        nmt: "T_pond_username_taken",
+        jpn: "T_pond_username_taken"
+    },
+
+
+    // ban related =====================================
     "T_pond_user_banned": {
         eng: "You are banned from the Pond.",
         nmt: "T_pond_user_banned",
@@ -977,71 +1068,33 @@ const presetLanguagesMap = {
         nmt: "T_pond_banned_until {{}}",
         jpn: "T_pond_banned_until {{}}"
     },
-    "T_pond_ban_permanent": {
-        eng: "Permanent",
-        nmt: "T_pond_ban_permanent",
-        jpn: "T_pond_ban_permanent"
-    },
     "T_pond_ban_reason {{}}": {
         eng: "Reason: {{}}",
         nmt: "T_pond_ban_reason {{}}",
         jpn: "T_pond_ban_reason {{}}"
     },
-    "T_pond_draft_invalid_format": {
-        eng: "Invalid draft format. Must include a recipient, title, and body.",
-        nmt: "T_pond_draft_invalid_format",
-        jpn: "T_pond_draft_invalid_format"
+    "T_pond_ban_permanent": {
+        eng: "Permanent",
+        nmt: "T_pond_ban_permanent",
+        jpn: "T_pond_ban_permanent"
     },
-    "T_pond_error_sending_message {{}}": {
-        eng: "Failed to send message: {{}}",
-        nmt: "T_pond_error_sending_message {{}}",
-        jpn: "T_pond_error_sending_message {{}}"
-    },
-    "T_session_forcefully_terminated": {
-        eng: "Your session was forcefully terminated.",
-        nmt: "T_session_forcefully_terminated",
-        jpn: "T_session_forcefully_terminated"
-    },
-    "T_session_forcefully_terminated_additional_notes {{}}": {
-        eng: "Your session was forcefully terminated. Additional notes: {{}}",
-        nmt: "T_session_forcefully_terminated_additional_notes {{}}",
-        jpn: "T_session_forcefully_terminated_additional_notes {{}}"
-    },
-    "T_additional_notes_message_not_found": {
-        eng: "Message not found",
-        nmt: "T_additional_notes_message_not_found",
-        jpn: "T_additional_notes_message_not_found"
-    },
-    "T_additional_notes_user_not_found": {
-        eng: "User not found",
-        nmt: "T_additional_notes_user_not_found",
-        jpn: "T_additional_notes_user_not_found"
-    },
-    "T_invalid_session": {
+
+    // session related =================================
+    "T_pond_invalid_session": {
         eng: "Invalid session. Please log in again.",
-        nmt: "T_invalid_session",
-        jpn: "T_invalid_session"
+        nmt: "T_pond_invalid_session",
+        jpn: "T_pond_invalid_session"
     },
-    "T_pond_inbox_not_found": {
-        eng: "The server could not find your user data.",
-        nmt: "T_pond_inbox_not_found",
-        jpn: "T_pond_inbox_not_found"
+    "T_pond_session_forcefully_terminated": {
+        eng: "Your session was forcefully terminated.",
+        nmt: "T_pond_session_forcefully_terminated",
+        jpn: "T_pond_session_forcefully_terminated"
     },
-    "T_pond_message_not_found": {
-        eng: "Message not found.",
-        nmt: "T_pond_message_not_found",
-        jpn: "T_pond_message_not_found"
+    "T_pond_session_forcefully_terminated_additional_notes {{}}": {
+        eng: "Your session was forcefully terminated. Additional notes: {{}}",
+        nmt: "T_pond_session_forcefully_terminated_additional_notes {{}}",
+        jpn: "T_pond_session_forcefully_terminated_additional_notes {{}}"
     },
-    "T_pond_error_recipient_banned {{}}": {
-        eng: "Cannot send message. Recipient '{{}}' is banned.",
-        nmt: "T_pond_error_recipient_banned {{}}",
-        jpn: "T_pond_error_recipient_banned {{}}"
-    },
-    "T_pond_settings_saved": {
-        eng: "Settings saved.",
-        nmt: "T_pond_settings_saved",
-        jpn: "T_pond_settings_saved"
-    }
     // uncategorized messages ==========================
 
 };

@@ -1355,7 +1355,7 @@ async function sendCommand(command, args, createEditableLineAfter){
                             createTerminalLine(`T_pond_banned_until {{${data.bannedUntil == -1 ? localize("T_pond_ban_permanent") : parseTimeFormat(config.timeFormat, data.bannedUntil)}}}`, "");
                             createTerminalLine(`T_pond_ban_reason {{${data.bannedReason}}}`, "");
                         } else if(response.status == 404){
-                            createTerminalLine("T_invalid_name_password", config.errorText);
+                            createTerminalLine("T_pond_invalid_name_password", config.errorText);
                         }
                         if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                     },
@@ -2695,7 +2695,7 @@ async function createLilypadLinePondDerivative(path, filename, options){
                 }, {
                     401: (req, data) => {
                         terminal.innerHTML = "";
-                        createTerminalLine(`T_invalid_session`, config.errorText);
+                        createTerminalLine(`T_pond_invalid_session`, config.errorText);
                         createEditableTerminalLine(`${config.currentPath}>`);
                     },
                     403: (req, data) => {
@@ -2709,7 +2709,7 @@ async function createLilypadLinePondDerivative(path, filename, options){
                     },
                     404: (req, data) => {
                         if(data.type == "recipient"){
-                            createTerminalLine(`T_additional_notes_user_not_found`, config.errorText, {expire: 5000});
+                            createTerminalLine(`T_pond_user_not_found`, config.errorText, {expire: 5000});
                         } else {
                             createTerminalLine(`T_pond_error_sending_message {{${data.error}}}`, config.errorText, {expire: 5000});
                         }
