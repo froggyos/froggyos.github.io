@@ -865,6 +865,13 @@ const presetLanguagesMap = {
         jpn: "十二月"
     },
 
+    // misc interjections =========================
+    "T_attention": {
+        eng: "ATTENTION!",
+        nmt: "T_attention",
+        jpn: "T_attention"
+    },
+
     // pond ============================================
 
 
@@ -989,6 +996,11 @@ const presetLanguagesMap = {
         nmt: "T_pond_no_permission_dismiss_reports",
         jpn: "T_pond_no_permission_dismiss_reports"
     },
+    "T_pond_no_permission_to_warn_user": {
+        eng: "You do not have permission to warn this user.",
+        nmt: "T_pond_no_permission_to_warn_user",
+        jpn: "T_pond_no_permission_to_warn_user"
+    },
 
 
     // successes =======================================
@@ -1006,6 +1018,16 @@ const presetLanguagesMap = {
         eng: "Settings saved.",
         nmt: "T_pond_settings_saved",
         jpn: "T_pond_settings_saved"
+    },
+    "T_pond_provide_warn_user": {
+        eng: "Please provide a username to warn.",
+        nmt: "T_pond_provide_warn_user",
+        jpn: "T_pond_provide_warn_user"
+    },
+    "T_pond_provide_warn_reason": {
+        eng: "Please provide a reason for the warning.",
+        nmt: "T_pond_provide_warn_reason",
+        jpn: "T_pond_provide_warn_reason"
     },
 
 
@@ -1079,6 +1101,35 @@ const presetLanguagesMap = {
         jpn: "T_pond_ban_permanent"
     },
 
+
+    // warn related ====================================
+    "T_pond_user_warned": {
+        eng: "You have been warned.",
+        nmt: "T_pond_user_warned",
+        jpn: "T_pond_user_warned"
+    },
+    "T_pond_warned_by {{}}": {
+        eng: "You were warned by: {{}}",
+        nmt: "T_pond_warned_by {{}}",
+        jpn: "T_pond_warned_by {{}}"
+    },
+    "T_pond_warned_at {{}}": {
+        eng: "You were warned at: {{}}",
+        nmt: "T_pond_warned_at {{}}",
+        jpn: "T_pond_warned_at {{}}"
+    },
+    "T_pond_warn_reason {{}}": {
+        eng: "For the reason of: {{}}",
+        nmt: "T_warn_reason {{}}",
+        jpn: "T_warn_reason {{}}"
+    },
+    "T_pond_warn_info_text": {
+        eng: "For more information, please message a moderator with the warning ID provided. It has been copied to your clipboard.",
+        nmt: "T_pond_warn_info_text",
+        jpn: "T_pond_warn_info_text"
+    },
+
+
     // session related =================================
     "T_pond_invalid_session": {
         eng: "Invalid session. Please log in again.",
@@ -1095,6 +1146,13 @@ const presetLanguagesMap = {
         nmt: "T_pond_session_forcefully_terminated_additional_notes {{}}",
         jpn: "T_pond_session_forcefully_terminated_additional_notes {{}}"
     },
+    "T_pond_logged_out": {
+        eng: "You have been logged out.",
+        nmt: "T_pond_logged_out",
+        jpn: "T_pond_logged_out"
+    }
+
+
     // uncategorized messages ==========================
 
 };
@@ -2494,10 +2552,3 @@ const setLanguageFiles = () => {
 }
 
 setLanguageFiles();
-
-/*
-change the hash cache to a set bc its faster
-work on the config proxy object verification
-
-
-*/

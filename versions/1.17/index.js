@@ -1361,12 +1361,55 @@ async function sendCommand(command, args, createEditableLineAfter){
                     },
                     "200": async (response, data) => {
                         setSetting("showSpinner", false)
-                        createTerminalLine(`T_pond_login_successful {{${username}}}`, ">");
-                        let sessionTokenStore = FroggyFileSystem.getFile(`D:/Pond/secret/${tokenFile}`);
+                        if(data.type == "unread_warn"){
+                            const warningDisplay = {
+                                [localize("T_attention")]: "text",
+                                [localize("T_pond_user_warned")]: "text",
+                                [localize(`T_pond_warned_by {{${data.warn.warnedBy}}}`)]: "text",
+                                [localize(`T_pond_warned_at {{${parseTimeFormat(config.timeFormat, data.warn.timestamp)}}}`)]: "text",
+                                [localize(`T_pond_warn_reason {{${data.warn.reason}}}`)]: "text",
+                                [localize("T_pond_warn_info_text")]: "text",
+                                [`Warning ID: ${data.warn.id}`]: "text",
+                                [`Acknowledge Warning`]: () => {
+                                    navigator.clipboard.writeText(data.warn.id);
+                                    let sessionTokenStore = FroggyFileSystem.getFile(`D:/Pond/secret/${tokenFile}`);
+                                    sessionTokenStore.write([data.sessionToken, username]);
+                                    handleRequest("/mark-warn", {
+                                        method: "POST",
+                                        headers: {
+                                            "Content-Type": "application/json",
+                                            "Session-Token": data.sessionToken,
+                                        }
+                                    }, {
+                                        "200": async (response, data) => {},
+                                        "40x": async (response, data) => {
+                                            createTerminalLine(response.status + " " + response.statusText, config.errorText, {translate: false});
+                                            createEditableTerminalLine(`${config.currentPath}>`);
+                                        },
+                                        "500": async (response, data) => {
+                                            createTerminalLine("T_pond_server_unreachable", config.errorText);
+                                            createEditableTerminalLine(`${config.currentPath}>`);
+                                        }
+                                    });
+                                    openPond(data.roles);
+                                },
+                                [`Log Out`]: () => {
+                                    let sessionTokenStore = FroggyFileSystem.getFile(`D:/Pond/secret/${tokenFile}`);
+                                    sessionTokenStore.write([]);
+                                    createTerminalLine("T_pond_logged_out", ">");
+                                    if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                                }
+                            }
+                            createPondMenu(warningDisplay)
+                            console.log(data)
+                        } else {
+                            createTerminalLine(`T_pond_login_successful {{${username}}}`, ">");
+                            let sessionTokenStore = FroggyFileSystem.getFile(`D:/Pond/secret/${tokenFile}`);
 
-                        sessionTokenStore.write([data.sessionToken, username]);
+                            sessionTokenStore.write([data.sessionToken, username]);
 
-                        openPond(data.roles);
+                            openPond(data.roles);
+                        }
                     },
                     "500": async (response, data) => {
                         setSetting("showSpinner", false)
@@ -2859,7 +2902,8 @@ let dateTimeInterval = setInterval(() => {
 }, 100);
 
 const onStart = () => {
-    sendCommand("pond", ["-l", "ari", "I4mth3own3r!!!"]);
+    sendCommand("pond", ["-l", "third_guy", "Supersecretpassword1!"])
+    //sendCommand("pond", ["-l", "ari", "I4mth3own3r!!!"]);
     //sendCommand("pond", ["-l", "test", "test"])
     // setTimeout(() => {
     //     createEditableTerminalLine(`${config.currentPath}>`);

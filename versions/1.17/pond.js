@@ -1090,6 +1090,78 @@ async function openPond(userRoles = []) {
                 }
             }
 
+            const warnMenu = {
+                "Warn User": "text",
+                "": "newline",
+                "id:username prefix:Enter username:": "input",
+                "id:reason prefix:Enter reason:": "input",
+                "Warn": () => {
+                    const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
+                    if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
+                    const username = document.getElementById("pond-input-username").textContent.trim();
+                    const reason = document.getElementById("pond-input-reason").textContent.trim();
+                    if(username.length == 0){
+                        createTerminalLine("T_pond_provide_warn_user", config.errorText, {expire: 5000});
+                        return false;
+                    }
+                    if(reason.length == 0){
+                        createTerminalLine("T_pond_provide_warn_reason", config.errorText, {expire: 5000});
+                        return false;
+                    }
+                    handleRequest("/warn", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "Session-Token": FroggyFileSystem.getFile(`D:/Pond/secret/${tokenFile}`).getData()[0]
+                        },
+                        body: JSON.stringify({
+                            username,
+                            reason
+                        })
+                    }, {
+                        200: (response, data) => {
+                            //resolveReport();
+                            createPondMenu({
+                                "User warned successfully.": "text",
+                                "<< Back to Mod Menu": () => {
+                                    const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
+                                    if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
+                                    createPondMenu(modMenu);
+                                }
+                            });
+                        },
+                        401: (response, data) => {
+                            if(data.type == "no_permission"){
+                                createTerminalLine("T_pond_no_permission_to_warn_user", config.errorText, {expire: 5000});
+                                return;
+                            }
+                            terminal.innerHTML = "";
+                            createTerminalLine("T_pond_invalid_session", config.errorText);
+                            createEditableTerminalLine(`${config.currentPath}>`);
+                        },
+                        403: (response, data) => {
+                            terminal.innerHTML = "";
+                            createTerminalLine("T_pond_session_forcefully_terminated", config.errorText);
+                            createEditableTerminalLine(`${config.currentPath}>`);
+                        },
+                        404: (response, data) => {
+                            terminal.innerHTML = ""; 
+                            if(data.type == "user"){
+                                createTerminalLine("T_pond_user_not_found", config.errorText, {expire: 5000});
+                            } else {
+                                createTerminalLine(`T_pond_session_forcefully_terminated`, config.errorText);
+                                createEditableTerminalLine(`${config.currentPath}>`);
+                            }
+                        }
+                    });
+                },
+                "<< Return to Mod Menu": () => {
+                    const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
+                    if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
+                    createPondMenu(modMenu);
+                },
+            };
+
             const modMenu = {
                 "Ban User": () => {
                     const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
@@ -1172,6 +1244,11 @@ async function openPond(userRoles = []) {
                     }
 
                     createPondMenu(unbanMenu);
+                },
+                "Warn User": () => {
+                    const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
+                    if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
+                    createPondMenu(warnMenu);
                 },
                 "View Reports": () => {
                     const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
@@ -1368,6 +1445,32 @@ async function openPond(userRoles = []) {
                                                 banMenu["Ban"] = oldBanFunction;
                                             },
                                             "Warn Sender": () => {
+                                                const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
+                                                if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
+
+                                                const oldWarnFunction = warnMenu["Warn"].bind(warnMenu);
+
+                                                warnMenu["Warn"] = function(){
+                                                    let result = oldWarnFunction();
+                                                    if(result !== false){
+                                                        resolveReport();
+                                                        createPondMenu({
+                                                            "User warned successfully.": "text",
+                                                            "<< Back to Mod Menu": () => {
+                                                                const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
+                                                                if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
+                                                                createPondMenu(modMenu);
+                                                            }
+                                                        });
+                                                    }
+                                                };
+
+                                                createPondMenu(warnMenu);
+
+                                                document.getElementById("pond-input-username").textContent = report.reportedMessage.sender;
+                                                document.getElementById("pond-input-reason").textContent = `For a message that you sent. Due to the architecture of the system, we cannot provide more specific details, such as the contents of the message.`;
+                                                
+                                                warnMenu["Warn"] = oldWarnFunction;
                                             },
                                             "Warn Reporter": () => {
                                             },
