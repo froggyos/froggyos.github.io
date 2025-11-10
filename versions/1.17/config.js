@@ -1124,7 +1124,7 @@ const presetLanguagesMap = {
         jpn: "T_warn_reason {{}}"
     },
     "T_pond_warn_info_text": {
-        eng: "For more information, please message a moderator with the warning ID provided. It has been copied to your clipboard.",
+        eng: "For more information, navigate to 'Other -> Warnings'.",
         nmt: "T_pond_warn_info_text",
         jpn: "T_pond_warn_info_text"
     },

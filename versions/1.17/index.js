@@ -2902,8 +2902,8 @@ let dateTimeInterval = setInterval(() => {
 }, 100);
 
 const onStart = () => {
-    sendCommand("pond", ["-l", "third_guy", "Supersecretpassword1!"])
-    //sendCommand("pond", ["-l", "ari", "I4mth3own3r!!!"]);
+    //sendCommand("pond", ["-l", "third_guy", "Supersecretpassword1!"])
+    sendCommand("pond", ["-l", "ari", "I4mth3own3r!!!"]);
     //sendCommand("pond", ["-l", "test", "test"])
     // setTimeout(() => {
     //     createEditableTerminalLine(`${config.currentPath}>`);
