@@ -679,37 +679,37 @@ const presetLanguagesMap = {
     // date and time =========================
     "T_date_short_sunday": {
         eng: "Sun",
-        nmt: "ypg",
+        nmt: "yg",
         jpn: "日"
     },
     "T_date_short_monday": {
         eng: "Mon",
-        nmt: "ypl",
+        nmt: "yl",
         jpn: "月"
     },
     "T_date_short_tuesday": {
         eng: "Tue",
-        nmt: "ypb",
+        nmt: "yb",
         jpn: "火"
     },
     "T_date_short_wednesday": {
         eng: "Wed",
-        nmt: "yps",
+        nmt: "ys",
         jpn: "水"
     },
     "T_date_short_thursday": {
         eng: "Thu",
-        nmt: "ypk",
+        nmt: "yk",
         jpn: "木"
     },
     "T_date_short_friday": {
         eng: "Fri",
-        nmt: "ypm",
+        nmt: "ym",
         jpn: "金"
     },
     "T_date_short_saturday": {
         eng: "Sat",
-        nmt: "ypw",
+        nmt: "yw",
         jpn: "土"
     },
     "T_date_long_sunday": {
@@ -749,62 +749,62 @@ const presetLanguagesMap = {
     },
     "T_date_short_january": {
         eng: "Jan",
-        nmt: "ygl",
+        nmt: "ylge",
         jpn: "1月"
     },
     "T_date_short_february": {
         eng: "Feb",
-        nmt: "yla",
+        nmt: "ylla",
         jpn: "2月"
     },
     "T_date_short_march": {
         eng: "Mar",
-        nmt: "ybs",
+        nmt: "ylbe",
         jpn: "3月"
     },
     "T_date_short_april": {
         eng: "Apr",
-        nmt: "ysl",
+        nmt: "ylsa",
         jpn: "4月"
     },
     "T_date_short_may": {
         eng: "May",
-        nmt: "ykm",
+        nmt: "ylki",
         jpn: "5月"
     },
     "T_date_short_june": {
         eng: "Jun",
-        nmt: "yml",
+        nmt: "ylmo",
         jpn: "6月"
     },
     "T_date_short_july": {
         eng: "Jul",
-        nmt: "ywé",
+        nmt: "ylwé",
         jpn: "7月"
     },
     "T_date_short_august": {
         eng: "Aug",
-        nmt: "yan",
+        nmt: "ylan",
         jpn: "8月"
     },
     "T_date_short_september": {
         eng: "Sep",
-        nmt: "ymk",
+        nmt: "ylmi",
         jpn: "9月"
     },
     "T_date_short_october": {
         eng: "Oct",
-        nmt: "ykó",
+        nmt: "ylkó",
         jpn: "10月"
     },
     "T_date_short_november": {
         eng: "Nov",
-        nmt: "ykg",
+        nmt: "ylkg",
         jpn: "11月"
     },
     "T_date_short_december": {
         eng: "Dec",
-        nmt: "ykl",
+        nmt: "ylkl",
         jpn: "12月"
     },
     "T_date_long_january": {
@@ -1444,7 +1444,7 @@ const FroggyFileSystem = new fs({
             "KEY currentSpinner TYPE String VALUE default END",
             "KEY defaultSpinner TYPE String VALUE default END",
             "KEY timeFormat TYPE String VALUE w. y/mn/d h:m:s END",
-            "KEY updateStatBar TYPE Boolean VALUE false END",
+            "KEY updateStatBar TYPE Boolean VALUE true END",
             "KEY allowedProgramDirectories TYPE Array START",
             "0 TYPE String VALUE D:/Programs",
             "KEY allowedProgramDirectories TYPE Array END",

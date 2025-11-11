@@ -833,11 +833,13 @@ async function sendCommand(command, args, createEditableLineAfter){
             }
             
             setSetting("language", code);
+            setSetting("showSpinner", true);
 
             setTimeout(() => {
+                setSetting("showSpinner", false);
                 createTerminalLine("T_lang_changed", ">")
                 if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
-            }, 10)
+            }, 500)
         } break;
         
         // change color palette
