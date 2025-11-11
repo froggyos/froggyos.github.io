@@ -246,7 +246,7 @@ function localize(descriptor, TRANSLATE_TEXT=true){
         })
     }
 
-    let translationMap = FroggyFileSystem.getFile("Config:/langs/lbh").getData();
+    let translationMap = FroggyFileSystem.getFile("Config:/langs/ldm").getData();
     let languageMap = FroggyFileSystem.getFile(`Config:/langs/${config.language}`).getData();
 
     let englishData = translationMap.indexOf(descriptor);
@@ -702,7 +702,7 @@ function createTerminalLine(text, path, other){
     } else {
         let localizedText = localize(text, translateText);
         if(localizedText == null) {
-            terminalLine.textContent = `Index Missing! -> ${text}`;
+            terminalLine.textContent = `Index Missing! -> ${text.replace(/{{.*?}}/g, "{{}}")}`;
             terminalPath.innerHTML = config.translationErrorText;
         }
         else terminalLine.textContent = localizedText; 
@@ -757,7 +757,7 @@ function validateLanguageFile(code){
     if(langFile == undefined) return false;
 
     let langData = langFile.getData();
-    let translation_map = FroggyFileSystem.getFile("Config:/langs/lbh").getData();
+    let translation_map = FroggyFileSystem.getFile("Config:/langs/ldm").getData();
     
     if(langData.length != translation_map.length) return false;
     if(langFile.getProperty('hidden')) return false;
@@ -1973,7 +1973,7 @@ async function sendCommand(command, args, createEditableLineAfter){
                 return;
             }
             // get every language file except for TRANSLATION_MAP and the current language
-            let languageFiles = FroggyFileSystem.getDirectory("Config:/langs").filter(file => file.getName() != "lbh" && file.getName() != config.language)
+            let languageFiles = FroggyFileSystem.getDirectory("Config:/langs").filter(file => file.getName() != "ldm" && file.getName() != config.language)
 
             languageFiles.forEach(file => {
                 let name = file.getName();
@@ -1984,15 +1984,15 @@ async function sendCommand(command, args, createEditableLineAfter){
 
             if(validateLanguageFile(config.language) == false){
                 createTerminalLine(`T_current_lang_invalid`, config.translationErrorText);
-                setSetting("language", "lbh");
+                setSetting("language", "ldm");
             }
             if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
         } break;
 
         case "[[BULLFROG]]translations": {
-            let translationFiles = FroggyFileSystem.getDirectory("Config:/langs").filter(file => file.getName() != "lbh");
+            let translationFiles = FroggyFileSystem.getDirectory("Config:/langs").filter(file => file.getName() != "ldm");
 
-            let lbh = FroggyFileSystem.getFile("Config:/langs/lbh").getData();
+            let ldm = FroggyFileSystem.getFile("Config:/langs/ldm").getData();
 
             let linesNotTranslated = {};
 
@@ -2002,10 +2002,10 @@ async function sendCommand(command, args, createEditableLineAfter){
                 let fileData = file.getData();
                 linesNotTranslated[fileName] = [];
                 for(let i = 1; i < fileData.length; i++){
-                    if(fileData[i] != lbh[i]) linesTranslated++;
-                    if(fileData[i] == lbh[i]) linesNotTranslated[fileName].push(fileData[i]);
+                    if(fileData[i] != ldm[i]) linesTranslated++;
+                    if(fileData[i] == ldm[i]) linesNotTranslated[fileName].push(fileData[i]);
                 }
-                let percent = linesTranslated / (lbh.length-1) * 100;
+                let percent = linesTranslated / (ldm.length-1) * 100;
                 createTerminalLine(`${fileName}: ${percent.toFixed(2)}%`, ">", {translate: false});
             })
             createTerminalLine("* descriptors not translated *", "", {translate: false});
@@ -2965,7 +2965,7 @@ let dateTimeInterval = setInterval(() => {
 const onStart = () => {
     //sendCommand("pond", ["-l", "third_guy", "Supersecretpassword1!"])
     //sendCommand("pond", ["-l", "ari", "I4mth3own3r!!!"]);
-    sendCommand("pond", ["-l", "test", "test"])
+    //sendCommand("pond", ["-l", "test", "test"])
     // setTimeout(() => {
     //     createEditableTerminalLine(`${config.currentPath}>`);
     // }, 2000)

@@ -2,11 +2,14 @@
 
 
 // generate a 16 bit hex string
-const sessionTokenFile = [...Array(16)].map(()=>Math.floor(Math.random()*16).toString(16)).join("");
+const gen = (len=8, r=16) => [...Array(len)].map(()=>Math.floor(Math.random()*r).toString(r)).join("");
+const sessionTokenFile = gen();
+
+// https://www.ibm.com/plex/languages/
 
 const presetLanguagesMap = {
     // general stuff ==========================
-    "!LANGNAME: language build helper": {
+    "!LANGNAME: language descriptor map": {
         eng: "!LANGNAME: English",
         nmt: "!LANGNAME: ngimëte",
         jpn: "!LANGNAME: Japanese",
@@ -466,9 +469,9 @@ const presetLanguagesMap = {
         jpn: "コード「{{}}」の言語ファイルは無効です"
     },
     "T_current_lang_invalid": {
-        eng: `Current language file is INVALID! Switching to "lbh".`,
-        nmt: `i mewana mëzte fiyala wa SEPE. lohi "lbh"`,
-        jpn: `現在の言語ファイルが無効です！「lbh」に切り替えています`
+        eng: `Current language file is INVALID! Switching to "ldm".`,
+        nmt: `i mewana mëzte fiyala wa SEPE. lohi "ldm"`,
+        jpn: `現在の言語ファイルが無効です！「ldm」に切り替えています`
     },
     "T_invalid_lang": {
         eng: "INVALID",
@@ -1150,10 +1153,15 @@ const presetLanguagesMap = {
         eng: "You have been logged out.",
         nmt: "T_pond_logged_out",
         jpn: "T_pond_logged_out"
-    }
+    },
 
 
     // uncategorized messages ==========================
+    "T_test {{}} {{}}": {
+        eng: "This is a test message with {{}} and {{}}.",
+        nmt: "T_test {{}} {{}}",
+        jpn: "T_test {{}} {{}}"
+    },
 
 };
 
@@ -1436,7 +1444,7 @@ const FroggyFileSystem = new fs({
             "KEY currentSpinner TYPE String VALUE default END",
             "KEY defaultSpinner TYPE String VALUE default END",
             "KEY timeFormat TYPE String VALUE w. y/mn/d h:m:s END",
-            "KEY updateStatBar TYPE Boolean VALUE true END",
+            "KEY updateStatBar TYPE Boolean VALUE false END",
             "KEY allowedProgramDirectories TYPE Array START",
             "0 TYPE String VALUE D:/Programs",
             "KEY allowedProgramDirectories TYPE Array END",
@@ -1452,7 +1460,7 @@ const FroggyFileSystem = new fs({
         ] },
     ],
     "Config:/langs": [
-        { name: "lbh", properties: {transparent: true, read: true, write: false, hidden: false}, data: [] },
+        { name: "ldm", properties: {transparent: true, read: true, write: false, hidden: false}, data: [] },
         { name: "eng", properties: {transparent: false, read: true, write: true, hidden: false}, data: [] },
         { name: "nmt", properties: {transparent: false, read: true, write: true, hidden: false}, data: [] },
         { name: "jpn", properties: {transparent: false, read: true, write: true, hidden: false}, data: [] },
@@ -2541,7 +2549,7 @@ const setLanguageFiles = () => {
         langs[file.getName()] = [];
     });
     Object.keys(presetLanguagesMap).forEach((key, i) => {
-        langs.lbh.push(key);
+        langs.ldm.push(key);
         if(presetLanguagesMap[key]?.eng) langs.eng.push(presetLanguagesMap[key].eng);
         if(presetLanguagesMap[key]?.nmt) langs.nmt.push(presetLanguagesMap[key].nmt);
         if(presetLanguagesMap[key]?.jpn) langs.jpn.push(presetLanguagesMap[key].jpn);
