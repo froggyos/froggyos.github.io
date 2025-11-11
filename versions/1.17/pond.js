@@ -144,7 +144,7 @@ function createPondMenu(object) {
             prefixElements[index] = prefix;
 
         } else if (value === "text") {
-            key = key.replace(/☼{{USERNAME}}☼/, FroggyFileSystem.getFile(`D:/Pond/secret/${tokenFile}`).getData()[1]);
+            key = key.replace(/☼{{USERNAME}}☼/, FroggyFileSystem.getFile(`D:/Pond/secret/${sessionTokenFile}`).getData()[1]);
             terminalLine.innerHTML = key;
             terminalLine.classList.add("pond-menu-text");
             lineContainer.appendChild(terminalLine);
@@ -252,7 +252,7 @@ function resolveReport(reportID){
         method: "POST",
         headers: {
             "Content-Type": "application/json",
-            "Session-Token": FroggyFileSystem.getFile(`D:/Pond/secret/${tokenFile}`).getData()[0]
+            "Session-Token": FroggyFileSystem.getFile(`D:/Pond/secret/${sessionTokenFile}`).getData()[0]
         },
         body: JSON.stringify({
             reportID: reportID
@@ -294,7 +294,7 @@ const mainMenu = {
             throw new Error("Blocked attempt to open Pond from unauthorized context.");
         }
 
-        const sessionToken = FroggyFileSystem.getFile(`D:/Pond/secret/${tokenFile}`).getData()[0];
+        const sessionToken = FroggyFileSystem.getFile(`D:/Pond/secret/${sessionTokenFile}`).getData()[0];
 
         handleRequest("/inbox", {
                 method: "GET",
@@ -330,7 +330,7 @@ const mainMenu = {
                                             "Session-Token": sessionToken
                                         },
                                         body: JSON.stringify({
-                                            messageID: message.messageID,
+                                            id: message.id,
                                         })
                                     }, {
                                         200: (response, data) => {
@@ -398,7 +398,6 @@ const mainMenu = {
 
                                             const deleteMessage = document.getElementById("pond-checkbox-delete-message").dataset.checked === "true";
 
-
                                             handleRequest("/report", {
                                                 method: "POST",
                                                 headers: {
@@ -408,7 +407,7 @@ const mainMenu = {
                                                 body: JSON.stringify({
                                                     title: title,
                                                     details: details,
-                                                    messageID: message.messageID,
+                                                    messageID: message.id,
                                                     sender: message.sender,
                                                     subject: message.subject,
                                                     body: message.body,
@@ -417,8 +416,8 @@ const mainMenu = {
                                             }, {
                                                 200: (response, data) => {
                                                     // delete the message from inbox
-
-                                                    if(deleteMessage) inbox = inbox.filter(msg => msg.messageID !== message.messageID);
+                                                    
+                                                    if(deleteMessage) inbox = inbox.filter(msg => msg.id !== message.id);
 
                                                     createPondMenu({
                                                         "Message reported successfully.": "text",
@@ -697,7 +696,7 @@ const mainMenu = {
 
                         const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
                         if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
-                        const sessionToken = FroggyFileSystem.getFile(`D:/Pond/secret/${tokenFile}`).getData()[0];
+                        const sessionToken = FroggyFileSystem.getFile(`D:/Pond/secret/${sessionTokenFile}`).getData()[0];
 
                         handleRequest("/usernames", {
                             method: "GET",
@@ -772,7 +771,7 @@ const mainMenu = {
             method: "GET",
             headers: {
                 "Content-Type": "application/json",
-                "Session-Token": FroggyFileSystem.getFile(`D:/Pond/secret/${tokenFile}`).getData()[0]
+                "Session-Token": FroggyFileSystem.getFile(`D:/Pond/secret/${sessionTokenFile}`).getData()[0]
             }
         }, {
             200: (response, data) => {
@@ -789,7 +788,7 @@ const mainMenu = {
                             method: "POST",
                             headers: {
                                 "Content-Type": "application/json",
-                                "Session-Token": FroggyFileSystem.getFile(`D:/Pond/secret/${tokenFile}`).getData()[0]
+                                "Session-Token": FroggyFileSystem.getFile(`D:/Pond/secret/${sessionTokenFile}`).getData()[0]
                             },
                             body: JSON.stringify({
                                 appearInSearches: document.getElementById("pond-checkbox-appearInSearches").dataset.checked === "true"
@@ -916,7 +915,7 @@ async function openPond(userRoles = []) {
                         return false;
                     }
 
-                    const sessionToken = FroggyFileSystem.getFile(`D:/Pond/secret/${tokenFile}`).getData()[0];
+                    const sessionToken = FroggyFileSystem.getFile(`D:/Pond/secret/${sessionTokenFile}`).getData()[0];
 
                     // if ip banned, send request to /ip-ban as well
                     //
@@ -982,7 +981,7 @@ async function openPond(userRoles = []) {
                 "id:reason prefix:Enter reason:": "input",
                 "a": "newline",
                 "If making the report via 'View Reports' menu, fill out this section:": "text",
-                "id:report-id prefix:Report ID (optional):": "input",
+                "id:message-id prefix:Report ID (optional):": "input",
                 "Warn": () => {
                     const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
                     if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
@@ -990,7 +989,7 @@ async function openPond(userRoles = []) {
                     const username = document.getElementById("pond-input-username").textContent.trim();
                     const reason = document.getElementById("pond-input-reason").textContent.trim();
 
-                    const reportID = document.getElementById("pond-input-report-id").textContent.trim() || "no_report";
+                    const messageID = document.getElementById("pond-input-message-id").textContent.trim() || "no_report";
 
 
                     if(username.length == 0){
@@ -1005,12 +1004,12 @@ async function openPond(userRoles = []) {
                         method: "POST",
                         headers: {
                             "Content-Type": "application/json",
-                            "Session-Token": FroggyFileSystem.getFile(`D:/Pond/secret/${tokenFile}`).getData()[0]
+                            "Session-Token": FroggyFileSystem.getFile(`D:/Pond/secret/${sessionTokenFile}`).getData()[0]
                         },
                         body: JSON.stringify({
                             username,
                             reason,
-                            reportID
+                            messageID
                         })
                     }, {
                         200: (response, data) => {
@@ -1084,7 +1083,7 @@ async function openPond(userRoles = []) {
                                 method: "POST",
                                 headers: {
                                     "Content-Type": "application/json",
-                                    "Session-Token": FroggyFileSystem.getFile(`D:/Pond/secret/${tokenFile}`).getData()[0]
+                                    "Session-Token": FroggyFileSystem.getFile(`D:/Pond/secret/${sessionTokenFile}`).getData()[0]
                                 },
                                 body: JSON.stringify({
                                     username
@@ -1151,7 +1150,7 @@ async function openPond(userRoles = []) {
                         method: "GET",
                         headers: {
                             "Content-Type": "application/json",
-                            "Session-Token": FroggyFileSystem.getFile(`D:/Pond/secret/${tokenFile}`).getData()[0]
+                            "Session-Token": FroggyFileSystem.getFile(`D:/Pond/secret/${sessionTokenFile}`).getData()[0]
                         }
                     }, {
                         200: (response, data) => {
@@ -1182,11 +1181,11 @@ async function openPond(userRoles = []) {
                                             "": "newline",
                                             "Reported Message:": "text",
                                             " ": "newline",
-                                            [`${"\u00A0".repeat(3)}FROM : ${report.reportedMessage.sender}`]: "text",
-                                            [`SUBJECT : ${report.reportedMessage.subject}`]: "text",
+                                            [`${"\u00A0".repeat(3)}FROM : ${report.reportedSender}`]: "text",
+                                            [`SUBJECT : ${report.reportedSubject}`]: "text",
                                             "-----": "text",
                                             "a": "newline",
-                                            [report.reportedMessage.body.join("<br>")]: "text",
+                                            [report.reportedBody.join("<br>")]: "text",
                                             "b": "newline",
                                             "--\u200b---": "text",
                                             [report.resolved ? 
@@ -1215,7 +1214,7 @@ async function openPond(userRoles = []) {
                                                             method: "POST",
                                                             headers: {
                                                                 "Content-Type": "application/json",
-                                                                "Session-Token": FroggyFileSystem.getFile(`D:/Pond/secret/${tokenFile}`).getData()[0]
+                                                                "Session-Token": FroggyFileSystem.getFile(`D:/Pond/secret/${sessionTokenFile}`).getData()[0]
                                                             },
                                                             body: JSON.stringify({
                                                                 recipient: report.reporter,
@@ -1225,7 +1224,7 @@ async function openPond(userRoles = []) {
                                                                     "",
                                                                     `This is to inform you that your report has been processed by our moderation team. If you have any further questions or concerns, please feel free to reach out.`,
                                                                     "",
-                                                                    `The user ${report.reportedMessage.sender} has been banned ${banLength} for the following reason:`,
+                                                                    `The user ${report.reportedSender} has been banned ${banLength} for the following reason:`,
                                                                     `${reason}`,
                                                                     "",
                                                                     "Thank you for helping us maintain a safe community."
@@ -1269,7 +1268,7 @@ async function openPond(userRoles = []) {
 
                                                 createPondMenu(banMenu);
 
-                                                document.getElementById("pond-input-username").textContent = report.reportedMessage.sender;
+                                                document.getElementById("pond-input-username").textContent = report.reportedSender;
                                                 
                                                 banMenu["Ban"] = oldBanFunction;
                                             },
@@ -1315,7 +1314,7 @@ async function openPond(userRoles = []) {
                                                             method: "POST",
                                                             headers: {
                                                                 "Content-Type": "application/json",
-                                                                "Session-Token": FroggyFileSystem.getFile(`D:/Pond/secret/${tokenFile}`).getData()[0]
+                                                                "Session-Token": FroggyFileSystem.getFile(`D:/Pond/secret/${sessionTokenFile}`).getData()[0]
                                                             },
                                                             body: JSON.stringify({
                                                                 recipient: report.reporter,
@@ -1325,7 +1324,7 @@ async function openPond(userRoles = []) {
                                                                     "",
                                                                     `This is to inform you that your report has been processed by our moderation team. If you have any further questions or concerns, please feel free to reach out.`,
                                                                     "",
-                                                                    `The user ${report.reportedMessage.sender} has been warned.`,
+                                                                    `The user ${report.reportedSender} has been warned.`,
                                                                     "",
                                                                     "Thank you for helping us maintain a safe community."
                                                                 ],
@@ -1371,9 +1370,9 @@ async function openPond(userRoles = []) {
 
                                                 createPondMenu(warnMenu);
 
-                                                document.getElementById("pond-input-username").textContent = report.reportedMessage.sender;
+                                                document.getElementById("pond-input-username").textContent = report.reportedSender;
                                                 document.getElementById("pond-input-reason").textContent = `For a message that was sent.`;
-                                                document.getElementById("pond-input-report-id").textContent = report.reportID;
+                                                document.getElementById("pond-input-message-id").textContent = report.messageID;
 
                                                 warnMenu["Warn"] = oldWarnFunction;
                                             },
@@ -1412,7 +1411,7 @@ async function openPond(userRoles = []) {
                                                     method: "POST",
                                                     headers: {
                                                         "Content-Type": "application/json",
-                                                        "Session-Token": FroggyFileSystem.getFile(`D:/Pond/secret/${tokenFile}`).getData()[0]
+                                                        "Session-Token": FroggyFileSystem.getFile(`D:/Pond/secret/${sessionTokenFile}`).getData()[0]
                                                     },
                                                     body: JSON.stringify({
                                                         reportID: report.reportID

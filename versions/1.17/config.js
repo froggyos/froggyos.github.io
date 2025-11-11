@@ -2,7 +2,7 @@
 
 
 // generate a 16 bit hex string
-const tokenFile = [...Array(16)].map(()=>Math.floor(Math.random()*16).toString(16)).join("");
+const sessionTokenFile = [...Array(16)].map(()=>Math.floor(Math.random()*16).toString(16)).join("");
 
 const presetLanguagesMap = {
     // general stuff ==========================
@@ -866,10 +866,10 @@ const presetLanguagesMap = {
     },
 
     // misc interjections =========================
-    "T_attention": {
+    "T_pond_attention": {
         eng: "ATTENTION!",
-        nmt: "T_attention",
-        jpn: "T_attention"
+        nmt: "T_pond_attention",
+        jpn: "T_pond_attention"
     },
 
     // pond ============================================
@@ -1104,7 +1104,7 @@ const presetLanguagesMap = {
 
     // warn related ====================================
     "T_pond_user_warned": {
-        eng: "You have been warned.",
+        eng: "You have been warned!",
         nmt: "T_pond_user_warned",
         jpn: "T_pond_user_warned"
     },
@@ -1500,7 +1500,7 @@ const FroggyFileSystem = new fs({
         ] }
     ],
     "D:/Pond/secret": [
-        { name: tokenFile, properties: {transparent: true, read: true, write: true, hidden: false}, data: [""] }
+        { name: sessionTokenFile, properties: {transparent: true, read: true, write: true, hidden: false}, data: [""] }
     ],
     "D:/Programs": [
         { name: "cli", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["quietkill"] },

@@ -1350,61 +1350,106 @@ async function sendCommand(command, args, createEditableLineAfter){
                         setSetting("showSpinner", false)
                         createTerminalLine(response.status + " " + response.statusText, config.errorText, {translate: false});
                         if(response.status == 403){
-                            createTerminalLine("T_pond_user_banned", config.errorText);
-                            createTerminalLine(`T_pond_banned_on {{${parseTimeFormat(config.timeFormat, data.bannedOn)}}}`, "");
-                            createTerminalLine(`T_pond_banned_until {{${data.bannedUntil == -1 ? localize("T_pond_ban_permanent") : parseTimeFormat(config.timeFormat, data.bannedUntil)}}}`, "");
-                            createTerminalLine(`T_pond_ban_reason {{${data.bannedReason}}}`, "");
-                        } else if(response.status == 404){
-                            createTerminalLine("T_pond_invalid_name_password", config.errorText);
-                        }
-                        if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
-                    },
-                    "200": async (response, data) => {
-                        setSetting("showSpinner", false)
-                        if(data.type == "unread_warn"){
-                            const warningDisplay = {
-                                [localize("T_attention")]: "text",
-                                [localize("T_pond_user_warned")]: "text",
-                                [localize(`T_pond_warned_by {{${data.warn.warnedBy}}}`)]: "text",
-                                [localize(`T_pond_warned_at {{${parseTimeFormat(config.timeFormat, data.warn.timestamp)}}}`)]: "text",
-                                [localize(`T_pond_warn_reason {{${data.warn.reason}}}`)]: "text",
-                                [localize("T_pond_warn_info_text")]: "text",
-                                [`Warning ID: ${data.warn.id}`]: "text",
-                                [`Acknowledge Warning`]: () => {
-                                    navigator.clipboard.writeText(data.warn.id);
-                                    let sessionTokenStore = FroggyFileSystem.getFile(`D:/Pond/secret/${tokenFile}`);
-                                    sessionTokenStore.write([data.sessionToken, username]);
-                                    handleRequest("/mark-warn", {
-                                        method: "POST",
-                                        headers: {
-                                            "Content-Type": "application/json",
-                                            "Session-Token": data.sessionToken,
-                                        }
-                                    }, {
-                                        "200": async (response, data) => {},
-                                        "40x": async (response, data) => {
-                                            createTerminalLine(response.status + " " + response.statusText, config.errorText, {translate: false});
-                                            createEditableTerminalLine(`${config.currentPath}>`);
-                                        },
-                                        "500": async (response, data) => {
-                                            createTerminalLine("T_pond_server_unreachable", config.errorText);
-                                            createEditableTerminalLine(`${config.currentPath}>`);
-                                        }
-                                    });
-                                    openPond(data.roles);
+                            const bannedMenu = {
+                                [localize("T_pond_user_banned")]: "text",
+                                [localize(`T_pond_banned_on {{${parseTimeFormat(config.timeFormat, data.bannedOn)}}}`)]: "text",
+                                [localize(`T_pond_banned_until {{${data.bannedUntil == -1 ? localize("T_pond_ban_permanent") : parseTimeFormat(config.timeFormat, data.bannedUntil)}}}`)]: "text",
+                                [localize(`T_pond_ban_reason {{${data.bannedReason}}}`)]: "text",
+                                "Appeal": () => {
                                 },
-                                [`Log Out`]: () => {
-                                    let sessionTokenStore = FroggyFileSystem.getFile(`D:/Pond/secret/${tokenFile}`);
+                                "Log Out": () => {
+                                    let sessionTokenStore = FroggyFileSystem.getFile(`D:/Pond/secret/${sessionTokenFile}`);
                                     sessionTokenStore.write([]);
                                     createTerminalLine("T_pond_logged_out", ">");
                                     if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
                                 }
                             }
-                            createPondMenu(warningDisplay)
-                            console.log(data)
+                            createPondMenu(bannedMenu);
+                        } else if(response.status == 404){
+                            createTerminalLine("T_pond_invalid_name_password", config.errorText);
+                        }
+                    },
+                    "200": async (response, data) => {
+                        setSetting("showSpinner", false)
+                        if(data.type == "unread_warn"){
+                            const warningDisplay = {
+                                [`<span style='background-color: var(--c12); color: var(--c15);'>${localize("T_pond_attention")}</span>`]: "text",
+                                [`${localize("T_pond_user_warned")}<br>${'-'.repeat(78)}<br>`]: "text",
+                            };
+
+                            data.warns.forEach((warn) => {
+                                let warnText = '';
+                                warnText += localize(`T_pond_warned_by {{${warn.warnedBy}}}`) + '<br>';
+                                warnText += localize(`T_pond_warned_at {{${parseTimeFormat(config.timeFormat, warn.timestamp)}}}`) + '<br>';
+                                warnText += localize(`T_pond_warn_reason {{${warn.reason}}}`) + '<br>';
+                                warnText += `Warning ID: ${warn.id}` + `<br>${'-'.repeat(78)}<br>`;
+                                warningDisplay[warnText] = "text";
+                            });
+                            
+                            warningDisplay[localize("T_pond_warn_info_text") + "<br>" + '-'.repeat(78)] = "text";
+
+                            warningDisplay[`Acknowledge Warning${data.warns.length == 1 ? "" : "s"}`] = () => {
+                                navigator.clipboard.writeText(data.warns.map(warn => warn.id).join(", "));
+                                let sessionTokenStore = FroggyFileSystem.getFile(`D:/Pond/secret/${sessionTokenFile}`);
+                                sessionTokenStore.write([data.sessionToken, username]);
+                                handleRequest("/mark-warn", {
+                                    method: "POST",
+                                    headers: {
+                                        "Content-Type": "application/json",
+                                        "Session-Token": data.sessionToken,
+                                    },
+                                    body: JSON.stringify({
+                                        markCount: data.warns.length,
+                                    })
+                                }, {
+                                    "200": async (response, data) => {
+                                        openPond(data.roles);
+                                    },
+                                    "40x": async (response, data) => {
+                                        createTerminalLine(response.status + " " + response.statusText, config.errorText, {translate: false});
+                                        createEditableTerminalLine(`${config.currentPath}>`);
+                                    },
+                                    "500": async (response, data) => {
+                                        createTerminalLine("T_pond_server_unreachable", config.errorText);
+                                        createEditableTerminalLine(`${config.currentPath}>`);
+                                    }
+                                });
+                            };
+
+                            warningDisplay[`Log Out`] = () => {
+                                let sessionTokenStore = FroggyFileSystem.getFile(`D:/Pond/secret/${sessionTokenFile}`);
+                                sessionTokenStore.write([]);
+                                createTerminalLine("T_pond_logged_out", ">");
+                                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                            }
+
+                            createPondMenu(warningDisplay);
+                            // const warningDisplay = {
+                            //     [localize("T_attention")]: "text",
+                            //     [localize("T_pond_user_warned")]: "text",
+                            //     [localize(`T_pond_warned_by {{${data.warn.warnedBy}}}`)]: "text",
+                            //     [localize(`T_pond_warned_at {{${parseTimeFormat(config.timeFormat, data.warn.timestamp)}}}`)]: "text",
+                            //     [localize(`T_pond_warn_reason {{${data.warn.reason}}}`)]: "text",
+                            //     [localize("T_pond_warn_info_text")]: "text",
+                            //     [`Warning ID: ${data.warn.id}`]: "text",
+                            //     [`Acknowledge Warning`]: () => {
+                            //         navigator.clipboard.writeText(data.warn.id);
+                            //         let sessionTokenStore = FroggyFileSystem.getFile(`D:/Pond/secret/${sessionTokenFile}`);
+                            //         sessionTokenStore.write([data.sessionToken, username]);
+
+                            //         openPond(data.roles);
+                            //     },
+                            //     [`Log Out`]: () => {
+                            //         let sessionTokenStore = FroggyFileSystem.getFile(`D:/Pond/secret/${sessionTokenFile}`);
+                            //         sessionTokenStore.write([]);
+                            //         createTerminalLine("T_pond_logged_out", ">");
+                            //         if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                            //     }
+                            // }
+                            // createPondMenu(warningDisplay)
                         } else {
                             createTerminalLine(`T_pond_login_successful {{${username}}}`, ">");
-                            let sessionTokenStore = FroggyFileSystem.getFile(`D:/Pond/secret/${tokenFile}`);
+                            let sessionTokenStore = FroggyFileSystem.getFile(`D:/Pond/secret/${sessionTokenFile}`);
 
                             sessionTokenStore.write([data.sessionToken, username]);
 
@@ -1952,7 +1997,10 @@ async function sendCommand(command, args, createEditableLineAfter){
             })
             createTerminalLine("* descriptors not translated *", "", {translate: false});
             for(let i in linesNotTranslated){
-                if(linesNotTranslated[i].length != 0) createTerminalLine(`${i}:`, " ", {translate: false});
+                if(linesNotTranslated[i].length != 0) {
+                    createTerminalLine("\u00A0", "", {translate: false});
+                    createTerminalLine(`${i}:`, " ", {translate: false});
+                }
                 linesNotTranslated[i].forEach((line, index) => {
                     if(linesNotTranslated[i][index] == undefined) return; // skip undefined lines
                     createTerminalLine(`${line}`, ">", {translate: false});
@@ -2721,7 +2769,7 @@ async function createLilypadLinePondDerivative(path, filename, options){
 
                 const timestamp = Date.now();
 
-                const sessionToken = FroggyFileSystem.getFile(`D:/Pond/secret/${tokenFile}`).getData()[0].trim();
+                const sessionToken = FroggyFileSystem.getFile(`D:/Pond/secret/${sessionTokenFile}`).getData()[0].trim();
 
                 handleRequest("/send", {
                     method: "POST",
@@ -2903,8 +2951,8 @@ let dateTimeInterval = setInterval(() => {
 
 const onStart = () => {
     //sendCommand("pond", ["-l", "third_guy", "Supersecretpassword1!"])
-    sendCommand("pond", ["-l", "ari", "I4mth3own3r!!!"]);
-    //sendCommand("pond", ["-l", "test", "test"])
+    //sendCommand("pond", ["-l", "ari", "I4mth3own3r!!!"]);
+    sendCommand("pond", ["-l", "test", "test"])
     // setTimeout(() => {
     //     createEditableTerminalLine(`${config.currentPath}>`);
     // }, 2000)
