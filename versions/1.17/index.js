@@ -343,6 +343,7 @@ function parseTimeFormat(text, timestamp){
 
     function getOrdinalSuffix(num) {
         if (typeof num !== "number" || isNaN(num)) return "";
+        if(config.language != "eng") return "";
     
         let lastDigit = num % 10;
         let lastTwoDigits = num % 100;
