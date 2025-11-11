@@ -775,10 +775,14 @@ async function sendCommand(command, args, createEditableLineAfter){
 
     let hadError = false;
 
+    function printLn() {
+        if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+    }
+
     switch(command){
         case "":
             createTerminalLine("T_froggy_doesnt_like", "");
-            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+            printLn();
         break;
 
         // commands =========================================================================================================================================================
@@ -811,7 +815,7 @@ async function sendCommand(command, args, createEditableLineAfter){
                 createTerminalLine(`T_available_langs`, "");
                 createTerminalLine(getDisplayCodes(), ">", {translate: false});
                 hadError = true;
-                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                printLn();
                 break;
             } else {
                 if(!langCodes.includes(args[0])){
@@ -819,7 +823,7 @@ async function sendCommand(command, args, createEditableLineAfter){
                     createTerminalLine(`T_available_langs`, "");
                     createTerminalLine(getDisplayCodes(), ">", {translate: false});
                     hadError = true;
-                    if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                    printLn();
                     break;
                 }
             }
@@ -828,7 +832,7 @@ async function sendCommand(command, args, createEditableLineAfter){
             if(validateLanguageFile(code) == false){
                 createTerminalLine(`T_invalid_lang_file {{${code}}}`, config.errorText);
                 hadError = true;
-                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                printLn();
                 break;
             }
             
@@ -838,7 +842,7 @@ async function sendCommand(command, args, createEditableLineAfter){
             setTimeout(() => {
                 setSetting("showSpinner", false);
                 createTerminalLine("T_lang_changed", ">")
-                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                printLn();
             }, 500)
         } break;
         
@@ -861,7 +865,7 @@ async function sendCommand(command, args, createEditableLineAfter){
                 createTerminalLine(`T_available_color_palettes`, "");
                 createTerminalLine(getDisplayPalettes(), ">", {translate: false});
                 hadError = true;
-                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                printLn();
                 break;
             }
             if(colorPalettes[args[0]] == undefined){
@@ -869,17 +873,17 @@ async function sendCommand(command, args, createEditableLineAfter){
                 createTerminalLine(`T_available_color_palettes`, "");
                 createTerminalLine(getDisplayPalettes(), ">", {translate: false});
                 hadError = true;
-                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                printLn();
                 break;
             }
             changeColorPalette(args[0]);
-            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+            printLn();
         } break;
 
         case "cl":
         case "clear":
             document.getElementById('terminal').innerHTML = "";
-            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+            printLn();
         break;
 
         // clear froggyOS state
@@ -888,7 +892,7 @@ async function sendCommand(command, args, createEditableLineAfter){
             localStorage.removeItem(`froggyOS-state-${config.version}-config`);
             localStorage.removeItem(`froggyOS-state-${config.version}-fs`);
             createTerminalLine("T_state_cleared", ">")
-            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+            printLn();
         break;
 
         // copy files
@@ -896,7 +900,7 @@ async function sendCommand(command, args, createEditableLineAfter){
             if(args.length == 0){
                 createTerminalLine("T_provide_file_name", config.errorText);
                 hadError = true;
-                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                printLn();
                 break;
             }
             
@@ -904,21 +908,21 @@ async function sendCommand(command, args, createEditableLineAfter){
             if(fileToClone == undefined || fileToClone.getProperty('hidden') == true){
                 createTerminalLine("T_file_does_not_exist", config.errorText);
                 hadError = true;
-                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                printLn();
                 break;
             }
 
             if(fileToClone == undefined){
                 createTerminalLine("T_file_does_not_exist", config.errorText);
                 hadError = true;
-                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                printLn();
                 break;
             }
 
             if(fileToClone.getProperty('read') == false){
                 createTerminalLine("T_no_permission_to_clone", config.errorText);
                 hadError = true;
-                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                printLn();
                 break;
             }
 
@@ -932,7 +936,7 @@ async function sendCommand(command, args, createEditableLineAfter){
             FroggyFileSystem.addFileToDirectory(config.currentPath, cloned);
 
             createTerminalLine(`T_file_cloned {{${fileToClone.getName()}}}`, ">")
-            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+            printLn();
         } break;
 
         // delete files
@@ -941,35 +945,35 @@ async function sendCommand(command, args, createEditableLineAfter){
             if(args.length == 0){
                 createTerminalLine("T_provide_file_name", config.errorText);
                 hadError = true;
-                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                printLn();
                 break;
             }
             let file = FroggyFileSystem.getFile(`${config.currentPath}/${args[0]}`);
             if(file == undefined || file.getProperty('hidden') == true){
                 createTerminalLine("T_file_does_not_exist", config.errorText);
                 hadError = true;
-                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                printLn();
                 break;
             }
 
             if(file.getProperty('write') == false){
                 createTerminalLine("T_no_permission_to_delete_file", config.errorText);
                 hadError = true;
-                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                printLn();
                 break;
             }
             // if we are in the Config: directory, do not allow the user to delete the file
             if(config.currentPath.split(":")[0] == "Config"){
                 createTerminalLine("T_cannot_delete_file", config.errorText);
                 hadError = true;
-                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                printLn();
                 break;
             }
 
             FroggyFileSystem.deleteFile(`${config.currentPath}/${file.getName()}`);
 
             createTerminalLine("T_file_deleted", ">")
-            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+            printLn();
         } break;
 
         case "ft":
@@ -977,18 +981,18 @@ async function sendCommand(command, args, createEditableLineAfter){
             if(args.length == 0){
                 createTerminalLine("T_provide_time_format", config.errorText);
                 hadError = true;
-                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                printLn();
                 break;
             }
             let text = args.join(" ");
             if(parseTimeFormat(text).length > 78){
                 createTerminalLine("T_arg_too_long", config.errorText);
                 hadError = true;
-                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                printLn();
                 break;
             }
             setSetting("timeFormat", args.join(" "));
-            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+            printLn();
         } break;
 
         // make files
@@ -997,35 +1001,35 @@ async function sendCommand(command, args, createEditableLineAfter){
             if(args.length == 0){
                 createTerminalLine("T_provide_file_name", config.errorText);
                 hadError = true;
-                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                printLn();
                 break;
             }
             if(FroggyFileSystem.getDirectory(`${config.currentPath}`) == undefined){
                 createTerminalLine("T_directory_does_not_exist", config.errorText);
                 hadError = true;
-                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                printLn();
             }
             if(FroggyFileSystem.getFile(`${config.currentPath}/${args[0]}`) != undefined){
                 createTerminalLine("T_file_already_exists", config.errorText);
                 hadError = true;
-                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                printLn();
                 break;
             }
             // if the current path is settings and the name isnt exactly 3 character long, throw an error
             if(config.currentPath == "Config:/langs" && args[0].length != 3){
                 createTerminalLine("T_file_name_not_3_char", config.errorText);
                 hadError = true;
-                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                printLn();
                 break;
             }
             FroggyFileSystem.addFileToDirectory(config.currentPath, new FroggyFile(args[0]));
             createTerminalLine("T_file_created", ">")
-            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+            printLn();
         } break;
 
         case "hello":
             createTerminalLine("T_hello_froggy", ">");
-            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+            printLn();
         break;
 
         case "?":
@@ -1055,7 +1059,7 @@ async function sendCommand(command, args, createEditableLineAfter){
             createTerminalLine("T_basic_commands_spawn", ">");
             createTerminalLine("T_basic_commands_spy", ">");
             createTerminalLine("T_basic_commands_swimto", ">");
-            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+            printLn();
         break;
 
 
@@ -1067,7 +1071,7 @@ async function sendCommand(command, args, createEditableLineAfter){
             if(directory == undefined){
                 createTerminalLine("T_provide_directory_name", config.errorText);
                 hadError = true;
-                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                printLn();
                 break;
             }
 
@@ -1078,7 +1082,7 @@ async function sendCommand(command, args, createEditableLineAfter){
             if(FroggyFileSystem.getDirectory(directory) == undefined){
                 createTerminalLine("T_directory_does_not_exist", config.errorText);
                 hadError = true;
-                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                printLn();
                 break;
             }
 
@@ -1105,7 +1109,7 @@ async function sendCommand(command, args, createEditableLineAfter){
 
             if(files.length == 0 && subdirectoryNames.length == 0){
                 createTerminalLine("T_directory_empty", ">")
-                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                printLn();
                 break;
             }
             subdirectoryNames.forEach(subdirectory => {
@@ -1114,7 +1118,7 @@ async function sendCommand(command, args, createEditableLineAfter){
             files.forEach(file => {
                 createTerminalLine(`       ${file.getName()}`, ">", {translate: false})
             });
-            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+            printLn();
         break;
 
         case "ld":
@@ -1125,7 +1129,7 @@ async function sendCommand(command, args, createEditableLineAfter){
             drives.forEach(drive => {
                 createTerminalLine(`${drive}`, ">", {translate: false});
             });
-            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+            printLn();
         } break;
 
         // load state
@@ -1137,7 +1141,7 @@ async function sendCommand(command, args, createEditableLineAfter){
             if(foundConfig == null || foundFs == null){
                 createTerminalLine("T_no_state_found", config.errorText);
                 hadError = true;
-                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                printLn();
                 break;
             }
             for(let key in JSON.parse(foundConfig)){
@@ -1149,7 +1153,7 @@ async function sendCommand(command, args, createEditableLineAfter){
             changeColorPalette(config.colorPalette);
 
             createTerminalLine("T_state_loaded", ">")
-            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+            printLn();
         break;
 
         case "/":
@@ -1165,7 +1169,7 @@ async function sendCommand(command, args, createEditableLineAfter){
                     let macroAliases = macros.filter(macro => macro.getProperty('transparent') == false).map(macro => macro.getData()[0].startsWith("!") ? macro.getData()[0].slice(1) : "no alias");
                     createTerminalLine(macroList.map((macro, i) => `${macro.getName()} (${macroAliases[i]})`).join(", "), ">", {translate: false});
                     hadError = true;
-                    if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                    printLn();
                     break;
                 }
             }
@@ -1181,7 +1185,7 @@ async function sendCommand(command, args, createEditableLineAfter){
             if(macro == undefined){
                 createTerminalLine("T_macro_does_not_exist", config.errorText);
                 hadError = true;
-                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                printLn();
                 break;
             }
 
@@ -1199,7 +1203,7 @@ async function sendCommand(command, args, createEditableLineAfter){
             if(args.length - 1 < totalFileArguments){
                 createTerminalLine(`T_missing_file_args`, config.errorText);
                 hadError = true;
-                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                printLn();
                 break;
             }
 
@@ -1235,14 +1239,14 @@ async function sendCommand(command, args, createEditableLineAfter){
             if(args.length == 0){
                 createTerminalLine("T_provide_file_name", config.errorText);
                 hadError = true;
-                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                printLn();
                 break;
             }
             let directory = FroggyFileSystem.getDirectory(config.currentPath);
             if(directory == undefined){
                 createTerminalLine("T_file_does_not_exist", config.errorText);
                 hadError = true;
-                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                printLn();
                 break;
             }
 
@@ -1261,7 +1265,7 @@ async function sendCommand(command, args, createEditableLineAfter){
             if(file == undefined){
                 createTerminalLine("T_file_does_not_exist", config.errorText);
                 hadError = true;
-                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                printLn();
                 break;
             }
 
@@ -1272,28 +1276,28 @@ async function sendCommand(command, args, createEditableLineAfter){
                 createTerminalLine("T_available_properties", "");
                 createTerminalLine(propertyTypes.join(", "), ">", {translate: false});
                 hadError = true;
-                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                printLn();
                 break;
             }
 
             if(value == undefined || (value != "0" && value != "1")){
                 createTerminalLine("T_invalid_args_provide_1_0", config.errorText);
                 hadError = true;
-                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                printLn();
                 break
             }
 
             if(file.properties.write == false){
                 createTerminalLine("T_no_permission_to_edit_file", config.errorText);
                 hadError = true;
-                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                printLn();
                 break;
             }
 
             file.properties[property] = value == "1" ? true : false;
             createTerminalLine("T_properties_updated", ">")
 
-            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+            printLn();
         break;
 
         case "docs":
@@ -1307,7 +1311,7 @@ async function sendCommand(command, args, createEditableLineAfter){
             .open("newWindow");
 
             createTerminalLine("T_documentation_opened", ">");
-            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+            printLn();
         } break;
 
         case "pond": {
@@ -1324,13 +1328,13 @@ async function sendCommand(command, args, createEditableLineAfter){
                     "500": async (response, data) => {
                         setSetting("showSpinner", false)
                         createTerminalLine("T_pond_server_unreachable", config.errorText);
-                        if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                        printLn();
                     },
                     "200": async (response, data) => {
                         setSetting("showSpinner", false)
                         createTerminalLine("T_pond_server_ok", ">");
                         createTerminalLine(`T_pond_server_response_time {{${Math.round(performance.now() - startTime)}}}`, ">")
-                        if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                        printLn();
                     },
                     "40x": async (response, data) => {
                         setSetting("showSpinner", false)
@@ -1345,7 +1349,7 @@ async function sendCommand(command, args, createEditableLineAfter){
 
                 if(username == undefined || password == undefined){
                     createTerminalLine("T_pond_provide_username_password", config.errorText);
-                    if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                    printLn();
                     break;
                 }
 
@@ -1376,7 +1380,7 @@ async function sendCommand(command, args, createEditableLineAfter){
                                     let sessionTokenStore = FroggyFileSystem.getFile(`D:/Pond/secret/${sessionTokenFile}`);
                                     sessionTokenStore.write([]);
                                     createTerminalLine("T_pond_logged_out", ">");
-                                    if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                                    printLn();
                                 }
                             }
                             createPondMenu(bannedMenu);
@@ -1435,7 +1439,7 @@ async function sendCommand(command, args, createEditableLineAfter){
                                 let sessionTokenStore = FroggyFileSystem.getFile(`D:/Pond/secret/${sessionTokenFile}`);
                                 sessionTokenStore.write([]);
                                 createTerminalLine("T_pond_logged_out", ">");
-                                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                                printLn();
                             }
 
                             createPondMenu(warningDisplay);
@@ -1458,7 +1462,7 @@ async function sendCommand(command, args, createEditableLineAfter){
                             //         let sessionTokenStore = FroggyFileSystem.getFile(`D:/Pond/secret/${sessionTokenFile}`);
                             //         sessionTokenStore.write([]);
                             //         createTerminalLine("T_pond_logged_out", ">");
-                            //         if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                            //         printLn();
                             //     }
                             // }
                             // createPondMenu(warningDisplay)
@@ -1474,7 +1478,7 @@ async function sendCommand(command, args, createEditableLineAfter){
                     "500": async (response, data) => {
                         setSetting("showSpinner", false)
                         createTerminalLine("T_pond_server_unreachable", config.errorText);
-                        if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                        printLn();
                     }
                 })
 
@@ -1484,7 +1488,7 @@ async function sendCommand(command, args, createEditableLineAfter){
 
                 if(username == undefined || password == undefined){
                     createTerminalLine("T_pond_provide_username_password", config.errorText);
-                    if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                    printLn();
                     break;
                 }
 
@@ -1502,24 +1506,24 @@ async function sendCommand(command, args, createEditableLineAfter){
                     200: async (response, data) => {
                         setSetting("showSpinner", false)
                         createTerminalLine("T_pond_registration_successful", ">");
-                        if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                        printLn();
                     },
                     400: async (response, data) => {
                         setSetting("showSpinner", false)
                         createTerminalLine("T_pond_registration_failed", config.errorText);
                         createTerminalLine(data.details, "", {translate: false});
-                        if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                        printLn();
                     },
                     409: async (response, data) => {
                         setSetting("showSpinner", false)
                         createTerminalLine("T_pond_registration_failed", config.errorText);
                         createTerminalLine("T_pond_username_taken", config.errorText);
-                        if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                        printLn();
                     },
                     500: async (response, data) => {
                         setSetting("showSpinner", false)
                         createTerminalLine("T_pond_server_error", config.errorText);
-                        if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                        printLn();
                     },
                 });
 
@@ -1528,7 +1532,7 @@ async function sendCommand(command, args, createEditableLineAfter){
                 createTerminalLine("T_pond_command_help_ping", ">");
                 createTerminalLine("T_pond_command_help_login", ">");
                 createTerminalLine("T_pond_command_help_register", ">");
-                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                printLn();
             }
 
         } break;
@@ -1537,7 +1541,7 @@ async function sendCommand(command, args, createEditableLineAfter){
             if(args.length < 2){
                 createTerminalLine("T_provide_file_name_and_new", config.errorText);
                 hadError = true;
-                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                printLn();
                 break;
             }
 
@@ -1549,44 +1553,44 @@ async function sendCommand(command, args, createEditableLineAfter){
             if(file == undefined){
                 createTerminalLine("T_file_does_not_exist", config.errorText);
                 hadError = true;
-                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                printLn();
                 break;
             }
 
             if(file.getProperty('write') == false){
                 createTerminalLine("T_no_permission_to_rename_file", config.errorText);
                 hadError = true;
-                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                printLn();
                 break;
             }
 
             if(FroggyFileSystem.getFile(`${config.currentPath}/${newName}`) != undefined){
                 createTerminalLine("T_file_name_already_exists", config.errorText);
                 hadError = true;
-                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                printLn();
                 break;
             }
 
             if(newName.length != 3 && config.currentPath == "Config:/langs"){
                 createTerminalLine("T_file_name_not_3_char", config.errorText);
                 hadError = true;
-                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                printLn();
                 break;
             }
 
             file.rename(newName);
             createTerminalLine(`T_file_renamed`, ">");
-            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+            printLn();
         } break;
         case "ribbit":
             if(args.length == 0){
                 createTerminalLine("T_provide_text_to_display", config.errorText);
                 hadError = true;
-                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                printLn();
                 break;
             }
             createTerminalLine(args.join(" "), ">", {translate: false})
-            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+            printLn();
         break;
 
         // save state
@@ -1597,7 +1601,7 @@ async function sendCommand(command, args, createEditableLineAfter){
             localStorage.setItem(`froggyOS-state-${config.version}-fs`, FroggyFileSystem.stringify());
 
             createTerminalLine("T_state_saved", ">")
-            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+            printLn();
         break;
 
         // make directories
@@ -1608,19 +1612,19 @@ async function sendCommand(command, args, createEditableLineAfter){
             if(config.dissallowSubdirectoriesIn.includes(config.currentPath)){
                 createTerminalLine("T_cannot_create_directories_in_here", config.errorText);
                 hadError = true;
-                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                printLn();
                 break;
             }
             if(args[0] == undefined){
                 createTerminalLine("T_provide_directory_name", config.errorText);
                 hadError = true;
-                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                printLn();
                 break;
             }
             if(FroggyFileSystem.getDirectory(directory) != undefined){
                 createTerminalLine("T_directory_already_exists", config.errorText);
                 hadError = true;
-                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                printLn();
                 break;
             }
             FroggyFileSystem.createDirectory(directory);
@@ -1633,20 +1637,20 @@ async function sendCommand(command, args, createEditableLineAfter){
             if(args.length == 0){
                 createTerminalLine("T_provide_file_name", config.errorText);
                 hadError = true;
-                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                printLn();
                 break;
             }
             file = FroggyFileSystem.getFile(`${config.currentPath}/${args[0]}`);
             if(file == undefined){
                 createTerminalLine("T_file_does_not_exist", config.errorText);
                 hadError = true;
-                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                printLn();
                 break;
             }
             if(file.getProperty('hidden') == true || file.getProperty('read') == false){
                 createTerminalLine("T_no_permission_to_read_file", config.errorText);
                 hadError = true;
-                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                printLn();
                 break;
             }
             createTerminalLine("T_file_info_intro", "");
@@ -1668,7 +1672,7 @@ async function sendCommand(command, args, createEditableLineAfter){
             file.getData().forEach(line => {
                 createTerminalLine(line, ">", {translate: false})
             });
-            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+            printLn();
         break;
 
         case "st":
@@ -1690,13 +1694,13 @@ async function sendCommand(command, args, createEditableLineAfter){
                 createTerminalLine("T_available_programs", "");
                 createTerminalLine(getProgramList().join(", "), ">", {translate: false});
                 hadError = true;
-                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                printLn();
                 break;
             }
 
             config.programSession++
             if(args[0] == "cli"){
-                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                printLn();
             } else if(args[0] == "lilypad"){
                 createTerminalLine("T_lilypad_exit", "");
                 createLilypadLine(">", undefined, undefined);
@@ -1711,13 +1715,13 @@ async function sendCommand(command, args, createEditableLineAfter){
                     createTerminalLine("T_available_programs", "");
                     createTerminalLine(getProgramList().join(", "), ">", {translate: false});
                     hadError = true;
-                    if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                    printLn();
                     break;
                 }
                 if(file.getProperty('read') == false){
                     createTerminalLine("T_no_permission_to_run_program", config.errorText);
                     hadError = true;
-                    if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                    printLn();
                     break;
                 }
 
@@ -1757,7 +1761,7 @@ async function sendCommand(command, args, createEditableLineAfter){
                         createTerminalLine(`\u00A0at position: ${err.col+1}`, "", {translate: false})
 
                         if(err.type == "InternalJavaScriptError"){
-                            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                            printLn();
                         }
                     },
 
@@ -1776,13 +1780,13 @@ async function sendCommand(command, args, createEditableLineAfter){
                     },
 
                     onComplete: () => {
-                        if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                        printLn();
                     },
 
                     onError: (error) => {
                         let command = `[[BULLFROG]]gotoprogramline ${args[0]} ${error.line} ${error.col}`;
                         if(error.type != "quietKill" && error.type != "kill") addToCommandHistory(command);
-                        if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                        printLn();
                     }
                 }
 
@@ -1797,11 +1801,11 @@ async function sendCommand(command, args, createEditableLineAfter){
             if(args.length == 0){
                 createTerminalLine("T_provide_path", config.errorText);
                 hadError = true;
-                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                printLn();
                 break;
             }
             config.currentPath = args.join("");
-            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+            printLn();
         break;
 
         // arg 1: file in the program directory
@@ -1812,7 +1816,7 @@ async function sendCommand(command, args, createEditableLineAfter){
             if(args.length < 3 || isNaN(parseInt(args[1])) || isNaN(parseInt(args[1]))){
                 createTerminalLine("T_provide_program_name_line_col", config.errorText);
                 hadError = true;
-                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                printLn();
                 break;
             }
 
@@ -1821,14 +1825,14 @@ async function sendCommand(command, args, createEditableLineAfter){
             if(programFile == undefined){
                 createTerminalLine("T_program_does_not_exist", config.errorText);
                 hadError = true;
-                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                printLn();
                 break;
             }
 
             if(programFile.getProperty('write') == false){
                 createTerminalLine("T_no_permission_to_edit_program", config.errorText);
                 hadError = true;
-                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                printLn();
                 break;
             }
 
@@ -1845,7 +1849,7 @@ async function sendCommand(command, args, createEditableLineAfter){
         case '[[BULLFROG]]greeting': {
             createTerminalLine("T_greeting_1", "");
             createTerminalLine(`T_greeting_2 {{${config.version}}}` , "");
-            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+            printLn();
         } break;
 
         case '[[BULLFROG]]help':
@@ -1864,7 +1868,7 @@ async function sendCommand(command, args, createEditableLineAfter){
             createTerminalLine("T_bullfrog_commands_vlang", ">");
             createTerminalLine("T_bullfrog_commands_translations", ">");
             createTerminalLine("T_bullfrog_commands_trigdiag", ">");
-            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+            printLn();
         break;
 
         case '[[BULLFROG]]setstatbar':
@@ -1872,11 +1876,11 @@ async function sendCommand(command, args, createEditableLineAfter){
             if(text > 78){
                 createTerminalLine("T_arg_too_long", config.errorText);
                 hadError = true;
-                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                printLn();
                 break;
             }
             barText.textContent = args.join(" ");
-            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+            printLn();
         break;
 
         case '[[BULLFROG]]showspinner':
@@ -1887,7 +1891,7 @@ async function sendCommand(command, args, createEditableLineAfter){
                 createTerminalLine("T_invalid_args_provide_1_0", config.errorText);
                 hadError = true;
             }
-            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+            printLn();
         break;
 
         case '[[BULLFROG]]statbarlock': {
@@ -1898,7 +1902,7 @@ async function sendCommand(command, args, createEditableLineAfter){
                 createTerminalLine("T_invalid_args_provide_1_0", config.errorText);
                 hadError = true;
             }
-            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+            printLn();
         } break;
 
         case "[[BULLFROG]]setspinner": {
@@ -1911,11 +1915,11 @@ async function sendCommand(command, args, createEditableLineAfter){
                 createTerminalLine(validSpinners.filter(s => s.getProperty('transparent') !== true).map(s => s.getName()).join(", "), ">", {translate: false});
 
                 hadError = true;
-                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                printLn();
                 break;
             } else {
                 setSetting("currentSpinner", spinner);
-                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                printLn();
                 break;
             }
         } break;
@@ -1923,7 +1927,7 @@ async function sendCommand(command, args, createEditableLineAfter){
         case "[[BULLFROG]]urgentsavestate": {
             localStorage.setItem("froggyOS-urgent-state-config", JSON.stringify(config));
             localStorage.setItem("froggyOS-urgent-state-fs", FroggyFileSystem.stringify());
-            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+            printLn();
         } break;
 
         case "[[BULLFROG]]urgentloadstate": {
@@ -1933,7 +1937,7 @@ async function sendCommand(command, args, createEditableLineAfter){
             if(configState == null || fsState == null){
                 createTerminalLine("T_no_urgent_state_found", config.errorText);
                 hadError = true;
-                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                printLn();
                 break;
             }
 
@@ -1944,13 +1948,13 @@ async function sendCommand(command, args, createEditableLineAfter){
             FroggyFileSystem.loadFromString(fsState);
             changeColorPalette(config.colorPalette);
 
-            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+            printLn();
         } break;
 
         case "[[BULLFROG]]urgentclearstate": {
             localStorage.removeItem("froggyOS-urgent-state-config");
             localStorage.removeItem("froggyOS-urgent-state-fs");
-            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+            printLn();
         } break;
 
         case "[[BULLFROG]]autoloadstate": {
@@ -1966,12 +1970,12 @@ async function sendCommand(command, args, createEditableLineAfter){
                 createTerminalLine("Loaded froggyOS from memory.", config.alertText, {translate: false});
             }
 
-            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+            printLn();
         } break;
 
         case "[[BULLFROG]]validatelanguage": {
             if(!config.validateLanguageOnStartup) {
-                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                printLn();
                 return;
             }
             // get every language file except for TRANSLATION_MAP and the current language
@@ -1988,7 +1992,7 @@ async function sendCommand(command, args, createEditableLineAfter){
                 createTerminalLine(`T_current_lang_invalid`, config.translationErrorText);
                 setSetting("language", "ldm");
             }
-            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+            printLn();
         } break;
 
         case "[[BULLFROG]]translations": {
@@ -2022,7 +2026,7 @@ async function sendCommand(command, args, createEditableLineAfter){
                 })
             }
 
-            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+            printLn();
         } break;
 
         case "[[BULLFROG]]triggerdialogue": {
@@ -2030,7 +2034,7 @@ async function sendCommand(command, args, createEditableLineAfter){
             if(dialogue == undefined){
                 createTerminalLine("T_provide_valid_t_desc", config.errorText);
                 hadError = true;
-                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                printLn();
                 break;
             }
 
@@ -2039,12 +2043,12 @@ async function sendCommand(command, args, createEditableLineAfter){
             if(localized == undefined){
                 createTerminalLine("T_provide_valid_t_desc", config.errorText);
                 hadError = true;
-                if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+                printLn();
                 break;
             }
 
             createTerminalLine(localized, ">", {translate: false});
-            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+            printLn();
             
 
         } break;
@@ -2052,7 +2056,7 @@ async function sendCommand(command, args, createEditableLineAfter){
         default:
             createTerminalLine(`T_doesnt_know {{${command}}}`, ">");
             hadError = true;
-            if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+            printLn();
         break;
     }
 
@@ -3024,15 +3028,18 @@ const pondLink = devMode ? "http://127.0.0.1:29329" : "roari.bpai.us/pond";
 const messageValidationRegex = /^Recipient:(.+?)-----Subject:(.+?)-----Body:(.+?)$/;
 
 function openLilypad(file, createEditableLineAfter){
+    function printLn() {
+        if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+    }
     if(file == undefined){
         createTerminalLine("T_file_does_not_exist", config.errorText);
-        hadError = true;
-        if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+        printLn();
+        return;
     }
     if(file.getProperty('write') == false){
         createTerminalLine("T_no_permission_to_edit_file", config.errorText);
-        hadError = true;
-        if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
+        printLn();
+        return;
     }
 
     for(let i = 0; i < file.getData().length; i++){

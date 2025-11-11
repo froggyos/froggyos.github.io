@@ -295,14 +295,9 @@ const presetLanguagesMap = {
         jpn: "T_file_info_intro"
     },
     "T_file_info_size {{}}": {
-        eng: "Size: {{}}",
+        eng: ":sp12:Size: {{}}",
         nmt: "T_file_info_size {{}}",
         jpn: "T_file_info_size {{}}"
-    },
-    "T_file_info_properties {{}}": {
-        eng: "Properties: {{}}",
-        nmt: "T_file_info_properties {{}}",
-        jpn: "T_file_info_properties {{}}"
     },
     "T_file_info_type_text": {
         eng: "File Type: Text",
