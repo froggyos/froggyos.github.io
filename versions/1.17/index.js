@@ -225,7 +225,13 @@ function smallParse(input){
     return input;
 }
 
-function localize(descriptor, TRANSLATE_TEXT){
+/**
+ * 
+ * @param {String} descriptor - the string to be localized
+ * @param {Boolean} TRANSLATE_TEXT - whether to translate the text or not
+ * @returns {String|null} the localized string, or null if the translation is missing
+ */
+function localize(descriptor, TRANSLATE_TEXT=true){
     let replacementData = [];
 
     if (TRANSLATE_TEXT == undefined) TRANSLATE_TEXT = true;
@@ -296,6 +302,12 @@ function updateProgramList(){
     }
 }
 
+/**
+ * 
+ * @param {String} text - the time format string
+ * @param {Number} timestamp - optional timestamp to use instead of current time
+ * @returns 
+ */
 function parseTimeFormat(text, timestamp){
     const now = timestamp != null ? new Date(Number(timestamp)) : new Date();
 
