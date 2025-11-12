@@ -1070,6 +1070,11 @@ const presetLanguagesMap = {
         nmt: "T_pond_username_taken",
         jpn: "T_pond_username_taken"
     },
+    "T_pond_message_too_long": {
+        eng: "The message is too long. It must be under 4096 characters.",
+        nmt: "T_pond_message_too_long",
+        jpn: "T_pond_message_too_long"
+    },
 
 
     // ban related =====================================

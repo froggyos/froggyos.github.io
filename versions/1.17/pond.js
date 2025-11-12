@@ -749,6 +749,63 @@ const mainMenu = {
 
                 createPondMenu(searchMenu);
             },
+            "Warnings": () => {
+                const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
+                if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
+
+                handleRequest("/get-warns", {
+                    method: "GET",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Session-Token": FroggyFileSystem.getFile(`D:/Pond/secret/${sessionTokenFile}`).getData()[0]
+                    }
+                }, {
+                    200: (response, data) => {
+                        let warns = data.warns;
+
+                        const warnsMenu = {};
+
+                        warns.forEach((warn, index) => {
+                            warnsMenu[warn.id] = () => {
+                                const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
+                                if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
+
+                                const warnMenu = {
+                                    [`Warn ID: ${warn.id}`]: "text",
+                                    [`Issued by: ${warn.warnedBy}`]: "text",
+                                    [`Reason: ${warn.reason}`]: "text",
+                                    [`Timestamp: ${parseTimeFormat(config.timeFormat, warn.timestamp)}`]: "text",
+                                    [warn.messageID == "no_report" ? "No associated message." : `Associated Message ID: ${warn.messageID}`]: "text",
+                                    [warn.messageID != "no_report" ? 
+                                        `${'-'.repeat(78)}<br>Reported Message:<br>Recipient: ${warn.messageRecipient}<br>` +
+                                        `Subject: ${warn.messageSubject}<br>` + 
+                                        `Timestamp: ${parseTimeFormat(config.timeFormat, warn.messageTimestamp)}<br>` + 
+                                        `Message Body: <br>${warn.messageBody.map(line => `${line}`).join("<br>")}`
+                                        : ""]: "text",
+                                    "<< Back to Warnings": () => {
+                                        const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
+                                        if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
+                                        createPondMenu(warnsMenu);
+                                    }
+                                }
+
+                                createPondMenu(warnMenu);
+                            }
+                        });
+
+                        warnsMenu["<< Back to Other Menu"] = () => {
+                            const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
+                            if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
+                            createPondMenu(otherMenu);
+                        };
+
+                        createPondMenu(warnsMenu);
+
+                        console.log(warns);
+                    }
+                });
+                
+            },
             "<< Back to Main Menu": () => {
                 const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
                 if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.");

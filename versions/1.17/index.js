@@ -1375,14 +1375,64 @@ async function sendCommand(command, args, createEditableLineAfter){
                                 [localize(`T_pond_banned_until {{${data.bannedUntil == -1 ? localize("T_pond_ban_permanent") : parseTimeFormat(config.timeFormat, data.bannedUntil)}}}`)]: "text",
                                 [localize(`T_pond_ban_reason {{${data.bannedReason}}}`)]: "text",
                                 "Appeal": () => {
-                                },
-                                "Log Out": () => {
-                                    let sessionTokenStore = FroggyFileSystem.getFile(`D:/Pond/secret/${sessionTokenFile}`);
-                                    sessionTokenStore.write([]);
-                                    createTerminalLine("T_pond_logged_out", ">");
-                                    printLn();
+                                    const appealMenu = {
+                                        "Please write your appeal message below. Make sure to include any relevant information.": "text",
+                                        "id:appeal-text prefix:Type here:": "input",
+                                        "Submit Appeal": async () => {
+                                            let appealText = document.getElementById("pond-input-appeal-text").innerText;
+                                            handleRequest("/appeal-ban", {
+                                                method: "POST",
+                                                headers: {
+                                                    "Content-Type": "application/json",
+                                                    "Session-Token": data.sessionToken,
+                                                },
+                                                body: JSON.stringify({
+                                                    username: username,
+                                                    appealText: appealText,
+                                                    bannedOn: data.bannedOn,
+                                                })
+                                            }, {
+                                                400: async (response, data) => {
+                                                    if(data.error == "not_banned"){
+                                                        terminal.innerHTML = "";
+                                                        createTerminalLine("T_pond_invalid_session", config.errorText);
+                                                        createEditableTerminalLine(`${config.currentPath}>`);
+                                                    } else {
+                                                        createTerminalLine(data.details, config.errorText, {translate: false, expire: 5000});
+                                                    }
+                                                },
+                                                403: (response, data) => {
+                                                    terminal.innerHTML = "";
+                                                    createTerminalLine("T_pond_session_forcefully_terminated", config.errorText);
+                                                    createEditableTerminalLine(`${config.currentPath}>`);
+                                                },
+                                                200: async (response, data) => {
+                                                    //createTerminalLine("T_pond_appeal_submitted", ">", {expire: 5000});
+                                                },
+                                            });
+ 
+                                        },
+                                        "<< Back": () => {
+                                            createPondMenu(bannedMenu);
+                                        }
+                                    }
+
+                                    createPondMenu(appealMenu);
                                 }
                             }
+
+                            // if(Date.now() - data.bannedOn < 1000*60*60*24*5){
+                            //     delete bannedMenu["Appeal"];
+                            //     bannedMenu["You may appeal your ban after 5 days."] = "text";
+                            // }
+
+                            bannedMenu["Log Out"] = () => {
+                                let sessionTokenStore = FroggyFileSystem.getFile(`D:/Pond/secret/${sessionTokenFile}`);
+                                sessionTokenStore.write([]);
+                                createTerminalLine("T_pond_logged_out", ">");
+                                printLn();
+                            }
+
                             createPondMenu(bannedMenu);
                         } else if(response.status == 404){
                             createTerminalLine("T_pond_invalid_name_password", config.errorText);
@@ -2803,6 +2853,11 @@ async function createLilypadLinePondDerivative(path, filename, options){
                         timestamp: timestamp
                     })
                 }, {
+                    400: (req, data) => {
+                        if(data.type == "message_too_long"){
+                            createTerminalLine(`T_pond_message_too_long`, config.errorText, {expire: 5000});
+                        }
+                    },
                     401: (req, data) => {
                         terminal.innerHTML = "";
                         createTerminalLine(`T_pond_invalid_session`, config.errorText);
@@ -2969,7 +3024,7 @@ let dateTimeInterval = setInterval(() => {
 }, 100);
 
 const onStart = () => {
-    //sendCommand("pond", ["-l", "third_guy", "Supersecretpassword1!"])
+    sendCommand("pond", ["-l", "third_guy", "Supersecretpassword1!"])
     //sendCommand("pond", ["-l", "ari", "I4mth3own3r!!!"]);
     //sendCommand("pond", ["-l", "test", "test"])
     // setTimeout(() => {
