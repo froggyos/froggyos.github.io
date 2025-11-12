@@ -81,10 +81,9 @@ result     = Index Missing! -> T_test {{}} {{}}
 ### formattime
 The all instances of the following characters (or character sequences) will be replaced with their respective values. Place a `!` before the character to escape it.
 #### Date
-* weekday
-    * `w` - short weekday (Mon, Tues)
-    * `W` - long weekday (Monday, Tuesday)
-* `y` - year
+* year
+    * `Y` - year (2025)
+    * `y` - year short (25)
 * month
     * `mn` - month number (01, 02)
     * `mnu` - month number unpadded (1, 2)
@@ -94,6 +93,9 @@ The all instances of the following characters (or character sequences) will be r
     * `d` - day (01, 02)
     * `du` - day unpadded (1, 2)
     * `D` - ordinal day (1st, 2nd) (English only)
+* weekday
+    * `w` - short weekday (Mon, Tue)
+    * `W` - long weekday (Monday, Tuesday)
 
 #### Time
 * hour

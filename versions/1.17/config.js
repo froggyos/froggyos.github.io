@@ -1443,7 +1443,7 @@ const FroggyFileSystem = new fs({
             "KEY showSpinner TYPE Boolean VALUE false END",
             "KEY currentSpinner TYPE String VALUE default END",
             "KEY defaultSpinner TYPE String VALUE default END",
-            "KEY timeFormat TYPE String VALUE w. y/mn/d h:m:s END",
+            "KEY timeFormat TYPE String VALUE w. Y/mn/d h:m:s END",
             "KEY updateStatBar TYPE Boolean VALUE true END",
             "KEY allowedProgramDirectories TYPE Array START",
             "0 TYPE String VALUE D:/Programs",

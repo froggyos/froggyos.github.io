@@ -325,6 +325,7 @@ function parseTimeFormat(text, timestamp){
     const dayOfWeekLong = dowListLong[now.getDay()];
 
     const year = now.getFullYear();
+    const yearShort = now.getFullYear().toString().slice(-2);
 
     const monthNumber = String(now.getMonth() + 1).padStart(2, '0');
     const monthNumberUnpadded = String(now.getMonth() + 1);
@@ -375,7 +376,8 @@ function parseTimeFormat(text, timestamp){
         { char: 'w', value: dayOfWeekShort },
         { char: 'W', value: dayOfWeekLong },
 
-        { char: 'y', value: year },
+        { char: 'Y', value: year },
+        { char: 'y', value: yearShort },
 
         { char: 'mn', value: monthNumber },
         { char: 'mnu', value: monthNumberUnpadded },
