@@ -234,6 +234,11 @@ const presetLanguagesMap = {
         nmt: "fiyala tama süm'an u'u 3 gina me kekéne",
         jpn: "ファイル名はちょうど3文字でなければなりません"
     },
+    "T_invalid_file_name_chars": {
+        eng: "Invalid characters in file name.",
+        nmt: "T_invalid_file_name_chars",
+        jpn: "T_invalid_file_name_chars"
+    },
     "T_no_permission_to_edit_file": {
         eng: "You do not have permission to edit this file.",
         nmt: "'a gewitsuyo pamason lohi lu fiyala",

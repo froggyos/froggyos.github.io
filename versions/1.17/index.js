@@ -768,7 +768,13 @@ function validateLanguageFile(code){
     return /^!LANGNAME: (.*?)$/g.test(identifierLine);
 }
 
-async function sendCommand(command, args, createEditableLineAfter){
+/**
+ * @param {string} command - the command to execute
+ * @param {Array} args - an array of arguments for the command
+ * @param {Boolean} createEditableLineAfter - whether to create a new editable terminal line after executing the command (default: true)
+ * @returns 
+ */
+async function sendCommand(command, args, createEditableLineAfter = true){
     if(createEditableLineAfter == undefined) createEditableLineAfter = true;
     command = command.trim();
     args = args.filter(arg => arg.trim() != "");
@@ -1252,6 +1258,15 @@ async function sendCommand(command, args, createEditableLineAfter){
                 break;
             }
 
+            const regex = /[^a-zA-Z0-9_.-]/g;
+
+            if(regex.test(args[0])){
+                createTerminalLine("T_invalid_file_name_chars", config.errorText);
+                hadError = true;
+                printLn();
+                break;
+            }
+
             let file = FroggyFileSystem.getFile(`${config.currentPath}/${args[0]}`);
 
             openLilypad(file, createEditableLineAfter);
@@ -1599,6 +1614,15 @@ async function sendCommand(command, args, createEditableLineAfter){
 
             let fileName = args[0];
             let newName = args[1];
+
+            const regex = /[^a-zA-Z0-9_.-]/g;
+
+            if(regex.test(newName)){
+                createTerminalLine("T_invalid_file_name_chars", config.errorText);
+                hadError = true;
+                printLn();
+                break;
+            }
 
             let file = FroggyFileSystem.getFile(`${config.currentPath}/${fileName}`);
 
@@ -3026,7 +3050,8 @@ let dateTimeInterval = setInterval(() => {
 }, 100);
 
 const onStart = () => {
-    sendCommand("pond", ["-l", "third_guy", "Supersecretpassword1!"])
+    sendCommand("h", ["Config:/langs"])
+    //sendCommand("pond", ["-l", "third_guy", "Supersecretpassword1!"])
     //sendCommand("pond", ["-l", "ari", "I4mth3own3r!!!"]);
     //sendCommand("pond", ["-l", "test", "test"])
     // setTimeout(() => {

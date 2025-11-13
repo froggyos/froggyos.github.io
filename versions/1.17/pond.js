@@ -14,7 +14,7 @@ async function handleRequest(link, body, handlers) {
 
     handlers[500] = handlers[500] || function (response, data) {
         terminal.innerHTML = "";
-        createTerminalLine("T_pond_server_unreachable", config.errorText);
+        createTerminalLine("T_pond_server_error", config.errorText);
         createEditableTerminalLine(`${config.currentPath}>`);
     }
 
