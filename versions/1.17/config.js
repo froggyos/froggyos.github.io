@@ -251,17 +251,17 @@ const presetLanguagesMap = {
     },
     "T_no_permission_to_clone": {
         eng: "You do not have permission to clone this file.",
-        nmt: "'a getsefese pamason mafu lu fiyala",
+        nmt: "'a gewitsuyo pamason ", // CONTINUE
         jpn: "このファイルをクローンする権限がありません"
     },
     "T_no_permission_to_rename_file": {
         eng: "You do not have permission to rename this file.",
-        nmt: "'a getsefese pamason som'on tama ma lu fiyala",
+        nmt: "'a gewitsuyo pamason som'on tama ma lu fiyala",
         jpn: "このファイル名を変更する権限がありません"
     },
     "T_no_permission_to_delete_file": {
         eng: "You do not have permission to delete this file.",
-        nmt: "na gewitsu pamason nggave ilo fiyala",
+        nmt: "na gewitsuyo pamason nggave ilo fiyala",
         jpn: "このファイルを削除する権限がありません"
     },
     "T_cannot_delete_file": {
