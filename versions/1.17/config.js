@@ -14,21 +14,6 @@ const presetLanguagesMap = {
         nmt: "!LANGNAME: ngimëte",
         jpn: "!LANGNAME: Japanese",
     },
-    "T_froggy_doesnt_like": {
-        eng: "Froggy doesn't like that. >:(",
-        nmt: "Froggy gehana ilu >:(",
-        jpn: "フロッギーはそれが気に入らないよ >:("
-    },
-    "T_doesnt_know {{}}": {
-        eng: `Froggy doesn't know "{{}}", sorry.`,
-        nmt: `Froggy gepele "{{}}", mbayu`,
-        jpn: "フロッギーは「{{}}」がわかりません、ごめんなさい"
-    },
-    "T_hello_froggy": {
-        eng: "Hello, I'm Froggy! ^v^",
-        nmt: "i katálo, mo Froggy! ^v^",
-        jpn: "どうも、フロッギーです！^v^"
-    },
     "T_greeting_1": {
         eng: "Type ‘help’ to receive support with commands, and possibly navigation.",
         nmt: "nenta ‘help’ mbo süm fesúāte kole komandda me, nam giwa 'ata",
@@ -38,6 +23,21 @@ const presetLanguagesMap = {
         eng: "* Welcome to froggyOS, version {{}} *",
         nmt: "* wulë froggyOS, kekyene {{}} *",
         jpn: "* froggyOSへようこそ！バージョン{{}} *"
+    },
+    "T_doesnt_know {{}}": {
+        eng: `Froggy doesn't know "{{}}", sorry.`,
+        nmt: `Froggy gepele "{{}}", mbayu`,
+        jpn: "フロッギーは「{{}}」がわかりません、ごめんなさい"
+    },
+    "T_froggy_doesnt_like": {
+        eng: "Froggy doesn't like that. >:(",
+        nmt: "Froggy gehana ilu >:(",
+        jpn: "フロッギーはそれが気に入らないよ >:("
+    },
+    "T_hello_froggy": {
+        eng: "Hello, I'm Froggy! ^v^",
+        nmt: "i katálo, mo Froggy! ^v^",
+        jpn: "どうも、フロッギーです！^v^"
     },
 
     // basic command help ====================
