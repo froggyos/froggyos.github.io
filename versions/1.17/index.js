@@ -1387,16 +1387,20 @@ async function sendCommand(command, args, createEditableLineAfter = true){
                         createTerminalLine(response.status + " " + response.statusText, config.errorText, {translate: false});
                         if(response.status == 403){
                             const bannedMenu = {
-                                [localize("T_pond_user_banned")]: "text",
+                                [config.errorText + " " + localize("T_pond_user_banned")]: "text",
                                 [localize(`T_pond_banned_on {{${parseTimeFormat(config.timeFormat, data.bannedOn)}}}`)]: "text",
                                 [localize(`T_pond_banned_until {{${data.bannedUntil == -1 ? localize("T_pond_ban_permanent") : parseTimeFormat(config.timeFormat, data.bannedUntil)}}}`)]: "text",
                                 [localize(`T_pond_ban_reason {{${data.bannedReason}}}`)]: "text",
                                 "Appeal": () => {
                                     const appealMenu = {
                                         "Please write your appeal message below. Make sure to include any relevant information.": "text",
+                                        "id:appeal-title prefix:Appeal Title:": "input",
                                         "id:appeal-text prefix:Type here:": "input",
                                         "Submit Appeal": async () => {
+
                                             let appealText = document.getElementById("pond-input-appeal-text").innerText;
+                                            let appealTitle = document.getElementById("pond-input-appeal-title").innerText;
+
                                             handleRequest("/appeal-ban", {
                                                 method: "POST",
                                                 headers: {
@@ -1405,6 +1409,7 @@ async function sendCommand(command, args, createEditableLineAfter = true){
                                                 },
                                                 body: JSON.stringify({
                                                     username: username,
+                                                    appealTitle: appealTitle,
                                                     appealText: appealText,
                                                     bannedOn: data.bannedOn,
                                                 })
@@ -1424,7 +1429,7 @@ async function sendCommand(command, args, createEditableLineAfter = true){
                                                     createEditableTerminalLine(`${config.currentPath}>`);
                                                 },
                                                 200: async (response, data) => {
-                                                    //createTerminalLine("T_pond_appeal_submitted", ">", {expire: 5000});
+                                                    createTerminalLine("T_pond_appeal_submitted", ">", {expire: 5000});
                                                 },
                                             });
  
@@ -3052,7 +3057,7 @@ let dateTimeInterval = setInterval(() => {
 const onStart = () => {
     //sendCommand("pond", ["-l", "third_guy", "Supersecretpassword1!"])
     //sendCommand("pond", ["-l", "ari", "I4mth3own3r!!!"]);
-    //sendCommand("pond", ["-l", "test", "test"])
+    sendCommand("pond", ["-l", "test", "test"])
     // setTimeout(() => {
     //     createEditableTerminalLine(`${config.currentPath}>`);
     // }, 2000)

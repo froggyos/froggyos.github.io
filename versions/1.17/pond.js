@@ -20,7 +20,10 @@ async function handleRequest(link, body, handlers) {
 
     handlers[429] = handlers[429] || function (response, data) {
         terminal.innerHTML = "";
-        createTerminalLine("T_pond_rate_limited", config.errorText);
+        if(data.type == "ratelimit") createTerminalLine("T_pond_ratelimit", config.errorText);
+        else {
+            createTerminalLine(`T_pond_ratelimit_strict {{${parseTimeFormat(config.timeFormat, data.reset)}}}`, config.errorText);
+        }
         createEditableTerminalLine(`${config.currentPath}>`);
     }
     try {
@@ -58,6 +61,12 @@ async function handleRequest(link, body, handlers) {
         handlers[500]();
     }
 }
+
+function pad(n){
+    return FULLWIDTH.repeat(n);
+}
+
+const FULLWIDTH = "\u00A0"
 
 /**
  * Creates a scrollable interactive Pond menu.
@@ -358,8 +367,8 @@ const mainMenu = {
                                 }
 
                                 let messageMenu = {
-                                    [`${"\u00A0".repeat(5)}FROM : ${message.sender}\u00A0${userDecorations}`]: "text",
-                                    [`${"\u00A0".repeat(2)}SUBJECT : ${message.subject}`]: "text",
+                                    [`${pad(5)}FROM : ${message.sender}${FULLWIDTH}${userDecorations}`]: "text",
+                                    [`${pad(2)}SUBJECT : ${message.subject}`]: "text",
                                     [`TIMESTAMP : ${parseTimeFormat(config.timeFormat, message.timestamp)}`]: "text",
                                     "-----": "text",
                                     "a": "newline",
@@ -523,7 +532,7 @@ const mainMenu = {
         config.currentPath = "D:/Pond/drafts";
 
         createTerminalLine("Composing new message...", "", {translate: false});
-        createTerminalLine("", "\u00A0", {translate: false});
+        createTerminalLine("", FULLWIDTH, {translate: false});
         createTerminalLine("Press [ESC] to save and exit", ">", {translate: false});
         createTerminalLine("Press [SHIFT + ESC] to exit without saving", ">", {translate: false});
         createTerminalLine("Press [F1] to save", ">", {translate: false});
@@ -618,7 +627,7 @@ const mainMenu = {
                     terminal.innerHTML = "";
 
                     createTerminalLine("Editing draft...", "", {translate: false});
-                    createTerminalLine("", "\u00A0", {translate: false});
+                    createTerminalLine("", FULLWIDTH, {translate: false});
                     createTerminalLine("Press [ESC] to save and exit", ">", {translate: false});
                     createTerminalLine("Press [SHIFT + ESC] to exit without saving", ">", {translate: false});
                     createTerminalLine("Press [F1] to save", ">", {translate: false});
@@ -914,7 +923,7 @@ async function openPond(userRoles = []) {
     await new Promise((resolve) => setTimeout(resolve, 1000));
     terminal.innerHTML = "";
 
-    if(userRoles.includes("mod")){
+    if(userRoles.includes("mod") || userRoles.includes("admin") || userRoles.includes("trial_mod") || userRoles.includes("owner")){
         mainMenu["Mod Panel"] = () => {
             const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
             if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
@@ -998,6 +1007,12 @@ async function openPond(userRoles = []) {
                                     createPondMenu(modMenu);
                                 }
                             });
+                        },
+                        400: (response, data) => {
+                            if(data.type == "already_banned"){
+                                createTerminalLine("T_pond_user_already_banned", config.errorText, {expire: 5000});
+                                return;
+                            }
                         },
                         401: (response, data) => {
                             if(data.type == "no_permission"){
@@ -1156,6 +1171,11 @@ async function openPond(userRoles = []) {
                                         }
                                     });
                                 },
+                                400: (response, data) => {
+                                    if(data.type == "not_banned"){
+                                        createTerminalLine("T_pond_user_not_banned", config.errorText, {expire: 5000});
+                                    }
+                                },
                                 401: (response, data) => {
                                     if(data.type == "no_permission"){
                                         createTerminalLine("T_pond_no_permission_to_unban_user", config.errorText, {expire: 5000});
@@ -1230,15 +1250,15 @@ async function openPond(userRoles = []) {
                                         terminal.innerHTML = "";
 
                                         const reportMenu = {
-                                            [`${"\u00A0".repeat(4)}TITLE : ${report.title}`]: "text",
-                                            [`${"\u00A0".repeat(1)}REPORTER : ${report.reporter}`]: "text",
+                                            [`${pad(4)}TITLE : ${report.title}`]: "text",
+                                            [`${pad(1)}REPORTER : ${report.reporter}`]: "text",
                                             [`TIMESTAMP : ${parseTimeFormat(config.timeFormat, report.reportTimestamp)}`]: "text",
-                                            [`${"\u00A0".repeat(2)}DETAILS : ${report.details}`]: "text",
+                                            [`${pad(2)}DETAILS : ${report.details}`]: "text",
                                             [`REPORT ID : ${report.reportID}`]: "text",
                                             "": "newline",
                                             "Reported Message:": "text",
                                             " ": "newline",
-                                            [`${"\u00A0".repeat(3)}FROM : ${report.reportedSender}`]: "text",
+                                            [`${pad(3)}FROM : ${report.reportedSender}`]: "text",
                                             [`SUBJECT : ${report.reportedSubject}`]: "text",
                                             "-----": "text",
                                             "a": "newline",
@@ -1553,6 +1573,89 @@ async function openPond(userRoles = []) {
                         }
                     },);
                 },
+                "View Appeals": () => {
+                    const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
+                    if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
+                    
+                    handleRequest("/get-appeals", {
+                        method: "GET",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "Session-Token": FroggyFileSystem.getFile(`D:/Pond/secret/${sessionTokenFile}`).getData()[0]
+                        }
+                    }, {
+                        200: (response, data) => {
+                            const appeals = data.appeals;
+
+                            function createAppealsMenu(){
+                                const appealsMenu = {
+                                    "User Appeals": "text",
+                                    "": "newline",
+                                };
+                                appeals.forEach((appeal, index) => {
+                                    const appealStatus = appeal.resolved ? "[CLSD]" : "[OPEN]";
+                                    appealsMenu[`${appealStatus} - ${appeal.appealID}`] = () => {
+                                        const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
+                                        if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
+                                        terminal.innerHTML = "";
+                                        const appealMenu = {
+                                            [`${pad(1)}USERNAME : ${appeal.username}`]: "text",
+                                            [`TIMESTAMP : ${parseTimeFormat(config.timeFormat, appeal.appealTimestamp)}`]: "text",
+                                            [`${pad(4)}TITLE : ${appeal.appealTitle}`]: "text",
+                                            [`APPEAL ID : ${appeal.appealID}`]: "text",
+                                            "": "newline",
+                                            [`Text:\n${appeal.appealText}`]: "text",
+                                            "": "newline",
+                                            "--\u200b---": "text",
+                                            "Take Action:": "text",
+                                            "": "newline",
+                                            "Close Appeal": () => {
+                                                const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
+                                                if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
+                                            },
+                                            "Grant Appeal": () => {
+                                                const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
+                                                if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
+                                            },
+                                            ["<< Back to Appeals"]: () => {
+                                                const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
+                                                if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.")
+                                                createPondMenu(appealsMenu);
+                                            }
+                                        };
+                                        createPondMenu(appealMenu);
+                                    };
+                                });
+                                appealsMenu["<< Back to Mod Menu"] = () => {
+                                    const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
+                                    if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
+                                    createPondMenu(modMenu);
+                                }
+                                return appealsMenu;
+                            }
+                            createPondMenu(createAppealsMenu());
+                        },
+                        401: (response, data) => {
+                            terminal.innerHTML = "";
+                            createTerminalLine("T_pond_invalid_session", config.errorText);
+                            createEditableTerminalLine(`${config.currentPath}>`);
+                        },
+                        403: (response, data) => {
+                            if(data.type == "banned"){
+                                terminal.innerHTML = "";
+                                createTerminalLine("T_pond_session_forcefully_terminated", config.errorText);
+                                createEditableTerminalLine(`${config.currentPath}>`);
+                            } else {
+                                createTerminalLine("You do not have permission to view appeals.", config.errorText, {translate: false, expire: 5000});
+                            }
+                        },
+                        404: (response, data) => {
+                            terminal.innerHTML = "";
+                            createTerminalLine("T_pond_session_forcefully_terminated", config.errorText);
+                            createEditableTerminalLine(`${config.currentPath}>`);
+                        }
+                    });
+                },
                 "<< Back to Main Menu": () => {
                     const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
                     if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
@@ -1580,6 +1683,7 @@ const decorations = {
     "admin" : `<span class="tag"        style="color: var(--c12)" >[ADMIN]</span>`,
     "owner" : `<span class="tag"        style="color: #f7a923"  >[OWNER]</span>`,
     "mod"   : `<span class="tag"        style="color: var(--c09)" >[MOD]</span>`,
+    "trial_mod": `<span class="tag"        style="color: var(--c03)" >[TRIAL MOD]</span>`,
     "banned": `<span class="tag"        style="color: var(--c08)" >[BANNED]</span>`,
     "spinny": `<span class="tag spinny" style="color: var(--c05)" ></span>`
 }

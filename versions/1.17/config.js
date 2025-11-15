@@ -940,10 +940,15 @@ const presetLanguagesMap = {
 
 
     // rate limiting ===================================
-    "T_pond_rate_limited": {
+    "T_pond_ratelimit": {
         eng: "You are being rate limited. Please wait a moment and try again.",
-        nmt: "T_pond_rate_limited",
-        jpn: "T_pond_rate_limited"
+        nmt: "T_pond_ratelimit",
+        jpn: "T_pond_ratelimit"
+    },
+    "T_pond_ratelimit_strict {{}}": {
+        eng: "You are being strictly rate limited. Please wait until {{}} to try again.",
+        nmt: "T_pond_ratelimit_strict {{}}",
+        jpn: "T_pond_ratelimit_strict {{}}"
     },
 
 
@@ -968,6 +973,17 @@ const presetLanguagesMap = {
         nmt: "T_pond_provide_ban_duration",
         jpn: "T_pond_provide_ban_duration"
     },
+    "T_pond_provide_warn_user": {
+        eng: "Please provide a username to warn.",
+        nmt: "T_pond_provide_warn_user",
+        jpn: "T_pond_provide_warn_user"
+    },
+    "T_pond_provide_warn_reason": {
+        eng: "Please provide a reason for the warning.",
+        nmt: "T_pond_provide_warn_reason",
+        jpn: "T_pond_provide_warn_reason"
+    },
+
 
 
     // invalid (format) ================================
@@ -1004,11 +1020,16 @@ const presetLanguagesMap = {
         nmt: "T_pond_no_permission_to_warn_user",
         jpn: "T_pond_no_permission_to_warn_user"
     },
+    "T_pond_no_permission_to_unban_user": {
+        eng: "You do not have permission to unban users.",
+        nmt: "T_pond_no_permission_to_unban_user",
+        jpn: "T_pond_no_permission_to_unban_user"
+    },
 
 
     // successes =======================================
     "T_pond_registration_successful": {
-        eng: "Registration successful! You can now log in with your credentials.",
+        eng: "Registration successful! You can now log in with your credentials. Write your password down, because there is **NO** password recovery.",
         nmt: "T_pond_registration_successful",
         jpn: "T_pond_registration_successful"
     },
@@ -1022,17 +1043,11 @@ const presetLanguagesMap = {
         nmt: "T_pond_settings_saved",
         jpn: "T_pond_settings_saved"
     },
-    "T_pond_provide_warn_user": {
-        eng: "Please provide a username to warn.",
-        nmt: "T_pond_provide_warn_user",
-        jpn: "T_pond_provide_warn_user"
+    "T_pond_appeal_submitted": {
+        eng: "Ban appeal submitted.",
+        nmt: "T_pond_appeal_submitted",
+        jpn: "T_pond_appeal_submitted"
     },
-    "T_pond_provide_warn_reason": {
-        eng: "Please provide a reason for the warning.",
-        nmt: "T_pond_provide_warn_reason",
-        jpn: "T_pond_provide_warn_reason"
-    },
-
 
     // failures ========================================
     "T_pond_registration_failed": {
@@ -1107,6 +1122,16 @@ const presetLanguagesMap = {
         eng: "Permanent",
         nmt: "T_pond_ban_permanent",
         jpn: "T_pond_ban_permanent"
+    },
+    "T_pond_user_already_banned": {
+        eng: "This user is already banned.",
+        nmt: "T_pond_user_already_banned",
+        jpn: "T_pond_user_already_banned"
+    },
+    "T_pond_user_not_banned": {
+        eng: "This user is not banned.",
+        nmt: "T_pond_user_not_banned",
+        jpn: "T_pond_user_not_banned"
     },
 
 
