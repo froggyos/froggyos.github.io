@@ -3108,8 +3108,8 @@ const SKIP_ANIMATION = true;
 let animSkipped = false;
 let innerBar = document.getElementById("inner-bar");
 
-const devMode = true;
-const pondLink = devMode ? "http://127.0.0.1:29329" : "roari.bpai.us/pond";
+const devMode = false;
+const pondLink = devMode ? "http://127.0.0.1:29329" : "https://roari.bpai.us/pond";
 
 const messageValidationRegex = /^Recipient:(.+?)-----Subject:(.+?)-----Body:(.+?)$/;
 
