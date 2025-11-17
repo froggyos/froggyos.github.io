@@ -123,6 +123,11 @@ function set_fSDS(path, filename, key, value){
     file.write(newData);
 }
 
+/**
+ * 
+ * @param {Array} inputFile - array of lines from a file to parse as fSDS
+ * @returns {Object} parsed fSDS object
+ */
 function parse_fSDS(inputFile){
     let output = {};
 
@@ -1596,41 +1601,63 @@ async function sendCommand(command, args, createEditableLineAfter = true){
                     printLn();
                     break;
                 }
+                
+                createTerminalLine("T_pond_registration_statement_1", config.alertText);
+                createTerminalLine("T_pond_registration_statement_2", config.alertText);
+                sendCommand("st", ["terminal_confirm", localize("T_pond_registration_question"), localize("T_yes"), localize("T_no"), localize("T_pond_registration_cancelled")], false);
 
-                setSetting("showSpinner", true)
-                handleRequest("/register", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
-                        username: username,
-                        password: password,
-                    })
-                }, {
-                    200: async (response, data) => {
-                        setSetting("showSpinner", false)
-                        createTerminalLine("T_pond_registration_successful", ">");
-                        printLn();
-                    },
-                    400: async (response, data) => {
-                        setSetting("showSpinner", false)
-                        createTerminalLine("T_pond_registration_failed", config.errorText);
-                        createTerminalLine(data.details, "", {translate: false});
-                        printLn();
-                    },
-                    409: async (response, data) => {
-                        setSetting("showSpinner", false)
-                        createTerminalLine("T_pond_registration_failed", config.errorText);
-                        createTerminalLine("T_pond_username_taken", config.errorText);
-                        printLn();
-                    },
-                    500: async (response, data) => {
-                        setSetting("showSpinner", false)
-                        createTerminalLine("T_pond_server_error", config.errorText);
-                        printLn();
-                    },
+                new Promise((resolve) => {
+                    const interval = setInterval(() => {
+                        if(config.currentProgram != "terminal_confirm"){
+                            const fsds = parse_fSDS(FroggyFileSystem.getFile("Config:/program_data/terminal_confirm").getData());
+                            clearInterval(interval);
+                            resolve(fsds.confirmed.value == 1);
+                        }
+                    }, 100);
+                }).then((confirmation) => {
+                    if(confirmation){
+                        setSetting("showSpinner", true)
+                        handleRequest("/register", {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                            },
+                            body: JSON.stringify({
+                                username: username,
+                                password: password,
+                            })
+                        }, {
+                            200: async (response, data) => {
+                                setSetting("showSpinner", false)
+                                createTerminalLine("T_pond_registration_successful", ">");
+                                printLn();
+                            },
+                            400: async (response, data) => {
+                                setSetting("showSpinner", false)
+                                createTerminalLine("T_pond_registration_failed", config.errorText);
+                                createTerminalLine(data.details, "", {translate: false});
+                                printLn();
+                            },
+                            409: async (response, data) => {
+                                setSetting("showSpinner", false)
+                                createTerminalLine("T_pond_registration_failed", config.errorText);
+                                createTerminalLine("T_pond_username_taken", config.errorText);
+                                printLn();
+                            },
+                            500: async (response, data) => {
+                                setSetting("showSpinner", false)
+                                createTerminalLine("T_pond_server_error", config.errorText);
+                                printLn();
+                            },
+                        });
+                    } else {
+                        setTimeout(() => {
+                            createEditableTerminalLine(`${config.currentPath}>`);
+                        }, 100)
+                    }
                 });
+
+                FroggyFileSystem.getFile("Config:/program_data/terminal_confirm").write([]);
 
             } else if(args[0] == "--help" || args[0] == "-h") {
                 createTerminalLine("T_pond_command_help_intro", "");
@@ -1843,6 +1870,8 @@ async function sendCommand(command, args, createEditableLineAfter = true){
                 break;
             }
 
+            const previousProgram = structuredClone(config.currentProgram);
+
             config.programSession++
             if(args[0] == "cli"){
                 printLn();
@@ -1899,6 +1928,7 @@ async function sendCommand(command, args, createEditableLineAfter = true){
                         
                     },
                     errout: (err) => {
+                        console.log(previousProgram)
                         createTerminalLine("\u00A0", config.programErrorText.replace("{{}}", err.type), {translate: false});
                         createTerminalLine("\u00A0", "", {translate: false});
                         createTerminalLine(err.message, "", {translate: false});
@@ -1925,10 +1955,12 @@ async function sendCommand(command, args, createEditableLineAfter = true){
                     },
 
                     onComplete: () => {
+                        config.currentProgram = previousProgram;
                         printLn();
                     },
 
                     onError: (error) => {
+                        config.currentProgram = previousProgram;
                         let command = `[[BULLFROG]]gotoprogramline ${args[0]} ${error.line} ${error.col}`;
                         if(error.type != "quietKill" && error.type != "kill") addToCommandHistory(command);
                         printLn();
@@ -3119,13 +3151,9 @@ let dateTimeInterval = setInterval(() => {
 }, 100);
 
 const onStart = () => {
-    // setTimeout(() => {
-    //     createEditableTerminalLine(`${config.currentPath}>`);
-    // }, 2000)
-    // setTimeout(() => {
-    //     sendCommand("pond", ["-l", "ari", "I4mth3own3r!!!"])
-    // }, 3000)
-    //sendCommand("st", ["snake", "file\\_arg\\_1"])
+    //sendCommand("pond", ["-r", "test", "test"])
+    //sendCommand("st", ["test"])
+
 }
 
 function ready(){

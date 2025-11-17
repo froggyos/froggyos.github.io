@@ -472,6 +472,27 @@ const imports = {
         }, {
             defaultKeyword: false
         });
+    },
+    filesys: (interp) => {
+        interp.variables["filesys"] = {
+            value: "File System Import",
+            type: "import_filesys",
+            mut: false,
+            freeable: false
+        }
+
+        // new FS3Method("writeData", ["import_filesys"], [{type: ["string"], optional: false}, {type: ["string"], optional: false}], (parent, args, interpreter) => {
+        //     console.log(parent,args,interpreter)
+        // }, false);
+
+        new FS3Keyword("writeData", ["string", "string|number|array"], (args, interpreter) => {
+            const fileName = interpreter.fileArguments[0]
+            const file = FroggyFileSystem.getFile(`Config:/program_data/${fileName}`);
+
+            set_fSDS("Config:/program_data", fileName, args[0].value, args[1].value);
+        }, {
+            defaultKeyword: false
+        });
     }
 }
 

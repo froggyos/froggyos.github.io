@@ -39,6 +39,16 @@ const presetLanguagesMap = {
         nmt: "i katálo, mo Froggy! ^v^",
         jpn: "どうも、フロッギーです！^v^"
     },
+    "T_yes": {
+        eng: "Yes",
+        nmt: "owa",
+        jpn: "T_yes"
+    },
+    "T_no": {
+        eng: "No",
+        nmt: "ge",
+        jpn: "T_no"
+    },
 
     // basic command help ====================
     "T_basic_commands_intro": {
@@ -880,7 +890,6 @@ const presetLanguagesMap = {
 
     // pond =============================================================================
 
-
     // server connectivity =============================
     "T_pond_checking": {
         eng: "Checking Pond server...",
@@ -1206,6 +1215,29 @@ const presetLanguagesMap = {
         jpn: "T_pond_logged_out"
     },
 
+    // registration
+    "T_pond_registration_statement_1": {
+        eng: "By registering, you give The Pond permission to:\n- store your username\n- store your password in an encrypted format\n- the repeated permission to store your IP address when you register and log in\n- abide by the community guidelines",
+        nmt: "T_pond_registration_statement_1",
+        jpn: "T_pond_registration_statement_1"
+    },
+    "T_pond_registration_statement_2": {
+        eng: "The Pond also reserves the right to:\n- change these terms at any time without prior notice\n- ban and/or warn users who violate the community guidelines or are a general nuisance to the community\n- delete accounts that have been inactive for over a year",
+        nmt: "T_pond_registration_statement_2",
+        jpn: "T_pond_registration_statement_2"
+    },
+    "T_pond_registration_question": {
+        eng: "Do you accept these terms?",
+        nmt: "T_pond_registration_question",
+        jpn: "T_pond_registration_question"
+    },
+    "T_pond_registration_cancelled": {
+        eng: "Registration cancelled.",
+        nmt: "T_pond_registration_cancelled",
+        jpn: "T_pond_registration_cancelled"
+    },
+
+    // pond end =========================================================================
 
     // uncategorized messages ==========================
     "T_test {{}} {{}}": {
@@ -1485,7 +1517,8 @@ const FroggyFileSystem = new fs({
     "Config:": [
         { name: "trusted_programs", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
             "test",
-            "fs3help"
+            "fs3help",
+            "confirm"
         ] },
         { name: "user", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
             "KEY language TYPE String VALUE eng END",
@@ -1775,10 +1808,8 @@ const FroggyFileSystem = new fs({
             // // "var meow = {",
             // // "    'name' = 'meow'",
             // // "}",
-            'var myArray = ["apple", "banana", "cherry"]',
-            'foreach $myArray {',
-            '    out "Item " + __index__>s + ": " + __item__',
-            '}',
+            "import 'filesys'",
+            "writeData '1' 2"
             // "if :1: {",
             // "    try {",
             // "       out notAVariable",
@@ -1796,6 +1827,28 @@ const FroggyFileSystem = new fs({
             // "out 'agaga'",
             // "wait 500",
             // "out 'gagagaga'",
+        ] },
+        { name: "terminal_confirm", properties: {transparent: true, read: true, write: false, hidden: false}, data: [
+            "import 'filesys'",
+            "writeData 'confirmed' 0",
+            "var question = ''",
+            "var yes = ''",
+            "var no = ''",
+            "var response = ''",
+            "var answer_for_decline = ''",
+            "filearg $question 1",
+            "filearg $yes 2",
+            "filearg $no 3",
+            "filearg $answer_for_decline 4",
+            "out question",
+            "prompt $response 1 [yes, no]",
+            "if response>eq(yes) {",
+            "    writeData 'confirmed' 1",
+            "}",
+            "else {",
+            "    writeData 'confirmed' 0",
+            "    out answer_for_decline",
+            "}",
         ] },
             { name: "fs3help", properties: {transparent: false, read: true, write: false, hidden: false }, data: [
                 "out ''",
