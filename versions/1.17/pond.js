@@ -71,13 +71,14 @@ const FULLWIDTH = "\u00A0"
 /**
  * Creates a scrollable interactive Pond menu.
  *
- * @param {{ [key: string]: Function | "text" | "newline" }} object
- * - Keys are menu labels.
+ * @param {{ [key: string]: Function | "text" | "newline" | "input" | "checkbox" }} object
+ * - Keys are what get displayed
  * - Values can be:
  *    - A function → selectable/executable item
  *    - "text" → plain text, not selectable
  *    - "newline" → blank line for spacing
  *    - "input" → text input, key should be "id:id prefix:prefix", final id will result as "pond-input-${id}"
+ *        - optional parameter of "single-line" can be added to make it a single line input
  *    - "checkbox" → checkbox input, key should be "id:id prefix:prefix", final id will result as "pond-checkbox-${id}"
  */
 function createPondMenu(object) {
@@ -115,8 +116,9 @@ function createPondMenu(object) {
         prefix.textContent = "~ "; // default prefix for all selectable items
 
         if (value === "input") {
-            const keyMatch = key.match(/^id:(\S+)\s+prefix:(.*)$/);
+            const keyMatch = key.match(/^id:(\S+)\s+prefix:(.*)\s+(single-line)?$/);
             const userPrefix = keyMatch ? keyMatch[2] : "";
+            const singleLine = keyMatch && keyMatch[3];
 
             prefix.textContent = `~ ${userPrefix}`;
 
@@ -124,6 +126,15 @@ function createPondMenu(object) {
             terminalLine.setAttribute('contenteditable', 'plaintext-only');
             terminalLine.setAttribute('spellcheck', 'false');
             terminalLine.id = keyMatch ? `pond-input-${keyMatch[1]}` : "";
+
+            if(singleLine){
+                terminalLine.addEventListener("keydown", (e) => {
+                    if (e.key === "Enter") {
+                        e.preventDefault();
+                    }
+                });
+            }
+
             terminalLine.textContent = "";
 
             lineContainer.appendChild(prefix);
@@ -699,7 +710,7 @@ const mainMenu = {
                 terminal.innerHTML = "";
 
                 let searchMenu = {
-                    "id:search-query prefix:Enter username to search:": "input",
+                    "id:search-query prefix:Enter username filter: single-line": "input",
                     "Search": () => {
                         const query = document.getElementById("pond-input-search-query").textContent.trim();
 
