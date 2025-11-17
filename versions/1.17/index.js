@@ -1332,34 +1332,67 @@ async function sendCommand(command, args, createEditableLineAfter = true){
         } break;
 
         case "pond": {
-            if(args.length == 0){
+            async function ping(){
+                let returnObj;
                 const startTime = performance.now();
+                await handleRequest("/ping", {
+                    method: "GET",
+                }, {
+                    "500": async (response, data) => {
+
+                        // createTerminalLine("T_pond_server_unreachable", config.errorText);
+                        // printLn();
+                        returnObj = {
+                            ok: false,
+                            code: 500,
+                            text: response.statusText,
+                            responseTime: Math.round(performance.now() - startTime)
+                        }
+                    },
+                    "200": async (response, data) => {
+                        returnObj = {
+                            ok: true,
+                            code: 200,
+                            text: response.statusText,
+                            responseTime: Math.round(performance.now() - startTime)
+                        }
+                    },
+                    "40x": async (response, data) => {
+                        // setSetting("showSpinner", false)
+                        // createTerminalLine("T_pond_server_error", config.errorText);
+                        // createTerminalLine(`${response.status} ${response.statusText}`, config.errorText);
+                        returnObj = {
+                            ok: false,
+                            code: response.status,
+                            text: response.statusText,
+                            responseTime: Math.round(performance.now() - startTime)
+                        }
+                    }
+                })
+                return returnObj;
+            }
+            if(args.length == 0){
                 createTerminalLine("T_pond_command_intro_do_h", "");
                 createTerminalLine("~~~", "", {translate: false});
                 createTerminalLine("T_pond_checking", ">");
                 setSetting("showSpinner", true)
-
-                handleRequest("/ping", {
-                    method: "GET",
-                }, {
-                    "500": async (response, data) => {
-                        setSetting("showSpinner", false)
-                        createTerminalLine("T_pond_server_unreachable", config.errorText);
-                        printLn();
-                    },
-                    "200": async (response, data) => {
-                        setSetting("showSpinner", false)
+                await ping().then((data) => {
+                    setSetting("showSpinner", false)
+                    if(data.ok){
                         createTerminalLine("T_pond_server_ok", ">");
-                        createTerminalLine(`T_pond_server_response_time {{${Math.round(performance.now() - startTime)}}}`, ">")
-                        printLn();
-                    },
-                    "40x": async (response, data) => {
-                        setSetting("showSpinner", false)
-                        createTerminalLine("T_pond_server_error", config.errorText);
-                        createTerminalLine(`${response.status} ${response.statusText}`, config.errorText);
+                        createTerminalLine(`T_pond_server_response_time {{${data.responseTime}}}`, ">")
+                    } else {
+                        if(data.code == 500){
+                            createTerminalLine("T_pond_server_unreachable", config.errorText);
+                        } else {
+                            createTerminalLine("T_pond_server_error", config.errorText);
+                            createTerminalLine(`${data.code} ${data.text}`, config.errorText);
+                            createTerminalLine(`T_pond_server_response_time {{${data.responseTime}}}`, ">")
+                        }
                     }
-                })
-            } else if(args[0] == "-login" || args[0] == "-l") {
+                    printLn();
+                });
+            } else if(args[0] == "--login" || args[0] == "-l") {
                 const userRoles = ["user"];
                 const username = args[1];
                 const password = args[2];
@@ -1554,7 +1587,7 @@ async function sendCommand(command, args, createEditableLineAfter = true){
                     }
                 })
 
-            } else if(args[0] == "-register" || args[0] == "-r") {
+            } else if(args[0] == "--register" || args[0] == "-r") {
                 const username = args[1];
                 const password = args[2];
 
@@ -1599,12 +1632,43 @@ async function sendCommand(command, args, createEditableLineAfter = true){
                     },
                 });
 
-            } else if(args[0] == "-help" || args[0] == "-h") {
+            } else if(args[0] == "--help" || args[0] == "-h") {
                 createTerminalLine("T_pond_command_help_intro", "");
                 createTerminalLine("T_pond_command_help_ping", ">");
                 createTerminalLine("T_pond_command_help_login", ">");
                 createTerminalLine("T_pond_command_help_register", ">");
                 printLn();
+            } else if (args[0] == "--test" || args[0] == "-t"){
+                // send 10 ping requests and average the response time
+                createTerminalLine("T_pond_checking", ">");
+                setSetting("showSpinner", true)
+                let totalResponseTime = 0;
+                let successfulPings = 0;
+                for(let i = 0; i < 10; i++){
+                    // eslint-disable-next-line no-await-in-loop
+                    await ping().then((data) => {
+                        if(data.ok){
+                            totalResponseTime += data.responseTime;
+                            successfulPings += 1;
+                            createTerminalLine(`T_pond_successful_response_time {{${data.responseTime}}}`, ">");
+                        } else {
+                            createTerminalLine(`T_pond_request_failed {{${data.code}}} {{${data.text}}}`, config.errorText);
+                        } 
+                    });
+                }
+                setSetting("showSpinner", false)
+
+                if(successfulPings == 0){
+                    createTerminalLine("T_pond_all_requests_failed", config.errorText);
+                } else {
+                    let averageResponseTime = (totalResponseTime / successfulPings).toFixed(3);
+                    let percentSuccessful = Math.round((successfulPings / 10) * 100);
+                    createTerminalLine(`T_pond_average_response_time {{${averageResponseTime}}} {{${percentSuccessful}}}`, ">");
+                }
+                printLn();
+            } else {
+                createTerminalLine(`T_invalid_command_argument {{${args[0]}}}`, config.errorText);
+                sendCommand("pond", ["--help"], createEditableLineAfter);
             }
 
         } break;
@@ -3055,9 +3119,6 @@ let dateTimeInterval = setInterval(() => {
 }, 100);
 
 const onStart = () => {
-    //sendCommand("pond", ["-l", "third_guy", "Supersecretpassword1!"])
-    //sendCommand("pond", ["-l", "ari", "I4mth3own3r!!!"]);
-    sendCommand("pond", ["-l", "test", "test"])
     // setTimeout(() => {
     //     createEditableTerminalLine(`${config.currentPath}>`);
     // }, 2000)

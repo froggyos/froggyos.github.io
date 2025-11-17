@@ -581,17 +581,20 @@ const presetLanguagesMap = {
         nmt: "apelelala som apeya mëmëzte dësikipita",
         jpn: "有効な翻訳ディスクリプターを入力してください"
     },
-
     "T_missing_key_config_user {{}}": {
         eng: "Missing key {{}} in Config:/user",
         nmt: "ndaní koda {{}} kene Config:/user",
         jpn: "T_missing_key_config_user"
     },
-
     "T_error_reading_config_file": {
         eng: "Error reading config file.",
         nmt: "gogowa sanwa känfikya fiyala",
         jpn: "T_error_reading_config_file"
+    },
+    "T_invalid_command_argument {{}}": {
+        eng: `Invalid command argument: "{{}}"`,
+        nmt: `T_invalid_command_argument {{}}`,
+        jpn: "T_invalid_command_argument {{}}"
     },
 
     // bullfrog commands =========================
@@ -909,7 +912,21 @@ const presetLanguagesMap = {
         nmt: "T_pond_server_response_time {{}}",
         jpn: "T_pond_server_response_time {{}}"
     },
-
+    "T_pond_successful_response_time {{}}": {
+        eng: "Successful response: {{}} ms",
+        nmt: "T_pond_successful_response_time {{}}",
+        jpn: "T_pond_successful_response_time {{}}"
+    },
+    "T_pond_request_failed {{}} {{}}": {
+        eng: "Request failed with status {{}}: {{}}",
+        nmt: "T_pond_request_failed {{}} {{}}",
+        jpn: "T_pond_request_failed {{}} {{}}"
+    },
+    "T_pond_average_response_time {{}} {{}}": {
+        eng: "Average response time: {{}} ms ({{}}% success rate)",
+        nmt: "T_pond_average_response_time {{}} ({{}}% success rate)",
+        jpn: "T_pond_average_response_time {{}} ({{}}% success rate)"
+    },
 
     // command help ====================================
     "T_pond_command_help_intro": {
@@ -937,7 +954,11 @@ const presetLanguagesMap = {
         nmt: "T_pond_command_help_ping",
         jpn: "T_pond_command_help_ping"
     },
-
+    "T_pond_command_help_test": {
+        eng: "pond -t - Run Pond server connectivity tests",
+        nmt: "T_pond_command_help_test",
+        jpn: "T_pond_command_help_test"
+    },
 
     // rate limiting ===================================
     "T_pond_ratelimit": {
