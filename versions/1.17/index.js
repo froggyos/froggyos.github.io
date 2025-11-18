@@ -1344,9 +1344,6 @@ async function sendCommand(command, args, createEditableLineAfter = true){
                     method: "GET",
                 }, {
                     "500": async (response, data) => {
-
-                        // createTerminalLine("T_pond_server_unreachable", config.errorText);
-                        // printLn();
                         returnObj = {
                             ok: false,
                             code: 500,
