@@ -1775,7 +1775,7 @@ async function sendCommand(command, args, createEditableLineAfter = true){
             directory = config.currentPath + "/" + args[0];
 
             if(config.dissallowSubdirectoriesIn.includes(config.currentPath)){
-                createTerminalLine("T_cannot_create_directories_in_here", config.errorText);
+                createTerminalLine("T_cannot_create_directories_here", config.errorText);
                 hadError = true;
                 printLn();
                 break;

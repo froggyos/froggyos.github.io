@@ -379,7 +379,7 @@ const presetLanguagesMap = {
         nmt: "ilo wa dilekatüli säna",
         jpn: "このディレクトリは空です"
     },
-    "T_cannot_create_directories_in_here": {
+    "T_cannot_create_directories_here": {
         eng: "You cannot create directories in this directory.",
         nmt: "'a gembeno dilekatüli me kene dilekatüli wa",
         jpn: "このディレクトリ内ではディレクトリを作成できません"
