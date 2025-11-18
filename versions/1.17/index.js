@@ -1350,7 +1350,7 @@ async function sendCommand(command, args, createEditableLineAfter = true){
                         returnObj = {
                             ok: false,
                             code: 500,
-                            text: response.statusText,
+                            text: "Server Unreachable",
                             responseTime: Math.round(performance.now() - startTime)
                         }
                     },
