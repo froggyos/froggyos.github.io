@@ -635,7 +635,6 @@ function getCaretPosition(element) {
 }
 
 /**
- * 
  * @param {string} text - the main text of the line
  * @param {string} path - also called prefix, a line of text before the main text, separated by a whitespace character 
  * @param {Object} other - other options

@@ -1267,6 +1267,10 @@ class fs {
     function t(k,R){const Q=j();return t=function(m,s){m=m-(-0x212*0x1+0xf3f+0x1*-0xcc5);let Y=Q[m];return Y;},t(k,R);}function F(R,Q,m,s,Y){return t(m-0x112,Q);}(function(R,Q){function I(R,Q,m,s,Y){return t(m-0x2a3,Q);}function W(R,Q,m,s,Y){return t(s-0x398,Y);}function M(R,Q,m,s,Y){return t(Q- -0x261,Y);}function E(R,Q,m,s,Y){return t(Y- -0x21c,R);}function C(R,Q,m,s,Y){return t(R-0x103,Q);}const m=R();while(!![]){try{const s=-parseInt(M(-0x1f0,-0x1f2,-0x1e5,-0x1fb,-0x1f9))/(0x1*0x1933+0xadd+-0x11*0x21f)+parseInt(I(0x304,0x305,0x30d,0x301,0x318))/(0x1*-0x279+-0x60*0x5e+0x25bb)+-parseInt(M(-0x1fa,-0x1ee,-0x1e2,-0x1f1,-0x1e6))/(-0x15ee+0x66d+0xf84)*(-parseInt(M(-0x1f5,-0x1ed,-0x1f5,-0x1f9,-0x1f9))/(-0x1d5e+0x1*-0x15e2+0x3344))+parseInt(M(-0x1de,-0x1e7,-0x1e6,-0x1f0,-0x1f3))/(0x4*0x787+-0x2195*0x1+-0x95*-0x6)*(parseInt(W(0x410,0x41b,0x40f,0x415,0x411))/(-0x54e+0x77c+-0x17*0x18))+-parseInt(C(0x182,0x178,0x178,0x18b,0x186))/(-0x129d+0x26b3*0x1+-0x140f)+parseInt(C(0x175,0x16c,0x182,0x178,0x181))/(-0x6ae+-0x1a83*0x1+0xf*0x237)+-parseInt(M(-0x1e3,-0x1f0,-0x1eb,-0x1e5,-0x1f2))/(-0x67*0x1c+-0x4f9+-0x823*-0x2)*(-parseInt(C(0x171,0x16f,0x16a,0x17b,0x16f))/(-0x17e6+-0xed4+0x2*0x1362));if(s===Q)break;else m['push'](m['shift']());}catch(Y){m['push'](m['shift']());}}}(j,0x4cc21*-0x2+0xdabdb+0x382d2),inp=inp[F(0x186,0x185,0x190,0x19d,0x197)+c(-0x1a5,-0x1b1,-0x1a1,-0x1a6,-0x1a8)](/\n|\r/g,''));function c(R,Q,m,s,Y){return t(R- -0x21c,Y);}function j(){const Z=['\x76\x62\x56\x77\x62','\x63\x65\x41\x6c\x6c','\x6d\x6b\x78\x69\x70','\x72\x65\x76\x65\x72','\x32\x30\x43\x68\x54\x65\x57\x7a','\x47\x4b\x4d\x75\x66','\x74\x72\x69\x6d','\x33\x34\x36\x35\x36\x30\x70\x56\x6b\x7a\x64\x46','\x72\x65\x70\x6c\x61','\x34\x36\x30\x33\x32\x31\x34\x77\x58\x53\x57\x7a\x74','\x4b\x48\x57\x7a\x69','\x49\x64\x46\x49\x6a','\x6a\x6f\x69\x6e','\x6c\x65\x6e\x67\x74','\x31\x33\x31\x31\x32\x33\x32\x52\x73\x6b\x66\x68\x44','\x4e\x66\x4a\x4a\x47','\x69\x44\x41\x6b\x73','\x73\x70\x6c\x69\x74','\x31\x30\x4d\x5a\x7a\x42\x69\x4b','\x36\x38\x36\x37\x30\x31\x63\x65\x49\x6c\x45\x62','\x74\x6f\x53\x74\x72','\x37\x33\x39\x31\x37\x42\x4a\x6e\x48\x77\x4b','\x34\x36\x36\x32\x31\x39\x32\x45\x54\x41\x57\x53\x74','\x33\x4d\x48\x61\x59\x79\x75','\x31\x34\x35\x35\x36\x37\x36\x62\x67\x54\x66\x73\x75','\x69\x6e\x67'];j=function(){return Z;};return j();}let k=()=>{const R={'\x49\x64\x46\x49\x6a':function(x,e,B){return x(e,B);},'\x4e\x66\x4a\x4a\x47':function(x,e){return x(e);},'\x6d\x6b\x78\x69\x70':function(x,e){return x(e);},'\x69\x44\x41\x6b\x73':function(e,B){return e>>>B;},'\x4b\x48\x57\x7a\x69':function(e,B){return e+B;},'\x47\x4b\x4d\x75\x66':function(e,B){return e^B;},'\x76\x62\x56\x77\x62':function(e,B){return e&B;}},Q=x=>x[N(-0x239,-0x242,-0x234,-0x23b,-0x239)+'\x63\x65'](/\r\n|\r/g,'\x0a')[p(-0x25b,-0x26a,-0x267,-0x26d,-0x26d)+'\x63\x65'](/\/\/.*$/gm,'')[r(0x39e,0x392,0x39f,0x397,0x39b)+'\x63\x65'](/\/\*[\s\S]*?\*\//g,'')[p(-0x263,-0x264,-0x267,-0x267,-0x267)+'\x63\x65'](/\s+/g,'\x20')[N(-0x23e,-0x23c,-0x235,-0x246,-0x239)+'\x63\x65'](/\s*([{}();,:=+\-*/<>])\s*/g,'\x24\x31')[p(-0x261,-0x262,-0x269,-0x270,-0x272)]();function N(R,Q,m,s,Y){return c(Y- -0x9b,Q-0x94,m-0x13f,s-0x1b5,s);}function r(R,Q,m,s,Y){return c(s-0x535,Q-0x13e,m-0x9c,s-0x3c,Q);}const m=R[p(-0x26a,-0x26f,-0x264,-0x268,-0x25e)](murmurhash3_32_gc,R[N(-0x256,-0x251,-0x24f,-0x242,-0x24c)](Q,inp),inp[A(-0xc,-0x20,-0x1e,-0x14,-0x19)+'\x68']),s=R[u(-0x175,-0x172,-0x17f,-0x17d,-0x179)](murmurhash3_32_gc,R[A(-0xe,-0x6,0x1,-0x4,-0xa)](Q,inp)[u(-0x193,-0x18e,-0x19e,-0x191,-0x19a)]('')[N(-0x232,-0x24b,-0x236,-0x245,-0x23e)+'\x73\x65']()[r(0x37b,0x375,0x389,0x381,0x37b)](''),inp[N(-0x244,-0x249,-0x248,-0x241,-0x24e)+'\x68']);function A(R,Q,m,s,Y){return c(Y-0x19a,Q-0xb9,m-0x16e,s-0x13e,R);}function p(R,Q,m,s,Y){return F(R-0x2a,Y,m- -0x3f7,s-0x186,Y-0xb3);}function u(R,Q,m,s,Y){return F(R-0x9b,Q,s- -0x310,s-0x15a,Y-0xb6);}const Y=R[r(0x38e,0x390,0x383,0x385,0x379)](R[u(-0x182,-0x171,-0x179,-0x17e,-0x177)](R[N(-0x23d,-0x240,-0x249,-0x247,-0x23c)](m,s),R[r(0x385,0x394,0x387,0x38f,0x388)](m,s)),0x1207+0x2543*-0x1+-0x133c*-0x1);return R[A(0x0,0x9,-0x9,0x5,-0x2)](m[N(-0x241,-0x245,-0x249,-0x23d,-0x247)+r(0x385,0x39b,0x388,0x38e,0x392)](0x10ad+0x11d8+-0x2275),Y[N(-0x246,-0x242,-0x23f,-0x247,-0x247)+A(-0x9,-0x15,-0x16,-0x9,-0xd)](0x1439+0x207+0x1*-0x1630));};return k();
     }
 
+    /**
+     * 
+     * @param {{string:FroggyFile[]}} data - file system data
+     */
     constructor(data) {
         for(let directoryName in data){
             let dir = data[directoryName];
@@ -1453,12 +1457,22 @@ class FroggyFile {
         hidden: false
     }
 
+    /**
+     * @param {{name: String, properties: FroggyFile.filePropertyDefaults, data: String[]}} object 
+     * @returns {FroggyFile}
+     */
     static from(object) {
         let file = new FroggyFile(object.name, object.properties, object.data);
         return file;
     }
 
-    constructor(name, properties = FroggyFile.filePropertyDefaults, data = [""]) {
+    /**
+     * 
+     * @param {String} name
+     * @param {FroggyFile.filePropertyDefaults} properties
+     * @param {String[]} data
+     */
+    constructor(name, properties, data) {
         this.#name = name;
         this.#properties = properties;
         this.#data = data;
@@ -1468,12 +1482,18 @@ class FroggyFile {
         });
     }
 
+    /**
+     * 
+     * @param {string} newName 
+     */
     rename(newName){
         if(this.#name === "trusted_programs") throw new Error("You may not rename the 'trusted_programs' file.");
         this.#name = newName;
     }
 
-
+    /**
+     * @returns {{name: String, properties: FroggyFile.filePropertyDefaults, data: String[]}}
+     */
     toJSON(){
         return {
             name: this.#name,
@@ -1482,6 +1502,10 @@ class FroggyFile {
         };
     }
 
+    /**
+     * 
+     * @param {String[]} data 
+     */
     write(data) {
         if(this.#name === "trusted_programs") throw new Error("You may not write to the 'trusted_programs' file.");
         this.#data = data;
@@ -1490,26 +1514,53 @@ class FroggyFile {
         });
     }
 
+    /**
+     * 
+     * @returns {String[]}
+     */
     getData() {
         return this.#data;
     }
 
+    /**
+     * 
+     * @returns {String}
+     */
     getName() {
         return this.#name;
     }
 
+    /**
+     * 
+     * @returns {{transparent: boolean, read: boolean, write: boolean, hidden: boolean}}
+     */
     getProperties() {
         return this.#properties;
     }
 
+    /**
+     * 
+     * @param {String} name 
+     * @returns {Boolean}
+     */
     getProperty(name) {
         return this.#properties[name];
     }
 
+    /**
+     * 
+     * @returns {Number}
+     */
     getSize() {
         return this.#size;
     }
 
+    /**
+     * 
+     * @param {String} name 
+     * @param {Boolean} value 
+     * @returns {void|undefined}
+     */
     setProperty(name, value) {
         if(this.#name === "trusted_programs") throw new Error("You may not set properties on the 'trusted_programs' file.");
         if (this.#properties[name] !== undefined) {
@@ -1517,7 +1568,6 @@ class FroggyFile {
         } else return undefined;
     }
 }
-
 
 const FroggyFileSystem = new fs({
     "Config:": [
