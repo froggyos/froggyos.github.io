@@ -970,7 +970,7 @@ const presetLanguagesMap = {
         jpn: "T_pond_command_help_test"
     },
     "T_pond_command_help_u": {
-        eng: "pond -u - Use last logged in Pond account",
+        eng: "pond -u - Use last logged in Pond account (credentials stored locally)",
         nmt: "T_pond_command_help_u",
         jpn: "T_pond_command_help_u"
     },
