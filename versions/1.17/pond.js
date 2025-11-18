@@ -760,10 +760,10 @@ const mainMenu = {
                             },
                         });
                     },
-                    "<< Back to Main Menu": () => {
+                    "<< Back to Other Menu": () => {
                         const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
                         if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
-                        createPondMenu(mainMenu);
+                        createPondMenu(otherMenu);
                     }
                 };
 
