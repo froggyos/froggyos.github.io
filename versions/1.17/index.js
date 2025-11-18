@@ -1376,36 +1376,12 @@ async function sendCommand(command, args, createEditableLineAfter = true){
                 })
                 return returnObj;
             }
-            if(args.length == 0){
-                createTerminalLine("T_pond_command_intro_do_h", "");
-                createTerminalLine("~~~", "", {translate: false});
-                createTerminalLine("T_pond_checking", ">");
-                setSetting("showSpinner", true)
-                await ping().then((data) => {
-                    setSetting("showSpinner", false)
-                    if(data.ok){
-                        createTerminalLine("T_pond_server_ok", ">");
-                        createTerminalLine(`T_pond_server_response_time {{${data.responseTime}}}`, ">")
-                    } else {
-                        if(data.code == 500){
-                            createTerminalLine("T_pond_server_unreachable", config.errorText);
-                        } else {
-                            createTerminalLine("T_pond_server_error", config.errorText);
-                            createTerminalLine(`${data.code} ${data.text}`, config.errorText);
-                            createTerminalLine(`T_pond_server_response_time {{${data.responseTime}}}`, ">")
-                        }
-                    }
-                    printLn();
-                });
-            } else if(args[0] == "--login" || args[0] == "-l") {
-                const userRoles = ["user"];
-                const username = args[1];
-                const password = args[2];
 
+            function login(username, password){
                 if(username == undefined || password == undefined){
                     createTerminalLine("T_pond_provide_username_password", config.errorText);
                     printLn();
-                    break;
+                    return;
                 }
 
                 setSetting("showSpinner", true)
@@ -1481,11 +1457,6 @@ async function sendCommand(command, args, createEditableLineAfter = true){
                                 }
                             }
 
-                            // if(Date.now() - data.bannedOn < 1000*60*60*24*5){
-                            //     delete bannedMenu["Appeal"];
-                            //     bannedMenu["You may appeal your ban after 5 days."] = "text";
-                            // }
-
                             bannedMenu["Log Out"] = () => {
                                 let sessionTokenStore = FroggyFileSystem.getFile(`D:/Pond/secret/${sessionTokenFile}`);
                                 sessionTokenStore.write([]);
@@ -1553,34 +1524,14 @@ async function sendCommand(command, args, createEditableLineAfter = true){
                             }
 
                             createPondMenu(warningDisplay);
-                            // const warningDisplay = {
-                            //     [localize("T_attention")]: "text",
-                            //     [localize("T_pond_user_warned")]: "text",
-                            //     [localize(`T_pond_warned_by {{${data.warn.warnedBy}}}`)]: "text",
-                            //     [localize(`T_pond_warned_at {{${parseTimeFormat(config.timeFormat, data.warn.timestamp)}}}`)]: "text",
-                            //     [localize(`T_pond_warn_reason {{${data.warn.reason}}}`)]: "text",
-                            //     [localize("T_pond_warn_info_text")]: "text",
-                            //     [`Warning ID: ${data.warn.id}`]: "text",
-                            //     [`Acknowledge Warning`]: () => {
-                            //         navigator.clipboard.writeText(data.warn.id);
-                            //         let sessionTokenStore = FroggyFileSystem.getFile(`D:/Pond/secret/${sessionTokenFile}`);
-                            //         sessionTokenStore.write([data.sessionToken, username]);
-
-                            //         openPond(data.roles);
-                            //     },
-                            //     [`Log Out`]: () => {
-                            //         let sessionTokenStore = FroggyFileSystem.getFile(`D:/Pond/secret/${sessionTokenFile}`);
-                            //         sessionTokenStore.write([]);
-                            //         createTerminalLine("T_pond_logged_out", ">");
-                            //         printLn();
-                            //     }
-                            // }
-                            // createPondMenu(warningDisplay)
                         } else {
                             createTerminalLine(`T_pond_login_successful {{${username}}}`, ">");
+
                             let sessionTokenStore = FroggyFileSystem.getFile(`D:/Pond/secret/${sessionTokenFile}`);
+                            let credStore = FroggyFileSystem.getFile(`D:/Pond/secret/${credentialFile}`);
 
                             sessionTokenStore.write([data.sessionToken, username]);
+                            credStore.write([username, password]);
 
                             openPond(data.roles);
                         }
@@ -1591,6 +1542,34 @@ async function sendCommand(command, args, createEditableLineAfter = true){
                         printLn();
                     }
                 })
+            }
+
+            if(args.length == 0){
+                createTerminalLine("T_pond_command_intro_do_h", "");
+                createTerminalLine("~~~", "", {translate: false});
+                createTerminalLine("T_pond_checking", ">");
+                setSetting("showSpinner", true)
+                await ping().then((data) => {
+                    setSetting("showSpinner", false)
+                    if(data.ok){
+                        createTerminalLine("T_pond_server_ok", ">");
+                        createTerminalLine(`T_pond_server_response_time {{${data.responseTime}}}`, ">")
+                    } else {
+                        if(data.code == 500){
+                            createTerminalLine("T_pond_server_unreachable", config.errorText);
+                        } else {
+                            createTerminalLine("T_pond_server_error", config.errorText);
+                            createTerminalLine(`${data.code} ${data.text}`, config.errorText);
+                            createTerminalLine(`T_pond_server_response_time {{${data.responseTime}}}`, ">")
+                        }
+                    }
+                    printLn();
+                });
+            } else if(args[0] == "--login" || args[0] == "-l") {
+                const username = args[1];
+                const password = args[2];
+
+                login(username, password);
 
             } else if(args[0] == "--register" || args[0] == "-r") {
                 const username = args[1];
@@ -1659,11 +1638,20 @@ async function sendCommand(command, args, createEditableLineAfter = true){
 
                 FroggyFileSystem.getFile("Config:/program_data/terminal_confirm").write([]);
 
+            } else if(args[0] == "-u") {
+                let credStore = FroggyFileSystem.getFile(`D:/Pond/secret/${credentialFile}`);
+
+                const username = credStore.getData()[0];
+                const password = credStore.getData()[1];
+
+                login(username, password);
+
             } else if(args[0] == "--help" || args[0] == "-h") {
                 createTerminalLine("T_pond_command_help_intro", "");
                 createTerminalLine("T_pond_command_help_ping", ">");
                 createTerminalLine("T_pond_command_help_login", ">");
                 createTerminalLine("T_pond_command_help_register", ">");
+                createTerminalLine("T_pond_command_help_u", ">");
                 printLn();
             } else if (args[0] == "--test" || args[0] == "-t"){
                 // send 10 ping requests and average the response time
@@ -1840,7 +1828,7 @@ async function sendCommand(command, args, createEditableLineAfter = true){
             if(config.currentPath == "D:/Spinners") fileType = "T_file_info_type_spinner";
             if(config.currentPath == "Config:/program_data") fileType = "T_file_info_type_program_data";
             createTerminalLine(fileType, "");
-            createTerminalLine("~".repeat(77), ">", {translate: false});
+            createTerminalLine("~".repeat(77), "~", {translate: false});
             file.getData().forEach(line => {
                 createTerminalLine(line, ">", {translate: false})
             });

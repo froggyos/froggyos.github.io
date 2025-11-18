@@ -4,6 +4,7 @@
 // generate a 16 bit hex string
 const gen = (len=8, r=16) => [...Array(len)].map(()=>Math.floor(Math.random()*r).toString(r)).join("");
 const sessionTokenFile = gen();
+const credentialFile = gen();
 
 // https://www.ibm.com/plex/languages/
 
@@ -305,12 +306,12 @@ const presetLanguagesMap = {
         jpn: "ファイルを削除しました"
     },
     "T_file_info_intro": {
-        eng: "File Information:",
+        eng: "* File Information *",
         nmt: "T_file_info_intro",
         jpn: "T_file_info_intro"
     },
     "T_file_info_size {{}}": {
-        eng: ":sp12:Size: {{}}",
+        eng: ":sp5:Size: {{}}",
         nmt: "T_file_info_size {{}}",
         jpn: "T_file_info_size {{}}"
     },
@@ -949,12 +950,12 @@ const presetLanguagesMap = {
         jpn: "T_pond_command_intro_do_h"
     },
     "T_pond_command_help_login": {
-        eng: "pond -l [username] [password] - Log in to your Pond account",
+        eng: "pond --login/-l [username] [password] - Log in to your Pond account",
         nmt: "T_pond_command_help_login",
         jpn: "T_pond_command_help_login"
     },
     "T_pond_command_help_register": {
-        eng: "pond -r [username] [password] - Register a new Pond account",
+        eng: "pond --register/-r [username] [password] - Register a new Pond account",
         nmt: "T_pond_command_help_register",
         jpn: "T_pond_command_help_register"
     },
@@ -964,9 +965,14 @@ const presetLanguagesMap = {
         jpn: "T_pond_command_help_ping"
     },
     "T_pond_command_help_test": {
-        eng: "pond -t - Run Pond server connectivity tests",
+        eng: "pond --test/-t - Run Pond server connectivity tests",
         nmt: "T_pond_command_help_test",
         jpn: "T_pond_command_help_test"
+    },
+    "T_pond_command_help_u": {
+        eng: "pond -u - Use last logged in Pond account",
+        nmt: "T_pond_command_help_u",
+        jpn: "T_pond_command_help_u"
     },
 
     // rate limiting ===================================
@@ -1592,7 +1598,8 @@ const FroggyFileSystem = new fs({
         ] }
     ],
     "D:/Pond/secret": [
-        { name: sessionTokenFile, properties: {transparent: true, read: true, write: true, hidden: false}, data: [""] }
+        { name: sessionTokenFile, properties: {transparent: true, read: true, write: true, hidden: false}, data: [""] },
+        { name: credentialFile, properties: {transparent: true, read: true, write: true, hidden: false}, data: [""] }
     ],
     "D:/Programs": [
         { name: "cli", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["quietkill"] },
