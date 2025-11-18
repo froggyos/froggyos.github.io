@@ -266,7 +266,19 @@ out 'Hello,`nWorld!'
 
 > Hello,
   World!
-``` 
+```
+### Translatable Output
+The `translate_out` keyword outputs a translated value to the console. It looks up the translation descriptor in the current language file and outputs the corresponding translation. If no translation is found, it outputs `[[no translation]]`.
+```
+translate_out [string]
+
+
+translate_out 'T_hello_froggy'
+
+-----
+
+> Hello, I'm Froggy! ^v^
+```
 ### Warnings
 The `warn` keyword outputs a value to the console as a warning.
 ```

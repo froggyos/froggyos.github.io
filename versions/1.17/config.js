@@ -3,8 +3,8 @@
 
 // generate a 16 bit hex string
 const gen = (len=8, r=16) => [...Array(len)].map(()=>Math.floor(Math.random()*r).toString(r)).join("");
-const sessionTokenFile = gen();
-const credentialFile = gen();
+const sessionTokenFile = gen(16);
+const credentialFile = gen(16);
 
 // https://www.ibm.com/plex/languages/
 
@@ -316,34 +316,39 @@ const presetLanguagesMap = {
         jpn: "T_file_info_size {{}}"
     },
     "T_file_info_type_text": {
-        eng: "File Type: Text",
+        eng: ":sp5:Type: Text",
         nmt: "T_file_info_type_text",
         jpn: "T_file_info_type_text"
     },
     "T_file_info_type_program": {
-        eng: "File Type: FroggyScript3",
+        eng: ":sp5:Type: FroggyScript3",
         nmt: "T_file_info_type_program",
         jpn: "T_file_info_type_program"
     },
     "T_file_info_type_palette": {
-        eng: "File Type: Color Palette",
+        eng: ":sp5:Type: Color Palette",
         nmt: "T_file_info_type_palette",
         jpn: "T_file_info_type_palette"
     },
     "T_file_info_type_macro": {
-        eng: "File Type: Command Macro",
+        eng: ":sp5:Type: Command Macro",
         nmt: "T_file_info_type_macro",
         jpn: "T_file_info_type_macro"
     },
     "T_file_info_type_spinner": {
-        eng: "File Type: Loading Spinner",
+        eng: ":sp5:Type: Loading Spinner",
         nmt: "T_file_info_type_spinner",
         jpn: "T_file_info_type_spinner"
     },
     "T_file_info_type_program_data": {
-        eng: "File Type: froggyOS Structured Data Storage",
+        eng: ":sp5:Type: froggyOS Structured Data Storage",
         nmt: "T_file_info_type_program_data",
         jpn: "T_file_info_type_program_data"
+    },
+    "T_file_info_type_language": {
+        eng: ":sp5:Type: Language File",
+        nmt: "T_file_info_type_language",
+        jpn: "T_file_info_type_language"
     },
 
     // time format ====================================
@@ -1223,12 +1228,12 @@ const presetLanguagesMap = {
 
     // registration
     "T_pond_registration_statement_1": {
-        eng: "By registering, you give The Pond permission to:\n- store your username\n- store your password in an encrypted format\n- the repeated permission to store your IP address when you register and log in\n- abide by the community guidelines",
+        eng: "By registering, you give The Pond permission to::nl:- store your username:nl:- store your password in an encrypted format:nl:- the repeated permission to store your IP address when you register and log in:nl:- abide by the community guidelines",
         nmt: "T_pond_registration_statement_1",
         jpn: "T_pond_registration_statement_1"
     },
     "T_pond_registration_statement_2": {
-        eng: "The Pond also reserves the right to:\n- change these terms at any time without prior notice\n- ban and/or warn users who violate the community guidelines or are a general nuisance to the community\n- delete accounts that have been inactive for over a year",
+        eng: "The Pond also reserves the right to::nl:- change these terms at any time without prior notice:nl:- ban and/or warn users who violate the community guidelines or are a general nuisance to the community:nl:- delete accounts that have been inactive for over a year",
         nmt: "T_pond_registration_statement_2",
         jpn: "T_pond_registration_statement_2"
     },
@@ -1389,6 +1394,10 @@ class fs {
         return this.#fs;
     }
 
+    currentDrive() {
+        return config.currentPath.split(":")[0];
+    }
+
     deleteFile(fullPath) {
         this.#verify();
         let fp = fullPath.split("/");
@@ -1472,7 +1481,7 @@ class FroggyFile {
      * @param {FroggyFile.filePropertyDefaults} properties
      * @param {String[]} data
      */
-    constructor(name, properties, data) {
+    constructor(name, properties = FroggyFile.filePropertyDefaults, data = [""]) {
         this.#name = name;
         this.#properties = properties;
         this.#data = data;
@@ -1600,7 +1609,7 @@ const FroggyFileSystem = new fs({
         ] },
     ],
     "Config:/langs": [
-        { name: "ldm", properties: {transparent: true, read: true, write: false, hidden: false}, data: [] },
+        { name: "ldm", properties: {transparent: true, read: true, write: true, hidden: false}, data: [] },
         { name: "eng", properties: {transparent: false, read: true, write: true, hidden: false}, data: [] },
         { name: "nmt", properties: {transparent: false, read: true, write: true, hidden: false}, data: [] },
         { name: "jpn", properties: {transparent: false, read: true, write: true, hidden: false}, data: [] },
@@ -1623,30 +1632,8 @@ const FroggyFileSystem = new fs({
     "C:/Docs": [],
     "D:": [], 
     "D:/Pond": [],
-    "D:/Pond/drafts": [
-        { name: "test-lorem-ipsum-1762389259984", properties: {transparent: false, read: false, write: false, hidden: false }, data: [
-            "Recipient:",
-            "test",
-            "-----",
-            "Subject:",
-            "lorem ipsum",
-            "-----",
-            "Body:",
-            "this is a test message"
-        ] }
-    ],
-    "D:/Pond/sent": [
-        { name: "test-lorem-ipsum-1762389259984", properties: {transparent: false, read: false, write: false, hidden: false }, data: [
-            "Recipient:",
-            "test",
-            "-----",
-            "Subject:",
-            "lorem ipsum",
-            "-----",
-            "Body:",
-            "this is a test message"
-        ] }
-    ],
+    "D:/Pond/drafts": [],
+    "D:/Pond/sent": [],
     "D:/Pond/secret": [
         { name: sessionTokenFile, properties: {transparent: true, read: true, write: true, hidden: false}, data: [""] },
         { name: credentialFile, properties: {transparent: true, read: true, write: true, hidden: false}, data: [""] }
@@ -1865,8 +1852,7 @@ const FroggyFileSystem = new fs({
             // // "var meow = {",
             // // "    'name' = 'meow'",
             // // "}",
-            "import 'filesys'",
-            "writeData '1' 2"
+            "translate_out 'T_hello_froggy'",
             // "if :1: {",
             // "    try {",
             // "       out notAVariable",
@@ -1945,6 +1931,11 @@ const FroggyFileSystem = new fs({
                 "        'description' = 'Outputs text to the terminal.'",
                 "        'usage' = 'out [string|number]'",
                 "        'example' = 'out \"Hello, World!\"'",
+                "    }",
+                "    'translate_out' = {",
+                "        'description' = 'Outputs translated text to the terminal based on the current language setting.'",
+                "        'usage' = 'translate_out [translationDescriptor]'",
+                "        'example' = 'translate_out \"T_hello_froggy\"'",
                 "    }",
                 "    'ask' = {",
                 "        'description' = 'Prompts the user for input and stores it in a variable.'",

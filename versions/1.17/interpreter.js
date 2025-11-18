@@ -1137,6 +1137,11 @@ new FS3Keyword("out", ["string|number"], (args, interpreter) => {
     interpreter.out(args[0]);
 });
 
+new FS3Keyword("translate_out", ["string"], (args, interpreter) => {
+    let translated = localize(args[0].value) ?? "[[no translation]]";
+    interpreter.out({type: "string", value: translated, line: args[0].line, col: args[0].col, methods: []});
+});
+
 new FS3Keyword("warn", ["string"], (args, interpreter) => {
     interpreter.smallwarnout(args[0].value);
 });

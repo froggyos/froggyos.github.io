@@ -17,6 +17,7 @@ document.body.onclick = function() {
 document.body.onkeyup = function(event) {
     if(event.key == "Enter" && event.shiftKey == true && config.currentProgram == "cli") {
         event.preventDefault();
+        console.log(configInterval)
         createEditableTerminalLine(`${config.currentPath}>`);
     }
 }
@@ -267,11 +268,18 @@ function localize(descriptor, TRANSLATE_TEXT=true){
         if(config.language == "nmt") translation = translation.replaceAll("ə", "ә")
 
         let spaceMatches = translation.match(/:sp\d+:/g);
+        let newlineMatches = translation.match(/:nl:/g);
         
         if(spaceMatches != null){
             spaceMatches.forEach(match => {
                 let num = +match.replaceAll(/\D/g, "");
                 translation = translation.replaceAll(match, " ".repeat(num))
+            })
+        }
+
+        if(newlineMatches != null){
+            newlineMatches.forEach(match => {
+                translation = translation.replaceAll(match, "\n")
             })
         }
 
@@ -974,13 +982,14 @@ async function sendCommand(command, args, createEditableLineAfter = true){
                 printLn();
                 break;
             }
-            // if we are in the Config: directory, do not allow the user to delete the file
-            if(config.currentPath.split(":")[0] == "Config"){
-                createTerminalLine("T_cannot_delete_file", config.errorText);
-                hadError = true;
-                printLn();
-                break;
-            }
+
+            // // if we are in the Config: directory, do not allow the user to delete the file
+            // if(config.currentPath.split(":")[0] == "Config"){
+            //     createTerminalLine("T_cannot_delete_file", config.errorText);
+            //     hadError = true;
+            //     printLn();
+            //     break;
+            // }
 
             FroggyFileSystem.deleteFile(`${config.currentPath}/${file.getName()}`);
 
@@ -1810,7 +1819,6 @@ async function sendCommand(command, args, createEditableLineAfter = true){
                 break;
             }
             createTerminalLine("T_file_info_intro", "");
-            createTerminalLine("T_file_info_size {{"+file.getSize()+"}}", "");
             let fileType = "T_file_info_type_text";
             config.allowedProgramDirectories.forEach(dir => {
                 let programFile = FroggyFileSystem.getFile(`${dir}/${file.getName()}`);
@@ -1824,6 +1832,7 @@ async function sendCommand(command, args, createEditableLineAfter = true){
             if(config.currentPath == "D:/Spinners") fileType = "T_file_info_type_spinner";
             if(config.currentPath == "Config:/program_data") fileType = "T_file_info_type_program_data";
             createTerminalLine(fileType, "");
+            createTerminalLine("T_file_info_size {{"+file.getSize()+"}}", "");
             createTerminalLine("~".repeat(77), "~", {translate: false});
             file.getData().forEach(line => {
                 createTerminalLine(line, ">", {translate: false})

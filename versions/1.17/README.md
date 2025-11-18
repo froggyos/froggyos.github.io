@@ -52,7 +52,7 @@ There are no defined file types in froggyOS. Instead, file types are determined 
 * The **name declaration** must be the first line of the file, and must be in the format `!LANGNAME: [language name]`. For example, the name declaration for the `eng` file is `!LANGNAME: English`.
 * If the default language is invalid, froggyOS will automatically revert to the `ldm` language file.
 * If a text results in `Index Missing! -> [translation descriptor]`, this means that the translation descriptor is missing from the language file.
-* Descriptors can have something called **inclusions**. Inclusions are defined by wrapping text in `{{}}`, and allow translations to have dynamic text. Examples:
+* Descriptors can have **inclusions**. Inclusions are defined by wrapping text in `{{}}`, and allow translations to have dynamic text. Examples:
 ```txt
 Successes:
 descriptor = T_test {{}} {{}}
