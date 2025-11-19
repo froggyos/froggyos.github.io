@@ -87,6 +87,11 @@ const presetLanguagesMap = {
         nmt: "croak [fiyala]. . . . . . . . . . . nggave fiyala",
         jpn: "croak [file] . . ファイルを削除する"
     },
+    "T_basic_commands_exportfile": {
+        eng: "exportfile [file] . . . . . . . . Exports a froggyOS file as a .txt file.",
+        nmt: "T_basic_commands_exportfile",
+        jpn: "T_basic_commands_exportfile",
+    },
     "T_basic_commands_formattime": {
         eng: "formattime [format]. . . . . . . . Changes the time format.",
         nmt: "formattime [folamata] . . . . . . . lohi lohí folamata",
@@ -260,6 +265,11 @@ const presetLanguagesMap = {
         nmt: "'a gewitsuyo pamason sanwa lu fiyala",
         jpn: "このファイルを読み取る権限がありません"
     },
+    "T_no_permission_to_export_file": {
+        eng: "You do not have permission to export this file.",
+        nmt: "T_no_permission_to_export_file",
+        jpn: "T_no_permission_to_export_file"
+    },
     "T_no_permission_to_clone": {
         eng: "You do not have permission to clone this file.",
         nmt: "'a gewitsuyo pamason ", // CONTINUE
@@ -289,6 +299,11 @@ const presetLanguagesMap = {
         eng: "File created.",
         nmt: "fiyala mbeno mana",
         jpn: "ファイルを作成しました"
+    },
+    "T_file_exported": {
+        eng: "File exported.",
+        nmt: "T_file_exported",
+        jpn: "T_file_exported",
     },
     "T_file_cloned {{}}": {
         eng: `File "{{}}" cloned.`,

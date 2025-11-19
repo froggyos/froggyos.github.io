@@ -422,10 +422,14 @@ function parseTimeFormat(text, timestamp){
 
     let replacementMap = Object.fromEntries(replacements.map(({ char, value }) => [char, value]));
 
-    let dateString = text.replace(/!([a-zA-Z]+)/g, "!$1") // Preserve escaped characters
-        .replace(/\b([a-zA-Z]+)\b/g, (match) => replacementMap[match] ?? match); // Replace only whole words
+    // fix escaping
+    let dateString = text.replace(/\b(?<!\!)([a-zA-Z]+)\b/g, (match) => replacementMap[match] ?? match); // Replace only whole words
 
     return dateString;
+}
+
+function limit(string, maxLength) {
+    return string.slice(0, maxLength);
 }
 
 function updateDateTime() {
@@ -436,14 +440,14 @@ function updateDateTime() {
     barText.textContent = dateString;
     if(config.showSpinner == true) {
         let spinnerFrames = FroggyFileSystem.getFile(`D:/Spinners/${config.currentSpinner}`).getData();
-        spinnerText.textContent = spinnerFrames[config.spinnerIndex % spinnerFrames.length];
+        spinnerText.textContent = limit(spinnerFrames[config.spinnerIndex % spinnerFrames.length], 1);
         config.spinnerIndex++;
     } else {
         spinnerText.textContent = "";
     }
 
     if(isJp(barText.textContent)) {
-        let text = barText.textContent;
+        let text = limit(barText.textContent, 78);
         barText.textContent = '';
         text.split("").forEach((char) => {
             let span = document.createElement('span');
@@ -997,6 +1001,51 @@ async function sendCommand(command, args, createEditableLineAfter = true){
             printLn();
         } break;
 
+        case "export":
+        case "exportfile": {
+            if(args.length == 0) {
+                hadError = true;
+                createTerminalLine("T_provide_file_name", config.errorText);
+                printLn();
+                break;
+            }
+
+            let file = FroggyFileSystem.getFile(`${config.currentPath}/${args[0]}`);
+            if(file == undefined) {
+                hadError = true;
+                createTerminalLine("T_file_does_not_exist", config.errorText);
+                printLn();
+                break;
+            }
+
+            if(file.getProperty('read') == false){
+                hadError = true;
+                createTerminalLine("T_no_permission_to_export_file", config.errorText);
+                printLn();
+                break;
+            }
+
+            function download(text, filename) {
+                const blob = new Blob([text], { type: "text/plain" });
+
+                // Create a temporary download link
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = filename + ".txt";
+
+                // Trigger download
+                a.click();
+
+                // Cleanup
+                URL.revokeObjectURL(url);
+            }
+
+            download(file.getData().join("\n"), file.getName());
+            createTerminalLine("T_file_exported", ">")
+            printLn();
+        } break;
+
         case "ft":
         case "formattime": {
             if(args.length == 0){
@@ -1062,6 +1111,7 @@ async function sendCommand(command, args, createEditableLineAfter = true){
             createTerminalLine("T_basic_commands_clone", ">");
             createTerminalLine("T_basic_commands_clearstate", ">");
             createTerminalLine("T_basic_commands_croak", ">");
+            createTerminalLine("T_basic_commands_exportfile", ">");
             createTerminalLine("T_basic_commands_formattime", ">");
             createTerminalLine("T_basic_commands_hatch", ">");
             createTerminalLine("T_basic_commands_hello", ">");

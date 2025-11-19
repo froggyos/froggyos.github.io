@@ -19,6 +19,7 @@ Paths have three parts, the drive, the directory, and the file name.
 * clear -> cl
 * clearstate -> cls
 * croak -> c
+* exportfile -> export
 * formattime -> ft
 * hatch -> ch
 * help -> ?
