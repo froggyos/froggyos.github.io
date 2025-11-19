@@ -96,7 +96,7 @@ literally everything is new
 
 ## 1.5-lbc2
 ```
-* Won't tell you :3
+* Secret
 ```
 
 # 1.6
@@ -158,7 +158,7 @@ idk
 ```
 ~ rewrote FroggyScript again
     - read the documentation
-    - debugging is broken :p
+    - debugging is broken
 ~ finally made the macro list show aliases
 + added new Lilypad keybinds
 ```
@@ -173,7 +173,7 @@ idk
 # 1.16
 ```
 ~ rewrote FroggyScript AGAIN
-    + Added objects :D
+    + Added objects
     - now called FroggyScript3
     - read the documentation
 ```
@@ -181,4 +181,7 @@ idk
 # 1.17
 ```
 + added the Pond! It is a user messaging platform.
++ new command
+    * pond - opens the Pond interface
+    * export - exports a froggyOS file to your computer
 ```

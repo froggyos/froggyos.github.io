@@ -3,7 +3,7 @@ FroggyOS is a CLI-based programming operating system that is designed to be simp
 ## General Information
 * in paths, `.` will be replaced with the current directory
 * programs can *only* be written in designated directories
-* you can press the `DEL` key to escape programs (ex. an infinite loop)
+* you can press the `CTRL+C` keys to stop a running program
 * if a FroggyScript program exits with an error, the command `[[BULLFROG]]gotoprogramline [program] [line with error]` will be put into your command history
 * file types are inferred based on file location
 * For whatever reason, if there is no typeable line in the terminal, press `SHIFT + ENTER` to create a typeable line
