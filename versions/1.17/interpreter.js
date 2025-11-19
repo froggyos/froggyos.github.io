@@ -1386,7 +1386,7 @@ new FS3Keyword("var", ["variable_reference", "literal_assignment", "string|numbe
 new FS3Keyword("prompt", ["variable_reference", "number", "array"], (args, interpreter) => {
     let variable = args[0].value.slice(1);
     let selectedIndex = args[1].value;
-    let options = args[2].value.map(o => o.value);
+    let array = args[2];
 
     setSetting("currentSpinner", "prompt-in-progress");
     setSetting("showSpinner", true)
@@ -1403,16 +1403,27 @@ new FS3Keyword("prompt", ["variable_reference", "number", "array"], (args, inter
         throw new FS3Error("TypeError", `Variable [${variable}] must be of type [string] to store user input`, args[0]);
     }
 
-    if(selectedIndex < 0 || selectedIndex >= options.length){
-        throw new FS3Error("RangeError", `Default index [${selectedIndex}] is out of bounds for options array of length [${options.length}]`, args[1]);
+    if(selectedIndex < 0 || selectedIndex >= array.length){
+        throw new FS3Error("RangeError", `Default index [${selectedIndex}] is out of bounds for options array of length [${array.length}]`, args[1]);
     }
 
-    if(options.length === 0){
+    if(array.length === 0){
         throw new FS3Error("ArgumentError", `Options array cannot be empty`, args[2]);
     }
 
+    if(array.value.some(o => o.type !== "string")){
+        throw new FS3Error("TypeError", `All options in options array must be of type [string]`, args[2]);
+    }
+
+    if(array.value.some(o => o.value.length === 0)){
+        throw new FS3Error("ArgumentError", `Options in options array cannot be empty strings`, args[2]);
+    }
+
+    let options = array.value.map(o => o.value);
+
     return new Promise((resolve, reject) => {
         const finish = () => {
+            interpreter.variables[variable].value = options[selectedIndex];
             interpreter.variables[variable].value = options[selectedIndex];
             interpreter.variables[variable].type = "string";
             setSetting("currentSpinner", getSetting("defaultSpinner"));

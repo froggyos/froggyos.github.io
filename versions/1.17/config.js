@@ -43,12 +43,12 @@ const presetLanguagesMap = {
     "T_yes": {
         eng: "Yes",
         nmt: "owa",
-        jpn: "T_yes"
+        jpn: "T_yes",
     },
     "T_no": {
         eng: "No",
         nmt: "ge",
-        jpn: "T_no"
+        jpn: "T_no",
     },
 
     // basic command help ====================
@@ -430,7 +430,7 @@ const presetLanguagesMap = {
     },
     "T_no_macros_found": {
         eng: "No macros found.",
-        nmt: "makulo gewitsu mana",
+        nmt: "makulo me gewitsu mana",
         jpn: "マクロが見つかりませんでした"
     },
     "T_available_macros": {
@@ -1609,25 +1609,15 @@ const FroggyFileSystem = new fs({
         ] },
     ],
     "Config:/langs": [
-        { name: "ldm", properties: {transparent: true, read: true, write: true, hidden: false}, data: [] },
+        { name: "ldm", properties: {transparent: true,  read: true, write: true, hidden: false}, data: [] },
         { name: "eng", properties: {transparent: false, read: true, write: true, hidden: false}, data: [] },
         { name: "nmt", properties: {transparent: false, read: true, write: true, hidden: false}, data: [] },
         { name: "jpn", properties: {transparent: false, read: true, write: true, hidden: false}, data: [] },
     ],
-    "Config:/program_data": [
-        { name: "test", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
-            "KEY meow!! TYPE Array START",
-            "0 TYPE String VALUE Meow!",
-            "1 TYPE Boolean VALUE Ribbit!",
-            "2 TYPE Number VALUE 7.201",
-            "KEY meow!! TYPE Array END",
-            "KEY Ribbit TYPE String VALUE woof END",
-            "KEY shit TYPE Number VALUE 1.2 END"
-        ] },
-    ],
+    "Config:/program_data": [],
     "C:": [],
     "C:/Home": [
-        { name: "welcome!", properties: {transparent: false, read: true, write: true, hidden: false}, data: ['Hello!', "Welcome to FroggyOS.", "Type 'help' for a list of commands.", "Have fun! ^v^"] },
+        { name: "welcome", properties: {transparent: false, read: true, write: true, hidden: false}, data: ['Hello!', "Welcome to FroggyOS.", "Type 'help' for a list of commands.", "Have fun! ^v^"] },
     ],
     "C:/Docs": [],
     "D:": [], 
@@ -1890,7 +1880,9 @@ const FroggyFileSystem = new fs({
             "}",
             "else {",
             "    writeData 'confirmed' 0",
-            "    out answer_for_decline",
+            "    if answer_for_decline>neq('') {",
+            "        out answer_for_decline",
+            "    }",
             "}",
         ] },
             { name: "fs3help", properties: {transparent: false, read: true, write: false, hidden: false }, data: [
@@ -2697,18 +2689,33 @@ const os_config_keys = Object.keys(config_preproxy).filter(key => !(config_prepr
 
 const setLanguageFiles = () => {
     let langs = {};
-    FroggyFileSystem.getDirectory("Config:/langs").forEach(file => {
+
+    // 1. Initialize language arrays based on actual files
+    const langFiles = FroggyFileSystem.getDirectory("Config:/langs");
+    langFiles.forEach(file => {
         langs[file.getName()] = [];
     });
-    Object.keys(presetLanguagesMap).forEach((key, i) => {
-        langs.ldm.push(key);
-        if(presetLanguagesMap[key]?.eng) langs.eng.push(presetLanguagesMap[key].eng);
-        if(presetLanguagesMap[key]?.nmt) langs.nmt.push(presetLanguagesMap[key].nmt);
-        if(presetLanguagesMap[key]?.jpn) langs.jpn.push(presetLanguagesMap[key].jpn);
-    })
-    FroggyFileSystem.getDirectory("Config:/langs").forEach(file => {
-        file.write(langs[file.getName()])
+
+    // 2. Dynamically fill each list based on presetLanguagesMap
+    Object.keys(presetLanguagesMap).forEach(key => {
+        const data = presetLanguagesMap[key];
+
+        // For every file/language, check if the key exists in the preset entry
+        Object.keys(langs).forEach(langName => {
+            if (data?.[langName] != null) {
+                langs[langName].push(data[langName]);
+            } else {
+                // Optionally push the key itself if the file is meant to store languages
+                // Example: if "ldm" file is supposed to store the keys
+                if (langName === "ldm") langs.ldm.push(key);
+            }
+        });
     });
-}
+
+    // 3. Write results back to each file
+    langFiles.forEach(file => {
+        file.write(langs[file.getName()]);
+    });
+};
 
 setLanguageFiles();
