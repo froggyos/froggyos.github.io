@@ -1602,7 +1602,7 @@ const FroggyFileSystem = new fs({
         ] },
         { name: "user", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
             "KEY language TYPE String VALUE eng END",
-            "KEY colorPalette TYPE String VALUE standard END",
+            "KEY colorPalette TYPE String VALUE swamp END",
             "KEY version TYPE String VALUE 1.17-indev END",
             "KEY showSpinner TYPE Boolean VALUE false END",
             "KEY currentSpinner TYPE String VALUE default END",

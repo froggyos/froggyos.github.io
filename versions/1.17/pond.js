@@ -1678,6 +1678,26 @@ async function openPond(userRoles = []) {
         };
     }
     createPondMenu(mainMenu)
+
+    function divider() {};
+
+    // const iframe = document.createElement("iframe");
+
+    // const sessionToken = encodeURIComponent(FroggyFileSystem.getFile(`D:/Pond/secret/${sessionTokenFile}`).getData()[0]);
+
+    // const palette = encodeURIComponent(
+    //     JSON.stringify(
+    //         FroggyFileSystem.getFile(
+    //             `D:/Palettes/${config.colorPalette}`
+    //         ).getData()
+    //     )
+    // );
+
+    // const username = encodeURIComponent(FroggyFileSystem.getFile(`D:/Pond/secret/${credentialFile}`).getData()[0]);
+
+    // iframe.src = `${pondLink}/embed/home?username=${username}&token=${sessionToken}&palette=${palette}`;
+    // iframe.classList.add("pond-iframe");
+    // terminal.appendChild(iframe);
 };
 
 function getDecorations(roles){

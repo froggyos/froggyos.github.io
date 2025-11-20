@@ -469,6 +469,8 @@ function changeColorPalette(name){
 
     let root = document.querySelector(':root');
 
+    root.style = "";
+
     for(let i = 0; i < Object.keys(palette).length; i++){
         let color = Object.keys(palette)[i];
         let hex = palette[color];
@@ -485,6 +487,22 @@ function changeColorPalette(name){
     setSetting("colorPalette", name);
     config.colorPalette = name;
     createColorTestBar();
+}
+
+function changeColorPaletteFromArray(array){
+    const root = document.querySelector(':root');
+    root.style = "";
+    for(let i = 0; i < array.length; i++){
+        if(i < 16){
+            const color = `c${i.toString().padStart(2, '0')}`;
+            const hex = `#${array[i]}`;
+            root.style.setProperty(`--${color}`, `#${array[i]}`);
+        } else {
+            let variable = array[i].split(" ")[0];
+            let color = array[i].split(" ")[1];
+            root.style.setProperty(`--${variable}`, `var(--c${color})`);
+        }
+    }
 }
 
 /*
@@ -3194,7 +3212,7 @@ let dateTimeInterval = setInterval(() => {
 }, 100);
 
 const onStart = () => {
-    //sendCommand("pond", ["-r", "test", "test"])
+    sendCommand("pond", ["-l", "test", "test"])
     //sendCommand("st", ["test"])
 
 }
@@ -3240,7 +3258,7 @@ const SKIP_ANIMATION = true;
 let animSkipped = false;
 let innerBar = document.getElementById("inner-bar");
 
-const devMode = false;
+const devMode = true;
 const pondLink = devMode ? "http://127.0.0.1:29329" : "https://roari.bpai.us/pond";
 
 const messageValidationRegex = /^Recipient:(.+?)-----Subject:(.+?)-----Body:(.+?)$/;
