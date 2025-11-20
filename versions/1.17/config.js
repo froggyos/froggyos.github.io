@@ -1248,7 +1248,7 @@ const presetLanguagesMap = {
         jpn: "T_pond_registration_statement_1"
     },
     "T_pond_registration_statement_2": {
-        eng: "The Pond also reserves the right to::nl:- change these terms at any time without* prior notice:nl:- ban and/or warn users who violate the community guidelines or are a general nuisance to the community:nl:- delete accounts that have been inactive for over a year:nl:* will change to \"with\" prior notice in the near future",
+        eng: "The Pond also reserves the right to::nl:- change these terms at any time without prior notice:nl:- ban and/or warn users who violate the community guidelines or are a general nuisance to the community:nl:- delete accounts that have been inactive for over a year",
         nmt: "T_pond_registration_statement_2",
         jpn: "T_pond_registration_statement_2"
     },
