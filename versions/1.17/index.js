@@ -2425,7 +2425,7 @@ function createLilypadLine(path, linetype, filename){
                 line.previousElementSibling.textContent = prefix;
             } else if(linetype == "palette"){
                 let prefix = String(index).padStart(2, "0");
-                if(index > 15) prefix = ">>"
+                if(index > 15) prefix = "--"
                 line.previousElementSibling.textContent = prefix;
             } else {
                 line.previousElementSibling.textContent = ">";
