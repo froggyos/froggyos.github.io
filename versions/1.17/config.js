@@ -1243,12 +1243,12 @@ const presetLanguagesMap = {
 
     // registration
     "T_pond_registration_statement_1": {
-        eng: "By registering, you give The Pond permission to::nl:- store your username:nl:- store your password in an encrypted format:nl:- the repeated permission to store your IP address when you register and log in:nl:- abide by the community guidelines",
+        eng: "By registering, you give The Pond permission to::nl:- store your username:nl:- store your password in an encrypted format:nl:- the repeated permission to store your IP address when you register and log in, for the purposes of IP banning *only*:nl:- abide by the community guidelines",
         nmt: "T_pond_registration_statement_1",
         jpn: "T_pond_registration_statement_1"
     },
     "T_pond_registration_statement_2": {
-        eng: "The Pond also reserves the right to::nl:- change these terms at any time without prior notice:nl:- ban and/or warn users who violate the community guidelines or are a general nuisance to the community:nl:- delete accounts that have been inactive for over a year",
+        eng: "The Pond also reserves the right to::nl:- change these terms at any time without* prior notice:nl:- ban and/or warn users who violate the community guidelines or are a general nuisance to the community:nl:- delete accounts that have been inactive for over a year:nl:* will change to \"with\" prior notice in the near future",
         nmt: "T_pond_registration_statement_2",
         jpn: "T_pond_registration_statement_2"
     },
