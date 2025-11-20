@@ -1471,7 +1471,6 @@ async function sendCommand(command, args, createEditableLineAfter = true){
                 }, {
                     "40x": async (response, data) => {
                         setSetting("showSpinner", false)
-                        createTerminalLine(response.status + " " + response.statusText, config.errorText, {translate: false});
                         if(response.status == 403){
                             const bannedMenu = {
                                 [config.errorText + " " + localize("T_pond_user_banned")]: "text",
@@ -1540,6 +1539,10 @@ async function sendCommand(command, args, createEditableLineAfter = true){
                             createPondMenu(bannedMenu);
                         } else if(response.status == 404){
                             createTerminalLine("T_pond_invalid_name_password", config.errorText);
+                            printLn();
+                        } else {
+                            createTerminalLine(response.status + " " + response.statusText, config.errorText, {translate: false});
+                            printLn();
                         }
                     },
                     "200": async (response, data) => {
@@ -3212,7 +3215,7 @@ let dateTimeInterval = setInterval(() => {
 }, 100);
 
 const onStart = () => {
-    sendCommand("pond", ["-l", "test", "test"])
+    //sendCommand("pond", ["-l", "test", "test"])
     //sendCommand("st", ["test"])
 
 }
@@ -3258,7 +3261,7 @@ const SKIP_ANIMATION = true;
 let animSkipped = false;
 let innerBar = document.getElementById("inner-bar");
 
-const devMode = true;
+const devMode = false;
 const pondLink = devMode ? "http://127.0.0.1:29329" : "https://roari.bpai.us/pond";
 
 const messageValidationRegex = /^Recipient:(.+?)-----Subject:(.+?)-----Body:(.+?)$/;

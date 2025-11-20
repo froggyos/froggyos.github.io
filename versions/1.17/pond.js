@@ -1685,19 +1685,25 @@ async function openPond(userRoles = []) {
 
     // const sessionToken = encodeURIComponent(FroggyFileSystem.getFile(`D:/Pond/secret/${sessionTokenFile}`).getData()[0]);
 
-    // const palette = encodeURIComponent(
-    //     JSON.stringify(
-    //         FroggyFileSystem.getFile(
+    // const palette = FroggyFileSystem.getFile(
     //             `D:/Palettes/${config.colorPalette}`
     //         ).getData()
-    //     )
-    // );
 
     // const username = encodeURIComponent(FroggyFileSystem.getFile(`D:/Pond/secret/${credentialFile}`).getData()[0]);
 
-    // iframe.src = `${pondLink}/embed/home?username=${username}&token=${sessionToken}&palette=${palette}`;
+    // iframe.src = `${pondLink}/embed/home?username=${username}&token=${sessionToken}`;
     // iframe.classList.add("pond-iframe");
     // terminal.appendChild(iframe);
+
+    // // send the palette to the iframe
+    // iframe.onload = () => {
+    //     iframe.contentWindow.postMessage({
+    //         type: "set-palette",
+    //         palette: palette
+    //     }, "*");
+    // }
+
+    // iframe.focus();
 };
 
 function getDecorations(roles){
