@@ -422,8 +422,13 @@ function parseTimeFormat(text, timestamp){
 
     let replacementMap = Object.fromEntries(replacements.map(({ char, value }) => [char, value]));
 
-    // fix escaping
-    let dateString = text.replace(/\b(?<!\!)([a-zA-Z]+)\b/g, (match) => replacementMap[match] ?? match); // Replace only whole words
+    let dateString = text.replace(/\b(?<!!)([a-zA-Z]+)\b/g, (match) => {
+        return replacementMap[match] ?? match
+    });
+
+    dateString = dateString.replace(/!([a-zA-Z])/g, (_, p1) => {
+        return p1;
+    });
 
     return dateString;
 }
