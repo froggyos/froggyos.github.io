@@ -481,11 +481,7 @@ const imports = {
             freeable: false
         }
 
-        // new FS3Method("writeData", ["import_filesys"], [{type: ["string"], optional: false}, {type: ["string"], optional: false}], (parent, args, interpreter) => {
-        //     console.log(parent,args,interpreter)
-        // }, false);
-
-        new FS3Keyword("writeData", ["string", "string|number|array"], (args, interpreter) => {
+        new FS3Keyword("writeProgramData", ["string", "string|number|array"], (args, interpreter) => {
             const fileName = interpreter.fileArguments[0]
             const file = FroggyFileSystem.getFile(`Config:/program_data/${fileName}`);
 
@@ -1050,13 +1046,13 @@ new FS3Keyword("filearg", ["variable_reference", "number"], (args, interpreter) 
     let argIndex = args[1].value;
     let argValue = interpreter.fileArguments[argIndex];
 
+    if(interpreter.variables[variableName] === undefined){
+        throw new FS3Error("ReferenceError", `Variable [${variableName}] is not defined`, args[0]);
+    }
+
     if(argValue === undefined){
         interpreter.variables[variableName].value = "";
         return;
-    }
-
-    if(!interpreter.variables[variableName]){
-        throw new FS3Error("ReferenceError", `Variable [${variableName}] is not defined`, args[0]);
     }
 
     if(!interpreter.variables[variableName].mut){

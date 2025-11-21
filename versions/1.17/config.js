@@ -88,7 +88,7 @@ const presetLanguagesMap = {
         jpn: "croak [file] . . ファイルを削除する"
     },
     "T_basic_commands_exportfile": {
-        eng: "exportfile [file] . . . . . . . . Exports a froggyOS file as a .txt file.",
+        eng: "exportfile [file]. . . . . . . . . Exports a froggyOS file as a .txt file.",
         nmt: "T_basic_commands_exportfile",
         jpn: "T_basic_commands_exportfile",
     },
@@ -379,8 +379,8 @@ const presetLanguagesMap = {
         nmt: "apelelala som dilekatüli tama",
         jpn: "ディレクトリ名を入力してください"
     },
-    "T_directory_does_not_exist": {
-        eng: "Directory does not exist.",
+    "T_directory_does_not_exist {{}}": {
+        eng: "Directory \"{{}}\" does not exist.",
         nmt: "dilekatüli getsefese",
         jpn: "ディレクトリは存在しません"
     },
@@ -1531,7 +1531,6 @@ class FroggyFile {
      * @param {String[]} data 
      */
     write(data) {
-        if(this.#name === "trusted_programs") throw new Error("You may not write to the 'trusted_programs' file.");
         this.#data = data;
         data.forEach(line => {
             this.#size += line.length + 1;
@@ -1878,7 +1877,7 @@ const FroggyFileSystem = new fs({
         ] },
         { name: "terminal_confirm", properties: {transparent: true, read: true, write: false, hidden: false}, data: [
             "import 'filesys'",
-            "writeData 'confirmed' 0",
+            "writeProgramData 'confirmed' 0",
             "var question = ''",
             "var yes = ''",
             "var no = ''",
@@ -1891,10 +1890,10 @@ const FroggyFileSystem = new fs({
             "out question",
             "prompt $response 1 [yes, no]",
             "if response>eq(yes) {",
-            "    writeData 'confirmed' 1",
+            "    writeProgramData 'confirmed' 1",
             "}",
             "else {",
-            "    writeData 'confirmed' 0",
+            "    writeProgramData 'confirmed' 0",
             "    if answer_for_decline>neq('') {",
             "        out answer_for_decline",
             "    }",
@@ -2378,6 +2377,7 @@ const FroggyFileSystem = new fs({
             "error-severity-4 06",
             "error-severity-5 04",
             "error-severity-6 08",
+            "error-text 15",
             "prompt-selected-background 02",
             "prompt-selected-text 15",
             "froggyscript-number-color 09",

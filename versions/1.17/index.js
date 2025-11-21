@@ -467,44 +467,21 @@ function updateDateTime() {
 
 // CSS STYLING ==============================================================================================
 function changeColorPalette(name){
-    const colorPalettes = createPalettesObject();
-    let palette = colorPalettes[name];
-
-    let variableDefinitions = structuredClone(getFileWithName("D:/Palettes", name)).data.splice(16);
-
-    let root = document.querySelector(':root');
-
-    root.style = "";
-
-    for(let i = 0; i < Object.keys(palette).length; i++){
-        let color = Object.keys(palette)[i];
-        let hex = palette[color];
-        root.style.setProperty(`--${color}`, hex);
-    }
-
-    for(let i = 0; i < variableDefinitions.length; i++){
-        let variable = variableDefinitions[i].split(" ")[0];
-        let color = variableDefinitions[i].split(" ")[1];
-
-        root.style.setProperty(`--${variable}`, `var(--c${color})`);
-    }
-
     setSetting("colorPalette", name);
-    config.colorPalette = name;
-    createColorTestBar();
-}
+    const file = FroggyFileSystem.getFile(`D:/Palettes/${name}`).getData();
 
-function changeColorPaletteFromArray(array){
     const root = document.querySelector(':root');
     root.style = "";
-    for(let i = 0; i < array.length; i++){
+    for(let i = 0; i < file.length; i++){
         if(i < 16){
             const color = `c${i.toString().padStart(2, '0')}`;
-            const hex = `#${array[i]}`;
-            root.style.setProperty(`--${color}`, `#${array[i]}`);
+            const hex = `#${file[i]}`;
+
+            root.style.setProperty(`--${color}`, hex);
         } else {
-            let variable = array[i].split(" ")[0];
-            let color = array[i].split(" ")[1];
+            let variable = file[i].split(" ")[0];
+            let color = file[i].split(" ")[1];
+
             root.style.setProperty(`--${variable}`, `var(--c${color})`);
         }
     }
@@ -1098,7 +1075,7 @@ async function sendCommand(command, args, createEditableLineAfter = true){
                 break;
             }
             if(FroggyFileSystem.getDirectory(`${config.currentPath}`) == undefined){
-                createTerminalLine("T_directory_does_not_exist", config.errorText);
+                createTerminalLine(`T_directory_does_not_exist {{${config.currentPath}}}`, config.errorText);
                 hadError = true;
                 printLn();
             }
@@ -1174,7 +1151,7 @@ async function sendCommand(command, args, createEditableLineAfter = true){
             if(directory == "-") directory = config.currentPath.split("/").slice(0, -1).join("/");
 
             if(FroggyFileSystem.getDirectory(directory) == undefined){
-                createTerminalLine("T_directory_does_not_exist", config.errorText);
+                createTerminalLine(`T_directory_does_not_exist {{${directory}}}`, config.errorText);
                 hadError = true;
                 printLn();
                 break;
@@ -2688,6 +2665,7 @@ function createLilypadLine(path, linetype, filename){
                         try {
                             currentFile.write(dataToWrite);
                         } catch (error) {
+                            console.log(error)
                             createTerminalLine(`T_file_does_not_exist`, config.errorText);
                             createEditableTerminalLine(`${config.currentPath}>`);
                             return;
