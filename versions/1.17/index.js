@@ -3160,6 +3160,8 @@ function setTrustedPrograms(){
     }, 100);
 }
 
+const defaults = parse_fSDS(FroggyFileSystem.getFile("Config:/user").getData());
+
 setUserConfigFromFile()
 sendCommand('[[BULLFROG]]autoloadstate', [], false);
 document.title = `froggyOS v. ${config.version}`;
@@ -3187,6 +3189,7 @@ let configInterval = setInterval(() => {
     if(badConfig) {
         terminal.lastElementChild.lastElementChild.contentEditable = false;
         createTerminalLine(`T_missing_key_config_user {{${badKey}}}`, config.fatalErrorText);
+        
         clearInterval(configInterval);
         clearInterval(dateTimeInterval);
         return;

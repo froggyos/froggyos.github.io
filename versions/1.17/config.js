@@ -613,8 +613,8 @@ const presetLanguagesMap = {
         jpn: "有効な翻訳ディスクリプターを入力してください"
     },
     "T_missing_key_config_user {{}}": {
-        eng: "Missing key {{}} in Config:/user",
-        nmt: "ndaní koda {{}} kene Config:/user",
+        eng: "Missing key {{}} in Config:/user. Using default.",
+        nmt: "ndaní koda {{}} kene Config:/user. mele gye wengki kekyene",
         jpn: "T_missing_key_config_user"
     },
     "T_error_reading_config_file": {
@@ -1271,7 +1271,6 @@ const presetLanguagesMap = {
         nmt: "T_test {{}} {{}}",
         jpn: "T_test {{}} {{}}"
     },
-
 };
 
 class UserKey { constructor() {} };
