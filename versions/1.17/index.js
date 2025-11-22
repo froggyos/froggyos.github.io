@@ -14,10 +14,13 @@ document.body.onclick = function() {
     } catch (err) { };
 }
 
+function spacer(){
+    createTerminalLine("\u00A0", "", {translate: false});
+}
+
 document.body.onkeyup = function(event) {
     if(event.key == "Enter" && event.shiftKey == true && config.currentProgram == "cli") {
         event.preventDefault();
-        console.log(configInterval)
         createEditableTerminalLine(`${config.currentPath}>`);
     }
 }
@@ -38,7 +41,7 @@ function addToCommandHistory(string){
 function setUserConfigFromFile(){
     let fsds = parse_fSDS(getFileWithName("Config:", "user").data);
     if(fsds.error) {
-        clearInterval(configInterval);
+        killInterval(configInterval);
         terminal.innerHTML = "";
         createTerminalLine("T_error_reading_config_file", config.fatalErrorText);
         return;
@@ -121,7 +124,7 @@ function set_fSDS(path, filename, key, value){
         }
     }
 
-    file.write(newData);
+    file.write(newData, path);
 }
 
 /**
@@ -231,6 +234,14 @@ function smallParse(input){
     return input;
 }
 
+const languageCache = {
+    ldm: null,
+    lang: {
+        current: null,
+        map: null
+    },
+};
+
 /**
  * 
  * @param {String} descriptor - the string to be localized
@@ -252,9 +263,13 @@ function localize(descriptor, TRANSLATE_TEXT=true){
         })
     }
 
-    let translationMap = FroggyFileSystem.getFile("Config:/langs/ldm").getData();
-    let languageMap = FroggyFileSystem.getFile(`Config:/langs/${config.language}`).getData();
+    if(config.language != languageCache.lang.current){
+        languageCache.lang.current = config.language;
+        languageCache.lang.map = FroggyFileSystem.getFile(`Config:/langs/${config.language}`).getData();
+    }
 
+    let translationMap = languageCache.ldm;
+    let languageMap = languageCache.lang.map;
     let englishData = translationMap.indexOf(descriptor);
     let translation = languageMap[englishData];
 
@@ -309,19 +324,84 @@ function updateProgramList(){
     // for all the programs, if there is not a corresponding file in the D:Program-Data directory, create one
     for(let program of config.programList){
         if(getFileWithName("Config:/program_data", program) == undefined){
-            let newFile = new FroggyFile(program);
+            let newFile = new FroggyFile(program, undefined, undefined, "Config:/program_data");
             FroggyFileSystem.addFileToDirectory("Config:/program_data", newFile);
         }
     }
 }
 
 /**
- * 
+ * Formats a duration (in milliseconds) into a human-readable string.
+ * Supports "!" escaping to output literal characters.
+ *
+ * Supported tokens:
+ *   d   - total days (unpadded)
+ *   dd  - total days (2-digit padded)
+ *   h   - total hours
+ *   hh  - total hours (2-digit padded)
+ *   m   - minutes (mod 60)
+ *   mm  - minutes (2-digit padded)
+ *   s   - seconds (mod 60)
+ *   ss  - seconds (2-digit padded)
+ *   ms  - milliseconds (3-digit padded)
+ *
+ * Escape rules:
+ *   !x  → literal x
+ *   !!  → literal !
+ *
+ * @param {string} text
+ * @param {number} durationMs
+ * @returns {string}
+ */
+function formatDuration(text, durationMs) {
+    // break down duration
+    const ms = durationMs % 1000;
+    const totalSeconds = Math.floor(durationMs / 1000);
+
+    const s = totalSeconds % 60;
+    const totalMinutes = Math.floor(totalSeconds / 60);
+
+    const m = totalMinutes % 60;
+    const totalHours = Math.floor(totalMinutes / 60);
+
+    const d = Math.floor(totalHours / 24);
+
+    const map = {
+        "dd": String(d).padStart(2, "0"),
+        "d": d,
+
+        "hh": String(totalHours).padStart(2, "0"),
+        "h": totalHours,
+
+        "mm": String(m).padStart(2, "0"),
+        "m": m,
+
+        "ss": String(s).padStart(2, "0"),
+        "s": s,
+
+        "ms": String(ms).padStart(3, "0")
+    };
+
+    // REGEX RULE:
+    // - optional leading "!" to mark escape
+    // - then one of our tokens
+    // - use capturing groups to decide behavior
+    return text.replace(/(!)?(dd|hh|mm|ss|ms|d|h|m|s)/g, (match, escape, token) => {
+        if (escape) {
+            // escaped → output literal token
+            return token;
+        }
+        // normal token → replace
+        return map[token];
+    });
+}
+
+/**
  * @param {String} text - the time format string
  * @param {Number} timestamp - optional timestamp to use instead of current time
  * @returns 
  */
-function parseTimeFormat(text, timestamp){
+function timestamp(text, timestamp){
     const now = timestamp != null ? new Date(Number(timestamp)) : new Date();
 
     let dowListShort = ['T_date_short_sunday', 'T_date_short_monday', 'T_date_short_tuesday', 'T_date_short_wednesday', 'T_date_short_thursday', 'T_date_short_friday', 'T_date_short_saturday'];
@@ -366,6 +446,17 @@ function parseTimeFormat(text, timestamp){
     const ampm = now.getHours() >= 12 ? 'PM' : 'AM';
 
     const timezone = new Date().toLocaleString(["en-US"], {timeZoneName: "short"}).split(" ").pop();
+
+    function getISOOffset(date = new Date()) {
+        const offset = date.getTimezoneOffset(); // minutes * behind UTC *
+        const sign = offset > 0 ? "-" : "+";     // positive = behind UTC so use "-"
+        const abs = Math.abs(offset);
+        const hours = String(Math.floor(abs / 60)).padStart(2, "0");
+        const mins  = String(abs % 60).padStart(2, "0");
+        return `${sign}${hours}:${mins}`;
+    }
+
+    const isoOffset = getISOOffset(now);
 
     function getOrdinalSuffix(num) {
         if (typeof num !== "number" || isNaN(num)) return "";
@@ -418,11 +509,12 @@ function parseTimeFormat(text, timestamp){
         { char: 'a', value: ampm },
 
         { char: 'z', value: timezone },
+        { char: 'Z', value: isoOffset },
     ];
 
     let replacementMap = Object.fromEntries(replacements.map(({ char, value }) => [char, value]));
 
-    let dateString = text.replace(/\b(?<!!)([a-zA-Z]+)\b/g, (match) => {
+    let dateString = text.replace(/(?<!!)([a-zA-Z]+)/g, (match) => {
         return replacementMap[match] ?? match
     });
 
@@ -440,7 +532,7 @@ function limit(string, maxLength) {
 function updateDateTime() {
     if(!config.updateStatBar) return;
 
-    let dateString = parseTimeFormat(config.timeFormat);
+    let dateString = timestamp(config.timeFormat);
 
     barText.textContent = dateString;
     if(config.showSpinner == true) {
@@ -720,7 +812,7 @@ function createTerminalLine(text, path, other){
     } else {
         let localizedText = localize(text, translateText);
         if(localizedText == null) {
-            terminalLine.textContent = `Index Missing! -> ${text.replace(/{{.*?}}/g, "{{}}")}`;
+            terminalLine.textContent = `Descriptor Missing! -> ${text.replace(/{{.*?}}/g, "{{}}")}`;
             terminalPath.innerHTML = config.translationErrorText;
         }
         else terminalLine.textContent = localizedText; 
@@ -950,7 +1042,7 @@ async function sendCommand(command, args, createEditableLineAfter = true){
                 break;
             }
 
-            let cloned = new FroggyFile(`clone_of_`+fileToClone.getName(), fileToClone.getProperties(), fileToClone.getData());
+            let cloned = new FroggyFile(`clone_of_`+fileToClone.getName(), fileToClone.getProperties(), fileToClone.getData(), config.currentPath);
 
             cloned.setProperty('read', true);
             cloned.setProperty('write', true);
@@ -1055,7 +1147,7 @@ async function sendCommand(command, args, createEditableLineAfter = true){
                 break;
             }
             let text = args.join(" ");
-            if(parseTimeFormat(text).length > 78){
+            if(timestamp(text).length > 78){
                 createTerminalLine("T_arg_too_long", config.errorText);
                 hadError = true;
                 printLn();
@@ -1123,6 +1215,7 @@ async function sendCommand(command, args, createEditableLineAfter = true){
             createTerminalLine("T_basic_commands_meta", ">");
             createTerminalLine("T_basic_commands_metaprop", ">");
             createTerminalLine("T_basic_commands_pond", ">");
+            createTerminalLine("T_basic_commands_pulse", ">");
             createTerminalLine("T_basic_commands_opendoc", ">");
             createTerminalLine("T_basic_commands_rename", ">");
             createTerminalLine("T_basic_commands_ribbit", ">");
@@ -1208,18 +1301,22 @@ async function sendCommand(command, args, createEditableLineAfter = true){
         case "loadstate":
             let foundConfig = localStorage.getItem(`froggyOS-state-${config.version}-config`);
             let foundFs = localStorage.getItem(`froggyOS-state-${config.version}-fs`);
+            let foundDiagnostics = localStorage.getItem(`froggyOS-state-${config.version}-diagnostics`);
 
-            if(foundConfig == null || foundFs == null){
+            if(foundConfig == null || foundFs == null || foundDiagnostics == null){
                 createTerminalLine("T_no_state_found", config.errorText);
                 hadError = true;
                 printLn();
                 break;
             }
+
             for(let key in JSON.parse(foundConfig)){
                 config[key] = JSON.parse(foundConfig)[key];
             }
 
             FroggyFileSystem.loadFromString(foundFs);
+
+            diagnostics = JSON.parse(foundDiagnostics);
 
             changeColorPalette(config.colorPalette);
 
@@ -1330,9 +1427,25 @@ async function sendCommand(command, args, createEditableLineAfter = true){
                 break;
             }
 
-            let file = FroggyFileSystem.getFile(`${config.currentPath}/${args[0]}`);
+            const file = FroggyFileSystem.getFile(`${config.currentPath}/${args[0]}`);
 
-            openLilypad(file, createEditableLineAfter);
+            if(file == undefined){
+                createTerminalLine("T_file_does_not_exist", config.errorText);
+                printLn();
+                return;
+            }
+            if(file.getProperty('write') == false){
+                createTerminalLine("T_no_permission_to_edit_file", config.errorText);
+                printLn();
+                return;
+            }
+            if(file.getProperty('read') == false){
+                createTerminalLine("T_no_permission_to_read_file", config.errorText);
+                printLn();
+                return;
+            }
+
+            openLilypad(file.getName(), file.getData(), createEditableLineAfter);
         } break;
 
         // edit file properties
@@ -1456,8 +1569,8 @@ async function sendCommand(command, args, createEditableLineAfter = true){
                         if(response.status == 403){
                             const bannedMenu = {
                                 [config.errorText + " " + localize("T_pond_user_banned")]: "text",
-                                [localize(`T_pond_banned_on {{${parseTimeFormat(config.timeFormat, data.bannedOn)}}}`)]: "text",
-                                [localize(`T_pond_banned_until {{${data.bannedUntil == -1 ? localize("T_pond_ban_permanent") : parseTimeFormat(config.timeFormat, data.bannedUntil)}}}`)]: "text",
+                                [localize(`T_pond_banned_on {{${timestamp(config.timeFormat, data.bannedOn)}}}`)]: "text",
+                                [localize(`T_pond_banned_until {{${data.bannedUntil == -1 ? localize("T_pond_ban_permanent") : timestamp(config.timeFormat, data.bannedUntil)}}}`)]: "text",
                                 [localize(`T_pond_ban_reason {{${data.bannedReason}}}`)]: "text",
                                 "Appeal": () => {
                                     const appealMenu = {
@@ -1538,7 +1651,7 @@ async function sendCommand(command, args, createEditableLineAfter = true){
                             data.warns.forEach((warn) => {
                                 let warnText = '';
                                 warnText += localize(`T_pond_warned_by {{${warn.warnedBy}}}`) + '<br>';
-                                warnText += localize(`T_pond_warned_at {{${parseTimeFormat(config.timeFormat, warn.timestamp)}}}`) + '<br>';
+                                warnText += localize(`T_pond_warned_at {{${timestamp(config.timeFormat, warn.timestamp)}}}`) + '<br>';
                                 warnText += localize(`T_pond_warn_reason {{${warn.reason}}}`) + '<br>';
                                 warnText += `Warning ID: ${warn.id}` + `<br>${'-'.repeat(78)}<br>`;
                                 warningDisplay[warnText] = "text";
@@ -1641,7 +1754,7 @@ async function sendCommand(command, args, createEditableLineAfter = true){
                 
                 createTerminalLine("T_pond_registration_statement_1", config.alertText);
                 createTerminalLine("T_pond_registration_statement_2", config.alertText);
-                sendCommand("st", ["terminal_confirm", localize("T_pond_registration_question"), localize("T_yes"), localize("T_no"), localize("T_pond_registration_cancelled")], false);
+                sendCommand("st", ["terminal_confirm", localize("T_pond_registration_question"), localize("T_intj_yes"), localize("T_intj_no"), localize("T_pond_registration_cancelled")], false);
 
                 new Promise((resolve) => {
                     const interval = setInterval(() => {
@@ -1694,7 +1807,7 @@ async function sendCommand(command, args, createEditableLineAfter = true){
                     }
                 });
 
-                FroggyFileSystem.getFile("Config:/program_data/terminal_confirm").write([]);
+                FroggyFileSystem.getFile("Config:/program_data/terminal_confirm").write([], "Config:/program_data");
 
             } else if(args[0] == "-u") {
                 let credStore = FroggyFileSystem.getFile(`D:/Pond/secret/${credentialFile}`);
@@ -1745,7 +1858,48 @@ async function sendCommand(command, args, createEditableLineAfter = true){
             }
 
         } break;
-        
+
+        case "pulse": {
+            createTerminalLine("T_pulse_info_intro", "");
+            createTerminalLine(`T_pulse_system_uptime {{${formatDuration("ss.ms!s mm!m hh!h dd!d", diagnostics.runtime)}}}`, pad(1));
+            createTerminalLine(`T_pulse_program_session {{${config.programSession}}}`, pad(1));
+            const maxLength = Object.keys(config.intervalNameMap)
+                .reduce((max, key) => Math.max(max, config.intervalNameMap[key].length), 0);
+
+            // Now loop through intervals
+            spacer()
+            createTerminalLine("T_pulse_governers", pad(1));
+            for (let interval in config.intervals) {
+                const name = config.intervalNameMap[interval];
+                const padding = pad(maxLength - name.length);
+
+                let response = config.intervals[interval]
+
+                if(response){
+                    response = localize("T_intj_ok")
+                    createTerminalLine(`${name}${padding} : ${response}`, pad(2), { translate: false });
+                } else {
+                    response = localize("T_intj_error")
+                    createTerminalLine(`${name}${padding} : ${response}`, pad(2), { translate: false, formatting: [
+                        {
+                            type: "range", 
+                            b: "c12",
+                            br_start: (name.length + padding.length) + 3,
+                            br_end: (name.length + padding.length) + response.length + 3,
+                        }, {
+                            type: "range", 
+                            t: "c15",
+                            tr_start: (name.length + padding.length) + 3,
+                            tr_end: (name.length + padding.length) + response.length + 3,
+                        }
+                    ]
+                    });
+                }
+            }
+            console.log(diagnostics)
+            printLn()
+        } break;
+
         case "rename": {
             if(args.length < 2){
                 createTerminalLine("T_provide_file_name_and_new", config.errorText);
@@ -1817,6 +1971,7 @@ async function sendCommand(command, args, createEditableLineAfter = true){
         case "savestate":
             localStorage.setItem(`froggyOS-state-${config.version}-config`, JSON.stringify(config));
             localStorage.setItem(`froggyOS-state-${config.version}-fs`, FroggyFileSystem.stringify());
+            localStorage.setItem(`froggyOS-state-${config.version}-diagnostics`, JSON.stringify(diagnostics));
 
             createTerminalLine("T_state_saved", ">")
             printLn();
@@ -1976,7 +2131,7 @@ async function sendCommand(command, args, createEditableLineAfter = true){
                     errout: (err) => {
                         console.log(previousProgram)
                         createTerminalLine("\u00A0", config.programErrorText.replace("{{}}", err.type), {translate: false});
-                        createTerminalLine("\u00A0", "", {translate: false});
+                        spacer()
                         createTerminalLine(err.message, "", {translate: false});
                         createTerminalLine(`\u00A0in line: ${err.line+1}`, "", {translate: false})
                         createTerminalLine(`\u00A0at position: ${err.col+1}`, "", {translate: false})
@@ -2031,6 +2186,10 @@ async function sendCommand(command, args, createEditableLineAfter = true){
             printLn();
         break;
 
+        case "[[BULLFROG]]diagnosticstable": {
+            outputDiagnosticInformation();
+            printLn();
+        } break;
         // arg 1: file in the program directory
         // arg 2: line #
         // opens that file up in lilypad and highlights the line
@@ -2061,7 +2220,7 @@ async function sendCommand(command, args, createEditableLineAfter = true){
 
 
             if(hadError == false){
-                openLilypad(programFile, createEditableLineAfter);
+                openLilypad(programFile.getName(), programFile.getData(), createEditableLineAfter);
                 const lines = document.querySelectorAll("[data-program='lilypad-session-3']");
             }
             
@@ -2078,6 +2237,7 @@ async function sendCommand(command, args, createEditableLineAfter = true){
         case '[[BULLFROG]]help':
             createTerminalLine("T_bullfrog_commands_intro", "");
             createTerminalLine("T_bullfrog_commands_changepath", ">");
+            createTerminalLine("T_bullfrog_commands_diagtable", ">");
             createTerminalLine("T_bullfrog_commands_greeting", ">");
             createTerminalLine("T_bullfrog_commands_help", ">");
             createTerminalLine("T_bullfrog_commands_setstatbar", ">");
@@ -2240,7 +2400,7 @@ async function sendCommand(command, args, createEditableLineAfter = true){
             createTerminalLine("* descriptors not translated *", "", {translate: false});
             for(let i in linesNotTranslated){
                 if(linesNotTranslated[i].length != 0) {
-                    createTerminalLine("\u00A0", "", {translate: false});
+                    spacer()
                     createTerminalLine(`${i}:`, " ", {translate: false});
                 }
                 linesNotTranslated[i].forEach((line, index) => {
@@ -2657,13 +2817,19 @@ function createLilypadLine(path, linetype, filename){
                     dataToWrite.forEach(line => {
                         dataLength += line.length;
                     });
+
+                    if(currentFile.getProperty('write') == false){
+                        createTerminalLine(`T_no_permission_to_edit_file`, config.errorText);
+                        createEditableTerminalLine(`${config.currentPath}>`);
+                        return;
+                    }
                     
                     setSetting("showSpinner", true)
                     setTimeout(function(){
                         setSetting("showSpinner", false)
 
                         try {
-                            currentFile.write(dataToWrite);
+                            currentFile.write(dataToWrite, config.currentPath);
                         } catch (error) {
                             console.log(error)
                             createTerminalLine(`T_file_does_not_exist`, config.errorText);
@@ -2967,7 +3133,7 @@ async function createLilypadLinePondDerivative(path, filename, options){
                 dataToWrite.push(lines[i].textContent);
             }
 
-            file.write(dataToWrite);
+            file.write(dataToWrite, "D:/Pond/drafts");
             setSetting("showSpinner", false)
             setSetting("currentSpinner", previousSpinner)
         }
@@ -3057,6 +3223,7 @@ async function createLilypadLinePondDerivative(path, filename, options){
                         const file = structuredClone(FroggyFileSystem.getFile(`D:/Pond/drafts/${filename}`).toJSON());
 
                         const newFile = FroggyFile.from(file);
+                        newFile.dirname = "D:/Pond/sent";
 
                         const newName = "sent-" + (file.name.replace(/^draft-/, ""))
 
@@ -3123,7 +3290,7 @@ async function createLilypadLinePondDerivative(path, filename, options){
                         }
 
                         try {
-                            currentFile.write(dataToWrite);
+                            currentFile.write(dataToWrite, "D:/Pond/drafts");
                         } catch (error) {
                             createTerminalLine(`T_file_does_not_exist`, config.errorText);
                         }
@@ -3154,11 +3321,6 @@ async function createLilypadLinePondDerivative(path, filename, options){
     updateLinePrefixes();
 }
 
-function setTrustedPrograms(){
-    setInterval(() => {
-        config.trustedPrograms = FroggyFileSystem.getFile("Config:/trusted_programs").getData();
-    }, 100);
-}
 
 const defaults = parse_fSDS(FroggyFileSystem.getFile("Config:/user").getData());
 
@@ -3166,11 +3328,21 @@ setUserConfigFromFile()
 sendCommand('[[BULLFROG]]autoloadstate', [], false);
 document.title = `froggyOS v. ${config.version}`;
 updateProgramList();
-updateDateTime();
 changeColorPalette(config.colorPalette);
 createColorTestBar();
-setTrustedPrograms();
 sendCommand('[[BULLFROG]]validatelanguage', [], false);
+
+let trustedProgramsInterval = setInterval(() => {
+    let file = FroggyFileSystem.getFile("Config:/trusted_programs");
+    if(file == undefined){
+        killInterval(trustedProgramsInterval);
+        return;
+    }
+    config.trustedPrograms = file.getData();
+}, 100);
+
+config.intervals[trustedProgramsInterval] = true;
+config.intervalNameMap[trustedProgramsInterval] = "trusted-programs";
 
 let configInterval = setInterval(() => {
     setUserConfigFromFile()
@@ -3190,8 +3362,8 @@ let configInterval = setInterval(() => {
         terminal.lastElementChild.lastElementChild.contentEditable = false;
         createTerminalLine(`T_missing_key_config_user {{${badKey}}}`, config.fatalErrorText);
         
-        clearInterval(configInterval);
-        clearInterval(dateTimeInterval);
+        killInterval(configInterval);
+        killInterval(dateTimeInterval);
         return;
     }
 }, 250);
@@ -3200,18 +3372,35 @@ let dateTimeInterval = setInterval(() => {
     updateDateTime()
 }, 100);
 
+config.intervals[configInterval] = true;
+config.intervals[dateTimeInterval] = true;
+
+config.intervalNameMap[configInterval] = "config";
+config.intervalNameMap[dateTimeInterval] = "date-time";
+
 const onStart = () => {
+    sendCommand("pulse", [])
     //sendCommand("pond", ["-l", "test", "test"])
     //sendCommand("st", ["test"])
-
 }
 
+function killInterval(interval){
+    clearInterval(interval);
+    config.intervals[interval] = false;
+}
+
+
+
 function ready(){
+    languageCache.ldm = FroggyFileSystem.getFile("Config:/langs/ldm").getData();
+    languageCache.lang.current = config.language;
+    languageCache.lang.map = FroggyFileSystem.getFile(`Config:/langs/${config.language}`).getData();
+    updateDateTime();
     document.getElementById("blackout").remove()
     sendCommand('[[BULLFROG]]greeting', []);
     setTimeout(() => {
         onStart();
-    }, 100)
+    }, 1000)
 }
 
 // literally all of this is just for the animation
@@ -3252,29 +3441,20 @@ const pondLink = devMode ? "http://127.0.0.1:29329" : "https://roari.bpai.us/pon
 
 const messageValidationRegex = /^Recipient:(.+?)-----Subject:(.+?)-----Body:(.+?)$/;
 
-function openLilypad(file, createEditableLineAfter){
-    function printLn() {
-        if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
-    }
-    if(file == undefined){
-        createTerminalLine("T_file_does_not_exist", config.errorText);
-        printLn();
-        return;
-    }
-    if(file.getProperty('write') == false){
-        createTerminalLine("T_no_permission_to_edit_file", config.errorText);
-        printLn();
-        return;
-    }
-
-    for(let i = 0; i < file.getData().length; i++){
+/**
+ * @param {String} fileName
+ * @param {String[]} fileData
+ * @param {*} createEditableLineAfter 
+ */
+function openLilypad(fileName, fileData, createEditableLineAfter){
+    for(let i = 0; i < fileData.length; i++){
         if(config.allowedProgramDirectories.includes(config.currentPath)){
-            createLilypadLine(String(i+1).padStart(3, "0"), "code", file.getName());
+            createLilypadLine(String(i+1).padStart(3, "0"), "code", fileName);
         } else if (config.currentPath == "D:/Palettes") {
-            createLilypadLine(String(i).padStart(2, "0"), "palette", file.getName());
-        } else createLilypadLine(">", undefined, file.getName());
+            createLilypadLine(String(i).padStart(2, "0"), "palette", fileName);
+        } else createLilypadLine(">", undefined ,fileName);
         let lines = document.querySelectorAll(`[data-program='lilypad-session-${config.programSession}']`);
-        lines[i].textContent = file.getData()[i];
+        lines[i].textContent = fileData[i];
         moveCaretToEnd(lines[i]);
     }
 

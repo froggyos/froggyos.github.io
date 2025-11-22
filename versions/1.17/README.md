@@ -52,7 +52,7 @@ There are no defined file types in froggyOS. Instead, file types are determined 
     * If a language file does not meet requirements (valid name declaration, correct file length), it will be invalid and unable to be used.
 * The **name declaration** must be the first line of the file, and must be in the format `!LANGNAME: [language name]`. For example, the name declaration for the `eng` file is `!LANGNAME: English`.
 * If the default language is invalid, froggyOS will automatically revert to the `ldm` language file.
-* If a text results in `Index Missing! -> [translation descriptor]`, this means that the translation descriptor is missing from the language file.
+* If a text results in `Descriptor Missing! -> [translation descriptor]`, this means that the translation descriptor is missing from the language file.
 * Descriptors can have **inclusions**. Inclusions are defined by wrapping text in `{{}}`, and allow translations to have dynamic text. Examples:
 ```txt
 Successes:
@@ -80,7 +80,13 @@ result     = Index Missing! -> T_test {{}} {{}}
 
 ## Command Help
 ### formattime
-The all instances of the following characters (or character sequences) will be replaced with their respective values. Place a `!` before the character to escape it.
+The all instances of the following characters (or character sequences) will be replaced with their respective values. Place a `!` before the character to escape it. If you want to put a character next to a formatting character, place the `!` *after* the formatting character.
+```
+d -> 5
+dd -> dd
+!dd -> d5
+d!d -> 5d
+```
 #### Date
 * year
     * `Y` - year (2025)
@@ -114,7 +120,9 @@ The all instances of the following characters (or character sequences) will be r
     * `l` - millisecond (000, 001)
     * `lu` - millisecond unpadded (0, 1)
 * `a` - AM/PM
-* `z` - timezone
+* timezone
+    * `z` - timezone abbreviation (PST, EST)
+    * `Z` - ISO 8601 timezone offset (+00:00, -05:00)
 
 ### hop
 * `hop ~` will take you to the root directory of the current drive

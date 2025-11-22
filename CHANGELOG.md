@@ -181,7 +181,8 @@ idk
 # 1.17
 ```
 + added the Pond! It is a user messaging platform.
-+ new command
++ new commands
     * pond - opens the Pond interface
     * export - exports a froggyOS file to your computer
+    * pulse - resurrecting one of the very first commands, but it actually does something this time! Shows system diagnostics.
 ```

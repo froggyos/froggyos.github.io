@@ -40,15 +40,25 @@ const presetLanguagesMap = {
         nmt: "i katálo, mo Froggy! ^v^",
         jpn: "どうも、フロッギーです！^v^"
     },
-    "T_yes": {
+    "T_intj_yes": {
         eng: "Yes",
         nmt: "owa",
-        jpn: "T_yes",
+        jpn: "T_intj_yes",
     },
-    "T_no": {
+    "T_intj_no": {
         eng: "No",
         nmt: "ge",
-        jpn: "T_no",
+        jpn: "T_intj_no",
+    },
+    "T_intj_ok": {
+        eng: "OK",
+        nmt: "OWA",
+        jpn: "T_intj_ok",
+    },
+    "T_intj_error": {
+        eng: "ERROR",
+        nmt: "GOGOWA",
+        jpn: "T_intj_error",
     },
 
     // basic command help ====================
@@ -141,6 +151,11 @@ const presetLanguagesMap = {
         eng: "metaprop [file] [property] [0/1] . Edits a file's properties.",
         nmt: "metaprop [fiyala] [popatí] [0/1]. . lohi fiyala oәpopatí me",
         jpn: "metaprop [file] [property] [0/1] . . ファイルのプロパティを変更する"
+    },
+    "T_basic_commands_pulse": {
+        eng: "pulse. . . . . . . . . . . . . . . Displays system information.",
+        nmt: "T_basic_commands_pulse",
+        jpn: "T_basic_commands_pulse",
     },
     "T_basic_commands_pond": {
         eng: "pond [options] . . . . . . . . . . Connects to the pond server.",
@@ -603,8 +618,8 @@ const presetLanguagesMap = {
         jpn: "有効な翻訳ディスクリプターを入力してください"
     },
     "T_missing_key_config_user {{}}": {
-        eng: "Missing key {{}} in Config:/user. Using default.",
-        nmt: "ndaní koda {{}} kene Config:/user. mele gye wengki kekyene",
+        eng: "Missing key {{}} in Config:/user.",
+        nmt: "ndaní koda {{}} kene Config:/user.",
         jpn: "T_missing_key_config_user"
     },
     "T_error_reading_config_file": {
@@ -618,6 +633,28 @@ const presetLanguagesMap = {
         jpn: "T_invalid_command_argument {{}}"
     },
 
+    // pulse =====================================
+    "T_pulse_info_intro": {
+        eng: "* Pulse Information *",
+        nmt: "T_pulse_info_intro",
+        jpn: "T_pulse_info_intro"
+    },
+    "T_pulse_system_uptime {{}}": {
+        eng: "System Uptime: {{}}",
+        nmt: "T_pulse_system_uptime {{}}",
+        jpn: "T_pulse_system_uptime {{}}"
+    },
+    "T_pulse_program_session {{}}": {
+        eng: "Program Session: {{}}",
+        nmt: "T_pulse_program_session {{}}",
+        jpn: "T_pulse_program_session {{}}"
+    },
+    "T_pulse_governers": {
+        eng: "* Governers *",
+        nmt: "* semes me *",
+        jpn: "T_pulse_governers"
+    },
+
     // bullfrog commands =========================
     "T_bullfrog_commands_intro": {
         eng: "* A few bullfrog commands *",
@@ -628,6 +665,11 @@ const presetLanguagesMap = {
         eng: "[[BULLFROG]]changepath [path] - Changes the path of the terminal",
         nmt: "[[BULLFROG]]changepath [fiyalātáne] - lohi fiyalātáne oәtaminalu",
         jpn: "[[BULLFROG]]changepath [path] - 端末のパスを変更する"
+    },
+    "T_bullfrog_commands_diagtable": {
+        eng: "[[BULLFROG]]diagnosticstable - Displays the diagnostic table in the developer console",
+        nmt: "T_bullfrog_commands_diagtable",
+        jpn: "T_bullfrog_commands_diagtable"
     },
     "T_bullfrog_commands_greeting": {
         eng: "[[BULLFROG]]greeting - Displays the greeting message",
@@ -1260,7 +1302,11 @@ const presetLanguagesMap = {
 
 class UserKey { constructor() {} };
 
-class fs {
+class SwagSystem {
+    static diagnostics = {
+        writes: {},
+        reads: {}
+    }
     #fs;
     #functionHashes = ['381bf05bf93fffdf', 'a9dbba03a9ffba87', '9af413c39bf77bcf', '943ee33ffefffb3f', 'c9bf35d4cdffb7df', '12643adc16e67fdc', 'a335c440bf37ee4c', 'd4f8d605d6f9ff8d', '1838f0a69c3bf1af', '1f6906df9ffb4eff', '1a6ccb615e7fef77', 'bfd42740fffd7fca']
     #fullPathHashes = ['c96c0ebfdf7fbfbf', 'e5a770acffff7aaf']
@@ -1271,6 +1317,7 @@ class fs {
     function t(k,R){const Q=j();return t=function(m,s){m=m-(-0x212*0x1+0xf3f+0x1*-0xcc5);let Y=Q[m];return Y;},t(k,R);}function F(R,Q,m,s,Y){return t(m-0x112,Q);}(function(R,Q){function I(R,Q,m,s,Y){return t(m-0x2a3,Q);}function W(R,Q,m,s,Y){return t(s-0x398,Y);}function M(R,Q,m,s,Y){return t(Q- -0x261,Y);}function E(R,Q,m,s,Y){return t(Y- -0x21c,R);}function C(R,Q,m,s,Y){return t(R-0x103,Q);}const m=R();while(!![]){try{const s=-parseInt(M(-0x1f0,-0x1f2,-0x1e5,-0x1fb,-0x1f9))/(0x1*0x1933+0xadd+-0x11*0x21f)+parseInt(I(0x304,0x305,0x30d,0x301,0x318))/(0x1*-0x279+-0x60*0x5e+0x25bb)+-parseInt(M(-0x1fa,-0x1ee,-0x1e2,-0x1f1,-0x1e6))/(-0x15ee+0x66d+0xf84)*(-parseInt(M(-0x1f5,-0x1ed,-0x1f5,-0x1f9,-0x1f9))/(-0x1d5e+0x1*-0x15e2+0x3344))+parseInt(M(-0x1de,-0x1e7,-0x1e6,-0x1f0,-0x1f3))/(0x4*0x787+-0x2195*0x1+-0x95*-0x6)*(parseInt(W(0x410,0x41b,0x40f,0x415,0x411))/(-0x54e+0x77c+-0x17*0x18))+-parseInt(C(0x182,0x178,0x178,0x18b,0x186))/(-0x129d+0x26b3*0x1+-0x140f)+parseInt(C(0x175,0x16c,0x182,0x178,0x181))/(-0x6ae+-0x1a83*0x1+0xf*0x237)+-parseInt(M(-0x1e3,-0x1f0,-0x1eb,-0x1e5,-0x1f2))/(-0x67*0x1c+-0x4f9+-0x823*-0x2)*(-parseInt(C(0x171,0x16f,0x16a,0x17b,0x16f))/(-0x17e6+-0xed4+0x2*0x1362));if(s===Q)break;else m['push'](m['shift']());}catch(Y){m['push'](m['shift']());}}}(j,0x4cc21*-0x2+0xdabdb+0x382d2),inp=inp[F(0x186,0x185,0x190,0x19d,0x197)+c(-0x1a5,-0x1b1,-0x1a1,-0x1a6,-0x1a8)](/\n|\r/g,''));function c(R,Q,m,s,Y){return t(R- -0x21c,Y);}function j(){const Z=['\x76\x62\x56\x77\x62','\x63\x65\x41\x6c\x6c','\x6d\x6b\x78\x69\x70','\x72\x65\x76\x65\x72','\x32\x30\x43\x68\x54\x65\x57\x7a','\x47\x4b\x4d\x75\x66','\x74\x72\x69\x6d','\x33\x34\x36\x35\x36\x30\x70\x56\x6b\x7a\x64\x46','\x72\x65\x70\x6c\x61','\x34\x36\x30\x33\x32\x31\x34\x77\x58\x53\x57\x7a\x74','\x4b\x48\x57\x7a\x69','\x49\x64\x46\x49\x6a','\x6a\x6f\x69\x6e','\x6c\x65\x6e\x67\x74','\x31\x33\x31\x31\x32\x33\x32\x52\x73\x6b\x66\x68\x44','\x4e\x66\x4a\x4a\x47','\x69\x44\x41\x6b\x73','\x73\x70\x6c\x69\x74','\x31\x30\x4d\x5a\x7a\x42\x69\x4b','\x36\x38\x36\x37\x30\x31\x63\x65\x49\x6c\x45\x62','\x74\x6f\x53\x74\x72','\x37\x33\x39\x31\x37\x42\x4a\x6e\x48\x77\x4b','\x34\x36\x36\x32\x31\x39\x32\x45\x54\x41\x57\x53\x74','\x33\x4d\x48\x61\x59\x79\x75','\x31\x34\x35\x35\x36\x37\x36\x62\x67\x54\x66\x73\x75','\x69\x6e\x67'];j=function(){return Z;};return j();}let k=()=>{const R={'\x49\x64\x46\x49\x6a':function(x,e,B){return x(e,B);},'\x4e\x66\x4a\x4a\x47':function(x,e){return x(e);},'\x6d\x6b\x78\x69\x70':function(x,e){return x(e);},'\x69\x44\x41\x6b\x73':function(e,B){return e>>>B;},'\x4b\x48\x57\x7a\x69':function(e,B){return e+B;},'\x47\x4b\x4d\x75\x66':function(e,B){return e^B;},'\x76\x62\x56\x77\x62':function(e,B){return e&B;}},Q=x=>x[N(-0x239,-0x242,-0x234,-0x23b,-0x239)+'\x63\x65'](/\r\n|\r/g,'\x0a')[p(-0x25b,-0x26a,-0x267,-0x26d,-0x26d)+'\x63\x65'](/\/\/.*$/gm,'')[r(0x39e,0x392,0x39f,0x397,0x39b)+'\x63\x65'](/\/\*[\s\S]*?\*\//g,'')[p(-0x263,-0x264,-0x267,-0x267,-0x267)+'\x63\x65'](/\s+/g,'\x20')[N(-0x23e,-0x23c,-0x235,-0x246,-0x239)+'\x63\x65'](/\s*([{}();,:=+\-*/<>])\s*/g,'\x24\x31')[p(-0x261,-0x262,-0x269,-0x270,-0x272)]();function N(R,Q,m,s,Y){return c(Y- -0x9b,Q-0x94,m-0x13f,s-0x1b5,s);}function r(R,Q,m,s,Y){return c(s-0x535,Q-0x13e,m-0x9c,s-0x3c,Q);}const m=R[p(-0x26a,-0x26f,-0x264,-0x268,-0x25e)](murmurhash3_32_gc,R[N(-0x256,-0x251,-0x24f,-0x242,-0x24c)](Q,inp),inp[A(-0xc,-0x20,-0x1e,-0x14,-0x19)+'\x68']),s=R[u(-0x175,-0x172,-0x17f,-0x17d,-0x179)](murmurhash3_32_gc,R[A(-0xe,-0x6,0x1,-0x4,-0xa)](Q,inp)[u(-0x193,-0x18e,-0x19e,-0x191,-0x19a)]('')[N(-0x232,-0x24b,-0x236,-0x245,-0x23e)+'\x73\x65']()[r(0x37b,0x375,0x389,0x381,0x37b)](''),inp[N(-0x244,-0x249,-0x248,-0x241,-0x24e)+'\x68']);function A(R,Q,m,s,Y){return c(Y-0x19a,Q-0xb9,m-0x16e,s-0x13e,R);}function p(R,Q,m,s,Y){return F(R-0x2a,Y,m- -0x3f7,s-0x186,Y-0xb3);}function u(R,Q,m,s,Y){return F(R-0x9b,Q,s- -0x310,s-0x15a,Y-0xb6);}const Y=R[r(0x38e,0x390,0x383,0x385,0x379)](R[u(-0x182,-0x171,-0x179,-0x17e,-0x177)](R[N(-0x23d,-0x240,-0x249,-0x247,-0x23c)](m,s),R[r(0x385,0x394,0x387,0x38f,0x388)](m,s)),0x1207+0x2543*-0x1+-0x133c*-0x1);return R[A(0x0,0x9,-0x9,0x5,-0x2)](m[N(-0x241,-0x245,-0x249,-0x23d,-0x247)+r(0x385,0x39b,0x388,0x38e,0x392)](0x10ad+0x11d8+-0x2275),Y[N(-0x246,-0x242,-0x23f,-0x247,-0x247)+A(-0x9,-0x15,-0x16,-0x9,-0xd)](0x1439+0x207+0x1*-0x1630));};return k();
     }
 
+
     /**
      * 
      * @param {{string:FroggyFile[]}} data - file system data
@@ -1279,7 +1326,7 @@ class fs {
         for(let directoryName in data){
             let dir = data[directoryName];
             dir.forEach((file, i) => {
-                data[directoryName][i] = new FroggyFile(file.name, file.properties, file.data);
+                data[directoryName][i] = new FroggyFile(file.name, file.properties, file.data, directoryName);
             })
         }
 
@@ -1385,6 +1432,7 @@ class fs {
 
         if(fs[location] === undefined) return undefined;
         if(fs[location]?.find(f => f.getName() === file.getName())) return undefined;
+        file.dirname = location;
         this.#fs[location].push(file);
     }
 
@@ -1480,11 +1528,12 @@ class FroggyFile {
      * @param {FroggyFile.filePropertyDefaults} properties
      * @param {String[]} data
      */
-    constructor(name, properties = FroggyFile.filePropertyDefaults, data = [""]) {
+    constructor(name, properties = FroggyFile.filePropertyDefaults, data = [""], dirname = "") {
         this.#name = name;
         this.#properties = properties;
         this.#data = data;
         this.#size = 0;
+        this.dirname = dirname;
         data.forEach(line => {
             this.#size += line.length + 1;
         });
@@ -1497,6 +1546,7 @@ class FroggyFile {
     rename(newName){
         if(this.#name === "trusted_programs") throw new Error("You may not rename the 'trusted_programs' file.");
         this.#name = newName;
+        const loc = this.dirname + "/" + this.#name;
     }
 
     /**
@@ -1516,6 +1566,15 @@ class FroggyFile {
      */
     write(data) {
         this.#data = data;
+        const loc = this.dirname + "/" + this.#name;
+        if(!SwagSystem.diagnostics.writes[loc]) SwagSystem.diagnostics.writes[loc] = {};
+
+        if(!SwagSystem.diagnostics.writes[loc].total) {
+            SwagSystem.diagnostics.writes[loc].total = 0;
+            SwagSystem.diagnostics.writes[loc].perSec = 0;
+        }
+
+        SwagSystem.diagnostics.writes[loc].total = (SwagSystem.diagnostics.writes[loc].total || 0) + 1;
         data.forEach(line => {
             this.#size += line.length + 1;
         });
@@ -1526,6 +1585,14 @@ class FroggyFile {
      * @returns {String[]}
      */
     getData() {
+        const loc = this.dirname + "/" + this.#name;
+        if(!SwagSystem.diagnostics.reads[loc]) SwagSystem.diagnostics.reads[loc] = {};
+
+        if(!SwagSystem.diagnostics.reads[loc].total) {
+            SwagSystem.diagnostics.reads[loc].total = 0;
+            SwagSystem.diagnostics.reads[loc].perSec = 0;
+        }
+        SwagSystem.diagnostics.reads[loc].total = (SwagSystem.diagnostics.reads[loc].total || 0) + 1;
         return this.#data;
     }
 
@@ -1576,7 +1643,7 @@ class FroggyFile {
     }
 }
 
-const FroggyFileSystem = new fs({
+const FroggyFileSystem = new SwagSystem({
     "Config:": [
         { name: "trusted_programs", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
             "test",
@@ -2283,8 +2350,21 @@ const FroggyFileSystem = new fs({
             "h D:/Palettes",
             "m $1",
         ] },
+        { name: "set-froggy-time-format", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
+            "!f",
+            "ft w. Y/mn/d h:m:s",
+        ] },
         { name: "set-US-time-format", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
+            "!time-US",
             "ft w. mn/d/y H:m:s a",
+        ] },
+        { name: "set-EU-time-format", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
+            "!time-EU",
+            "ft w. d/mn/y H:m:s",
+        ] },
+        { name: "set-iso-time-format", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
+            "!time-ISO",
+            "ft Y-mn-d!T h:m:s.l!Z",
         ] },
     ],
     "D:/Palettes": [
@@ -2625,12 +2705,10 @@ let config_preproxy = {
 
     // immutable settings
     trustedPrograms: [],
-    stepThroughProgram: false,
     currentPath: "C:/Home",
     commandHistory: [],
     commandHistoryIndex: 0,
     spinnerIndex: 0,
-    osTime: 0,
     currentProgram: "cli",
     programList: ["cli", "lilypad"],
     programSession: 0,
@@ -2640,9 +2718,11 @@ let config_preproxy = {
     alertText: createErrorText(0, "ALERT"),
     programErrorText: " -- <span class='error'><span class='error-severity-5'>!! -> {{}} <- !!</span></span> --",
     fatalErrorText: createErrorText(6, "Fatal Error"),
+    intervals: {},
+    intervalNameMap: {},
 }
 
-const diagnostic = {
+const diagnostics = {
     total: {
         configGet: 0,
         configSet: 0,
@@ -2658,11 +2738,11 @@ const diagnostic = {
 
 const config = new Proxy(config_preproxy, {
     get: (target, prop, value) => {
-        diagnostic.total.configGet++;
+        diagnostics.total.configGet++;
         return target[prop];
     },
     set: (target, prop, value) => {
-        diagnostic.total.configSet++;
+        diagnostics.total.configSet++;
         let stack = new Error().stack.split("\n").slice(2).map(line => line.trim());
         if(stack.some(line => line.includes("at #verify"))) {
             return true;
@@ -2676,12 +2756,85 @@ function createErrorText(severity, message){
     return `<span class='error'><span class='error-severity-${severity}'>${message}</span> -</span>`
 }
 
+// Store previous totals
+let prevTotals = {
+    configGet: 0,
+    configSet: 0,
+    reads: {},
+    writes: {}
+};
+
 const diagnosticInterval = setInterval(() => {
-    diagnostic.perSecond.configGet = Math.ceil(diagnostic.total.configGet / diagnostic.counter);
-    diagnostic.perSecond.configSet = Math.ceil(diagnostic.total.configSet / diagnostic.counter);
-    diagnostic.runtime = Date.now() - diagnostic.startTime;
-    diagnostic.counter++;
+    diagnostics.counter++; // increment counter for this tick
+    const now = Date.now();
+    diagnostics.runtime = now - diagnostics.startTime;
+
+    // Initialize containers
+    diagnostics.lastSecond = {};
+    diagnostics.average = {};
+
+    // --- Config GET/SET ---
+    ['configGet', 'configSet'].forEach(key => {
+        const current = diagnostics.total[key] || 0;
+        const delta = current - (prevTotals[key] || 0);
+        diagnostics.lastSecond[key] = delta;
+        diagnostics.average[key] = +(current / diagnostics.counter).toFixed(3); // average per interval
+        prevTotals[key] = current;
+    });
+
+    // --- Reads & Writes ---
+    ['reads', 'writes'].forEach(type => {
+        diagnostics.lastSecond[type] = {};
+        diagnostics.average[type] = {};
+
+        for (let dir in SwagSystem.diagnostics[type]) {
+            const total = SwagSystem.diagnostics[type][dir].total || 0;
+            if (!(dir in prevTotals[type])) prevTotals[type][dir] = 0;
+
+            const delta = total - prevTotals[type][dir];
+            const avg = +(total / diagnostics.counter).toFixed(3); // average per interval
+
+            diagnostics.lastSecond[type][dir] = delta;
+            diagnostics.average[type][dir] = avg;
+
+            prevTotals[type][dir] = total;
+        }
+    });
 }, 1000);
+
+config.intervals[diagnosticInterval] = true
+config.intervalNameMap[diagnosticInterval] = "diagnostics";
+
+function outputDiagnosticInformation(){
+    // --- Console Output ---
+    console.clear();
+    console.log(`--- Diagnostics (Runtime: ${(diagnostics.runtime/1000).toFixed(1)}s) ---`);
+
+    // Config table
+    console.log("Config:");
+    const configTable = ['configGet', 'configSet'].map(k => ({
+        Metric: k,
+        'Last Second': diagnostics.lastSecond[k],
+        'Average': diagnostics.average[k],
+        'Total': diagnostics.total[k]
+    }));
+    console.table(configTable);
+
+    // Reads/Writes tables
+    ['reads', 'writes'].forEach(type => {
+        console.log(type.charAt(0).toUpperCase() + type.slice(1) + ":");
+        const table = [];
+        for (let dir in diagnostics.lastSecond[type]) {
+            table.push({
+                Directory: dir,
+                'Last Second': diagnostics.lastSecond[type][dir],
+                'Average': diagnostics.average[type][dir],
+                'Total': SwagSystem.diagnostics[type][dir].total
+            });
+        }
+        console.table(table);
+    });
+}
 
 const user_config_keys = Object.keys(config_preproxy).filter(key => config_preproxy[key] instanceof UserKey);
 const os_config_keys = Object.keys(config_preproxy).filter(key => !(config_preproxy[key] instanceof UserKey)).filter(key => !["trustedPrograms"].includes(key));

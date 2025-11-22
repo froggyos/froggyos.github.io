@@ -22,7 +22,7 @@ async function handleRequest(link, body, handlers) {
         terminal.innerHTML = "";
         if(data.type == "ratelimit") createTerminalLine("T_pond_ratelimit", config.errorText);
         else {
-            createTerminalLine(`T_pond_ratelimit_strict {{${parseTimeFormat(config.timeFormat, data.reset)}}}`, config.errorText);
+            createTerminalLine(`T_pond_ratelimit_strict {{${timestamp(config.timeFormat, data.reset)}}}`, config.errorText);
         }
         createEditableTerminalLine(`${config.currentPath}>`);
     }
@@ -380,7 +380,7 @@ const mainMenu = {
                                 let messageMenu = {
                                     [`${pad(5)}FROM : ${message.sender}${FULLWIDTH}${userDecorations}`]: "text",
                                     [`${pad(2)}SUBJECT : ${message.subject}`]: "text",
-                                    [`TIMESTAMP : ${parseTimeFormat(config.timeFormat, message.timestamp)}`]: "text",
+                                    [`TIMESTAMP : ${timestamp(config.timeFormat, message.timestamp)}`]: "text",
                                     "-----": "text",
                                     "a": "newline",
                                 };
@@ -794,12 +794,12 @@ const mainMenu = {
                                     [`Warn ID: ${warn.id}`]: "text",
                                     [`Issued by: ${warn.warnedBy}`]: "text",
                                     [`Reason: ${warn.reason}`]: "text",
-                                    [`Timestamp: ${parseTimeFormat(config.timeFormat, warn.timestamp)}`]: "text",
+                                    [`Timestamp: ${timestamp(config.timeFormat, warn.timestamp)}`]: "text",
                                     [warn.messageID == "no_report" ? "No associated message." : `Associated Message ID: ${warn.messageID}`]: "text",
                                     [warn.messageID != "no_report" ? 
                                         `${'-'.repeat(78)}<br>Reported Message:<br>Recipient: ${warn.messageRecipient}<br>` +
                                         `Subject: ${warn.messageSubject}<br>` + 
-                                        `Timestamp: ${parseTimeFormat(config.timeFormat, warn.messageTimestamp)}<br>` + 
+                                        `Timestamp: ${timestamp(config.timeFormat, warn.messageTimestamp)}<br>` + 
                                         `Message Body: <br>${warn.messageBody.map(line => `${line}`).join("<br>")}`
                                         : ""]: "text",
                                     "<< Back to Warnings": () => {
@@ -1263,7 +1263,7 @@ async function openPond(userRoles = []) {
                                         const reportMenu = {
                                             [`${pad(4)}TITLE : ${report.title}`]: "text",
                                             [`${pad(1)}REPORTER : ${report.reporter}`]: "text",
-                                            [`TIMESTAMP : ${parseTimeFormat(config.timeFormat, report.reportTimestamp)}`]: "text",
+                                            [`TIMESTAMP : ${timestamp(config.timeFormat, report.reportTimestamp)}`]: "text",
                                             [`${pad(2)}DETAILS : ${report.details}`]: "text",
                                             [`REPORT ID : ${report.reportID}`]: "text",
                                             "": "newline",
@@ -1278,7 +1278,7 @@ async function openPond(userRoles = []) {
                                             "--\u200b---": "text",
                                             [report.resolved ? 
                                                 "Resolved by : " +  report.resolvedBy + "<br>" +
-                                                "Resolution Timestamp : " + parseTimeFormat(config.timeFormat, report.resolutionTimestamp)
+                                                "Resolution Timestamp : " + timestamp(config.timeFormat, report.resolutionTimestamp)
                                                 : ""]: "text",
                                             "Take Action:": "text",
                                             "": "newline",
@@ -1611,7 +1611,7 @@ async function openPond(userRoles = []) {
                                         terminal.innerHTML = "";
                                         const appealMenu = {
                                             [`${pad(1)}USERNAME : ${appeal.username}`]: "text",
-                                            [`TIMESTAMP : ${parseTimeFormat(config.timeFormat, appeal.appealTimestamp)}`]: "text",
+                                            [`TIMESTAMP : ${timestamp(config.timeFormat, appeal.appealTimestamp)}`]: "text",
                                             [`${pad(4)}TITLE : ${appeal.appealTitle}`]: "text",
                                             [`APPEAL ID : ${appeal.appealID}`]: "text",
                                             "": "newline",
