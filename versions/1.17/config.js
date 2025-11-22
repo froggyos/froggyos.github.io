@@ -1528,7 +1528,7 @@ class FroggyFile {
      * @param {FroggyFile.filePropertyDefaults} properties
      * @param {String[]} data
      */
-    constructor(name, properties = FroggyFile.filePropertyDefaults, data = [""], dirname = "") {
+    constructor(name, properties = FroggyFile.filePropertyDefaults, data = [""], dirname = "<unknown dir>") {
         this.#name = name;
         this.#properties = properties;
         this.#data = data;
@@ -2778,7 +2778,7 @@ const diagnosticInterval = setInterval(() => {
         const current = diagnostics.total[key] || 0;
         const delta = current - (prevTotals[key] || 0);
         diagnostics.lastSecond[key] = delta;
-        diagnostics.average[key] = +(current / diagnostics.counter).toFixed(3); // average per interval
+        diagnostics.average[key] = +(current / diagnostics.counter).toFixed(2); // average per interval
         prevTotals[key] = current;
     });
 
@@ -2792,7 +2792,7 @@ const diagnosticInterval = setInterval(() => {
             if (!(dir in prevTotals[type])) prevTotals[type][dir] = 0;
 
             const delta = total - prevTotals[type][dir];
-            const avg = +(total / diagnostics.counter).toFixed(3); // average per interval
+            const avg = +(total / diagnostics.counter).toFixed(2); // average per interval
 
             diagnostics.lastSecond[type][dir] = delta;
             diagnostics.average[type][dir] = avg;
@@ -2808,7 +2808,7 @@ config.intervalNameMap[diagnosticInterval] = "diagnostics";
 function outputDiagnosticInformation(){
     // --- Console Output ---
     console.clear();
-    console.log(`--- Diagnostics (Runtime: ${(diagnostics.runtime/1000).toFixed(1)}s) ---`);
+    console.log(`--- Diagnostics (Runtime: ${(diagnostics.runtime/1000).toFixed(2)}s) ---`);
 
     // Config table
     console.log("Config:");
