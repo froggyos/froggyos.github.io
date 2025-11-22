@@ -597,16 +597,6 @@ const presetLanguagesMap = {
         nmt: "ndaní fiyala ágayuménta me",
         jpn: "ファイルの引数が不足しています"
     },
-    "T_UNUSED_invalid_format_object_inter_rule_delimiter": {
-        eng: "Invalid FormatObject (INTER-RULE DELIMITER) syntax.",
-        nmt: "gogowa FormatObject (LU GAYANA MEMәPELEWISI) sebesikya",
-        jpn: "無効なフォーマットオブジェクト（インター・ルール・デリミター）構文です"
-    },
-    "T_UNUSED_error_data_unavailable": {
-        eng: "Error Data UNAVAILABLE",
-        nmt: "gogowa data UNAYAVA",
-        jpn: "エラーデータは利用できません"
-    },
     "T_provide_valid_t_desc": {
         eng: "Please provide a valid translation descriptor.",
         nmt: "apelelala som apeya mëmëzte dësikipita",
@@ -663,11 +653,6 @@ const presetLanguagesMap = {
         eng: "[[BULLFROG]]showspinner [0/1] - Toggles the loading spinner",
         nmt: "[[BULLFROG]]showspinner [0/1] - togela supinär",
         jpn: "[[BULLFROG]]showspinner [0/1] - ローディングスピナーの表示を切り替える"
-    },
-    "T_UNUSED_bullfrog_commands_debugmode": {
-        eng: "[[BULLFROG]]debugmode [0/1] - Toggles debug mode",
-        nmt: "[[BULLFROG]]debugmode [0/1] - togela debug módi",
-        jpn: "[[BULLFROG]]debugmode [0/1] - デバッグモードを切り替える"
     },
     "T_bullfrog_commands_setspinner": {
         eng: "[[BULLFROG]]setspinner [spinner] - Changes the loading spinner",
