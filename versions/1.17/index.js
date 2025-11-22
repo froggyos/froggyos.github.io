@@ -14,8 +14,8 @@ document.body.onclick = function() {
     } catch (err) { };
 }
 
-function spacer(){
-    createTerminalLine("\u00A0", "", {translate: false});
+function spacer(text="\u00A0") {
+    createTerminalLine(text, "", {translate: false});
 }
 
 document.body.onkeyup = function(event) {
@@ -42,6 +42,7 @@ function setUserConfigFromFile(){
     let fsds = parse_fSDS(getFileWithName("Config:", "user").data);
     if(fsds.error) {
         killInterval(configInterval);
+        config.troubles.push("buc/fe"); // bad user config fsds error
         terminal.innerHTML = "";
         createTerminalLine("T_error_reading_config_file", config.fatalErrorText);
         return;
@@ -1717,7 +1718,7 @@ async function sendCommand(command, args, createEditableLineAfter = true){
 
             if(args.length == 0){
                 createTerminalLine("T_pond_command_intro_do_h", "");
-                createTerminalLine("~~~", "", {translate: false});
+                spacer("~~~")
                 createTerminalLine("T_pond_checking", ">");
                 setSetting("showSpinner", true)
                 await ping().then((data) => {
@@ -1831,7 +1832,6 @@ async function sendCommand(command, args, createEditableLineAfter = true){
                 let totalResponseTime = 0;
                 let successfulPings = 0;
                 for(let i = 0; i < 10; i++){
-                    // eslint-disable-next-line no-await-in-loop
                     await ping().then((data) => {
                         if(data.ok){
                             totalResponseTime += data.responseTime;
@@ -1861,13 +1861,18 @@ async function sendCommand(command, args, createEditableLineAfter = true){
 
         case "pulse": {
             createTerminalLine("T_pulse_info_intro", "");
-            createTerminalLine(`T_pulse_system_uptime {{${formatDuration("ss.ms!s mm!m hh!h dd!d", diagnostics.runtime)}}}`, pad(1));
-            createTerminalLine(`T_pulse_program_session {{${config.programSession}}}`, pad(1));
+            spacer("~~~");
+            createTerminalLine("T_pulse_system_info", pad(1));
+            createTerminalLine(`T_pulse_system_uptime {{${formatDuration("ss.ms!s mm!m hh!h dd!d", diagnostics.runtime)}}}`, pad(2));
+            createTerminalLine(`T_pulse_version {{${config.version}}}`, pad(2));
+            createTerminalLine(`T_pulse_fs_size {{${FroggyFileSystem.size()}}}`, pad(2));
+            createTerminalLine(`T_pulse_program_session {{${config.programSession}}}`, pad(2));
+
             const maxLength = Object.keys(config.intervalNameMap)
                 .reduce((max, key) => Math.max(max, config.intervalNameMap[key].length), 0);
 
             // Now loop through intervals
-            spacer()
+            spacer("~~~");
             createTerminalLine("T_pulse_governers", pad(1));
             for (let interval in config.intervals) {
                 const name = config.intervalNameMap[interval];
@@ -1875,29 +1880,65 @@ async function sendCommand(command, args, createEditableLineAfter = true){
 
                 let response = config.intervals[interval]
 
-                if(response){
-                    response = localize("T_intj_ok")
-                    createTerminalLine(`${name}${padding} : ${response}`, pad(2), { translate: false });
+                if(response === true){
+                    createTerminalLine(`${name}${padding} : ${localize("T_intj_ok")}`, pad(2), { translate: false });
                 } else {
-                    response = localize("T_intj_error")
-                    createTerminalLine(`${name}${padding} : ${response}`, pad(2), { translate: false, formatting: [
+                    const line = `${name}${padding} : ${localize("T_intj_error")} ${config.troubles[response]}`
+                    createTerminalLine(line, pad(2), { translate: false, formatting: [
                         {
                             type: "range", 
                             b: "c12",
                             br_start: (name.length + padding.length) + 3,
-                            br_end: (name.length + padding.length) + response.length + 3,
+                            br_end: (name.length + padding.length) + localize("T_intj_error").length + 2,
                         }, {
                             type: "range", 
                             t: "c15",
                             tr_start: (name.length + padding.length) + 3,
-                            tr_end: (name.length + padding.length) + response.length + 3,
+                            tr_end: (name.length + padding.length) + localize("T_intj_error").length + 2,
                         }
                     ]
                     });
                 }
             }
-            console.log(diagnostics)
-            printLn()
+            // --- Diagnostics output ---
+            spacer("~~~");
+            createTerminalLine("T_pulse_config", pad(1));
+            const configMetrics = ['configGet', 'configSet'].map(key => ({
+                Metric: key,
+                Last: diagnostics.lastSecond[key],
+                Avg: diagnostics.average[key],
+                Total: diagnostics.total[key]
+            }));
+
+            // Print config nicely
+            configMetrics.forEach(item => {
+                createTerminalLine(`${item.Metric.padEnd(10)} | ${localize("T_pulse_abbr_last_second")}: ${String(item.Last).padStart(5)} | ${localize("T_pulse_abbr_average")}: ${String(item.Avg).padStart(5)} | ${localize("T_pulse_abbr_total")}: ${String(item.Total).padStart(5)}`, pad(2), {translate: false});
+            });
+
+            spacer("~~~");
+
+            // Reads/Writes Table
+            ['reads', 'writes'].forEach(type => {
+                const obj = {
+                    "reads": "T_pulse_reads",
+                    "writes": "T_pulse_writes"
+                }
+                createTerminalLine(obj[type], pad(1));
+
+                const dirs = Object.keys(diagnostics.lastSecond[type])
+                    .sort((a, b) => (SwagSystem.diagnostics[type][b]?.total || 0) - (SwagSystem.diagnostics[type][a]?.total || 0));
+
+                dirs.forEach(dir => {
+                    const last = diagnostics.lastSecond[type][dir];
+                    const avg = diagnostics.average[type][dir];
+                    const total = SwagSystem.diagnostics[type][dir].total;
+                    const line = `${dir}\n${pad(2)}${localize("T_pulse_abbr_last_second")}: ${String(last)} | ${localize("T_pulse_abbr_average")}: ${String(avg)} | ${localize("T_pulse_abbr_total")}: ${String(total)}`;
+                    createTerminalLine(line, pad(2), {translate: false});
+                    spacer();
+                });
+                spacer("~~~")
+            });
+            printLn();
         } break;
 
         case "rename": {
@@ -2040,7 +2081,7 @@ async function sendCommand(command, args, createEditableLineAfter = true){
             if(config.currentPath == "D:/Spinners") fileType = "T_file_info_type_spinner";
             if(config.currentPath == "Config:/program_data") fileType = "T_file_info_type_program_data";
             createTerminalLine(fileType, "");
-            createTerminalLine("T_file_info_size {{"+file.getSize()+"}}", "");
+            createTerminalLine(`T_file_info_size {{${formatBytes(file.getSize())}}}`, "");
             createTerminalLine("~".repeat(77), "~", {translate: false});
             file.getData().forEach(line => {
                 createTerminalLine(line, ">", {translate: false})
@@ -3307,6 +3348,7 @@ async function createLilypadLinePondDerivative(path, filename, options){
     };
 
     terminalLine.addEventListener('keydown', terminalLineKeydownHandler);
+    terminalLine.addEventListener('wheel', () => terminal.focus());
 
     lineContainer.appendChild(terminalPath);
     lineContainer.appendChild(terminalLine);
@@ -3320,6 +3362,13 @@ async function createLilypadLinePondDerivative(path, filename, options){
     terminalLine.focus();
     updateLinePrefixes();
 }
+
+terminal.addEventListener('wheel', (event) => {
+    event.preventDefault();
+    const direction = Math.sign(event.deltaY);
+    if(event.shiftKey) terminal.scrollTop += 32 * direction;
+    else terminal.scrollTop += 8 * direction;
+});
 
 
 const defaults = parse_fSDS(FroggyFileSystem.getFile("Config:/user").getData());
@@ -3335,7 +3384,9 @@ sendCommand('[[BULLFROG]]validatelanguage', [], false);
 let trustedProgramsInterval = setInterval(() => {
     let file = FroggyFileSystem.getFile("Config:/trusted_programs");
     if(file == undefined){
+        createTerminalLine(`T_trusted_programs_file_missing`, config.fatalErrorText);
         killInterval(trustedProgramsInterval);
+        config.troubles.push("tpfm"); // trusted programs file missing
         return;
     }
     config.trustedPrograms = file.getData();
@@ -3364,6 +3415,7 @@ let configInterval = setInterval(() => {
         
         killInterval(configInterval);
         killInterval(dateTimeInterval);
+        config.troubles.push(`buc/mk-${badKey}`); // bad user config missing key
         return;
     }
 }, 250);
@@ -3386,7 +3438,7 @@ const onStart = () => {
 
 function killInterval(interval){
     clearInterval(interval);
-    config.intervals[interval] = false;
+    config.intervals[interval] = config.troubles.length;
 }
 
 

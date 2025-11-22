@@ -622,6 +622,11 @@ const presetLanguagesMap = {
         nmt: "ndaní koda {{}} kene Config:/user.",
         jpn: "T_missing_key_config_user"
     },
+    "T_trusted_programs_file_missing": {
+        eng: "Missing Config:/trusted_programs",
+        nmt: "T_trusted_programs_file_missing",
+        jpn: "T_trusted_programs_file_missing"
+    },
     "T_error_reading_config_file": {
         eng: "Error reading config file.",
         nmt: "gogowa sanwa känfikya fiyala",
@@ -639,20 +644,65 @@ const presetLanguagesMap = {
         nmt: "T_pulse_info_intro",
         jpn: "T_pulse_info_intro"
     },
+    "T_pulse_system_info": {
+        eng: "* System Information *",
+        nmt: "T_pulse_system_info",
+        jpn: "T_pulse_system_info"
+    },
     "T_pulse_system_uptime {{}}": {
-        eng: "System Uptime: {{}}",
+        eng: "uptime: {{}}",
         nmt: "T_pulse_system_uptime {{}}",
         jpn: "T_pulse_system_uptime {{}}"
     },
+    "T_pulse_fs_size {{}}": {
+        eng: "file system size: {{}}",
+        nmt: "T_pulse_fs_size {{}}",
+        jpn: "T_pulse_fs_size {{}}"
+    },
     "T_pulse_program_session {{}}": {
-        eng: "Program Session: {{}}",
+        eng: "program session: {{}}",
         nmt: "T_pulse_program_session {{}}",
         jpn: "T_pulse_program_session {{}}"
+    },
+    "T_pulse_version {{}}": {
+        eng: "version: {{}}",
+        nmt: "T_pulse_version {{}}",
+        jpn: "T_pulse_version {{}}"
     },
     "T_pulse_governers": {
         eng: "* Governers *",
         nmt: "* semes me *",
         jpn: "T_pulse_governers"
+    },
+    "T_pulse_config": {
+        eng: "* Config *",
+        nmt: "T_pulse_config",
+        jpn: "T_pulse_config"
+    },
+    "T_pulse_reads": {
+        eng: "* File Reads *",
+        nmt: "T_pulse_reads",
+        jpn: "T_pulse_reads"
+    },
+    "T_pulse_writes": {
+        eng: "* File Writes *",
+        nmt: "T_pulse_writes",
+        jpn: "T_pulse_writes"
+    },
+    "T_pulse_abbr_last_second": {
+        eng: "Last",
+        nmt: "T_pulse_abbr_last_second",
+        jpn: "T_pulse_abbr_last_second"
+    },
+    "T_pulse_abbr_average": {
+        eng: "Avg",
+        nmt: "T_pulse_abbr_average",
+        jpn: "T_pulse_abbr_average"
+    },
+    "T_pulse_abbr_total": {
+        eng: "Total",
+        nmt: "T_pulse_abbr_total",
+        jpn: "T_pulse_abbr_total"
     },
 
     // bullfrog commands =========================
@@ -1394,6 +1444,20 @@ class SwagSystem {
         if (!this.#functionHashes.includes(callerHash)) throw new Error(`Access denied: JavaScript Function "${caller}" is not allowed to access the file system.`);
     }
 
+    size() {
+        this.#verify();
+        let total = 0;
+        const fs = this.#fs;
+        for (let directory in fs) {
+            total += directory.length;
+            fs[directory].forEach(file => {
+                total += file.getSize();
+            });
+        }
+
+        return formatBytes(total);
+    }
+
     getDirectory(location) {
         this.#verify();
         const fs = this.#fs;
@@ -1532,11 +1596,12 @@ class FroggyFile {
         this.#name = name;
         this.#properties = properties;
         this.#data = data;
-        this.#size = 0;
+        this.#size = 4;
         this.dirname = dirname;
         data.forEach(line => {
             this.#size += line.length + 1;
         });
+        this.#size += this.#name.length;
     }
 
     /**
@@ -1545,8 +1610,9 @@ class FroggyFile {
      */
     rename(newName){
         if(this.#name === "trusted_programs") throw new Error("You may not rename the 'trusted_programs' file.");
+        this.#size -= this.#name.length;
         this.#name = newName;
-        const loc = this.dirname + "/" + this.#name;
+        this.#size += this.#name.length;
     }
 
     /**
@@ -1566,6 +1632,7 @@ class FroggyFile {
      */
     write(data) {
         this.#data = data;
+        this.#size = 4;
         const loc = this.dirname + "/" + this.#name;
         if(!SwagSystem.diagnostics.writes[loc]) SwagSystem.diagnostics.writes[loc] = {};
 
@@ -1578,6 +1645,7 @@ class FroggyFile {
         data.forEach(line => {
             this.#size += line.length + 1;
         });
+        this.#size += this.#name.length;
     }
 
     /**
@@ -2720,14 +2788,11 @@ let config_preproxy = {
     fatalErrorText: createErrorText(6, "Fatal Error"),
     intervals: {},
     intervalNameMap: {},
+    troubles: [],
 }
 
 const diagnostics = {
     total: {
-        configGet: 0,
-        configSet: 0,
-    },
-    perSecond: {
         configGet: 0,
         configSet: 0,
     },
@@ -2812,6 +2877,7 @@ function outputDiagnosticInformation(){
 
     // Config table
     console.log("Config:");
+
     const configTable = ['configGet', 'configSet'].map(k => ({
         Metric: k,
         'Last Second': diagnostics.lastSecond[k],
@@ -2834,6 +2900,28 @@ function outputDiagnosticInformation(){
         }
         console.table(table);
     });
+}
+
+function formatBytes(total) {
+    if (total < 1024) {
+        // B → KB
+        return `${total} B`;
+    }
+    else if (total < 1024 * 1024) {
+        const kb = total / 1024;
+        return `${kb.toFixed(2)} KB (${total} B)`;
+    }
+    else if (total < 1024 * 1024 * 1024) {
+        const kb = total / 1024;
+        const mb = total / (1024 * 1024);
+        return `${mb.toFixed(2)} MB (${kb} KB)`;
+    }
+    else {
+        const mb = total / (1024 * 1024);
+        const gb = total / (1024 * 1024 * 1024);
+        return `${gb.toFixed(2)} GB (${mb} MB)`;
+        // TB preview uses more precision (usually very small)
+    }
 }
 
 const user_config_keys = Object.keys(config_preproxy).filter(key => config_preproxy[key] instanceof UserKey);
