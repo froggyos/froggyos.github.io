@@ -1,5 +1,3 @@
-**BUG!!**
-for some reason text is always the text color when the palette is changed.
 # froggyOS Documentation
 FroggyOS is a CLI-based programming operating system that is designed to be simple and easy to use. It is built using HTML, CSS, and JavaScript. It was created to be a fun and educational way to introduce beginners to CLI-based operating systems, as opposed to GUI-based operating systems, like Windows.
 ## General Information
