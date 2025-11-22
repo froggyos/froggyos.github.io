@@ -1,12 +1,13 @@
 # froggyOS Documentation
 FroggyOS is a CLI-based programming operating system that is designed to be simple and easy to use. It is built using HTML, CSS, and JavaScript. It was created to be a fun and educational way to introduce beginners to CLI-based operating systems, as opposed to GUI-based operating systems, like Windows.
 ## General Information
-* in paths, `.` will be replaced with the current directory
-* programs can *only* be written in designated directories
-* you can press the `CTRL+C` keys to stop a running program
-* if a FroggyScript program exits with an error, the command `[[BULLFROG]]gotoprogramline [program] [line with error]` will be put into your command history
-* file types are inferred based on file location
-* For whatever reason, if there is no typeable line in the terminal, press `SHIFT + ENTER` to create a typeable line
+* In paths, `.` will be replaced with the current directory.
+* Programs can *only* be written in designated directories.
+* You can press the `CTRL+C` keys to stop a running program.
+* If a FroggyScript program exits with an error, the command `[[BULLFROG]]gotoprogramline [program] [line with error]` will be put into your command history.
+* File types are inferred based on file location.
+* For whatever reason, if there is no typeable line in the terminal, press `SHIFT + ENTER` to create a typeable line.
+* Holding shift while scrolling will allow you to scroll faster.
 ### Paths
 Paths have three parts, the drive, the directory, and the file name.
 ```
@@ -70,12 +71,12 @@ Errors:
 descriptor = T_test {{}} {{}}
 text       = This is a test message with {{}} and {{}}.
 usage      = T_test {{one}}
-result     = Index Missing! -> T_test {{}}
+result     = Descriptor Missing! -> T_test {{}}
 
 descriptor = T_test {{}}
 text       = This is a test message with {{}} and {{}}.
 usage      = T_test {{one}} {{two}}
-result     = Index Missing! -> T_test {{}} {{}}
+result     = Descriptor Missing! -> T_test {{}} {{}}
 ```
 
 ## Command Help
@@ -137,6 +138,33 @@ Properties:
 * hidden - If this file is hidden. This will prevent the file from being acted upon (for example, it cannot be edited).
 * transparent - This file will not show in the directory or in lists, but can be acted upon (for example, can be edited).
     * when a file is cloned, this property will be set to `false`.
+
+### pulse
+The `pulse` command outputs system diagnostics information. It has 5 main sections:
+1. System Information
+    * uptime
+    * version
+    * file system size
+    * current program session
+    * current language
+    * current color palette
+2. Governors
+    * tracks governor activity
+    * see more in [Technical Information](#governors)
+    * this section will also show any [troubles](#troubles) detected.
+3. Config Read/Write Metrics
+    * tracks config read and write operations
+4. File Read Metrics
+    * tracks file read operations
+    * If a file is highlighted in red, that means it has been deleted
+5. File Write Metrics
+    * tracks file write operations
+    * If a file is highlighted in red, that means it has been deleted
+
+Note:
+* Last: number of operations in the last second
+* Avg: average number of operations per second since startup
+* Total: total number of operations since startup
 
 ## Macros
 * Macros are written in the `D:/Macros` directory
@@ -265,7 +293,38 @@ There are no set colors that you must have, but these are the color conventions.
 * swamp-revised
 * neon
 
+## Recovery Mode
+Recovery mode is a special mode in froggyOS that allows you to fix issues with the operating system. To enter recovery mode, run the command `[[BULLFROG]]recoverymode`. In recovery mode, you can run the following commands:
+* `regenlangfiles` - Regenerates language files.
+* `clearstate` - Clears the autoload state.
+* `exit` - Exits recovery mode only if all governors are not troubled.
+* `help` - Lists all available recovery mode commands.
+
 # Technical Information
+## Governors
+Governors are intervals that run at set times to manage system resources. There are four governors in froggyOS:
+1. diagnostics
+2. trusted-programs
+3. config
+4. date-time
+
+### diagnostics
+The diagnostics governor runs every second. It tracks file read and write operations, as well as config read and write operations. It keeps track of the number of operations in the last second, the average number of operations per second since startup, and the total number of operations since startup. It is the main driver of the `pulse` command.
+### trusted-programs
+The trusted-programs governor runs every 100 milliseconds. It checks the list of trusted programs in the `D:/trusted_programs` file and updates the trusted status of programs accordingly.
+### config
+The config governor runs every 250 milliseconds. It updates the user config and program list.
+### date-time
+The date-time governor runs every 100 milliseconds. It updates the date and time in the stat bar, as well as the spinner in the top right corner.
+## Troubles
+Troubles are issues with governors that are shown inside of the `pulse` command. Current troubles:
+| Short name | Long name | Description |
+|------------|-----------|-------------|
+| `tpfm` | Trusted programs file missing | The trusted programs file is missing |
+| `buc/mk-(key)` | Bad user config missing key (key) | The user config file is missing the key (key) |
+| `buc/fe` | bad user config fsds error | The user config file has an fSDS parsing error |
+| `buc/gone` | bad user config gone | The user config file is missing |
+
 ## Startup Sequence
 1. Load any state if it exists from `localStorage`
 2. Get the user config from `Config:/user`

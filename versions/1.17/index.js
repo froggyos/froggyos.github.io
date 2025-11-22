@@ -39,10 +39,20 @@ function addToCommandHistory(string){
 }
 
 function setUserConfigFromFile(){
-    let fsds = parse_fSDS(getFileWithName("Config:", "user").data);
+    const file = FroggyFileSystem.getFile("Config:/user");
+    if(file == undefined) {
+        killInterval(configGovernor, "buc/gone"); // user config gone
+        killInterval(dateTimeGovernor, "buc/gone"); // user config gone
+        terminal.innerHTML = "";
+        createTerminalLine("T_user_config_does_not_exist", config.fatalErrorText);
+        setTimeout(() => {
+            recoveryMode();
+        }, 5000);
+        return;
+    }
+    let fsds = parse_fSDS(file.getData());
     if(fsds.error) {
-        killInterval(configInterval);
-        config.troubles.push("buc/fe"); // bad user config fsds error
+        killInterval(configGovernor, "buc/fe"); // bad user config fsds error
         terminal.innerHTML = "";
         createTerminalLine("T_error_reading_config_file", config.fatalErrorText);
         return;
@@ -266,10 +276,25 @@ function localize(descriptor, TRANSLATE_TEXT=true){
 
     if(config.language != languageCache.lang.current){
         languageCache.lang.current = config.language;
+
+        const file = FroggyFileSystem.getFile(`D:/lang_data/${config.language}`);
+
+        if(file == undefined){
+            return;
+        }
+
         languageCache.lang.map = FroggyFileSystem.getFile(`Config:/langs/${config.language}`).getData();
     }
 
     let translationMap = languageCache.ldm;
+
+    if(translationMap == null){
+        killInterval(configGovernor, "buc/nldm");
+        killInterval(dateTimeGovernor, "buc/nldm");
+        // no ldm; off to recovery mode you go!
+        return;
+    }
+
     let languageMap = languageCache.lang.map;
     let englishData = translationMap.indexOf(descriptor);
     let translation = languageMap[englishData];
@@ -952,6 +977,9 @@ async function sendCommand(command, args, createEditableLineAfter = true){
                 printLn();
                 break;
             }
+
+
+            languageCache.lang.map = FroggyFileSystem.getFile(`Config:/langs/${code}`).getData();
             
             setSetting("language", code);
             setSetting("showSpinner", true);
@@ -1867,6 +1895,8 @@ async function sendCommand(command, args, createEditableLineAfter = true){
             createTerminalLine(`T_pulse_version {{${config.version}}}`, pad(2));
             createTerminalLine(`T_pulse_fs_size {{${FroggyFileSystem.size()}}}`, pad(2));
             createTerminalLine(`T_pulse_program_session {{${config.programSession}}}`, pad(2));
+            createTerminalLine(`T_pulse_language {{${config.language}}}`, pad(2));
+            createTerminalLine(`T_pulse_palette {{${config.colorPalette}}}`, pad(2));
 
             const maxLength = Object.keys(config.intervalNameMap)
                 .reduce((max, key) => Math.max(max, config.intervalNameMap[key].length), 0);
@@ -1883,7 +1913,7 @@ async function sendCommand(command, args, createEditableLineAfter = true){
                 if(response === true){
                     createTerminalLine(`${name}${padding} : ${localize("T_intj_ok")}`, pad(2), { translate: false });
                 } else {
-                    const line = `${name}${padding} : ${localize("T_intj_error")} ${config.troubles[response]}`
+                    const line = `${name}${padding} : ${localize("T_intj_error")} ${response}`
                     createTerminalLine(line, pad(2), { translate: false, formatting: [
                         {
                             type: "range", 
@@ -1903,7 +1933,7 @@ async function sendCommand(command, args, createEditableLineAfter = true){
             // --- Diagnostics output ---
             spacer("~~~");
             createTerminalLine("T_pulse_config", pad(1));
-            const configMetrics = ['configGet', 'configSet'].map(key => ({
+            const configMetrics = ['configRead', 'configWrite'].map(key => ({
                 Metric: key,
                 Last: diagnostics.lastSecond[key],
                 Avg: diagnostics.average[key],
@@ -1912,7 +1942,7 @@ async function sendCommand(command, args, createEditableLineAfter = true){
 
             // Print config nicely
             configMetrics.forEach(item => {
-                createTerminalLine(`${item.Metric.padEnd(10)} | ${localize("T_pulse_abbr_last_second")}: ${String(item.Last).padStart(5)} | ${localize("T_pulse_abbr_average")}: ${String(item.Avg).padStart(5)} | ${localize("T_pulse_abbr_total")}: ${String(item.Total).padStart(5)}`, pad(2), {translate: false});
+                createTerminalLine(`${item.Metric.padEnd(11)} | ${localize("T_pulse_abbr_last_second")}: ${String(item.Last).padStart(5)} | ${localize("T_pulse_abbr_average")}: ${String(item.Avg).padStart(5)} | ${localize("T_pulse_abbr_total")}: ${String(item.Total).padStart(5)}`, pad(2), {translate: false});
             });
 
             spacer("~~~");
@@ -1932,8 +1962,27 @@ async function sendCommand(command, args, createEditableLineAfter = true){
                     const last = diagnostics.lastSecond[type][dir];
                     const avg = diagnostics.average[type][dir];
                     const total = SwagSystem.diagnostics[type][dir].total;
+
+                    const exists = FroggyFileSystem.fileExists(dir);
+
+                    const formatting = [];
+
+                    if(!exists){
+                        formatting.push({
+                            type: "blanket",
+                            b: "c12",
+                            br_start: 0,
+                            br_end: dir.length,
+                        }, {
+                            type: "blanket",
+                            t: "c15",
+                            tr_start: 0,
+                            tr_end: dir.length,
+                        });
+                    }
+
                     const line = `${dir}\n${pad(2)}${localize("T_pulse_abbr_last_second")}: ${String(last)} | ${localize("T_pulse_abbr_average")}: ${String(avg)} | ${localize("T_pulse_abbr_total")}: ${String(total)}`;
-                    createTerminalLine(line, pad(2), {translate: false});
+                    createTerminalLine(line, pad(2), {translate: false, formatting});
                     spacer();
                 });
                 spacer("~~~")
@@ -2281,6 +2330,8 @@ async function sendCommand(command, args, createEditableLineAfter = true){
             createTerminalLine("T_bullfrog_commands_diagtable", ">");
             createTerminalLine("T_bullfrog_commands_greeting", ">");
             createTerminalLine("T_bullfrog_commands_help", ">");
+            createTerminalLine("T_bullfrog_commands_gotoprogramline", ">");
+            createTerminalLine("T_bullfrog_commands_recoverymode", ">");
             createTerminalLine("T_bullfrog_commands_setstatbar", ">");
             createTerminalLine("T_bullfrog_commands_statbarlock", ">");
             createTerminalLine("T_bullfrog_commands_showspinner", ">");
@@ -2293,6 +2344,10 @@ async function sendCommand(command, args, createEditableLineAfter = true){
             createTerminalLine("T_bullfrog_commands_translations", ">");
             createTerminalLine("T_bullfrog_commands_trigdiag", ">");
             printLn();
+        break;
+
+        case '[[BULLFROG]]recoverymode':
+            recoveryMode();
         break;
 
         case '[[BULLFROG]]setstatbar':
@@ -3370,9 +3425,6 @@ terminal.addEventListener('wheel', (event) => {
     else terminal.scrollTop += 8 * direction;
 });
 
-
-const defaults = parse_fSDS(FroggyFileSystem.getFile("Config:/user").getData());
-
 setUserConfigFromFile()
 sendCommand('[[BULLFROG]]autoloadstate', [], false);
 document.title = `froggyOS v. ${config.version}`;
@@ -3381,21 +3433,23 @@ changeColorPalette(config.colorPalette);
 createColorTestBar();
 sendCommand('[[BULLFROG]]validatelanguage', [], false);
 
-let trustedProgramsInterval = setInterval(() => {
+let trustedProgramsGovernor = setInterval(() => {
+    if(config.intervals[trustedProgramsGovernor] !== true) return;
     let file = FroggyFileSystem.getFile("Config:/trusted_programs");
     if(file == undefined){
+        terminal.innerHTML = "";
         createTerminalLine(`T_trusted_programs_file_missing`, config.fatalErrorText);
-        killInterval(trustedProgramsInterval);
-        config.troubles.push("tpfm"); // trusted programs file missing
+        killInterval(trustedProgramsGovernor, "tpfm");
         return;
     }
     config.trustedPrograms = file.getData();
 }, 100);
 
-config.intervals[trustedProgramsInterval] = true;
-config.intervalNameMap[trustedProgramsInterval] = "trusted-programs";
+config.intervals[trustedProgramsGovernor] = true;
+config.intervalNameMap[trustedProgramsGovernor] = "trusted-programs";
 
-let configInterval = setInterval(() => {
+let configGovernor = setInterval(() => {
+    if(config.intervals[configGovernor] !== true) return;
     setUserConfigFromFile()
     updateProgramList()
 
@@ -3413,40 +3467,148 @@ let configInterval = setInterval(() => {
         terminal.lastElementChild.lastElementChild.contentEditable = false;
         createTerminalLine(`T_missing_key_config_user {{${badKey}}}`, config.fatalErrorText);
         
-        killInterval(configInterval);
-        killInterval(dateTimeInterval);
-        config.troubles.push(`buc/mk-${badKey}`); // bad user config missing key
+        killInterval(configGovernor, `buc/mk-${badKey}`); // bad user config missing key
+        killInterval(dateTimeGovernor, `buc/mk-${badKey}`); // bad user config missing key
         return;
     }
 }, 250);
 
-let dateTimeInterval = setInterval(() => {
+let dateTimeGovernor = setInterval(() => {
+    if(config.intervals[dateTimeGovernor] !== true) return;
     updateDateTime()
 }, 100);
 
-config.intervals[configInterval] = true;
-config.intervals[dateTimeInterval] = true;
+config.intervals[configGovernor] = true;
+config.intervals[dateTimeGovernor] = true;
 
-config.intervalNameMap[configInterval] = "config";
-config.intervalNameMap[dateTimeInterval] = "date-time";
+config.intervalNameMap[configGovernor] = "config";
+config.intervalNameMap[dateTimeGovernor] = "date-time";
 
-const onStart = () => {
-    sendCommand("pulse", [])
+function onStart(){
+    //sendCommand("pulse", [])
     //sendCommand("pond", ["-l", "test", "test"])
     //sendCommand("st", ["test"])
 }
 
-function killInterval(interval){
-    clearInterval(interval);
-    config.intervals[interval] = config.troubles.length;
+function killInterval(interval, trouble){
+    config.intervals[interval] = trouble
+}
+
+function recoveryMode(){
+    let oldSendCommand = sendCommand;
+
+    onStart = function(){};
+
+    terminal.innerHTML = "";
+    const out = (v, prefix=">") => {
+        createTerminalLine(v, prefix, {translate: false})
+    }
+    
+    const printLn = (v = ">") => {
+        createEditableTerminalLine(v);
+    }
+
+    out("Welcome to froggyOS recovery mode! If you're seeing this, you MESSED SOMETHING UP BIG TIME. YAY! (or you entered the command yourself. In that case, Im proud that you're trying to fix your mistakes!) Type \"help\" for a list of commands.");
+    printLn()
+
+    sendCommand = function(command, args){
+        if(command == "[[BULLFROG]]greeting") return;
+        switch(command){
+            case 'regenlangfiles': {
+                out("Regenerating language files...");
+                let dir = FroggyFileSystem.getDirectory("Config:/langs");
+                if(!dir){
+                    FroggyFileSystem.createDirectory("Config:/langs");
+                    dir = FroggyFileSystem.getDirectory("Config:/langs");
+                }
+
+                FroggyFileSystem.addFileToDirectory("Config:/langs", FroggyFile.from({name: "ldm", properties: undefined, data: Object.keys(presetLanguagesMap)}));
+
+                const ldmFileData = FroggyFileSystem.getFile("Config:/langs/ldm").getData();
+
+                const langCodes = Object.keys(presetLanguagesMap[ldmFileData[0]])
+
+                const languageData = {};
+
+                ldmFileData.forEach(descriptor => {
+                    langCodes.forEach(code => {
+                        if(languageData[code] == undefined){
+                            languageData[code] = [];
+                        }
+
+                        languageData[code].push(presetLanguagesMap[descriptor][code]);
+                    })
+                })
+
+                langCodes.forEach(code => {
+                    FroggyFileSystem.addFileToDirectory("Config:/langs", FroggyFile.from({name: code, properties: undefined, data: languageData[code]}));
+                });
+
+                languageCache.ldm = FroggyFileSystem.getFile("Config:/langs/ldm").getData();
+                languageCache.lang.current = config.language;
+                languageCache.lang.map = FroggyFileSystem.getFile(`Config:/langs/${config.language}`).getData();
+
+                config.intervals[dateTimeGovernor] = true;
+                config.intervals[configGovernor] = true;
+
+                if(config.intervals.some(x => x !== true)){
+                    out("Some governors are still troubled. Staying in recovery mode.");
+                    printLn();
+                    return;
+                }
+                out("Language files regenerated successfully. You can now change the language to any available.");
+
+                sendCommand = oldSendCommand;
+                printLn(config.currentPath + ">");
+            } break;
+            case 'clearstate': {
+                out("Clearing state...");
+                localStorage.removeItem(`froggyOS-state-${config.version}-config`);
+                localStorage.removeItem(`froggyOS-state-${config.version}-diagnostics`);
+                localStorage.removeItem(`froggyOS-state-${config.version}-fs`);
+                out("State cleared. Please reload the window to complete the process.");
+            } break;
+            case "help": {
+                out("Available commands:");
+                out("regenlangfiles: Regenerates language files.");
+                out("clearstate: Clears the autoload state.");
+                out("exit: Exits recovery mode");
+                printLn()
+            } break;
+            case "exit": {
+                if(Object.values(config.intervals).some(x => x !== true)){
+                    out("Some governors are still troubled.", config.fatalErrorText);
+                    printLn();
+                    return;
+                }
+                sendCommand = oldSendCommand;
+                printLn(config.currentPath + ">");
+            } break;
+            default: {
+                out(`Unknown command: ${command}`);
+                printLn()
+            }
+        }
+    };
 }
 
 
 
 function ready(){
-    languageCache.ldm = FroggyFileSystem.getFile("Config:/langs/ldm").getData();
-    languageCache.lang.current = config.language;
-    languageCache.lang.map = FroggyFileSystem.getFile(`Config:/langs/${config.language}`).getData();
+    try {
+        languageCache.ldm = FroggyFileSystem.getFile("Config:/langs/ldm").getData();
+        languageCache.lang.current = config.language;
+        languageCache.lang.map = FroggyFileSystem.getFile(`Config:/langs/${config.language}`).getData();
+    } catch (e) {
+        setTimeout(() => {
+        terminal.innerHTML = "";
+            createTerminalLine(`All language files missing. Entering recovery mode...`, config.fatalErrorText, {translate: false});
+            setTimeout(() => {
+                recoveryMode()
+            }, 5000);
+        }, 1000);
+    }
+
     updateDateTime();
     document.getElementById("blackout").remove()
     sendCommand('[[BULLFROG]]greeting', []);

@@ -622,6 +622,11 @@ const presetLanguagesMap = {
         nmt: "ndaní koda {{}} kene Config:/user.",
         jpn: "T_missing_key_config_user"
     },
+    "T_user_config_does_not_exist": {
+        eng: "User Config does not exist. Entering recovery mode...",
+        nmt: "T_user_config_does_not_exist",
+        jpn: "T_user_config_does_not_exist"
+    },
     "T_trusted_programs_file_missing": {
         eng: "Missing Config:/trusted_programs",
         nmt: "T_trusted_programs_file_missing",
@@ -660,9 +665,19 @@ const presetLanguagesMap = {
         jpn: "T_pulse_fs_size {{}}"
     },
     "T_pulse_program_session {{}}": {
-        eng: "program session: {{}}",
+        eng: "current program session: {{}}",
         nmt: "T_pulse_program_session {{}}",
         jpn: "T_pulse_program_session {{}}"
+    },
+    "T_pulse_language {{}}": {
+        eng: "current language: {{}}",
+        nmt: "T_pulse_language {{}}",
+        jpn: "T_pulse_language {{}}"
+    },
+    "T_pulse_palette {{}}": {
+        eng: "current color palette: {{}}",
+        nmt: "T_pulse_palette {{}}",
+        jpn: "T_pulse_palette {{}}"
     },
     "T_pulse_version {{}}": {
         eng: "version: {{}}",
@@ -730,6 +745,11 @@ const presetLanguagesMap = {
         eng: "[[BULLFROG]]help - Displays this message",
         nmt: "[[BULLFROG]]help - nenta lu mem",
         jpn: "[[BULLFROG]]help - このメッセージを表示する"
+    },
+    "T_bullfrog_commands_recoverymode": {
+        eng: "[[BULLFROG]]recoverymode - Enters recovery mode",
+        nmt: "T_bullfrog_commands_recoverymode",
+        jpn: "T_bullfrog_commands_recoverymode"
     },
     "T_bullfrog_commands_setstatbar": {
         eng: "[[BULLFROG]]setstatbar [text] - Changes the text in the status bar",
@@ -1529,6 +1549,18 @@ class SwagSystem {
         if(this.#fs[location] !== undefined) return undefined;
 
         this.#fs[location] = [];
+    }
+
+    fileExists(fullPath) {
+        this.#verify();
+        let fp = fullPath.split("/");
+        let path = fp.slice(0, -1).join("/");
+        let file = fp[fp.length - 1];
+        const fs = this.#fs;
+        if(fs[path] === undefined) return false;
+
+        let retrievedFile = fs[path]?.find(f => f.getName() === file);
+        return retrievedFile !== undefined && retrievedFile.getProperty("hidden") !== true;
     }
 
     stringify() {
@@ -2793,8 +2825,8 @@ let config_preproxy = {
 
 const diagnostics = {
     total: {
-        configGet: 0,
-        configSet: 0,
+        configRead: 0,
+        configWrite: 0,
     },
     runtime: 0,
     startTime: Date.now(),
@@ -2803,11 +2835,11 @@ const diagnostics = {
 
 const config = new Proxy(config_preproxy, {
     get: (target, prop, value) => {
-        diagnostics.total.configGet++;
+        diagnostics.total.configRead++;
         return target[prop];
     },
     set: (target, prop, value) => {
-        diagnostics.total.configSet++;
+        diagnostics.total.configWrite++;
         let stack = new Error().stack.split("\n").slice(2).map(line => line.trim());
         if(stack.some(line => line.includes("at #verify"))) {
             return true;
@@ -2823,13 +2855,14 @@ function createErrorText(severity, message){
 
 // Store previous totals
 let prevTotals = {
-    configGet: 0,
-    configSet: 0,
+    configRead: 0,
+    configWrite: 0,
     reads: {},
     writes: {}
 };
 
-const diagnosticInterval = setInterval(() => {
+const diagnosticsGovernor = setInterval(() => {
+    if(config.intervals[diagnosticsGovernor] !== true) return;
     diagnostics.counter++; // increment counter for this tick
     const now = Date.now();
     diagnostics.runtime = now - diagnostics.startTime;
@@ -2839,7 +2872,7 @@ const diagnosticInterval = setInterval(() => {
     diagnostics.average = {};
 
     // --- Config GET/SET ---
-    ['configGet', 'configSet'].forEach(key => {
+    ['configRead', 'configWrite'].forEach(key => {
         const current = diagnostics.total[key] || 0;
         const delta = current - (prevTotals[key] || 0);
         diagnostics.lastSecond[key] = delta;
@@ -2867,8 +2900,8 @@ const diagnosticInterval = setInterval(() => {
     });
 }, 1000);
 
-config.intervals[diagnosticInterval] = true
-config.intervalNameMap[diagnosticInterval] = "diagnostics";
+config.intervals[diagnosticsGovernor] = true
+config.intervalNameMap[diagnosticsGovernor] = "diagnostics";
 
 function outputDiagnosticInformation(){
     // --- Console Output ---
@@ -2878,7 +2911,7 @@ function outputDiagnosticInformation(){
     // Config table
     console.log("Config:");
 
-    const configTable = ['configGet', 'configSet'].map(k => ({
+    const configTable = ['configRead', 'configWrite'].map(k => ({
         Metric: k,
         'Last Second': diagnostics.lastSecond[k],
         'Average': diagnostics.average[k],
