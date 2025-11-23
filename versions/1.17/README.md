@@ -20,6 +20,7 @@ Paths have three parts, the drive, the directory, and the file name.
 * clear -> cl
 * clearstate -> cls
 * croak -> c
+* croakdir -> cdir
 * exportfile -> export
 * formattime -> ft
 * hatch -> ch
@@ -302,14 +303,17 @@ Recovery mode is a special mode in froggyOS that allows you to fix issues with t
 
 # Technical Information
 ## Governors
-Governors are intervals that run at set times to manage system resources. There are four governors in froggyOS:
+Governors are intervals that run at set times to manage system resources. There are five governors in froggyOS:
 1. diagnostics
-2. trusted-programs
-3. config
-4. date-time
+2. integrity
+3. trusted-programs
+4. config
+5. date-time
 
 ### diagnostics
 The diagnostics governor runs every second. It tracks file read and write operations, as well as config read and write operations. It keeps track of the number of operations in the last second, the average number of operations per second since startup, and the total number of operations since startup. It is the main driver of the `pulse` command.
+### integrity
+The integrity governor runs every second. It checks the integrity of the froggyOS installation by checking for the existence of important files and directories. If any important files or directories are missing, it registers a trouble.
 ### trusted-programs
 The trusted-programs governor runs every 100 milliseconds. It checks the list of trusted programs in the `D:/trusted_programs` file and updates the trusted status of programs accordingly.
 ### config
@@ -324,7 +328,7 @@ Troubles are issues with governors that are shown inside of the `pulse` command.
 | `buc/mk-(key)` | Bad user config missing key (key) | The user config file is missing the key (key) |
 | `buc/fe` | bad user config fsds error | The user config file has an fSDS parsing error |
 | `buc/gone` | bad user config gone | The user config file is missing |
-| `nldm` | No language descriptor map | The language descriptor map file is missing |
+| `integ/nldm` | No language descriptor map | The language descriptor map file is missing |
 | `halt` | Halted | The governor has been halted by the user |
 
 ## Startup Sequence

@@ -62,7 +62,7 @@ class Governor {
         this.troubles = new Set();
         this.ok = true;
         this.interval = setInterval(() => {
-            if(!TroubleManager.governors[this.name].ok) return;
+            if(!this.ok) return;
             this.fn();
         }, this.intervalMs);
 
@@ -98,41 +98,58 @@ class Governor {
     getRecommendedActions(){
         const actions = new Set();
         this.troubles.forEach(trouble => {
-            if(trouble.startsWith("tpfm")) actions.add({
-                action: "regentrustedprogramfile",
-                description: "Regenerate the trusted program file",
-                trouble
-            })
-            else if (trouble.startsWith("buc/mk")) {
+            if(trouble.startsWith("tpfm")) {
+                actions.add({
+                    action: "regentrustedprogramfile",
+                    description: "Regenerate the trusted program file",
+                    trouble
+                })
+            } else if (trouble.startsWith("buc/mk")) {
                 let key = trouble.split("-")[1];
                 actions.add({
                     action: "regenkey "+key,
                     description: `Regenerate the key: ${key}`,
                     trouble
                 })
+            } else if(trouble.startsWith("buc/gone")) {
+                actions.add({
+                    action: "regenuserfile",
+                    description: "Regenerate the user config file",
+                    trouble
+                }) 
+            } else if(trouble.startsWith("buc/fe")) {
+                actions.add({
+                    action: "unknown",
+                    description: "unknown",
+                    trouble
+                }) 
+            } else if (trouble.startsWith("nldm")) {
+                actions.add({
+                    action: "regenlangfiles",
+                    description: "Regenerate the language files",
+                    trouble
+                })
+            } else if(trouble === "halt") {
+                actions.add({
+                    action: `unhalt ${this.name}`,
+                    description: "Unhalt the governor",
+                    trouble
+                })
+            } else if(trouble === "ncd") {
+                actions.add({
+                    action: "regenconfigdir",
+                    description: "Regenerate the config directory",
+                    trouble
+                })
+            } else {
+                actions.add({
+                    action: "no recommended action for trouble",
+                    description: trouble,
+                    trouble
+                })
             }
-            else if(trouble.startsWith("buc/gone")) actions.add({
-                action: "regenuserfile",
-                description: "Regenerate the user file",
-                trouble
-            })
-            else if(trouble.startsWith("buc/fe")) actions.add({
-                action: "unknown",
-                description: "unknown",
-                trouble
-            })
-            else if (trouble.startsWith("nldm")) actions.add({
-                action: "regenlangfiles",
-                description: "Regenerate the language files",
-                trouble
-            })
-            else if(trouble === "halt") actions.add({
-                action: `unhalt ${this.name}`,
-                description: "Unhalt the governor",
-                trouble
-            })
-        });
-        return Array.from(actions);
+        })
+        return Array.from(actions)
     }
 }
 
@@ -223,9 +240,14 @@ const presetLanguagesMap = {
         jpn: "clearstate . . froggyOSの状態をクリアする"
     },
     "T_basic_commands_croak": {
-        eng: "croak [file] . . . . . . . . . . . Deletes the file.",
-        nmt: "croak [fiyala]. . . . . . . . . . . nggave fiyala",
+        eng: "croak [file] . . . . . . . . . . . Deletes files and directories.",
+        nmt: "croak [fiyala]. . . . . . . . . . . nggave fiyala me nam dilekatüli me",
         jpn: "croak [file] . . ファイルを削除する"
+    },
+    "T_basic_commands_croakdir": {
+        eng: "croakdir [directory] . . . . . . Deletes a directory.",
+        nmt: "croakdir [dilekatüli]. . . . . . nggave dilekatüli",
+        jpn: "T_basic_commands_croakdir",
     },
     "T_basic_commands_exportfile": {
         eng: "exportfile [file]. . . . . . . . . Exports a froggyOS file as a .txt file.",
@@ -548,6 +570,11 @@ const presetLanguagesMap = {
         eng: "Directory created.",
         nmt: "dilekatüli mbeno mana",
         jpn: "ディレクトリを作成しました"
+    },
+    "T_directory_deleted": {
+        eng: "Directory deleted.",
+        nmt: "dilekatüli nggave mana",
+        jpn: "T_directory_deleted"
     },
 
     // palette ====================================
@@ -1682,6 +1709,14 @@ class SwagSystem {
         if(index === -1 || index == undefined) return undefined;
 
         fs[path].splice(index, 1);
+    }
+
+    deleteDirectory(location) {
+        this.#verify();
+        if(this.#fs[location] === undefined) return undefined;
+        for(let dir in this.#fs){
+            if(dir.startsWith(location))    delete this.#fs[dir];
+        }
     }
 
     createDirectory(location) {
@@ -3041,10 +3076,18 @@ const diagnosticsGovernor = new Governor("diagnostics", 1000, () => {
     });
 });
 
-// TroubleManager.registerGovernor("diagnostics", diagnosticsGovernor);
+const integrityGovernor = new Governor("integrity", 1000, () => {
+    if(!FroggyFileSystem.directoryExists("Config:")) {
+        integrityGovernor.registerTrouble("ncd")
+        createTerminalLine("no Config directory", config.fatalErrorText, {translate: false})
+    }
 
-// config.intervals[diagnosticsGovernor] = true
-// config.intervalNameMap[diagnosticsGovernor] = "diagnostics";
+    if(!FroggyFileSystem.fileExists("Config:/langs/ldm")) {
+        integrityGovernor.registerTrouble("nldm")
+        createTerminalLine("no ldm file found", config.fatalErrorText, {translate: false})
+        
+    }
+});
 
 function outputDiagnosticInformation(){
     // --- Console Output ---

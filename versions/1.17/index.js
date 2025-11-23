@@ -1127,28 +1127,15 @@ async function sendCommand(command, args, createEditableLineAfter = true){
                 printLn();
                 break;
             }
+
             let file = FroggyFileSystem.getFile(`${config.currentPath}/${args[0]}`);
-            if(file == undefined || file.getProperty('hidden') == true){
+
+            if(file == undefined){
                 createTerminalLine("T_file_does_not_exist", config.errorText);
                 hadError = true;
                 printLn();
                 break;
             }
-
-            if(file.getProperty('write') == false){
-                createTerminalLine("T_no_permission_to_delete_file", config.errorText);
-                hadError = true;
-                printLn();
-                break;
-            }
-
-            // // if we are in the Config: directory, do not allow the user to delete the file
-            // if(config.currentPath.split(":")[0] == "Config"){
-            //     createTerminalLine("T_cannot_delete_file", config.errorText);
-            //     hadError = true;
-            //     printLn();
-            //     break;
-            // }
 
             FroggyFileSystem.deleteFile(`${config.currentPath}/${file.getName()}`);
 
@@ -1156,6 +1143,48 @@ async function sendCommand(command, args, createEditableLineAfter = true){
             printLn();
         } break;
 
+        case "cdir":
+        case "croakdir": {
+            if(args.length == 0){
+                createTerminalLine("T_provide_directory_name", config.errorText);
+                hadError = true;
+                printLn();
+                break;
+            }
+
+            let directory = FroggyFileSystem.getDirectory(`${args[0]}`);
+
+            if(directory == undefined){
+                createTerminalLine(`T_directory_does_not_exist {{${args[0]}}}`, config.errorText);
+                hadError = true;
+                printLn();
+                break;
+            }
+
+            FroggyFileSystem.deleteDirectory(`${args[0]}`);
+
+            if (config.currentPath.startsWith(args[0])) {
+
+                // If the deleted directory *was* Config:
+                if (args[0] === config.currentPath) {
+                    config.currentPath = "invalid directory";
+                } else {
+                    // Fallback to Config: if it exists
+                    if (FroggyFileSystem.directoryExists("Config:")) {
+                        config.currentPath = "Config:";
+                    } else {
+                        createTerminalLine("No config drive. Entering recovery mode...", config.fatalErrorText, {translate: false});
+                        setTimeout(() => {
+                            enterRecoveryMode();
+                        }, 5000);
+                        return;
+                    }
+                }
+            }
+
+            createTerminalLine("T_directory_deleted", ">")
+            printLn();
+        } break;
         case "export":
         case "exportfile": {
             if(args.length == 0) {
@@ -1233,6 +1262,7 @@ async function sendCommand(command, args, createEditableLineAfter = true){
                 createTerminalLine(`T_directory_does_not_exist {{${config.currentPath}}}`, config.errorText);
                 hadError = true;
                 printLn();
+                break;
             }
             if(FroggyFileSystem.getFile(`${config.currentPath}/${args[0]}`) != undefined){
                 createTerminalLine("T_file_already_exists", config.errorText);
@@ -1266,6 +1296,7 @@ async function sendCommand(command, args, createEditableLineAfter = true){
             createTerminalLine("T_basic_commands_clone", ">");
             createTerminalLine("T_basic_commands_clearstate", ">");
             createTerminalLine("T_basic_commands_croak", ">");
+            createTerminalLine("T_basic_commands_croakdir", ">");
             createTerminalLine("T_basic_commands_exportfile", ">");
             createTerminalLine("T_basic_commands_formattime", ">");
             createTerminalLine("T_basic_commands_hatch", ">");
@@ -3502,20 +3533,6 @@ terminal.addEventListener('wheel', (event) => {
     else terminal.scrollTop += 8 * direction;
 });
 
-setUserConfigFromFile()
-sendCommand('[[BULLFROG]]autoloadstate', [], false);
-document.title = `froggyOS v. ${config.version}`;
-updateProgramList();
-changeColorPalette(config.colorPalette);
-createColorTestBar();
-sendCommand('[[BULLFROG]]validatelanguage', [], false);
-
-function onStart(){
-    //sendCommand("[[BULLFROG]]recoverymode", [])
-    //sendCommand("pond", ["-l", "test", "test"])
-    //sendCommand("st", ["test"])
-}
-
 function enterRecoveryMode(){
     let oldSendCommand = sendCommand;
 
@@ -3604,6 +3621,22 @@ function enterRecoveryMode(){
     sendCommand = function(command, args){
         if(command == "[[BULLFROG]]greeting") return;
         switch(command){
+            case "forceexit": {
+                sendCommand = oldSendCommand;
+                printLn(config.currentPath + ">");
+            } break;
+            case "regenconfigdir": {
+                out("Regenerating Config directory...");
+                if(FroggyFileSystem.directoryExists("Config:")){
+                    out("Config directory already exists.", config.errorText);
+                    printLn()
+                    return;
+                }
+                FroggyFileSystem.createDirectory("Config:");
+                out("Config directory regenerated successfully.");
+                clearActions("regenconfigdir");
+                exitRecoveryMode();
+            } break;
             case "regenkey": {
                 let key = args[0];
                 if(key == undefined){
@@ -3693,10 +3726,9 @@ function enterRecoveryMode(){
                     printLn()
                     return;
                 }
-                let dir = FroggyFileSystem.getDirectory("Config:/langs");
-                if(!dir){
+
+                if(!FroggyFileSystem.directoryExists("Config:/langs")){
                     FroggyFileSystem.createDirectory("Config:/langs");
-                    dir = FroggyFileSystem.getDirectory("Config:/langs");
                 }
 
                 FroggyFileSystem.addFileToDirectory("Config:/langs", FroggyFile.from({name: "ldm", properties: undefined, data: Object.keys(presetLanguagesMap)}));
@@ -3776,7 +3808,19 @@ function enterRecoveryMode(){
     };
 }
 
+setUserConfigFromFile()
+sendCommand('[[BULLFROG]]autoloadstate', [], false);
+document.title = `froggyOS v. ${config.version}`;
+updateProgramList();
+changeColorPalette(config.colorPalette);
+createColorTestBar();
+sendCommand('[[BULLFROG]]validatelanguage', [], false);
 
+function onStart(){
+    //sendCommand("[[BULLFROG]]recoverymode", [])
+    //sendCommand("pond", ["-l", "test", "test"])
+    //sendCommand("st", ["test"])
+}
 
 function ready(){
     try {
