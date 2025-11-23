@@ -8,6 +8,45 @@ const spinnerText = document.getElementById('spinner-text');
 // if the last character is japanese, switch the font
 let isJp = (text) => /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF「」]/g.test(text);
 
+const trustedProgramsGovernor = new Governor('trusted-programs', 100, () => {
+    let file = FroggyFileSystem.getFile("Config:/trusted_programs");
+    if(file == undefined){
+        terminal.innerHTML = "";
+        createTerminalLine(`T_trusted_programs_file_missing`, config.fatalErrorText);
+        trustedProgramsGovernor.registerTrouble("tpfm"); // trusted programs file missing
+        return;
+    }
+    config.trustedPrograms = file.getData();
+});
+
+const configGovernor = new Governor("config", 250, () => {
+    setUserConfigFromFile()
+    updateProgramList()
+
+    let badConfig = false;
+    let badKey = '';
+    for (let key of user_config_keys) {
+        if(getSetting(key) == undefined){
+            badConfig = true;
+            badKey = key;
+            break;
+        }
+    }
+
+    if(badConfig) {
+        terminal.lastElementChild.lastElementChild.contentEditable = false;
+        createTerminalLine(`T_missing_key_config_user {{${badKey}}}`, config.fatalErrorText);
+
+        configGovernor.registerTrouble(`buc/mk-${badKey}`); // bad user config missing key
+        dateTimeGovernor.registerTrouble(`buc/mk-${badKey}`); // bad user config missing key
+        return;
+    }
+});
+
+const dateTimeGovernor = new Governor("date-time", 100, () => {
+    updateDateTime()
+});
+
 document.body.onclick = function() {
     try {
         terminal.lastChild.lastChild.focus();
@@ -41,18 +80,14 @@ function addToCommandHistory(string){
 function setUserConfigFromFile(){
     const file = FroggyFileSystem.getFile("Config:/user");
     if(file == undefined) {
-        killInterval(configGovernor, "buc/gone"); // user config gone
-        killInterval(dateTimeGovernor, "buc/gone"); // user config gone
-        terminal.innerHTML = "";
+        configGovernor.registerTrouble("buc/gone"); // bad user config file gone
+        dateTimeGovernor.registerTrouble("buc/gone"); // bad user config file gone
         createTerminalLine("T_user_config_does_not_exist", config.fatalErrorText);
-        setTimeout(() => {
-            recoveryMode();
-        }, 5000);
         return;
     }
     let fsds = parse_fSDS(file.getData());
     if(fsds.error) {
-        killInterval(configGovernor, "buc/fe"); // bad user config fsds error
+        configGovernor.registerTrouble("buc/fe"); // bad user config fsds error
         terminal.innerHTML = "";
         createTerminalLine("T_error_reading_config_file", config.fatalErrorText);
         return;
@@ -279,18 +314,16 @@ function localize(descriptor, TRANSLATE_TEXT=true){
 
         const file = FroggyFileSystem.getFile(`D:/lang_data/${config.language}`);
 
-        if(file == undefined){
-            return;
+        if(file != undefined){
+            languageCache.lang.map = FroggyFileSystem.getFile(`Config:/langs/${config.language}`).getData();
         }
-
-        languageCache.lang.map = FroggyFileSystem.getFile(`Config:/langs/${config.language}`).getData();
     }
 
     let translationMap = languageCache.ldm;
 
     if(translationMap == null){
-        killInterval(configGovernor, "buc/nldm");
-        killInterval(dateTimeGovernor, "buc/nldm");
+        configGovernor.registerTrouble("buc/nldm");
+        dateTimeGovernor.registerTrouble("buc/nldm");
         // no ldm; off to recovery mode you go!
         return;
     }
@@ -1898,30 +1931,47 @@ async function sendCommand(command, args, createEditableLineAfter = true){
             createTerminalLine(`T_pulse_language {{${config.language}}}`, pad(2));
             createTerminalLine(`T_pulse_palette {{${config.colorPalette}}}`, pad(2));
 
-            const maxLength = Object.keys(config.intervalNameMap)
-                .reduce((max, key) => Math.max(max, config.intervalNameMap[key].length), 0);
+            let maxLength = 0;
+            for(let governorName in TroubleManager.governors){
+                const governor = TroubleManager.governors[governorName];
+                if(governor.name.length > maxLength) maxLength = governor.name.length;
+            }
 
             // Now loop through intervals
             spacer("~~~");
             createTerminalLine("T_pulse_governers", pad(1));
-            for (let interval in config.intervals) {
-                const name = config.intervalNameMap[interval];
+            for(let governorName in TroubleManager.governors){
+                const governor = TroubleManager.governors[governorName];
+                const name = governor.name;
                 const padding = pad(maxLength - name.length);
-
-                let response = config.intervals[interval]
-
-                if(response === true){
+                
+                if(governor.ok){
                     createTerminalLine(`${name}${padding} : ${localize("T_intj_ok")}`, pad(2), { translate: false });
                 } else {
-                    const line = `${name}${padding} : ${localize("T_intj_error")} ${response}`
+                    let troubles = governor.troubles;
+
+                    let line = `${name}${padding} : ${localize("T_intj_error")}`;
+
+                    let lineLength = structuredClone(line.length);
+
+                    let troubleIterator = 0;
+                    troubles.forEach((trouble, i) => {
+                        if(troubleIterator == 0) line += ` ${trouble}`;
+                        else {
+                            line += `\n${pad(lineLength+1)}${trouble}`;
+                        }
+
+                        troubleIterator++;
+                    });
+
                     createTerminalLine(line, pad(2), { translate: false, formatting: [
                         {
-                            type: "range", 
+                            type: "range",
                             b: "c12",
                             br_start: (name.length + padding.length) + 3,
                             br_end: (name.length + padding.length) + localize("T_intj_error").length + 2,
                         }, {
-                            type: "range", 
+                            type: "range",
                             t: "c15",
                             tr_start: (name.length + padding.length) + 3,
                             tr_end: (name.length + padding.length) + localize("T_intj_error").length + 2,
@@ -1930,6 +1980,32 @@ async function sendCommand(command, args, createEditableLineAfter = true){
                     });
                 }
             }
+            // for (let interval in config.intervals) {
+            //     const name = config.intervalNameMap[interval];
+            //     const padding = pad(maxLength - name.length);
+
+            //     let response = config.intervals[interval]
+
+            //     if(response === true){
+            //         createTerminalLine(`${name}${padding} : ${localize("T_intj_ok")}`, pad(2), { translate: false });
+            //     } else {
+            //         const line = `${name}${padding} : ${localize("T_intj_error")} ${response}`
+            //         createTerminalLine(line, pad(2), { translate: false, formatting: [
+            //             {
+            //                 type: "range", 
+            //                 b: "c12",
+            //                 br_start: (name.length + padding.length) + 3,
+            //                 br_end: (name.length + padding.length) + localize("T_intj_error").length + 2,
+            //             }, {
+            //                 type: "range", 
+            //                 t: "c15",
+            //                 tr_start: (name.length + padding.length) + 3,
+            //                 tr_end: (name.length + padding.length) + localize("T_intj_error").length + 2,
+            //             }
+            //         ]
+            //         });
+            //     }
+            // }
             // --- Diagnostics output ---
             spacer("~~~");
             createTerminalLine("T_pulse_config", pad(1));
@@ -2347,7 +2423,7 @@ async function sendCommand(command, args, createEditableLineAfter = true){
         break;
 
         case '[[BULLFROG]]recoverymode':
-            recoveryMode();
+            enterRecoveryMode();
         break;
 
         case '[[BULLFROG]]setstatbar':
@@ -3433,68 +3509,13 @@ changeColorPalette(config.colorPalette);
 createColorTestBar();
 sendCommand('[[BULLFROG]]validatelanguage', [], false);
 
-let trustedProgramsGovernor = setInterval(() => {
-    if(config.intervals[trustedProgramsGovernor] !== true) return;
-    let file = FroggyFileSystem.getFile("Config:/trusted_programs");
-    if(file == undefined){
-        terminal.innerHTML = "";
-        createTerminalLine(`T_trusted_programs_file_missing`, config.fatalErrorText);
-        killInterval(trustedProgramsGovernor, "tpfm");
-        return;
-    }
-    config.trustedPrograms = file.getData();
-}, 100);
-
-config.intervals[trustedProgramsGovernor] = true;
-config.intervalNameMap[trustedProgramsGovernor] = "trusted-programs";
-
-let configGovernor = setInterval(() => {
-    if(config.intervals[configGovernor] !== true) return;
-    setUserConfigFromFile()
-    updateProgramList()
-
-    let badConfig = false;
-    let badKey = '';
-    for (let key of user_config_keys) {
-        if(getSetting(key) == undefined){
-            badConfig = true;
-            badKey = key;
-            break;
-        }
-    }
-
-    if(badConfig) {
-        terminal.lastElementChild.lastElementChild.contentEditable = false;
-        createTerminalLine(`T_missing_key_config_user {{${badKey}}}`, config.fatalErrorText);
-        
-        killInterval(configGovernor, `buc/mk-${badKey}`); // bad user config missing key
-        killInterval(dateTimeGovernor, `buc/mk-${badKey}`); // bad user config missing key
-        return;
-    }
-}, 250);
-
-let dateTimeGovernor = setInterval(() => {
-    if(config.intervals[dateTimeGovernor] !== true) return;
-    updateDateTime()
-}, 100);
-
-config.intervals[configGovernor] = true;
-config.intervals[dateTimeGovernor] = true;
-
-config.intervalNameMap[configGovernor] = "config";
-config.intervalNameMap[dateTimeGovernor] = "date-time";
-
 function onStart(){
-    //sendCommand("pulse", [])
+    sendCommand("pulse", [])
     //sendCommand("pond", ["-l", "test", "test"])
     //sendCommand("st", ["test"])
 }
 
-function killInterval(interval, trouble){
-    config.intervals[interval] = trouble
-}
-
-function recoveryMode(){
+function enterRecoveryMode(){
     let oldSendCommand = sendCommand;
 
     onStart = function(){};
@@ -3508,12 +3529,80 @@ function recoveryMode(){
         createEditableTerminalLine(v);
     }
 
+    const freshUserFile = FroggyFile.from({ name: "user", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
+            "KEY language TYPE String VALUE eng END",
+            "KEY colorPalette TYPE String VALUE standard END",
+            "KEY version TYPE String VALUE 1.17-indev END",
+            "KEY showSpinner TYPE Boolean VALUE false END",
+            "KEY currentSpinner TYPE String VALUE default END",
+            "KEY defaultSpinner TYPE String VALUE default END",
+            "KEY timeFormat TYPE String VALUE w. Y/mn/d h:m:s END",
+            "KEY updateStatBar TYPE Boolean VALUE true END",
+            "KEY allowedProgramDirectories TYPE Array START",
+            "0 TYPE String VALUE D:/Programs",
+            "KEY allowedProgramDirectories TYPE Array END",
+            "KEY dissallowSubdirectoriesIn TYPE Array START",
+            "0 TYPE String VALUE D:/Programs",
+            "1 TYPE String VALUE D:/Macros",
+            "2 TYPE String VALUE D:/Program-Data",
+            "3 TYPE String VALUE D:/Palettes",
+            "4 TYPE String VALUE D:/Spinners",
+            "5 TYPE String VALUE D:/Pond",
+            "KEY dissallowSubdirectoriesIn TYPE Array END",
+            "KEY validateLanguageOnStartup TYPE Boolean VALUE true END",
+    ]})
+
+    let recommendedActions = [];
+
     out("Welcome to froggyOS recovery mode! If you're seeing this, you MESSED SOMETHING UP BIG TIME. YAY! (or you entered the command yourself. In that case, Im proud that you're trying to fix your mistakes!) Type \"help\" for a list of commands.");
+
+    function getAndOutputRecommendedActions(){
+        recommendedActions = [];
+
+        Object.values(TroubleManager.governors).forEach(gov => {
+            let actions = gov.getRecommendedActions();
+            if(actions.length > 0){
+                actions = actions.map(action => {
+                    action.govName = gov.name;
+                    return action;
+                })
+                recommendedActions.push(...actions);
+            }
+        })
+        if(recommendedActions.length > 0) out("Recommended actions:")
+        recommendedActions.forEach(action => {
+            out(`${action.govName}`)
+            out(`${pad(1)}- ${action.action}: ${action.description}`)
+        })
+    }
+
+    getAndOutputRecommendedActions()
     printLn()
 
     sendCommand = function(command, args){
         if(command == "[[BULLFROG]]greeting") return;
         switch(command){
+            case "regenuserfile": {
+                out("Regenerating user file...");
+                if(!FroggyFileSystem.directoryExists("Config:")){
+                    out("Unable to regenerate user file: Config directory missing.", config.errorText);
+                    return;
+                }
+                FroggyFileSystem.addFileToDirectory("Config:", freshUserFile);
+                out("User file regenerated successfully.");
+                recommendedActions.forEach(action => {
+                    if(action.action == "regenuserfile") TroubleManager.getGovernor(action.govName).removeTrouble(action.trouble);
+                })
+                if(TroubleManager.hasTrouble()){
+                    out("Some governors are still troubled. Staying in recovery mode.");
+                    getAndOutputRecommendedActions();
+                    printLn();
+                    return;
+                }
+
+                sendCommand = oldSendCommand;
+                printLn(config.currentPath + ">");
+            } break;
             case 'regenlangfiles': {
                 out("Regenerating language files...");
                 let dir = FroggyFileSystem.getDirectory("Config:/langs");
@@ -3548,15 +3637,48 @@ function recoveryMode(){
                 languageCache.lang.current = config.language;
                 languageCache.lang.map = FroggyFileSystem.getFile(`Config:/langs/${config.language}`).getData();
 
-                config.intervals[dateTimeGovernor] = true;
-                config.intervals[configGovernor] = true;
+                recommendedActions.forEach(action => {
+                    if(action.action == "regenlangfiles") TroubleManager.getGovernor(action.govName).removeTrouble(action.trouble);
+                })
 
-                if(config.intervals.some(x => x !== true)){
+                if(TroubleManager.hasTrouble()){
+                    out("Language files regenerated successfully.")
                     out("Some governors are still troubled. Staying in recovery mode.");
+                    getAndOutputRecommendedActions();
                     printLn();
                     return;
                 }
                 out("Language files regenerated successfully. You can now change the language to any available.");
+
+                sendCommand = oldSendCommand;
+                printLn(config.currentPath + ">");
+            } break;
+            case "regentrustedprogramfile": {
+                const file = FroggyFile.from({ name: "trusted_programs", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
+                    "test",
+                    "fs3help",
+                    "confirm"
+                ] })
+
+                if(!FroggyFileSystem.directoryExists("Config:")){
+                    out("Unable to regenerate trusted programs file: Config directory missing.", config.errorText);
+                    return;
+                }
+
+                FroggyFileSystem.addFileToDirectory("Config:", file);
+
+                recommendedActions.forEach(action => {
+                    if(action.action == "regentrustedprogramfile") TroubleManager.getGovernor(action.govName).removeTrouble(action.trouble);
+                })
+
+                out("Trusted programs file regenerated successfully.");
+
+                if(TroubleManager.hasTrouble()){
+                    out("Some governors are still troubled. Staying in recovery mode.");
+                    getAndOutputRecommendedActions();
+                    printLn();
+                    return;
+                }
 
                 sendCommand = oldSendCommand;
                 printLn(config.currentPath + ">");
@@ -3566,7 +3688,7 @@ function recoveryMode(){
                 localStorage.removeItem(`froggyOS-state-${config.version}-config`);
                 localStorage.removeItem(`froggyOS-state-${config.version}-diagnostics`);
                 localStorage.removeItem(`froggyOS-state-${config.version}-fs`);
-                out("State cleared. Please reload the window to complete the process.");
+                out("State cleared. Reload window to complete the process.");
             } break;
             case "help": {
                 out("Available commands:");
@@ -3576,8 +3698,9 @@ function recoveryMode(){
                 printLn()
             } break;
             case "exit": {
-                if(Object.values(config.intervals).some(x => x !== true)){
+                if(TroubleManager.hasTrouble()){
                     out("Some governors are still troubled.", config.fatalErrorText);
+                    getAndOutputRecommendedActions();
                     printLn();
                     return;
                 }
@@ -3604,7 +3727,7 @@ function ready(){
         terminal.innerHTML = "";
             createTerminalLine(`All language files missing. Entering recovery mode...`, config.fatalErrorText, {translate: false});
             setTimeout(() => {
-                recoveryMode()
+                enterRecoveryMode()
             }, 5000);
         }, 1000);
     }

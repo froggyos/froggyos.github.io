@@ -6,6 +6,91 @@ const gen = (len=8, r=16) => [...Array(len)].map(()=>Math.floor(Math.random()*r)
 const sessionTokenFile = gen(16);
 const credentialFile = gen(16);
 
+class TroubleManager {
+    static governors = {};
+
+    /**
+     * 
+     * @param {string} name 
+     * @param {Governor} governor 
+     */
+    static registerGovernor(name, governor){
+        this.governors[name] = governor;
+    }
+
+    static getGovernor(name){
+        return this.governors[name];
+    }
+
+    static hasTrouble(){
+        for(const govName in this.governors){
+            if(!this.governors[govName].ok) return true;
+        }
+        return false;
+    }
+}
+
+class Governor {
+    constructor(name, intervalMs, fn){
+        this.name = name;
+        this.intervalMs = intervalMs;
+        this.fn = fn;
+        this.troubles = new Set();
+        this.ok = true;
+        this.interval = setInterval(() => {
+            if(!TroubleManager.governors[this.name].ok) return;
+            this.fn();
+        }, this.intervalMs);
+
+        TroubleManager.registerGovernor(this.name, this);
+    }
+
+    registerTrouble(trouble){
+        this.troubles.add(trouble);
+        if(this.ok) this.ok = false;
+    }
+
+    removeTrouble(trouble){
+        this.troubles.delete(trouble);
+        if(this.troubles.size === 0) this.ok = true;
+    }
+
+    getRecommendedActions(){
+        const actions = new Set();
+        this.troubles.forEach(trouble => {
+            if(trouble.startsWith("tpfm")) actions.add({
+                action: "regentrustedprogramfile",
+                description: "Regenerate the trusted program file",
+                trouble
+            })
+            else if (trouble.startsWith("buc/mk")) {
+                let key = trouble.split("-")[1];
+                actions.add({
+                    action: "regenkey "+key,
+                    description: `Regenerate the key: ${key}`,
+                    trouble
+                })
+            }
+            else if(trouble.startsWith("buc/gone")) actions.add({
+                action: "regenuserfile",
+                description: "Regenerate the user file",
+                trouble
+            })
+            else if(trouble.startsWith("buc/fe")) actions.add({
+                action: "unknown",
+                description: "unknown",
+                trouble
+            })
+            else if (trouble.startsWith("buc/nldm")) actions.add({
+                action: "regenlangfiles",
+                description: "Regenerate the language files",
+                trouble
+            })
+        });
+        return Array.from(actions);
+    }
+}
+
 // https://www.ibm.com/plex/languages/
 
 const presetLanguagesMap = {
@@ -623,7 +708,7 @@ const presetLanguagesMap = {
         jpn: "T_missing_key_config_user"
     },
     "T_user_config_does_not_exist": {
-        eng: "User Config does not exist. Entering recovery mode...",
+        eng: "User Config does not exist.",
         nmt: "T_user_config_does_not_exist",
         jpn: "T_user_config_does_not_exist"
     },
@@ -1483,6 +1568,12 @@ class SwagSystem {
         const fs = this.#fs;
 
         return fs[location]?.filter(f => f.getProperty("hidden") !== true) || undefined;
+    }
+
+    directoryExists(location) {
+        this.#verify();
+        const fs = this.#fs;
+        return fs[location] !== undefined;
     }
 
     /**
@@ -2818,9 +2909,6 @@ let config_preproxy = {
     alertText: createErrorText(0, "ALERT"),
     programErrorText: " -- <span class='error'><span class='error-severity-5'>!! -> {{}} <- !!</span></span> --",
     fatalErrorText: createErrorText(6, "Fatal Error"),
-    intervals: {},
-    intervalNameMap: {},
-    troubles: [],
 }
 
 const diagnostics = {
@@ -2861,8 +2949,7 @@ let prevTotals = {
     writes: {}
 };
 
-const diagnosticsGovernor = setInterval(() => {
-    if(config.intervals[diagnosticsGovernor] !== true) return;
+const diagnosticsGovernor = new Governor("diagnostics", 1000, () => {
     diagnostics.counter++; // increment counter for this tick
     const now = Date.now();
     diagnostics.runtime = now - diagnostics.startTime;
@@ -2898,10 +2985,12 @@ const diagnosticsGovernor = setInterval(() => {
             prevTotals[type][dir] = total;
         }
     });
-}, 1000);
+});
 
-config.intervals[diagnosticsGovernor] = true
-config.intervalNameMap[diagnosticsGovernor] = "diagnostics";
+// TroubleManager.registerGovernor("diagnostics", diagnosticsGovernor);
+
+// config.intervals[diagnosticsGovernor] = true
+// config.intervalNameMap[diagnosticsGovernor] = "diagnostics";
 
 function outputDiagnosticInformation(){
     // --- Console Output ---
