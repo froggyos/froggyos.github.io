@@ -841,10 +841,10 @@ const presetLanguagesMap = {
         nmt: "T_pulse_version {{}}",
         jpn: "T_pulse_version {{}}"
     },
-    "T_pulse_governers": {
-        eng: "* Governers *",
+    "T_pulse_governors": {
+        eng: "* Governors *",
         nmt: "* semes me *",
-        jpn: "T_pulse_governers"
+        jpn: "T_pulse_governors"
     },
     "T_pulse_config": {
         eng: "* Config *",

@@ -1971,7 +1971,7 @@ async function sendCommand(command, args, createEditableLineAfter = true){
 
             // Now loop through intervals
             spacer("~~~");
-            createTerminalLine("T_pulse_governers", pad(1));
+            createTerminalLine("T_pulse_governors", pad(1));
             for(let governorName in TroubleManager.governors){
                 const governor = TroubleManager.governors[governorName];
                 const name = governor.name;
