@@ -80,8 +80,9 @@ function addToCommandHistory(string){
 function setUserConfigFromFile(){
     const file = FroggyFileSystem.getFile("Config:/user");
     if(file == undefined) {
-        configGovernor.registerTrouble("buc/gone"); // bad user config file gone
-        dateTimeGovernor.registerTrouble("buc/gone"); // bad user config file gone
+        configGovernor.registerTrouble("buc/gone");
+        dateTimeGovernor.registerTrouble("buc/gone");
+        terminal.lastChild.lastChild.contentEditable = false;
         createTerminalLine("T_user_config_does_not_exist", config.fatalErrorText);
         return;
     }
@@ -322,8 +323,8 @@ function localize(descriptor, TRANSLATE_TEXT=true){
     let translationMap = languageCache.ldm;
 
     if(translationMap == null){
-        configGovernor.registerTrouble("buc/nldm");
-        dateTimeGovernor.registerTrouble("buc/nldm");
+        configGovernor.registerTrouble("nldm");
+        dateTimeGovernor.registerTrouble("nldm");
         // no ldm; off to recovery mode you go!
         return;
     }
@@ -2018,7 +2019,7 @@ async function sendCommand(command, args, createEditableLineAfter = true){
 
             // Print config nicely
             configMetrics.forEach(item => {
-                createTerminalLine(`${item.Metric.padEnd(11)} | ${localize("T_pulse_abbr_last_second")}: ${String(item.Last).padStart(5)} | ${localize("T_pulse_abbr_average")}: ${String(item.Avg).padStart(5)} | ${localize("T_pulse_abbr_total")}: ${String(item.Total).padStart(5)}`, pad(2), {translate: false});
+                createTerminalLine(`${item.Metric}\n${pad(3)}${localize("T_pulse_abbr_last_second")}: ${item.Last} | ${localize("T_pulse_abbr_average")}: ${item.Avg} | ${localize("T_pulse_abbr_total")}: ${item.Total}`,pad(2), {translate: false})
             });
 
             spacer("~~~");
@@ -3552,13 +3553,11 @@ function enterRecoveryMode(){
             "KEY validateLanguageOnStartup TYPE Boolean VALUE true END",
     ]})
 
-    let recommendedActions = [];
+    let recommendedActions = []
 
     out("Welcome to froggyOS recovery mode! If you're seeing this, you MESSED SOMETHING UP BIG TIME. YAY! (or you entered the command yourself. In that case, Im proud that you're trying to fix your mistakes!) Type \"help\" for a list of commands.");
 
     function getAndOutputRecommendedActions(){
-        recommendedActions = [];
-
         Object.values(TroubleManager.governors).forEach(gov => {
             let actions = gov.getRecommendedActions();
             if(actions.length > 0){
@@ -3569,23 +3568,57 @@ function enterRecoveryMode(){
                 recommendedActions.push(...actions);
             }
         })
-        if(recommendedActions.length > 0) out("Recommended actions:")
-        recommendedActions.forEach(action => {
-            out(`${action.govName}`)
-            out(`${pad(1)}- ${action.action}: ${action.description}`)
-        })
+        if(recommendedActions.length > 0) {
+            out("Recommended actions:")
+            for(const gov in TroubleManager.getAllRecommendedActions()){
+                const actions = TroubleManager.getAllRecommendedActions()[gov];
+                out(`${gov}:`)
+                actions.forEach(action => {
+                    out(`${pad(1)}- ${action.action}: ${action.description}`)
+                })
+            }
+        }
     }
 
     getAndOutputRecommendedActions()
     printLn()
 
+    function exitRecoveryMode(){
+        if(TroubleManager.hasTrouble()){
+            out("Some governors are still troubled. Staying in recovery mode.");
+            getAndOutputRecommendedActions();
+            printLn();
+            return;
+        }
+        out("All troubles resolved. Exiting recovery mode.");
+        sendCommand = oldSendCommand;
+        printLn(config.currentPath + ">");
+    }
+
     sendCommand = function(command, args){
         if(command == "[[BULLFROG]]greeting") return;
         switch(command){
+            case "unhalt": {
+                if(!TroubleManager.getGovernor(args[0])){
+                    out(`Unknown governor: ${args[0]}`);
+                    printLn()
+                    return;
+                }
+                const gov = TroubleManager.getGovernor(args[0]);
+                if(!gov.hasTrouble("halt")){
+                    out(`Governor ${args[0]} is not halted.`);
+                    printLn()
+                    return;
+                }
+                gov.removeTrouble("halt");
+                out(`Governor ${args[0]} unhalted.`);
+                exitRecoveryMode();
+            } break;
             case "regenuserfile": {
                 out("Regenerating user file...");
                 if(!FroggyFileSystem.directoryExists("Config:")){
                     out("Unable to regenerate user file: Config directory missing.", config.errorText);
+                    printLn()
                     return;
                 }
                 FroggyFileSystem.addFileToDirectory("Config:", freshUserFile);
@@ -3593,18 +3626,15 @@ function enterRecoveryMode(){
                 recommendedActions.forEach(action => {
                     if(action.action == "regenuserfile") TroubleManager.getGovernor(action.govName).removeTrouble(action.trouble);
                 })
-                if(TroubleManager.hasTrouble()){
-                    out("Some governors are still troubled. Staying in recovery mode.");
-                    getAndOutputRecommendedActions();
-                    printLn();
-                    return;
-                }
-
-                sendCommand = oldSendCommand;
-                printLn(config.currentPath + ">");
+                exitRecoveryMode();
             } break;
             case 'regenlangfiles': {
                 out("Regenerating language files...");
+                if(!FroggyFileSystem.directoryExists("Config:")){
+                    out("Unable to regenerate language files: Config directory missing.", config.errorText);
+                    printLn()
+                    return;
+                }
                 let dir = FroggyFileSystem.getDirectory("Config:/langs");
                 if(!dir){
                     FroggyFileSystem.createDirectory("Config:/langs");
@@ -3641,17 +3671,8 @@ function enterRecoveryMode(){
                     if(action.action == "regenlangfiles") TroubleManager.getGovernor(action.govName).removeTrouble(action.trouble);
                 })
 
-                if(TroubleManager.hasTrouble()){
-                    out("Language files regenerated successfully.")
-                    out("Some governors are still troubled. Staying in recovery mode.");
-                    getAndOutputRecommendedActions();
-                    printLn();
-                    return;
-                }
-                out("Language files regenerated successfully. You can now change the language to any available.");
-
-                sendCommand = oldSendCommand;
-                printLn(config.currentPath + ">");
+                out("Language files regenerated successfully.")
+                exitRecoveryMode();
             } break;
             case "regentrustedprogramfile": {
                 const file = FroggyFile.from({ name: "trusted_programs", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
@@ -3662,6 +3683,7 @@ function enterRecoveryMode(){
 
                 if(!FroggyFileSystem.directoryExists("Config:")){
                     out("Unable to regenerate trusted programs file: Config directory missing.", config.errorText);
+                    printLn()
                     return;
                 }
 
@@ -3672,16 +3694,7 @@ function enterRecoveryMode(){
                 })
 
                 out("Trusted programs file regenerated successfully.");
-
-                if(TroubleManager.hasTrouble()){
-                    out("Some governors are still troubled. Staying in recovery mode.");
-                    getAndOutputRecommendedActions();
-                    printLn();
-                    return;
-                }
-
-                sendCommand = oldSendCommand;
-                printLn(config.currentPath + ">");
+                exitRecoveryMode();
             } break;
             case 'clearstate': {
                 out("Clearing state...");
@@ -3694,18 +3707,13 @@ function enterRecoveryMode(){
                 out("Available commands:");
                 out("regenlangfiles: Regenerates language files.");
                 out("clearstate: Clears the autoload state.");
+                out("regenuserfile: Regenerates the user configuration file.");
+                out("regentrustedprogramfile: Regenerates the trusted programs file.");
                 out("exit: Exits recovery mode");
                 printLn()
             } break;
             case "exit": {
-                if(TroubleManager.hasTrouble()){
-                    out("Some governors are still troubled.", config.fatalErrorText);
-                    getAndOutputRecommendedActions();
-                    printLn();
-                    return;
-                }
-                sendCommand = oldSendCommand;
-                printLn(config.currentPath + ">");
+                exitRecoveryMode();
             } break;
             default: {
                 out(`Unknown command: ${command}`);
@@ -3722,19 +3730,27 @@ function ready(){
         languageCache.ldm = FroggyFileSystem.getFile("Config:/langs/ldm").getData();
         languageCache.lang.current = config.language;
         languageCache.lang.map = FroggyFileSystem.getFile(`Config:/langs/${config.language}`).getData();
-    } catch (e) {
-        setTimeout(() => {
-        terminal.innerHTML = "";
-            createTerminalLine(`All language files missing. Entering recovery mode...`, config.fatalErrorText, {translate: false});
-            setTimeout(() => {
-                enterRecoveryMode()
-            }, 5000);
-        }, 1000);
+    } catch (e) { }
+
+    const file = FroggyFileSystem.getFile("Config:/user");
+    if(file == undefined) {
+        configGovernor.registerTrouble("buc/gone");
+        dateTimeGovernor.registerTrouble("buc/gone");
+        terminal.lastChild.lastChild.contentEditable = false;
+        createTerminalLine("T_user_config_does_not_exist", config.fatalErrorText);
     }
 
     updateDateTime();
     document.getElementById("blackout").remove()
     sendCommand('[[BULLFROG]]greeting', []);
+    if(TroubleManager.hasTrouble()){
+        terminal.innerHTML = "";
+        createTerminalLine("Entering recovery mode in 5 seconds...", ">", {translate: false});
+        setTimeout(() => {
+            enterRecoveryMode();
+        }, 5000);
+        return;
+    }
     setTimeout(() => {
         onStart();
     }, 1000)

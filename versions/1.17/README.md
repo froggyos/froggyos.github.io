@@ -324,6 +324,8 @@ Troubles are issues with governors that are shown inside of the `pulse` command.
 | `buc/mk-(key)` | Bad user config missing key (key) | The user config file is missing the key (key) |
 | `buc/fe` | bad user config fsds error | The user config file has an fSDS parsing error |
 | `buc/gone` | bad user config gone | The user config file is missing |
+| `nldm` | No language descriptor map | The language descriptor map file is missing |
+| `halt` | Halted | The governor has been halted by the user |
 
 ## Startup Sequence
 1. Load any state if it exists from `localStorage`

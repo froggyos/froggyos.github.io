@@ -62,12 +62,6 @@ async function handleRequest(link, body, handlers) {
     }
 }
 
-function pad(n){
-    return FULLWIDTH.repeat(n);
-}
-
-const FULLWIDTH = "\u00A0"
-
 /**
  * Creates a scrollable interactive Pond menu.
  *

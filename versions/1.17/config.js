@@ -6,6 +6,12 @@ const gen = (len=8, r=16) => [...Array(len)].map(()=>Math.floor(Math.random()*r)
 const sessionTokenFile = gen(16);
 const credentialFile = gen(16);
 
+function pad(n){
+    return FULLWIDTH.repeat(n);
+}
+
+const FULLWIDTH = "\u00A0"
+
 class TroubleManager {
     static governors = {};
 
@@ -28,6 +34,24 @@ class TroubleManager {
         }
         return false;
     }
+
+    static rawGovernors(){
+        return Object.values(this.governors);
+    }
+
+    /**
+     * @returns {Map<string, Array<{action: string, description: string, trouble: string}>>}
+     */
+    static getAllRecommendedActions(){
+        const actions = {}
+        for(const govName in this.governors){
+            const gov = this.governors[govName];
+            if(!gov.ok){
+                actions[govName] = gov.getRecommendedActions();
+            }
+        }
+        return actions
+    }
 }
 
 class Governor {
@@ -45,6 +69,10 @@ class Governor {
         TroubleManager.registerGovernor(this.name, this);
     }
 
+    /**
+     * 
+     * @param {string} trouble
+     */
     registerTrouble(trouble){
         this.troubles.add(trouble);
         if(this.ok) this.ok = false;
@@ -53,6 +81,18 @@ class Governor {
     removeTrouble(trouble){
         this.troubles.delete(trouble);
         if(this.troubles.size === 0) this.ok = true;
+    }
+
+    hasTrouble(trouble){
+        return this.troubles.has(trouble);
+    }
+
+    halt(){
+        this.registerTrouble("halt");
+    }
+
+    unhalt(){
+        this.removeTrouble("halt");
     }
 
     getRecommendedActions(){
@@ -81,9 +121,14 @@ class Governor {
                 description: "unknown",
                 trouble
             })
-            else if (trouble.startsWith("buc/nldm")) actions.add({
+            else if (trouble.startsWith("nldm")) actions.add({
                 action: "regenlangfiles",
                 description: "Regenerate the language files",
+                trouble
+            })
+            else if(trouble === "halt") actions.add({
+                action: `unhalt ${this.name}`,
+                description: "Unhalt the governor",
                 trouble
             })
         });
@@ -436,7 +481,7 @@ const presetLanguagesMap = {
         jpn: "T_file_info_type_text"
     },
     "T_file_info_type_program": {
-        eng: ":sp5:Type: FroggyScript3",
+        eng: ":sp5:Type: FroggyScript3 Program",
         nmt: "T_file_info_type_program",
         jpn: "T_file_info_type_program"
     },
@@ -1455,6 +1500,10 @@ const presetLanguagesMap = {
     },
 };
 
+function utf8ByteLength(str) {
+    return new TextEncoder().encode(str).byteLength;
+}
+
 class UserKey { constructor() {} };
 
 class SwagSystem {
@@ -1554,7 +1603,7 @@ class SwagSystem {
         let total = 0;
         const fs = this.#fs;
         for (let directory in fs) {
-            total += directory.length;
+            total += utf8ByteLength(directory);
             fs[directory].forEach(file => {
                 total += file.getSize();
             });
@@ -1719,12 +1768,12 @@ class FroggyFile {
         this.#name = name;
         this.#properties = properties;
         this.#data = data;
-        this.#size = 4;
         this.dirname = dirname;
+        this.#size = 4;
         data.forEach(line => {
-            this.#size += line.length + 1;
+            this.#size += utf8ByteLength(line) + 1;
         });
-        this.#size += this.#name.length;
+        this.updateSize();
     }
 
     /**
@@ -1733,9 +1782,8 @@ class FroggyFile {
      */
     rename(newName){
         if(this.#name === "trusted_programs") throw new Error("You may not rename the 'trusted_programs' file.");
-        this.#size -= this.#name.length;
         this.#name = newName;
-        this.#size += this.#name.length;
+        this.updateSize();
     }
 
     /**
@@ -1755,7 +1803,6 @@ class FroggyFile {
      */
     write(data) {
         this.#data = data;
-        this.#size = 4;
         const loc = this.dirname + "/" + this.#name;
         if(!SwagSystem.diagnostics.writes[loc]) SwagSystem.diagnostics.writes[loc] = {};
 
@@ -1765,10 +1812,17 @@ class FroggyFile {
         }
 
         SwagSystem.diagnostics.writes[loc].total = (SwagSystem.diagnostics.writes[loc].total || 0) + 1;
-        data.forEach(line => {
-            this.#size += line.length + 1;
+        this.updateSize();
+    }
+
+    updateSize() {
+        this.#size = 4;
+        this.#data.forEach(line => {
+            this.#size += utf8ByteLength(line) + 1;
         });
-        this.#size += this.#name.length;
+        this.#size -= 1;
+        this.#size += utf8ByteLength(this.#name);
+        this.#size += utf8ByteLength(this.dirname);
     }
 
     /**
