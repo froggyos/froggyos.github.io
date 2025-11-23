@@ -176,18 +176,18 @@ function set_fSDS(path, filename, key, value){
 
 /**
  * 
- * @param {Array} inputFile - array of lines from a file to parse as fSDS
+ * @param {Array} lines - array of lines from a file to parse as fSDS
  * @returns {Object} parsed fSDS object
  */
-function parse_fSDS(inputFile){
+function parse_fSDS(lines){
     let output = {};
 
     let error = '';
 
     let dataError = 0;
 
-    for(let i = 0; i < inputFile.length; i++){
-        let line = inputFile[i].trim();
+    for(let i = 0; i < lines.length; i++){
+        let line = lines[i].trim();
         let match = line.match(/^KEY (.+?) TYPE (String|Number|Boolean) VALUE (.+?) END$/);
         if(match != null){
             let key = match[1];
@@ -202,15 +202,15 @@ function parse_fSDS(inputFile){
                 let endingKey = arrayMatchStart[1];
                 let arrayMatchEnd = null;
     
-                for(let j = i + 1; j < inputFile.length; j++){
-                    let arrayLine = inputFile[j].trim();
+                for(let j = i + 1; j < lines.length; j++){
+                    let arrayLine = lines[j].trim();
                     if(arrayLine.includes(`KEY ${endingKey} TYPE Array END`)){
                         arrayMatchEnd = arrayLine.match(/^KEY (.+?) TYPE Array END$/);
                         break;
                     }
                 }
 
-                if(inputFile.length != 0 && (arrayMatchEnd == null)){
+                if(lines.length != 0 && (arrayMatchEnd == null)){
                     dataError++;
                 }
 
@@ -229,11 +229,11 @@ function parse_fSDS(inputFile){
 
                 if(dataError > 0) break;
 
-                let searchStart = inputFile.indexOf(arrayMatchStart[0]) + 1;
-                let searchEnd = inputFile.indexOf(arrayMatchEnd[0]);
+                let searchStart = lines.indexOf(arrayMatchStart[0]) + 1;
+                let searchEnd = lines.indexOf(arrayMatchEnd[0]);
 
                 for(let j = searchStart; j < searchEnd; j++){
-                    let arrayDataLine = inputFile[j].trim();
+                    let arrayDataLine = lines[j].trim();
                     let regex = new RegExp(`${value.length} TYPE (String|Number|Boolean) VALUE (.+?)$`);
                     let arrayDataMatch = arrayDataLine.match(regex);
                     if(arrayDataMatch != null){
@@ -3511,7 +3511,7 @@ createColorTestBar();
 sendCommand('[[BULLFROG]]validatelanguage', [], false);
 
 function onStart(){
-    sendCommand("pulse", [])
+    //sendCommand("[[BULLFROG]]recoverymode", [])
     //sendCommand("pond", ["-l", "test", "test"])
     //sendCommand("st", ["test"])
 }
@@ -3583,21 +3583,81 @@ function enterRecoveryMode(){
     getAndOutputRecommendedActions()
     printLn()
 
-    function exitRecoveryMode(){
+    function exitRecoveryMode(fromExitCommand = false){
         if(TroubleManager.hasTrouble()){
             out("Some governors are still troubled. Staying in recovery mode.");
             getAndOutputRecommendedActions();
             printLn();
             return;
         }
-        out("All troubles resolved. Exiting recovery mode.");
+        if(!fromExitCommand) out("All troubles resolved. Exiting recovery mode.");
         sendCommand = oldSendCommand;
         printLn(config.currentPath + ">");
+    }
+
+    function clearActions(actionName){
+        recommendedActions.forEach(action => {
+            if(action.action.startsWith(actionName)) TroubleManager.getGovernor(action.govName).removeTrouble(action.trouble);
+        })
     }
 
     sendCommand = function(command, args){
         if(command == "[[BULLFROG]]greeting") return;
         switch(command){
+            case "regenkey": {
+                let key = args[0];
+                if(key == undefined){
+                    out("Please specify a key to regenerate.");
+                    printLn()
+                    return;
+                }
+
+                const keysfSDS = parse_fSDS(["KEY language TYPE String VALUE eng END",
+                    "KEY colorPalette TYPE String VALUE standard END",
+                    "KEY version TYPE String VALUE 1.17-indev END",
+                    "KEY showSpinner TYPE Boolean VALUE false END",
+                    "KEY currentSpinner TYPE String VALUE default END",
+                    "KEY defaultSpinner TYPE String VALUE default END",
+                    "KEY timeFormat TYPE String VALUE w. Y/mn/d h:m:s END",
+                    "KEY updateStatBar TYPE Boolean VALUE true END",
+                    "KEY allowedProgramDirectories TYPE Array START",
+                    "0 TYPE String VALUE D:/Programs",
+                    "KEY allowedProgramDirectories TYPE Array END",
+                    "KEY dissallowSubdirectoriesIn TYPE Array START",
+                    "0 TYPE String VALUE D:/Programs",
+                    "1 TYPE String VALUE D:/Macros",
+                    "2 TYPE String VALUE D:/Program-Data",
+                    "3 TYPE String VALUE D:/Palettes",
+                    "4 TYPE String VALUE D:/Spinners",
+                    "5 TYPE String VALUE D:/Pond",
+                    "KEY dissallowSubdirectoriesIn TYPE Array END",
+                    "KEY validateLanguageOnStartup TYPE Boolean VALUE true END"])
+                
+                if(keysfSDS[key] == undefined){
+                    out(`Unknown key: ${key}`);
+                    printLn()
+                    return;
+                }
+
+                if(!FroggyFileSystem.directoryExists("Config:")){
+                    out("Unable to regenerate key: Config directory missing.", config.errorText);
+                    printLn()
+                    return;
+                }
+
+                if(!FroggyFileSystem.fileExists("Config:/user")){
+                    out("Unable to regenerate key: User file missing.", config.errorText);
+                    printLn()
+                    return;
+                }
+                const valueToWrite = keysfSDS[key];
+
+                set_fSDS("Config:", "user", key, valueToWrite.value);
+                out(`Key ${key} regenerated successfully.`);
+                clearActions("regenkey");
+                exitRecoveryMode();
+
+            } break;
             case "unhalt": {
                 if(!TroubleManager.getGovernor(args[0])){
                     out(`Unknown governor: ${args[0]}`);
@@ -3623,9 +3683,7 @@ function enterRecoveryMode(){
                 }
                 FroggyFileSystem.addFileToDirectory("Config:", freshUserFile);
                 out("User file regenerated successfully.");
-                recommendedActions.forEach(action => {
-                    if(action.action == "regenuserfile") TroubleManager.getGovernor(action.govName).removeTrouble(action.trouble);
-                })
+                clearActions("regenuserfile");
                 exitRecoveryMode();
             } break;
             case 'regenlangfiles': {
@@ -3667,10 +3725,7 @@ function enterRecoveryMode(){
                 languageCache.lang.current = config.language;
                 languageCache.lang.map = FroggyFileSystem.getFile(`Config:/langs/${config.language}`).getData();
 
-                recommendedActions.forEach(action => {
-                    if(action.action == "regenlangfiles") TroubleManager.getGovernor(action.govName).removeTrouble(action.trouble);
-                })
-
+                clearActions("regenlangfiles");
                 out("Language files regenerated successfully.")
                 exitRecoveryMode();
             } break;
@@ -3689,9 +3744,7 @@ function enterRecoveryMode(){
 
                 FroggyFileSystem.addFileToDirectory("Config:", file);
 
-                recommendedActions.forEach(action => {
-                    if(action.action == "regentrustedprogramfile") TroubleManager.getGovernor(action.govName).removeTrouble(action.trouble);
-                })
+                clearActions("regentrustedprogramfile");
 
                 out("Trusted programs file regenerated successfully.");
                 exitRecoveryMode();
@@ -3713,7 +3766,7 @@ function enterRecoveryMode(){
                 printLn()
             } break;
             case "exit": {
-                exitRecoveryMode();
+                exitRecoveryMode(true);
             } break;
             default: {
                 out(`Unknown command: ${command}`);
@@ -3793,49 +3846,6 @@ const devMode = false;
 const pondLink = devMode ? "http://127.0.0.1:29329" : "https://roari.bpai.us/pond";
 
 const messageValidationRegex = /^Recipient:(.+?)-----Subject:(.+?)-----Body:(.+?)$/;
-
-/**
- * @param {String} fileName
- * @param {String[]} fileData
- * @param {*} createEditableLineAfter 
- */
-function openLilypad(fileName, fileData, createEditableLineAfter){
-    for(let i = 0; i < fileData.length; i++){
-        if(config.allowedProgramDirectories.includes(config.currentPath)){
-            createLilypadLine(String(i+1).padStart(3, "0"), "code", fileName);
-        } else if (config.currentPath == "D:/Palettes") {
-            createLilypadLine(String(i).padStart(2, "0"), "palette", fileName);
-        } else createLilypadLine(">", undefined ,fileName);
-        let lines = document.querySelectorAll(`[data-program='lilypad-session-${config.programSession}']`);
-        lines[i].textContent = fileData[i];
-        moveCaretToEnd(lines[i]);
-    }
-
-    // get the last lilypad line and highlight it
-    let lines = document.querySelectorAll(`[data-program='lilypad-session-${config.programSession}']`)
-    lines[lines.length - 1].classList.add("highlighted-line");
-}
-
-function openPondLilypad(file, options){
-    const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"));
-
-    if(error) {
-        throw new Error("Blocked attempt to open Pond from unauthorized context.");
-    }
-
-    for(let i = 0; i < file.getData().length; i++){
-
-        createLilypadLinePondDerivative(">", file.getName(), options);
-
-        let lines = document.querySelectorAll(`[data-program='lilypad-pond-session-${config.programSession}']`);
-        lines[i].textContent = file.getData()[i];
-        moveCaretToEnd(lines[i]);
-    }
-
-    // get the last lilypad line and highlight it
-    let lines = document.querySelectorAll(`[data-program='lilypad-pond-session-${config.programSession}']`)
-    lines[lines.length - 1].classList.add("highlighted-line");
-}
 
 if(!SKIP_ANIMATION) {
     innerBar.animate(...getTimings(0)).onfinish = () => {

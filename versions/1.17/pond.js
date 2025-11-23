@@ -63,6 +63,49 @@ async function handleRequest(link, body, handlers) {
 }
 
 /**
+ * @param {String} fileName
+ * @param {String[]} fileData
+ * @param {*} createEditableLineAfter 
+ */
+function openLilypad(fileName, fileData, createEditableLineAfter){
+    for(let i = 0; i < fileData.length; i++){
+        if(config.allowedProgramDirectories.includes(config.currentPath)){
+            createLilypadLine(String(i+1).padStart(3, "0"), "code", fileName);
+        } else if (config.currentPath == "D:/Palettes") {
+            createLilypadLine(String(i).padStart(2, "0"), "palette", fileName);
+        } else createLilypadLine(">", undefined ,fileName);
+        let lines = document.querySelectorAll(`[data-program='lilypad-session-${config.programSession}']`);
+        lines[i].textContent = fileData[i];
+        moveCaretToEnd(lines[i]);
+    }
+
+    // get the last lilypad line and highlight it
+    let lines = document.querySelectorAll(`[data-program='lilypad-session-${config.programSession}']`)
+    lines[lines.length - 1].classList.add("highlighted-line");
+}
+
+function openPondLilypad(file, options){
+    const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"));
+
+    if(error) {
+        throw new Error("Blocked attempt to open Pond from unauthorized context.");
+    }
+
+    for(let i = 0; i < file.getData().length; i++){
+
+        createLilypadLinePondDerivative(">", file.getName(), options);
+
+        let lines = document.querySelectorAll(`[data-program='lilypad-pond-session-${config.programSession}']`);
+        lines[i].textContent = file.getData()[i];
+        moveCaretToEnd(lines[i]);
+    }
+
+    // get the last lilypad line and highlight it
+    let lines = document.querySelectorAll(`[data-program='lilypad-pond-session-${config.programSession}']`)
+    lines[lines.length - 1].classList.add("highlighted-line");
+}
+
+/**
  * Creates a scrollable interactive Pond menu.
  *
  * @param {{ [key: string]: Function | "text" | "newline" | "input" | "checkbox" }} object
