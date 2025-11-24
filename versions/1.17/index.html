@@ -25,8 +25,8 @@
     }
 
     #screen {
-        width: 640px;
-        height: 480px;
+        width: var(--terminal-width);
+        height: var(--terminal-height);
         background-color: var(--terminal-background);
         display: flex;
         flex-direction: column;
@@ -45,6 +45,9 @@
         cursor: none;
         color: var(--bar-text);
         margin-bottom: 5px;
+        white-space: nowrap;
+        text-overflow: clip;
+        overflow: hidden;
     }
     #terminal {
         width: 100%;

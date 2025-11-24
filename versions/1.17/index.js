@@ -19,6 +19,15 @@ const trustedProgramsGovernor = new Governor('trusted-programs', 100, () => {
     config.trustedPrograms = file.getData();
 });
 
+function horizontal(char = "-"){
+    let line = char.repeat(maxCharsPerLine());
+    return line;
+}
+
+function maxCharsPerLine(){
+    return Math.floor(document.querySelector(':root').style.getPropertyValue('--terminal-width').replace("px","") / 8) - 2;
+}
+
 const configGovernor = new Governor("config", 250, () => {
     setUserConfigFromFile()
     updateProgramList()
@@ -44,6 +53,10 @@ const configGovernor = new Governor("config", 250, () => {
 });
 
 const dateTimeGovernor = new Governor("date-time", 100, () => {
+    const root = document.querySelector(':root');
+    const userFile = parse_fSDS(FroggyFileSystem.getFile("Config:/user").getData());
+    root.style.setProperty('--terminal-width', `${userFile.terminalWidth.value}px`);
+    root.style.setProperty('--terminal-height', `${userFile.terminalHeight.value}px`);
     updateDateTime()
 });
 
@@ -99,7 +112,7 @@ function setUserConfigFromFile(){
     config.showSpinner = getSetting("showSpinner");
     config.currentSpinner = getSetting("currentSpinner");
     config.defaultSpinner = getSetting("defaultSpinner");
-    config.timeFormat = getSetting("timeFormat")?.slice(0, 78);
+    config.timeFormat = getSetting("timeFormat")?.slice(0, maxCharsPerLine());
     config.updateStatBar = getSetting("updateStatBar")
     config.allowedProgramDirectories = getSetting("allowedProgramDirectories");
     // add other settings for macros, palettes, etc.
@@ -604,7 +617,7 @@ function updateDateTime() {
     }
 
     if(isJp(barText.textContent)) {
-        let text = limit(barText.textContent, 78);
+        let text = limit(barText.textContent, maxCharsPerLine());
         barText.textContent = '';
         text.split("").forEach((char) => {
             let span = document.createElement('span');
@@ -1185,7 +1198,7 @@ async function sendCommand(command, args, createEditableLineAfter = true){
             createTerminalLine("T_directory_deleted", ">")
             printLn();
         } break;
-        case "export":
+        case "xf":
         case "exportfile": {
             if(args.length == 0) {
                 hadError = true;
@@ -1239,7 +1252,7 @@ async function sendCommand(command, args, createEditableLineAfter = true){
                 break;
             }
             let text = args.join(" ");
-            if(timestamp(text).length > 78){
+            if(timestamp(text).length > maxCharsPerLine()){
                 createTerminalLine("T_arg_too_long", config.errorText);
                 hadError = true;
                 printLn();
@@ -1290,33 +1303,28 @@ async function sendCommand(command, args, createEditableLineAfter = true){
         case "?":
         case "help":
             createTerminalLine("T_basic_commands_intro", "");
-            createTerminalLine("T_basic_commands_lang", ">");
-            createTerminalLine("T_basic_commands_palette", ">");
-            createTerminalLine("T_basic_commands_clear", ">");
-            createTerminalLine("T_basic_commands_clone", ">");
-            createTerminalLine("T_basic_commands_clearstate", ">");
-            createTerminalLine("T_basic_commands_croak", ">");
-            createTerminalLine("T_basic_commands_croakdir", ">");
-            createTerminalLine("T_basic_commands_exportfile", ">");
-            createTerminalLine("T_basic_commands_formattime", ">");
-            createTerminalLine("T_basic_commands_hatch", ">");
-            createTerminalLine("T_basic_commands_hello", ">");
-            createTerminalLine("T_basic_commands_help", ">");
-            createTerminalLine("T_basic_commands_hop", ">");
-            createTerminalLine("T_basic_commands_list", ">");
-            createTerminalLine("T_basic_commands_listdrives", ">");
-            createTerminalLine("T_basic_commands_loadstate", ">");
-            createTerminalLine("T_basic_commands_meta", ">");
-            createTerminalLine("T_basic_commands_metaprop", ">");
-            createTerminalLine("T_basic_commands_pond", ">");
-            createTerminalLine("T_basic_commands_pulse", ">");
-            createTerminalLine("T_basic_commands_opendoc", ">");
-            createTerminalLine("T_basic_commands_rename", ">");
-            createTerminalLine("T_basic_commands_ribbit", ">");
-            createTerminalLine("T_basic_commands_savestate", ">");
-            createTerminalLine("T_basic_commands_spawn", ">");
-            createTerminalLine("T_basic_commands_spy", ">");
-            createTerminalLine("T_basic_commands_swimto", ">");
+            const filter = args[0] ?? null;
+
+            const descriptors = FroggyFileSystem.getFile(`Config:/langs/ldm`).getData().filter(line => line.startsWith("T_basic_commands_"));
+
+            descriptors.shift()
+
+            if(filter == null){
+                descriptors.forEach(descriptor => {
+                    createTerminalLine(descriptor, ">");
+                })
+            } else {
+                const filtered = descriptors.map(x => x.replace("T_basic_commands_", "")).filter(descriptor => descriptor.toLowerCase().includes(filter.toLowerCase())).map(descriptor => "T_basic_commands_" + descriptor);
+                
+                if(filtered.length > 0){
+                    filtered.forEach(descriptor => {
+                        createTerminalLine(descriptor, ">");
+                    })
+                } else {
+                    createTerminalLine(`T_no_commands_with_filter {{${filter}}}`, config.errorText);
+                }
+
+            }
             printLn();
         break;
 
@@ -1739,7 +1747,7 @@ async function sendCommand(command, args, createEditableLineAfter = true){
                         if(data.type == "unread_warn"){
                             const warningDisplay = {
                                 [`<span style='background-color: var(--c12); color: var(--c15);'>${localize("T_pond_attention")}</span>`]: "text",
-                                [`${localize("T_pond_user_warned")}<br>${'-'.repeat(78)}<br>`]: "text",
+                                [`${localize("T_pond_user_warned")}<br>${horizontal("-")}<br>`]: "text",
                             };
 
                             data.warns.forEach((warn) => {
@@ -1747,11 +1755,11 @@ async function sendCommand(command, args, createEditableLineAfter = true){
                                 warnText += localize(`T_pond_warned_by {{${warn.warnedBy}}}`) + '<br>';
                                 warnText += localize(`T_pond_warned_at {{${timestamp(config.timeFormat, warn.timestamp)}}}`) + '<br>';
                                 warnText += localize(`T_pond_warn_reason {{${warn.reason}}}`) + '<br>';
-                                warnText += `Warning ID: ${warn.id}` + `<br>${'-'.repeat(78)}<br>`;
+                                warnText += `Warning ID: ${warn.id}` + `<br>${horizontal("-")}<br>`;
                                 warningDisplay[warnText] = "text";
                             });
                             
-                            warningDisplay[localize("T_pond_warn_info_text") + "<br>" + '-'.repeat(78)] = "text";
+                            warningDisplay[localize("T_pond_warn_info_text") + "<br>" + horizontal("-")] = "text";
 
                             warningDisplay[`Acknowledge Warning${data.warns.length == 1 ? "" : "s"}`] = () => {
                                 navigator.clipboard.writeText(data.warns.map(warn => warn.id).join(", "));
@@ -2460,7 +2468,7 @@ async function sendCommand(command, args, createEditableLineAfter = true){
 
         case '[[BULLFROG]]setstatbar':
             let text = args.join(" ");
-            if(text > 78){
+            if(text > maxCharsPerLine()){
                 createTerminalLine("T_arg_too_long", config.errorText);
                 hadError = true;
                 printLn();
@@ -3547,29 +3555,6 @@ function enterRecoveryMode(){
         createEditableTerminalLine(v);
     }
 
-    const freshUserFile = FroggyFile.from({ name: "user", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
-            "KEY language TYPE String VALUE eng END",
-            "KEY colorPalette TYPE String VALUE standard END",
-            "KEY version TYPE String VALUE 1.17-indev END",
-            "KEY showSpinner TYPE Boolean VALUE false END",
-            "KEY currentSpinner TYPE String VALUE default END",
-            "KEY defaultSpinner TYPE String VALUE default END",
-            "KEY timeFormat TYPE String VALUE w. Y/mn/d h:m:s END",
-            "KEY updateStatBar TYPE Boolean VALUE true END",
-            "KEY allowedProgramDirectories TYPE Array START",
-            "0 TYPE String VALUE D:/Programs",
-            "KEY allowedProgramDirectories TYPE Array END",
-            "KEY dissallowSubdirectoriesIn TYPE Array START",
-            "0 TYPE String VALUE D:/Programs",
-            "1 TYPE String VALUE D:/Macros",
-            "2 TYPE String VALUE D:/Program-Data",
-            "3 TYPE String VALUE D:/Palettes",
-            "4 TYPE String VALUE D:/Spinners",
-            "5 TYPE String VALUE D:/Pond",
-            "KEY dissallowSubdirectoriesIn TYPE Array END",
-            "KEY validateLanguageOnStartup TYPE Boolean VALUE true END",
-    ]})
-
     let recommendedActions = []
 
     out("Welcome to froggyOS recovery mode! If you're seeing this, you MESSED SOMETHING UP BIG TIME. YAY! (or you entered the command yourself. In that case, Im proud that you're trying to fix your mistakes!) Type \"help\" for a list of commands.");
@@ -3645,26 +3630,7 @@ function enterRecoveryMode(){
                     return;
                 }
 
-                const keysfSDS = parse_fSDS(["KEY language TYPE String VALUE eng END",
-                    "KEY colorPalette TYPE String VALUE standard END",
-                    "KEY version TYPE String VALUE 1.17-indev END",
-                    "KEY showSpinner TYPE Boolean VALUE false END",
-                    "KEY currentSpinner TYPE String VALUE default END",
-                    "KEY defaultSpinner TYPE String VALUE default END",
-                    "KEY timeFormat TYPE String VALUE w. Y/mn/d h:m:s END",
-                    "KEY updateStatBar TYPE Boolean VALUE true END",
-                    "KEY allowedProgramDirectories TYPE Array START",
-                    "0 TYPE String VALUE D:/Programs",
-                    "KEY allowedProgramDirectories TYPE Array END",
-                    "KEY dissallowSubdirectoriesIn TYPE Array START",
-                    "0 TYPE String VALUE D:/Programs",
-                    "1 TYPE String VALUE D:/Macros",
-                    "2 TYPE String VALUE D:/Program-Data",
-                    "3 TYPE String VALUE D:/Palettes",
-                    "4 TYPE String VALUE D:/Spinners",
-                    "5 TYPE String VALUE D:/Pond",
-                    "KEY dissallowSubdirectoriesIn TYPE Array END",
-                    "KEY validateLanguageOnStartup TYPE Boolean VALUE true END"])
+                const keysfSDS = parse_fSDS(userFileCopy.getData());
                 
                 if(keysfSDS[key] == undefined){
                     out(`Unknown key: ${key}`);
@@ -3692,6 +3658,11 @@ function enterRecoveryMode(){
 
             } break;
             case "unhalt": {
+                if(args[0] == undefined){
+                    out("Please specify a governor to unhalt.");
+                    printLn()
+                    return;
+                }
                 if(!TroubleManager.getGovernor(args[0])){
                     out(`Unknown governor: ${args[0]}`);
                     printLn()
@@ -3714,7 +3685,7 @@ function enterRecoveryMode(){
                     printLn()
                     return;
                 }
-                FroggyFileSystem.addFileToDirectory("Config:", freshUserFile);
+                FroggyFileSystem.addFileToDirectory("Config:", userFileCopy);
                 out("User file regenerated successfully.");
                 clearActions("regenuserfile");
                 exitRecoveryMode();
@@ -3794,6 +3765,9 @@ function enterRecoveryMode(){
                 out("clearstate: Clears the autoload state.");
                 out("regenuserfile: Regenerates the user configuration file.");
                 out("regentrustedprogramfile: Regenerates the trusted programs file.");
+                out("regenconfigdir: Regenerates the Config directory.");
+                out("regenkey [key]: Regenerates a specific key in the user configuration file.");
+                out("unhalt [governor]: Removes the 'halt' trouble from a governor.");
                 out("exit: Exits recovery mode");
                 printLn()
             } break;
@@ -3808,6 +3782,76 @@ function enterRecoveryMode(){
     };
 }
 
+const SKIP_ANIMATION = true;
+const currentAnimations = []
+let animSkipped = false;
+let innerBar = document.getElementById("inner-bar");
+
+const devMode = false;
+const pondLink = devMode ? "http://127.0.0.1:29329" : "https://roari.bpai.us/pond";
+
+const messageValidationRegex = /^Recipient:(.+?)-----Subject:(.+?)-----Body:(.+?)$/;
+
+if(SKIP_ANIMATION == false) {
+    const anim0 = innerBar.animate(...getTimings(0));
+    currentAnimations.push(anim0);
+    anim0.onfinish = () => {
+        const anim1 = innerBar.animate(...getTimings(1));
+        currentAnimations.push(anim1);
+        anim1.onfinish = () => {
+            const anim2 = innerBar.animate(...getTimings(2));
+            currentAnimations.push(anim2);
+            anim2.onfinish = () => {
+                const anim3 = innerBar.animate(...getTimings(3));
+                currentAnimations.push(anim3);
+                anim3.onfinish = () => {
+                    const anim4 = innerBar.animate(...getTimings(4));
+                    currentAnimations.push(anim4);
+                    anim4.onfinish = () => {
+                        sequence()
+                    };
+                };
+            };
+        };
+    };
+
+    document.addEventListener("keyup", () => {
+        animSkipped = true;
+        currentAnimations.forEach(a => a.cancel());
+        sequence()
+    }, { once: true });
+
+} else {
+    setTimeout(() => {
+        sequence()
+    }, 100); 
+}
+
+let randomNumbers = [
+    Math.floor(Math.random() * 60) + 20,
+    Math.floor(Math.random() * 60) + 20,
+    Math.floor(Math.random() * 60) + 20,
+    Math.floor(Math.random() * 60) + 20
+].sort((a, b) => a - b);
+let timings = [
+    ["0%", randomNumbers[0] + "%"],
+    [randomNumbers[0] + "%", randomNumbers[1] + "%"],
+    [randomNumbers[1] + "%", randomNumbers[2] + "%"],
+    [randomNumbers[2] + "%", randomNumbers[3] + "%"],
+    [randomNumbers[3] + "%", "100%"]
+]
+let getTimings = (i) => {
+    return [[
+        { width: timings[i][0] },
+        { width: timings[i][1] },
+        { width: timings[i][1] }    
+    ], {
+        duration: Math.floor(Math.random() * 1800) + 500,
+        easing: "ease-in-out",
+        fill: "forwards"
+    }]
+}
+
 setUserConfigFromFile()
 sendCommand('[[BULLFROG]]autoloadstate', [], false);
 document.title = `froggyOS v. ${config.version}`;
@@ -3815,19 +3859,17 @@ updateProgramList();
 changeColorPalette(config.colorPalette);
 createColorTestBar();
 sendCommand('[[BULLFROG]]validatelanguage', [], false);
-
-function onStart(){
-    //sendCommand("[[BULLFROG]]recoverymode", [])
-    //sendCommand("pond", ["-l", "test", "test"])
-    //sendCommand("st", ["test"])
-}
+ready();
 
 function ready(){
     try {
         languageCache.ldm = FroggyFileSystem.getFile("Config:/langs/ldm").getData();
         languageCache.lang.current = config.language;
         languageCache.lang.map = FroggyFileSystem.getFile(`Config:/langs/${config.language}`).getData();
-    } catch (e) { }
+    } catch (e) {
+
+        console.log("faaack")
+     }
 
     const file = FroggyFileSystem.getFile("Config:/user");
     if(file == undefined) {
@@ -3838,7 +3880,20 @@ function ready(){
     }
 
     updateDateTime();
-    document.getElementById("blackout").remove()
+}
+
+// literally all of this is just for the animation
+
+function onStart(){
+    sendCommand("?", ["c"])
+    //sendCommand("[[BULLFROG]]recoverymode", [])
+    //sendCommand("pond", ["-l", "test", "test"])
+    //sendCommand("st", ["test"])
+}
+
+
+function sequence(){
+    document.getElementById("blackout")?.remove()
     sendCommand('[[BULLFROG]]greeting', []);
     if(TroubleManager.hasTrouble()){
         terminal.innerHTML = "";
@@ -3848,69 +3903,5 @@ function ready(){
         }, 5000);
         return;
     }
-    setTimeout(() => {
-        onStart();
-    }, 1000)
-}
-
-// literally all of this is just for the animation
-let randomNumbers = [
-    Math.floor(Math.random() * 60) + 20,
-    Math.floor(Math.random() * 60) + 20,
-    Math.floor(Math.random() * 60) + 20,
-    Math.floor(Math.random() * 60) + 20
-].sort((a, b) => a - b);
-
-let timings = [
-    ["0%", randomNumbers[0] + "%"],
-    [randomNumbers[0] + "%", randomNumbers[1] + "%"],
-    [randomNumbers[1] + "%", randomNumbers[2] + "%"],
-    [randomNumbers[2] + "%", randomNumbers[3] + "%"],
-    [randomNumbers[3] + "%", "100%"]
-]
-
-let getTimings = (i) => {
-    return [[
-        { width: timings[i][0] },
-        { width: timings[i][1] },
-        { width: timings[i][1] }    
-    ], {
-        duration: Math.floor(Math.random() * 3000) + 500,
-        easing: "ease-in-out",
-        fill: "forwards"
-    }]
-}
-
-const SKIP_ANIMATION = true;
-
-let animSkipped = false;
-let innerBar = document.getElementById("inner-bar");
-
-const devMode = false;
-const pondLink = devMode ? "http://127.0.0.1:29329" : "https://roari.bpai.us/pond";
-
-const messageValidationRegex = /^Recipient:(.+?)-----Subject:(.+?)-----Body:(.+?)$/;
-
-if(!SKIP_ANIMATION) {
-    innerBar.animate(...getTimings(0)).onfinish = () => {
-        innerBar.animate(...getTimings(1)).onfinish = () => {
-            innerBar.animate(...getTimings(2)).onfinish = () => {
-                innerBar.animate(...getTimings(3)).onfinish = () => {
-                    innerBar.animate(...getTimings(4)).onfinish = () => {
-                        setTimeout(() => {
-                            ready()
-                        }, 100)
-                    }
-                }
-            }
-        }
-    }
-
-    document.addEventListener('keyup', function(e){
-        animSkipped = true;
-        ready()
-    }, {once: true});
-
-} else {
-    ready();    
+    onStart();
 }

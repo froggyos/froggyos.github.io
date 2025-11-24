@@ -214,141 +214,143 @@ const presetLanguagesMap = {
         nmt: "* tine hatsamwa komandda me o-froggyOS *",
         jpn: "* いくつかの基本的なfroggyOSコマンド *"
     },
-    "T_basic_commands_lang": {
-        eng: "changelanguage [code]. . . . . . . Changes the current language.",
-        nmt: "changelanguage [koda] . . . . . . . lohi mëzte",
-        jpn: "changelanguage [code] . . 現在の言語を変更する"
+    "T_basic_commands_changelanguage": {
+        eng: "changelanguage [code]:nl::sp2:Change the current language.",
+        nmt: "changelanguage [koda]:nl::sp2:lohi mëzte",
+        jpn: "changelanguage [code]:nl::sp2:現在の言語を変更する",
     },
-    "T_basic_commands_palette": {
-        eng: "changepalette [palette]. . . . . . Changes the color palette.",
-        nmt: "changepalette [paleta].  . . . . . . lohi pesezte paleta",
-        jpn: "changepalette [palette] . . カラーパレットを変更する"
+    "T_basic_commands_changepalette": {
+        eng: "changepalette [palette]:nl::sp2:Change the color palette.",
+        nmt: "changepalette [paleta]:nl::sp2:lohi pesezte paleta",
+        jpn: "changepalette [palette]:nl::sp2:カラーパレットを変更する",
     },
     "T_basic_commands_clear": {
-        eng: "clear. . . . . . . . . . . . . . . Clears the terminal output.",
-        nmt: "clear . . . . . . . . . . . . . . . nggave taminalu tuha",
-        jpn: "clear . . 端末の出力をクリアする"
+        eng: "clear:nl::sp2:Clear the terminal output.",
+        nmt: "clear:nl::sp2:nggave taminalu tuha",
+        jpn: "clear:nl::sp2:端末の出力をクリアする",
     },
     "T_basic_commands_clone": {
-        eng: "clone [file] . . . . . . . . . . . Clones a file.",
-        nmt: "clone [fiyala]. . . . . . . . . . . mafo fiyala",
-        jpn: "clone [file] . . . . . . . . . ファイルをクローンする"
+        eng: "clone [file]:nl::sp2:Copy a file.",
+        nmt: "clone [fiyala]:nl::sp2:mafo fiyala",
+        jpn: "clone [file]:nl::sp2:ファイルをクローンする",
     },
     "T_basic_commands_clearstate": {
-        eng: "clearstate . . . . . . . . . . . . Clears froggyOS state.",
-        nmt: "clearstate. . . . . . . . . . . . . ngátiwi satéte o-froggyOS",
-        jpn: "clearstate . . froggyOSの状態をクリアする"
+        eng: "clearstate:nl::sp2:Clear froggyOS state.",
+        nmt: "clearstate:nl::sp2:ngátiwi satéte o-froggyOS",
+        jpn: "clearstate:nl::sp2:froggyOSの状態をクリアする",
     },
     "T_basic_commands_croak": {
-        eng: "croak [file] . . . . . . . . . . . Deletes files and directories.",
-        nmt: "croak [fiyala]. . . . . . . . . . . nggave fiyala me nam dilekatüli me",
-        jpn: "croak [file] . . ファイルを削除する"
+        eng: "croak [file]:nl::sp2:Delete a file.",
+        nmt: "croak [fiyala]:nl::sp2:nggave fiyala",
+        jpn: "croak [file]:nl::sp2:ファイルを削除する",
     },
     "T_basic_commands_croakdir": {
-        eng: "croakdir [directory] . . . . . . Deletes a directory.",
-        nmt: "croakdir [dilekatüli]. . . . . . nggave dilekatüli",
-        jpn: "T_basic_commands_croakdir",
+        eng: "croakdir [directory]:nl::sp2:Delete a directory.",
+        nmt: "croakdir [dilekatüli]:nl::sp2:nggave dilekatüli",
+        jpn: "T_basic_commands_croakdir"
     },
     "T_basic_commands_exportfile": {
-        eng: "exportfile [file]. . . . . . . . . Exports a froggyOS file as a .txt file.",
+        eng: "exportfile [file]:nl::sp2:Export a froggyOS file as a .txt file.",
         nmt: "T_basic_commands_exportfile",
-        jpn: "T_basic_commands_exportfile",
+        jpn: "T_basic_commands_exportfile"
     },
     "T_basic_commands_formattime": {
-        eng: "formattime [format]. . . . . . . . Changes the time format.",
-        nmt: "formattime [folamata] . . . . . . . lohi lohí folamata",
-        jpn: "formattime [format] . . 時間形式を変更する"
+        eng: "formattime [format]:nl::sp2:Change the time format.",
+        nmt: "formattime [folamata]:nl::sp2:lohi lohí folamata",
+        jpn: "formattime [format]:nl::sp2:時間形式を変更する",
     },
     "T_basic_commands_hatch": {
-        eng: "hatch [file] . . . . . . . . . . . Creates a file.",
-        nmt: "hatch [fiyala]. . . . . . . . . . . mbeno fiyala",
-        jpn: "hatch [file] . . ファイルを作成する"
+        eng: "hatch [file]:nl::sp2:Create a file.",
+        nmt: "hatch [fiyala]:nl::sp2:mbeno fiyala",
+        jpn: "hatch [file]:nl::sp2:ファイルを作成する",
     },
     "T_basic_commands_hello": {
-        eng: "hello. . . . . . . . . . . . . . . Displays a greeting message.",
-        nmt: "hello . . . . . . . . . . . . . . . nenta wüle mem",
-        jpn: "hello . . 挨拶のメッセージを表示する"
+        eng: "hello:nl::sp2:Display a greeting message.",
+        nmt: "hello:nl::sp2:nenta wüle mem",
+        jpn: "hello:nl::sp2:挨拶のメッセージを表示する",
     },
     "T_basic_commands_help": {
-        eng: "help . . . . . . . . . . . . . . . Displays this message.",
-        nmt: "help. . . . . . . . . . . . . . . . nenta lu mem",
-        jpn: "help . . このメッセージを表示する"
+        eng: "help [filter]:nl::sp2:Display this message.",
+        nmt: "help [filter]:nl::sp2:nenta lu mem",
+        jpn: "help [filter]:nl::sp2:このメッセージを表示する",
     },
     "T_basic_commands_hop": {
-        eng: "hop [directory]. . . . . . . . . . Moves to a directory.",
-        nmt: "hop [dilekatüli]. . . . . . . . . . tsi dilekatüli wa",
-        jpn: "hop [directory] . . ディレクトリに移動する"
+        eng: "hop [directory]:nl::sp2:Move to a directory.",
+        nmt: "hop [dilekatüli]:nl::sp2:tsi dilekatüli wa",
+        jpn: "hop [directory]:nl::sp2:ディレクトリに移動する",
     },
     "T_basic_commands_list": {
-        eng: "list . . . . . . . . . . . . . . . Lists files and subdirectories in the :sp35:current directory.",
-        nmt: "list. . . . . . . . . . . . . . . . seyaya fiyala me nam dilekatülilala me ilo :sp36:dilekatüli wa",
-        jpn: "list . . 現在のディレクトリ内のファイルとサブディレクトリを表示する"
+        eng: "list:nl::sp2:List files and subdirectories in the current directory.",
+        nmt: "list:nl::sp2:seyaya fiyala me nam dilekatülilala me ilo dilekatüli wa",
+        jpn: "list:nl::sp2:現在のディレクトリ内のファイルとサブディレクトリを表示する",
     },
     "T_basic_commands_listdrives": {
-        eng: "listdrives . . . . . . . . . . . . Lists all drives.",
-        nmt: "listdrives. . . . . . . . . . . . . seyaya ká'ono dalayavu me",
-        jpn: "listdrives . . 全てのドライブを表示する"
+        eng: "listdrives:nl::sp2:List all drives.",
+        nmt: "listdrives:nl::sp2:seyaya ká'ono dalayavu me",
+        jpn: "listdrives:nl::sp2:全てのドライブを表示する",
     },
     "T_basic_commands_loadstate": {
-        eng: "loadstate. . . . . . . . . . . . . Load froggyOS state.",
-        nmt: "loadstate . . . . . . . . . . . . . nagyu satéte o-froggyOS",
-        jpn: "loadstate . . froggyOSの状態をロードする"
+        eng: "loadstate:nl::sp2:Load froggyOS state.",
+        nmt: "loadstate:nl::sp2:nagyu satéte o-froggyOS",
+        jpn: "loadstate:nl::sp2:froggyOSの状態をロードする",
     },
     "T_basic_commands_meta": {
-        eng: "meta [file]. . . . . . . . . . . . Edits a file.",
-        nmt: "meta [fiyala] . . . . . . . . . . . lohi fiyala kili'ocyá",
-        jpn: "meta [file] . . ファイルを編集する"
+        eng: "meta [file]:nl::sp2:Edit a file.",
+        nmt: "meta [fiyala]:nl::sp2:lohi fiyala kili'ocyá",
+        jpn: "meta [file]:nl::sp2:ファイルを編集する",
     },
     "T_basic_commands_metaprop": {
-        eng: "metaprop [file] [property] [0/1] . Edits a file's properties.",
-        nmt: "metaprop [fiyala] [popatí] [0/1]. . lohi fiyala oәpopatí me",
-        jpn: "metaprop [file] [property] [0/1] . . ファイルのプロパティを変更する"
+        eng: "metaprop [file] [property] [0/1]:nl::sp2:Edit a file's properties.",
+        nmt: "metaprop [fiyala] [popatí] [0/1]:nl::sp2:lohi fiyala oәpopatí me",
+        jpn: "metaprop [file] [property] [0/1]:nl::sp2:ファイルのプロパティを変更する",
     },
     "T_basic_commands_pulse": {
-        eng: "pulse. . . . . . . . . . . . . . . Displays system information.",
+        eng: "pulse:nl::sp2:Display system information.",
         nmt: "T_basic_commands_pulse",
-        jpn: "T_basic_commands_pulse",
+        jpn: "T_basic_commands_pulse"
     },
     "T_basic_commands_pond": {
-        eng: "pond [options] . . . . . . . . . . Connects to the pond server.",
+        eng: "pond [options]:nl::sp2:Connect to the pond server.",
         nmt: "T_basic_commands_pond",
-        jpn: "T_basic_commands_pond",
+        jpn: "T_basic_commands_pond"
     },
-    "T_basic_commands_opendoc": {
-        eng: "opendocumentation. . . . . . . . . Opens the froggyOS documentation.",
-        nmt: "opendocumentation . . . . . . . . . ndo dokumenndasiyon o-froggyOS",
-        jpn: "opendocumentation . . froggyOSのマニュアルを開く"
+    "T_basic_commands_opendocumentation": {
+        eng: "opendocumentation:nl::sp2:Open the froggyOS documentation.",
+        nmt: "opendocumentation:nl::sp2:ndo dokumenndasiyon o-froggyOS",
+        jpn: "opendocumentation:nl::sp2:froggyOSのマニュアルを開く",
     },
     "T_basic_commands_rename": {
-        eng: "rename [file] [new_name] . . . . . Renames the file.",
-        nmt: "rename [fiyala] [sana_tama] . . . . som'on tama ma fiyala",
-        jpn: "rename [file] [new_name] . . . ファイル名を変更する"
+        eng: "rename [file] [new_name]:nl::sp2:Rename a file.",
+        nmt: "rename [fiyala] [sana_tama]:nl::sp2:som'on tama ma fiyala",
+        jpn: "rename [file] [new_name]:nl::sp2:ファイル名を変更する",
     },
+
     "T_basic_commands_ribbit": {
-        eng: "ribbit [text]. . . . . . . . . . . Displays the text.",
-        nmt: "ribbit [memәpelezwisi]. . . . . . . nenta memәpelezwisi",
-        jpn: "ribbit [テキスト] . . テキストを表示する"
+        eng: "ribbit [text]:nl::sp2:Display text.",
+        nmt: "ribbit [memәpelezwisi]:nl::sp2:nenta memәpelezwisi",
+        jpn: "ribbit [テキスト]:nl::sp2:テキストを表示する",
     },
     "T_basic_commands_savestate": {
-        eng: "savestate. . . . . . . . . . . . . Save froggyOS state.",
-        nmt: "savestate . . . . . . . . . . . . . esaya satéte o-froggyOS",
-        jpn: "savestate . . froggyOSの状態をセーブする"
+        eng: "savestate:nl::sp2:Save froggyOS state.",
+        nmt: "savestate:nl::sp2:esaya satéte o-froggyOS",
+        jpn: "savestate:nl::sp2:froggyOSの状態をセーブする",
     },
     "T_basic_commands_spawn": {
-        eng: "spawn [directory]. . . . . . . . . Creates a directory.",
-        nmt: "spawn [dilekatüli]. . . . . . . . . mbeno dilekatüli",
-        jpn: "spawn [ディレクトリ] . . ディレクトリを作成する"
+        eng: "spawn [directory]:nl::sp2:Create a directory.",
+        nmt: "spawn [dilekatüli]:nl::sp2:mbeno dilekatüli",
+        jpn: "spawn [ディレクトリ]:nl::sp2:ディレクトリを作成する",
     },
     "T_basic_commands_spy": {
-        eng: "spy [file] . . . . . . . . . . . . Reads the file and outputs it to the :sp35:terminal. Will also output certain :sp35:statistics about the file.",
-        nmt: "spy [fiyala]. . . . . . . . . . . . sensa fiyala nam nenta lu taminalu wa",
-        jpn: "spy [ファイル] . . ファイルを読み取る"
+        eng: "spy [file]:nl::sp2:Read the file and output it to the terminal. Also show file statistics.",
+        nmt: "spy [fiyala]:nl::sp2:sensa fiyala nam nenta lu taminalu wa",
+        jpn: "spy [ファイル]:nl::sp2:ファイルを読み取る",
     },
     "T_basic_commands_swimto": {
-        eng: "swimto [program] . . . . . . . . . Start a program.",
-        nmt: "swimto [program]. . . . . . . . . . igyensa pógám",
-        jpn: "swimto [プログラム] . . プログラムを開始する"
+        eng: "swimto [program]:nl::sp2:Start a program.",
+        nmt: "swimto [program]:nl::sp2:igyensa pógám",
+        jpn: "swimto [プログラム]:nl::sp2:プログラムを開始する",
     },
+
     /*
     basic model:
     provide ...
@@ -799,6 +801,11 @@ const presetLanguagesMap = {
         nmt: `T_invalid_command_argument {{}}`,
         jpn: "T_invalid_command_argument {{}}"
     },
+    "T_no_commands_with_filter {{}}": {
+        eng: `No commands found with filter "{{}}"`,
+        nmt: "T_no_commands_with_filter {{}}",
+        jpn: "T_no_commands_with_filter {{}}"
+    },
 
     // pulse =====================================
     "T_pulse_info_intro": {
@@ -897,6 +904,11 @@ const presetLanguagesMap = {
         eng: "[[BULLFROG]]greeting - Displays the greeting message",
         nmt: "[[BULLFROG]]greeting - nenta náha wulë mem",
         jpn: "[[BULLFROG]]greeting - 挨拶のメッセージを表示する"
+    },
+    "T_bullfrog_commands_gotoprogramline": {
+        eng: "[[BULLFROG]]gotoprogramline [program] [line] [column] - Goes to a specific line and column in a program in lilypad",
+        nmt: "T_bullfrog_commands_gotoprogramline",
+        jpn: "T_bullfrog_commands_gotoprogramline"
     },
     "T_bullfrog_commands_help": {
         eng: "[[BULLFROG]]help - Displays this message",
@@ -1856,8 +1868,6 @@ class FroggyFile {
             this.#size += utf8ByteLength(line) + 1;
         });
         this.#size -= 1;
-        this.#size += utf8ByteLength(this.#name);
-        this.#size += utf8ByteLength(this.dirname);
     }
 
     /**
@@ -1951,6 +1961,8 @@ const FroggyFileSystem = new SwagSystem({
             "5 TYPE String VALUE D:/Pond",
             "KEY dissallowSubdirectoriesIn TYPE Array END",
             "KEY validateLanguageOnStartup TYPE Boolean VALUE true END",
+            "KEY terminalWidth TYPE Number VALUE 640 END",
+            "KEY terminalHeight TYPE Number VALUE 480 END",
         ] },
     ],
     "Config:/langs": [
@@ -2969,6 +2981,8 @@ const FroggyFileSystem = new SwagSystem({
     ],
 })
 
+const userFileCopy = FroggyFile.from(FroggyFileSystem.getFile("Config:/user").toJSON());
+
 let config_preproxy = {
     // settings as files
     version: new UserKey(),
@@ -2982,6 +2996,8 @@ let config_preproxy = {
     dissallowSubdirectoriesIn: new UserKey(),
     language: new UserKey(),
     validateLanguageOnStartup: new UserKey(),
+    terminalWidth: new UserKey(),
+    terminalHeight: new UserKey(),
 
     // immutable settings
     trustedPrograms: [],

@@ -21,7 +21,7 @@ Paths have three parts, the drive, the directory, and the file name.
 * clearstate -> cls
 * croak -> c
 * croakdir -> cdir
-* exportfile -> export
+* exportfile -> xf
 * formattime -> ft
 * hatch -> ch
 * help -> ?
