@@ -7,7 +7,20 @@
         --terminal-width: 640px;
         --terminal-height: 480px;
     }
+
     body {
+        overflow: hidden;
+        margin: 0;
+        display: flex;
+        flex-direction: row;
+    }
+
+    #styler {
+        width: 350px;
+        border-right: 1px black solid;
+    }
+
+    #fake-body {
         background-color: var(--void-space);
         margin: 0;
         padding: 0;
@@ -15,6 +28,7 @@
         justify-content: center;
         align-items: center;
         height: 100vh;
+        width: 100%;
 
         font-variant-ligatures: none;
         font-family: "Press Start 2P", serif;
@@ -135,7 +149,7 @@
     .error-severity-6 {
         background-color: var(--error-severity-6);
         color: var(--error-text);
-        font-weight: 400 !important;
+        font-weight: 500 !important;
     }
 
     .text-jp {
@@ -284,61 +298,59 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP&display=swap" rel="stylesheet">
-    <meta property="og:title" content="froggyOS" />
-    <meta property="og:url" content="https://froggyos.xyz/versions/1.17" />
+    <meta property="og:title" content="froggyOS Palette Creator" />
+    <meta property="og:url" content="https://froggyos.xyz/color-palette-creator" />
     <meta name="theme-color" content="#00AA00" data-react-helmet="true" />
     <meta property="og:description" content="a frog-themed OS simulation" />
+    <title>froggyOS Palette Creator</title>
 </head>
 <body>
-    <div id="color-test-bar"></div>
-    <div id="screen">
-        <div id="bar">
-            <div id="bar-text"></div>
-            <div id="spinner-text"></div>
-        </div>
-        <div id="terminal">
-            <div class="line-container">
-                <span>></span><div>Welcome to the Color Palette Creator!</div>
+    <div id="styler">
+        "peee"
+    </div>
+    <div id="fake-body">
+        <div id="color-test-bar"></div>
+        <div id="screen">
+            <div id="bar">
+                <div id="bar-text"></div>
+                <div id="spinner-text"></div>
             </div>
-            <div class="line-container selected">
-                <span>></span><div>This line is selected. Used for menus and such.</div>
-            </div>
-            <div class="line-container highlighted-line">
-                <span>></span><div>This line is highlighted. Used to show what line is currently selected in the text editor.</div>
-            </div>
-            <div class="line-container error error-severity-0">
-                <span>></span><div>Alert!</div>
-            </div>
-            <div class="line-container error error-severity-1">
-                <span>></span><div>Warning!</div>
-            </div>
-            <div class="line-container error error-severity-2">
-                <span>></span><div>Error!</div>
-            </div>
-            <div class="line-container error error-severity-3">
-                <span>></span><div>Important Warning!</div>
-            </div>
-            <div class="line-container error error-severity-4">
-                <span>></span><div>Important Error!</div>
-            </div>
-            <div class="line-container error error-severity-5">
-                <span>></span><div>Critical Error!</div>
-            </div>
-            <div class="line-container error error-severity-6">
-                <span>></span><div>Fatal Error!</div>
+            <div id="terminal">
+                <div class="line-container">
+                    <span>></span><div>Welcome to the Color Palette Creator!</div>
+                </div>
+                <div class="line-container selected">
+                    <span>></span><div>This line is selected. Used for menus and such.</div>
+                </div>
+                <div class="line-container highlighted-line">
+                    <span>></span><div>This line is highlighted. Used to show what line is currently selected in the text editor.</div>
+                </div>
+                <div class="line-container error error-severity-0">
+                    <span>></span><div>Alert!</div>
+                </div>
+                <div class="line-container error error-severity-1">
+                    <span>></span><div>Warning!</div>
+                </div>
+                <div class="line-container error error-severity-2">
+                    <span>></span><div>Error!</div>
+                </div>
+                <div class="line-container error error-severity-3">
+                    <span>></span><div>Important Warning!</div>
+                </div>
+                <div class="line-container error error-severity-4">
+                    <span>></span><div>Important Error!</div>
+                </div>
+                <div class="line-container error error-severity-5">
+                    <span>></span><div>Critical Error!</div>
+                </div>
+                <div class="line-container error error-severity-6">
+                    <span>></span><div>Fatal Error!</div>
+                </div>
             </div>
         </div>
     </div>
 </body>
-<script src="https://cdn.jsdelivr.net/gh/garycourt/murmurhash-js/murmurhash3_gc.min.js"></script>
-<script src="https://rus1130.github.io/projects/Global/markdownParser.js"></script>
-<script src="https://rus1130.github.io/projects/Global/sniffer.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/mathjs@14.4.0/lib/browser/math.min.js"></script>
-<script src="./config.js"></script>
-<script src="./interpreter.js"></script>
-<script src="./index.js"></script>
-<script src="./pond.js"></script>
-<script defer>
+<script>
     document.querySelectorAll("script").forEach((script) => {
         script.remove();
     });
