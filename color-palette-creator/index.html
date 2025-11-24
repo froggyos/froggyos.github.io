@@ -275,6 +275,9 @@
     <meta name="theme-color" content="#00AA00" data-react-helmet="true" />
     <meta property="og:description" content="a frog-themed OS simulation" />
     <title>froggyOS Palette Creator</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/classic.min.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/14.5.3/math.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/pickr.min.js"></script>
 </head>
 <body>
     <div id="styler">
@@ -337,6 +340,7 @@
     </div>
 </body>
 <script>
+    // https://github.com/simonwep/pickr
     document.querySelectorAll("script").forEach((script) => {
         script.remove();
     });
