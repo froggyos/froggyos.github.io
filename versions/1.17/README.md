@@ -315,24 +315,14 @@ The date-time governor runs every 100 milliseconds. It updates the date and time
 Troubles are issues with governors that are shown inside of the `pulse` command. Current troubles:
 | Short name | Long name | Description |
 |------------|-----------|-------------|
-| `tpfm` | Trusted programs file missing | The trusted programs file is missing |
-| `buc/mk-(key)` | Bad user config missing key (key) | The user config file is missing the key (key) |
+| `tpfm` | trusted programs file missing | The trusted programs file is missing |
+| `buc/mk-(key)` | bad user config missing key (key) | The user config file is missing the key (key) |
 | `buc/fe` | bad user config fsds error | The user config file has an fSDS parsing error |
 | `buc/gone` | bad user config gone | The user config file is missing |
-| `nldm` | No language descriptor map | The language descriptor map file is missing |
-| `halt` | Halted | The governor has been halted by the user |
+| `nldm` | no language descriptor map | The language descriptor map file is missing |
+| `halt` | halted | The governor has been halted by the user |
 | `fd` | floating directory | A directory has an invalid path |
 
-## Startup Sequence
-1. Load any state if it exists from `localStorage`
-2. Get the user config from `Config:/user`
-3. Set the program list
-4. Update date and time
-5. Change the color palette
-6. Create the color palette bar
-7. Set trusted files    
-8. Validate current language
-Along with the startup sequence, there are two intervals, `configInterval` and `dateTimeInterval`. The `configInterval` updates the user config and program list every 250 milliseconds, while the `dateTimeInterval` updates the date and time every 100 milliseconds.
 # FroggyScript
 FroggyScript is a programming language used in froggyOS. Documentation [here](https://rus1130.github.io/projects/mdparser.html?toc=true&url=https://froggyos.github.io/versions/1.17/docs/froggyscript3.md).
 # Other
