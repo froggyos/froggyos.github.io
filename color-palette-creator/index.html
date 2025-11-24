@@ -118,38 +118,38 @@
     }
     .error-severity-0 {
         background-color: var(--error-severity-0);
-        color: var(--error-text);
+        color: var(--error-severity-text-0);
         font-weight: 400 !important;
     }
     .error-severity-1 {
         background-color: var(--error-severity-1);
-        color: var(--error-text);
+        color: var(--error-severity-text-1);
         font-weight: 400 !important;
     }
     .error-severity-2 {
         background-color: var(--error-severity-2);
-        color: var(--error-text);
+        color: var(--error-severity-text-2);
         font-weight: 400 !important;
     }
     .error-severity-3 {
         background-color: var(--error-severity-3);
-        color: var(--error-text);
+        color: var(--error-severity-text-3);
         font-weight: 400 !important;
     }
     .error-severity-4 {
         background-color: var(--error-severity-4);
-        color: var(--error-text);
+        color: var(--error-severity-text-4);
         font-weight: 400 !important;
     }
     .error-severity-5 {
         background-color: var(--error-severity-5);
-        color: var(--error-text);
+        color: var(--error-severity-text-5);
         font-weight: 400 !important;
     }
     .error-severity-6 {
         background-color: var(--error-severity-6);
-        color: var(--error-text);
-        font-weight: 500 !important;
+        color: var(--error-severity-text-6);
+        font-weight: 400 !important;
     }
 
     .text-jp {
@@ -184,34 +184,6 @@
         color: var(--terminal-line-selection-text);
     }
 
-    /* Debugging */
-    #froggyscript-debug-button {
-        position: absolute;
-        display: none;
-        top: 0;
-        right: 0;
-        background-color: var(--bar-background);
-        color: var(--bar-text);
-        width: 50px;
-        height: 50px;
-        cursor: pointer;
-    }
-    #debug-program-memory {
-        position: absolute;
-        display: none;
-        top: calc(48px * 2);
-        height: calc(100vh - 48px * 2);
-        width: calc(48px * 8);
-        left: 0;
-    }
-    #debug-os {
-        position: absolute;
-        display: none;
-        top: 50px;
-        right: 0;
-        height: calc(100vh - 50px);
-        width: 350px;
-    }
     #bar-text {
         display: inline-block;
     }
@@ -328,7 +300,7 @@
                     <span></span><div>&nbsp;</div>
                 </div>
                 <div class="line-container selected">
-                    <span>></span><div>This line is selected. Used for menus and such.</div>
+                    <span>></span><div>This line is selected. Used for menus and such, as well as text selection.</div>
                 </div>
                 <div class="line-container highlighted-line">
                     <span>></span><div>This line is highlighted. Used to show what line is currently selected in the text editor.</div>
@@ -354,6 +326,12 @@
                 <div class="line-container error error-severity-6">
                     <span>></span><div>Fatal Error!</div>
                 </div>
+                <div class="line-container">
+                    <span>></span><div style="color: var(--froggyscript-string-color)">froggyscript string</div>
+                </div>
+                <div class="line-container">
+                    <span>></span><div style="color: var(--froggyscript-number-color)">froggyscript number</div>
+                </div>
             </div>
         </div>
     </div>
@@ -363,7 +341,7 @@
         script.remove();
     });
 
-    const defaultPalette = ['000000', '0000AA', '00AA00', '00AAAA', 'AA0000', 'AA00AA', 'AA5500', 'AAAAAA', '555555', '5555FF', '55FF55', '55FFFF', 'FF5555', 'FF55FF', 'FFFF55', 'FFFFFF', 'void-space 00', 'bar-background 01', 'bar-text 15', 'terminal-background 15', 'terminal-line-background 15', 'terminal-line-highlighted-background 14', 'terminal-line-text 02', 'terminal-line-selection-background 02', 'terminal-line-selection-text 15', 'error-severity-0 03', 'error-severity-1 13', 'error-severity-2 12', 'error-severity-3 05', 'error-severity-4 06', 'error-severity-5 04', 'error-severity-6 08', 'error-text 15', 'prompt-selected-background 02', 'prompt-selected-text 15', 'froggyscript-number-color 09', 'froggyscript-string-color 02']
+    const defaultPalette = ["000000", "0000C4","00C400","00C4C4","C40000","C400C4","C47E00","C4C4C4","4E4E4E","4E4EDC","4EDC4E","4EF3F3","DC4E4E","F34EF3","F3F34E","FFFFFF","void-space 00","bar-background 01","bar-text 15","terminal-background 15","terminal-line-background 15","terminal-line-highlighted-background 14","terminal-line-text 02","terminal-line-selection-background 02","terminal-line-selection-text 15","error-severity-0 03","error-severity-text-0 15","error-severity-1 13","error-severity-text-1 15","error-severity-2 12","error-severity-text-2 15","error-severity-3 05","error-severity-text-3 15","error-severity-4 06","error-severity-text-4 15","error-severity-5 04","error-severity-text-5 15","error-severity-6 08","error-severity-text-6 15","prompt-selected-background 02","prompt-selected-text 15","froggyscript-number-color 09","froggyscript-string-color 02"]
 
     const root = document.querySelector(':root');
     root.style = "";
