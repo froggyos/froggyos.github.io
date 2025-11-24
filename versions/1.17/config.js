@@ -2659,6 +2659,7 @@ const FroggyFileSystem = new SwagSystem({
             "ft Y-mn-d!T h:m:s.l!Z",
         ] },
     ],
+    // https://lospec.com/palette-list/endesga-64
     "D:/Palettes": [
         // standard and revised palettes:  https://int10h.org/blog/2022/06/ibm-5153-color-true-cga-palette/
         { name: "standard", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
