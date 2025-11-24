@@ -3780,7 +3780,7 @@ function enterRecoveryMode(){
     };
 }
 
-const SKIP_ANIMATION = true;
+const SKIP_ANIMATION = false;
 const currentAnimations = []
 let animSkipped = false;
 let innerBar = document.getElementById("inner-bar");
@@ -3789,6 +3789,31 @@ const devMode = false;
 const pondLink = devMode ? "http://127.0.0.1:29329" : "https://roari.bpai.us/pond";
 
 const messageValidationRegex = /^Recipient:(.+?)-----Subject:(.+?)-----Body:(.+?)$/;
+
+let randomNumbers = [
+    Math.floor(Math.random() * 60) + 20,
+    Math.floor(Math.random() * 60) + 20,
+    Math.floor(Math.random() * 60) + 20,
+    Math.floor(Math.random() * 60) + 20
+].sort((a, b) => a - b);
+let timings = [
+    ["0%", randomNumbers[0] + "%"],
+    [randomNumbers[0] + "%", randomNumbers[1] + "%"],
+    [randomNumbers[1] + "%", randomNumbers[2] + "%"],
+    [randomNumbers[2] + "%", randomNumbers[3] + "%"],
+    [randomNumbers[3] + "%", "100%"]
+]
+let getTimings = (i) => {
+    return [[
+        { width: timings[i][0] },
+        { width: timings[i][1] },
+        { width: timings[i][1] }    
+    ], {
+        duration: Math.floor(Math.random() * 1800) + 500,
+        easing: "ease-in-out",
+        fill: "forwards"
+    }]
+}
 
 if(SKIP_ANIMATION == false) {
     const anim0 = innerBar.animate(...getTimings(0));
@@ -3823,31 +3848,6 @@ if(SKIP_ANIMATION == false) {
     setTimeout(() => {
         sequence()
     }, 100); 
-}
-
-let randomNumbers = [
-    Math.floor(Math.random() * 60) + 20,
-    Math.floor(Math.random() * 60) + 20,
-    Math.floor(Math.random() * 60) + 20,
-    Math.floor(Math.random() * 60) + 20
-].sort((a, b) => a - b);
-let timings = [
-    ["0%", randomNumbers[0] + "%"],
-    [randomNumbers[0] + "%", randomNumbers[1] + "%"],
-    [randomNumbers[1] + "%", randomNumbers[2] + "%"],
-    [randomNumbers[2] + "%", randomNumbers[3] + "%"],
-    [randomNumbers[3] + "%", "100%"]
-]
-let getTimings = (i) => {
-    return [[
-        { width: timings[i][0] },
-        { width: timings[i][1] },
-        { width: timings[i][1] }    
-    ], {
-        duration: Math.floor(Math.random() * 1800) + 500,
-        easing: "ease-in-out",
-        fill: "forwards"
-    }]
 }
 
 setUserConfigFromFile()
