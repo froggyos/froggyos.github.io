@@ -975,6 +975,9 @@ async function sendCommand(command, args, createEditableLineAfter = true){
         return true;
     }
 
+    // guard
+    // if(!requireGovernor(integrityGovernor)) return;
+
     switch(command){
         case "":
             createTerminalLine("T_froggy_doesnt_like", "");
