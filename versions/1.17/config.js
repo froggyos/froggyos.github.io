@@ -591,8 +591,8 @@ const presetLanguagesMap = {
         jpn: "カラーパレットは存在しません"
     },
     "T_palette_error_invalid_hex {{}}": {
-        eng: "PaletteError: {{}} is an invalid hex color.",
-        nmt: "PaletaGogowa: {{}} wa sepu hex pesezte",
+        eng: "palette error: {{}} is an invalid hex color.",
+        nmt: "paleta gogowa: {{}} wa sepu hex pesezte",
         jpn: "パレットエラー: {{}}は無効な16進カラーコードです"
     },
     "T_could_not_create_palette": {
@@ -802,7 +802,7 @@ const presetLanguagesMap = {
         jpn: "T_invalid_command_argument {{}}"
     },
     "T_no_commands_with_filter {{}}": {
-        eng: `No commands found with filter "{{}}"`,
+        eng: `No commands start with "{{}}"`,
         nmt: "T_no_commands_with_filter {{}}",
         jpn: "T_no_commands_with_filter {{}}"
     },
@@ -829,17 +829,17 @@ const presetLanguagesMap = {
         jpn: "T_pulse_fs_size {{}}"
     },
     "T_pulse_program_session {{}}": {
-        eng: "current program session: {{}}",
+        eng: "program session: {{}}",
         nmt: "T_pulse_program_session {{}}",
         jpn: "T_pulse_program_session {{}}"
     },
     "T_pulse_language {{}}": {
-        eng: "current language: {{}}",
+        eng: "language: {{}}",
         nmt: "T_pulse_language {{}}",
         jpn: "T_pulse_language {{}}"
     },
     "T_pulse_palette {{}}": {
-        eng: "current color palette: {{}}",
+        eng: "color palette: {{}}",
         nmt: "T_pulse_palette {{}}",
         jpn: "T_pulse_palette {{}}"
     },
