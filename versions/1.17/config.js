@@ -3056,6 +3056,7 @@ let prevTotals = {
 };
 
 const diagnosticsGovernor = new Governor("diagnostics", 1000, () => {
+    setTerminalSize();
     diagnostics.counter++; // increment counter for this tick
     const now = Date.now();
     diagnostics.runtime = now - diagnostics.startTime;
@@ -3105,8 +3106,9 @@ function setTerminalSize(){
 }
 
 const integrityGovernor = new Governor("integrity", 1000, () => {
-    setTerminalSize()
+    // handle "floating directories"
 
+    
     if(!FroggyFileSystem.directoryExists("Config:")) {
         integrityGovernor.registerTrouble("ncd")
         createTerminalLine("no Config directory", config.fatalErrorText, {translate: false})

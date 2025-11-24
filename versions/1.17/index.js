@@ -189,6 +189,7 @@ function set_fSDS(path, filename, key, value){
  * @returns {Object} parsed fSDS object
  */
 function parse_fSDS(lines){
+    if(lines == undefined) return undefined;
     let output = {};
 
     let error = '';
@@ -3590,6 +3591,7 @@ function enterRecoveryMode(){
         }
         if(!fromExitCommand) out("All troubles resolved. Exiting recovery mode.");
         sendCommand = oldSendCommand;
+        if(config.currentPath == "invalid directory") config.currentPath = "Config:"
         printLn(config.currentPath + ">");
     }
 
@@ -3683,7 +3685,7 @@ function enterRecoveryMode(){
                 }
                 FroggyFileSystem.addFileToDirectory("Config:", userFileCopy);
                 out("User file regenerated successfully.");
-                clearActions("regenuserfile");
+                clearActions("regenuserfile");  
                 exitRecoveryMode();
             } break;
             case 'regenlangfiles': {
@@ -3892,13 +3894,5 @@ function onStart(){
 function sequence(){
     document.getElementById("blackout")?.remove()
     sendCommand('[[BULLFROG]]greeting', []);
-    if(TroubleManager.hasTrouble()){
-        terminal.innerHTML = "";
-        createTerminalLine("Entering recovery mode in 5 seconds...", ">", {translate: false});
-        setTimeout(() => {
-            enterRecoveryMode();
-        }, 5000);
-        return;
-    }
     onStart();
 }
