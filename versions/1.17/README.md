@@ -321,6 +321,7 @@ Troubles are issues with governors that are shown inside of the `pulse` command.
 | `buc/gone` | bad user config gone | The user config file is missing |
 | `nldm` | No language descriptor map | The language descriptor map file is missing |
 | `halt` | Halted | The governor has been halted by the user |
+| `fd` | floating directory | A directory has an invalid path |
 
 ## Startup Sequence
 1. Load any state if it exists from `localStorage`

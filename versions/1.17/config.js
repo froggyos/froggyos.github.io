@@ -101,20 +101,20 @@ class Governor {
             if(trouble.startsWith("tpfm")) {
                 actions.add({
                     action: "regentrustedprogramfile",
-                    description: "Regenerate the trusted program file",
+                    description: "regenerate the trusted program file",
                     trouble
                 })
             } else if (trouble.startsWith("buc/mk")) {
                 let key = trouble.split("-")[1];
                 actions.add({
                     action: "regenkey "+key,
-                    description: `Regenerate the key: ${key}`,
+                    description: `regenerate the key: ${key}`,
                     trouble
                 })
             } else if(trouble.startsWith("buc/gone")) {
                 actions.add({
                     action: "regenuserfile",
-                    description: "Regenerate the user config file",
+                    description: "regenerate the user config file",
                     trouble
                 }) 
             } else if(trouble.startsWith("buc/fe")) {
@@ -126,19 +126,25 @@ class Governor {
             } else if (trouble.startsWith("nldm")) {
                 actions.add({
                     action: "regenlangfiles",
-                    description: "Regenerate the language files",
+                    description: "regenerate the language files",
                     trouble
                 })
             } else if(trouble === "halt") {
                 actions.add({
                     action: `unhalt ${this.name}`,
-                    description: "Unhalt the governor",
+                    description: "unhalt the governor",
                     trouble
                 })
             } else if(trouble === "ncd") {
                 actions.add({
                     action: "regenconfigdir",
-                    description: "Regenerate the config directory",
+                    description: "regenerate the config directory",
+                    trouble
+                })
+            } else if (trouble === "fd") {
+                actions.add({
+                    action: "purgefd",
+                    description: "purge floating directories",
                     trouble
                 })
             } else {
@@ -1664,6 +1670,22 @@ class SwagSystem {
         return fs[location] !== undefined;
     }
 
+    allDirectories() {
+        this.#verify();
+        return Object.keys(this.#fs);
+    }
+
+    getFloatingDirectories() {
+        this.#verify();
+        function findFloatingDirectories(paths) {
+            return paths.filter(path => {
+                const validRootPattern = /^[A-Za-z]:\/?|^Config:\/?/;
+                return !validRootPattern.test(path);
+            });
+        }
+        return findFloatingDirectories(Object.keys(this.#fs));
+    }
+
     /**
      * 
      * @param {string} fullPath 
@@ -3150,6 +3172,15 @@ function setTerminalSize(){
 const integrityGovernor = new Governor("integrity", 1000, () => {
     // handle "floating directories"
 
+    const floatingDirs = FroggyFileSystem.getFloatingDirectories()
+
+    if(floatingDirs.length > 0) {
+        floatingDirs.forEach(dir => {
+            terminal.lastChild.lastChild.contentEditable = false;
+            createTerminalLine(`Floating directory detected: ${dir}`, config.fatalErrorText, {translate: false})
+        });
+        integrityGovernor.registerTrouble("fd")
+    }
     
     if(!FroggyFileSystem.directoryExists("Config:")) {
         integrityGovernor.registerTrouble("ncd")
@@ -3158,6 +3189,7 @@ const integrityGovernor = new Governor("integrity", 1000, () => {
 
     if(!FroggyFileSystem.fileExists("Config:/langs/ldm")) {
         integrityGovernor.registerTrouble("nldm")
+        terminal.lastChild.lastChild.contentEditable = false;
         createTerminalLine("no ldm file found", config.fatalErrorText, {translate: false})
         
     }

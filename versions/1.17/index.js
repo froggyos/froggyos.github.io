@@ -1066,6 +1066,7 @@ async function sendCommand(command, args, createEditableLineAfter = true){
                 break;
             }
             changeColorPalette(args[0]);
+            setTerminalSize();
             printLn();
         } break;
 
@@ -3604,6 +3605,27 @@ function enterRecoveryMode(){
     sendCommand = function(command, args){
         if(command == "[[BULLFROG]]greeting") return;
         switch(command){
+            case "purgefd": {
+                if(FroggyFileSystem.directoryExists("Config:") == false){
+                    out("Unable to purge floating directories: Config directory missing.", config.errorText);
+                    printLn()
+                    return;
+                }
+                out("Purging floating directories...");
+                let floatingDirs = FroggyFileSystem.getFloatingDirectories();
+                if(floatingDirs.length == 0){
+                    out("No floating directories found.");
+                    printLn()
+                    return;
+                }
+                floatingDirs.forEach(dir => {
+                    FroggyFileSystem.deleteDirectory(dir);
+                    out(`Deleted floating directory: ${dir}`);
+                });
+                config.currentPath = "Config:";
+                clearActions("purgefd");
+                exitRecoveryMode();
+            } break;
             case "forceexit": {
                 sendCommand = oldSendCommand;
                 printLn(config.currentPath + ">");
@@ -3766,6 +3788,7 @@ function enterRecoveryMode(){
                 out("regenconfigdir: Regenerates the Config directory.");
                 out("regenkey [key]: Regenerates a specific key in the user configuration file.");
                 out("unhalt [governor]: Removes the 'halt' trouble from a governor.");
+                out("purgefd: purges floating directories");
                 out("exit: Exits recovery mode");
                 printLn()
             } break;
@@ -3780,7 +3803,7 @@ function enterRecoveryMode(){
     };
 }
 
-const SKIP_ANIMATION = false;
+const SKIP_ANIMATION = true;
 const currentAnimations = []
 let animSkipped = false;
 let innerBar = document.getElementById("inner-bar");
@@ -3864,10 +3887,7 @@ function ready(){
         languageCache.ldm = FroggyFileSystem.getFile("Config:/langs/ldm").getData();
         languageCache.lang.current = config.language;
         languageCache.lang.map = FroggyFileSystem.getFile(`Config:/langs/${config.language}`).getData();
-    } catch (e) {
-
-        console.log("faaack")
-     }
+    } catch (e) {}
 
     const file = FroggyFileSystem.getFile("Config:/user");
     if(file == undefined) {
