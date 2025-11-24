@@ -1461,7 +1461,7 @@ async function sendCommand(command, args, createEditableLineAfter = true){
                 } else {
                     let macroList = macros.filter(macro => macro.getProperty('transparent') == false);
                     let macroAliases = macros.filter(macro => macro.getProperty('transparent') == false).map(macro => macro.getData()[0].startsWith("!") ? macro.getData()[0].slice(1) : "no alias");
-                    createTerminalLine(macroList.map((macro, i) => `${macro.getName()} (${macroAliases[i]})`).join(", "), ">", {translate: false});
+                    createTerminalLine(macroList.map((macro, i) => `${macro.getName()} (${macroAliases[i]})`).join("\n"), ">", {translate: false});
                     hadError = true;
                     printLn();
                     break;

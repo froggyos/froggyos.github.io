@@ -2683,7 +2683,7 @@ const FroggyFileSystem = new SwagSystem({
         ] },
         { name: "set-EU-time-format", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
             "!time-EU",
-            "ft w. d/mn/y H:m:s",
+            "ft w. d/mn/y h:m:s",
         ] },
         { name: "set-iso-time-format", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
             "!time-ISO",
