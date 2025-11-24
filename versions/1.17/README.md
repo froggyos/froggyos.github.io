@@ -286,6 +286,15 @@ There are no set colors that you must have, but these are the color conventions.
 * `14` - light orange/yellow
 * `15` - white
 
+## Error Colors
+* Alert - `03`
+* Warning - `13`
+* Error - `12`
+* Important Warning - `05`
+* Important Error - `06`
+* Critial Error - `04`
+* Fatal Error - `08`
+
 ### Current Color Palettes
 * standard
 * revised

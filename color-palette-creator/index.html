@@ -1,0 +1,491 @@
+<!--mrjuice43, Rus1130, 2025/01/10-->
+<style>
+    :root {
+        --BLACK: #000000;
+        --WHITE: #FFFFFF;
+        --transparent: transparent;
+        --terminal-width: 640px;
+        --terminal-height: 480px;
+    }
+    body {
+        background-color: var(--void-space);
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+
+        font-variant-ligatures: none;
+        font-family: "Press Start 2P", serif;
+        font-size: 8px;
+        cursor: none;
+        text-decoration: none;
+        -webkit-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+    }
+
+    #screen {
+        width: var(--terminal-width);
+        height: var(--terminal-height);
+        background-color: var(--terminal-background);
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: center;
+        padding-top: 0;
+        box-sizing: border-box;
+    }
+    #bar {
+        background-color: var(--bar-background);
+        height: 10px;
+        width: 100%;
+        padding-left: 4px;
+        padding-top: 1px;
+        box-sizing: border-box;
+        cursor: none;
+        color: var(--bar-text);
+        margin-bottom: 5px;
+        white-space: nowrap;
+        text-overflow: clip;
+        overflow: hidden;
+    }
+    #terminal {
+        width: 100%;
+        height: 100%;
+        background-color: var(--terminal-background);
+        display: flex;
+        flex-direction: column;
+        padding-left: 4px;
+        overflow-y: auto;
+        box-sizing: border-box;
+        scrollbar-width: none;
+    }
+    #color-test-bar {
+        position: absolute;
+        top: 0;
+        left: 0;
+    }
+    
+    .line-container {
+        display: flex;
+        flex-direction: row;
+        color: var(--terminal-line-text);
+        background-color: var(--terminal-line-background);
+        outline: none;
+    }
+    
+    .line-container > :first-child {
+        padding-right: 8px;
+        white-space: pre;
+    }
+    .line-container > div {
+        min-width: 1px;
+        width: 100%;
+        white-space: pre-wrap;
+    }
+
+    div.terminal-line.pond-menu-text {
+        white-space: normal;
+        overflow-wrap: break-word;
+    }
+
+    .line-container > div:focus {
+        outline: none;
+    }
+    .selected {
+        background-color: var(--prompt-selected-background);
+        color: var(--prompt-selected-text);
+    }
+    .error {
+        white-space: nowrap;
+        font-family: "Press Start 2P" !important;
+    }
+    .error-severity-0 {
+        background-color: var(--error-severity-0);
+        color: var(--error-text);
+        font-weight: 400 !important;
+    }
+    .error-severity-1 {
+        background-color: var(--error-severity-1);
+        color: var(--error-text);
+        font-weight: 400 !important;
+    }
+    .error-severity-2 {
+        background-color: var(--error-severity-2);
+        color: var(--error-text);
+        font-weight: 400 !important;
+    }
+    .error-severity-3 {
+        background-color: var(--error-severity-3);
+        color: var(--error-text);
+        font-weight: 400 !important;
+    }
+    .error-severity-4 {
+        background-color: var(--error-severity-4);
+        color: var(--error-text);
+        font-weight: 400 !important;
+    }
+    .error-severity-5 {
+        background-color: var(--error-severity-5);
+        color: var(--error-text);
+        font-weight: 400 !important;
+    }
+    .error-severity-6 {
+        background-color: var(--error-severity-6);
+        color: var(--error-text);
+        font-weight: 400 !important;
+    }
+
+    .text-jp {
+        font-family: monospace;
+        line-height: 11px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+
+    .bar-text-jp {
+        font-family: monospace;
+        line-height: 8px;
+        font-size: 10px;
+        font-weight: 600;
+    }
+
+    .line-container:has(span.path-jp) {
+        max-height: 12px;
+    }
+
+    .path-jp {
+        line-height: 14px;
+        font-size: 8px;
+    }
+
+    .highlighted-line {
+        background-color: var(--terminal-line-highlighted-background);
+    }
+
+    ::selection {
+        background-color: var(--terminal-line-selection-background);
+        color: var(--terminal-line-selection-text);
+    }
+
+    /* Debugging */
+    #froggyscript-debug-button {
+        position: absolute;
+        display: none;
+        top: 0;
+        right: 0;
+        background-color: var(--bar-background);
+        color: var(--bar-text);
+        width: 50px;
+        height: 50px;
+        cursor: pointer;
+    }
+    #debug-program-memory {
+        position: absolute;
+        display: none;
+        top: calc(48px * 2);
+        height: calc(100vh - 48px * 2);
+        width: calc(48px * 8);
+        left: 0;
+    }
+    #debug-os {
+        position: absolute;
+        display: none;
+        top: 50px;
+        right: 0;
+        height: calc(100vh - 50px);
+        width: 350px;
+    }
+    #bar-text {
+        display: inline-block;
+    }
+
+    #spinner-text {
+        float: right;
+        padding-right: 3px;
+        padding-top: 0.5px;
+        width: 8px;
+        height: 8px;
+    }
+
+    #blackout {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background-color: var(--void-space);
+        z-index: 9999;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+    }
+
+    #loading-bar {
+        width: 300px;
+        height: 40px;
+        background-color: var(--void-space);
+        border: 5px solid var(--terminal-background);
+        padding: 5px;
+    }
+
+    #inner-bar {
+        background-color: var(--terminal-background);
+        height: 40px;
+        width: 100%;
+    }
+
+    .tag {
+        display: inline-block;
+        font-family: "Press Start 2P", serif;
+        font-size: 8px;
+        line-height: 8px;
+    }
+
+    /* use the pseudo-element so the element can keep any label if needed */
+    .spinny::after {
+        content: "/";
+        animation: spinny 800ms steps(1,end) infinite;
+        -webkit-animation: spinny 800ms steps(1,end) infinite;
+        display: inline-block;
+    }
+
+    .pond-iframe {
+        width: 100%;
+        height: 100%;
+        border: none;
+        outline: none;
+        margin: 0;
+        padding: 0;
+    }
+
+    /* keyframes cycle the four characters; note the escaped backslash */
+    @keyframes spinny {
+        0%   { content: "[/]"; }
+        25%  { content: "[-]"; }
+        50%  { content: "[\\]"; }
+        75%  { content: "[|]"; }
+        100% { content: "[/]"; }
+    }
+    @-webkit-keyframes spinny {
+        0%   { content: "[/]"; }
+        25%  { content: "[-]"; }
+        50%  { content: "[\\]"; }
+        75%  { content: "[|]"; }
+        100% { content: "[/]"; }
+    }
+
+</style>
+<head>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP&display=swap" rel="stylesheet">
+    <meta property="og:title" content="froggyOS" />
+    <meta property="og:url" content="https://froggyos.xyz/versions/1.17" />
+    <meta name="theme-color" content="#00AA00" data-react-helmet="true" />
+    <meta property="og:description" content="a frog-themed OS simulation" />
+</head>
+<body>
+    <div id="color-test-bar"></div>
+    <div id="screen">
+        <div id="bar">
+            <div id="bar-text"></div>
+            <div id="spinner-text"></div>
+        </div>
+        <div id="terminal">
+            <div class="line-container">
+                <span>></span><div>Welcome to the Color Palette Creator!</div>
+            </div>
+            <div class="line-container selected">
+                <span>></span><div>This line is selected. Used for menus and such.</div>
+            </div>
+            <div class="line-container highlighted-line">
+                <span>></span><div>This line is highlighted. Used to show what line is currently selected in the text editor.</div>
+            </div>
+            <div class="line-container error error-severity-0">
+                <span>></span><div>Alert!</div>
+            </div>
+            <div class="line-container error error-severity-1">
+                <span>></span><div>Warning!</div>
+            </div>
+            <div class="line-container error error-severity-2">
+                <span>></span><div>Error!</div>
+            </div>
+            <div class="line-container error error-severity-3">
+                <span>></span><div>Important Warning!</div>
+            </div>
+            <div class="line-container error error-severity-4">
+                <span>></span><div>Important Error!</div>
+            </div>
+            <div class="line-container error error-severity-5">
+                <span>></span><div>Critical Error!</div>
+            </div>
+            <div class="line-container error error-severity-6">
+                <span>></span><div>Fatal Error!</div>
+            </div>
+        </div>
+    </div>
+</body>
+<script src="https://cdn.jsdelivr.net/gh/garycourt/murmurhash-js/murmurhash3_gc.min.js"></script>
+<script src="https://rus1130.github.io/projects/Global/markdownParser.js"></script>
+<script src="https://rus1130.github.io/projects/Global/sniffer.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mathjs@14.4.0/lib/browser/math.min.js"></script>
+<script src="./config.js"></script>
+<script src="./interpreter.js"></script>
+<script src="./index.js"></script>
+<script src="./pond.js"></script>
+<script defer>
+    document.querySelectorAll("script").forEach((script) => {
+        script.remove();
+    });
+
+    const defaultPalette = ['000000', '0000AA', '00AA00', '00AAAA', 'AA0000', 'AA00AA', 'AA5500', 'AAAAAA', '555555', '5555FF', '55FF55', '55FFFF', 'FF5555', 'FF55FF', 'FFFF55', 'FFFFFF', 'void-space 00', 'bar-background 01', 'bar-text 15', 'terminal-background 15', 'terminal-line-background 15', 'terminal-line-highlighted-background 14', 'terminal-line-text 02', 'terminal-line-selection-background 02', 'terminal-line-selection-text 15', 'error-severity-0 03', 'error-severity-1 13', 'error-severity-2 12', 'error-severity-3 05', 'error-severity-4 06', 'error-severity-5 04', 'error-severity-6 08', 'error-text 15', 'prompt-selected-background 02', 'prompt-selected-text 15', 'froggyscript-number-color 09', 'froggyscript-string-color 02']
+
+    const root = document.querySelector(':root');
+    root.style = "";
+    for(let i = 0; i < defaultPalette.length; i++){
+        if(i < 16){
+            const color = `c${i.toString().padStart(2, '0')}`;
+            const hex = `#${defaultPalette[i]}`;
+
+            root.style.setProperty(`--${color}`, hex);
+        } else {
+            let variable = defaultPalette[i].split(" ")[0];
+            let color = defaultPalette[i].split(" ")[1];
+
+            root.style.setProperty(`--${variable}`, `var(--c${color})`);
+        }
+    }
+
+    /**
+ * @param {String} text - the time format string
+ * @param {Number} timestamp - optional timestamp to use instead of current time
+ * @returns 
+ */
+function timestamp(text, timestamp){
+    const now = timestamp != null ? new Date(Number(timestamp)) : new Date();
+
+    let dowListShort = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    let dowListLong = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    let monthListShort = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    let monthListLong = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+    const dayOfWeekShort = dowListShort[now.getDay()];
+    const dayOfWeekLong = dowListLong[now.getDay()];
+
+    const year = now.getFullYear();
+    const yearShort = now.getFullYear().toString().slice(-2);
+
+    const monthNumber = String(now.getMonth() + 1).padStart(2, '0');
+    const monthNumberUnpadded = String(now.getMonth() + 1);
+    const monthShort = monthListShort[now.getMonth()];
+    const monthLong = monthListLong[now.getMonth()]; 
+
+    const day = String(now.getDate()).padStart(2, '0');
+    const dayUnpadded = String(now.getDate());
+    const ordinalDay = String(now.getDate()) + getOrdinalSuffix(+day);
+
+    const hour24 = String(now.getHours()).padStart(2, '0');
+    const hour12 = String((now.getHours() + 11) % 12 + 1).padStart(2, '0');
+    const hour24Unpadded = String(now.getHours());
+    const hour12Unpadded = String((now.getHours() + 11) % 12 + 1);
+
+    const minute = String(now.getMinutes()).padStart(2, '0');
+    const minuteUnpadded = String(now.getMinutes());
+
+    const second = String(now.getSeconds()).padStart(2, '0');
+    const secondUnpadded = String(now.getSeconds());
+
+    const millisecond = String(now.getMilliseconds()).padStart(3, '0');
+    const millisecondUnpadded = String(now.getMilliseconds());
+
+    const ampm = now.getHours() >= 12 ? 'PM' : 'AM';
+
+    const timezone = new Date().toLocaleString(["en-US"], {timeZoneName: "short"}).split(" ").pop();
+
+    function getISOOffset(date = new Date()) {
+        const offset = date.getTimezoneOffset(); // minutes * behind UTC *
+        const sign = offset > 0 ? "-" : "+";     // positive = behind UTC so use "-"
+        const abs = Math.abs(offset);
+        const hours = String(Math.floor(abs / 60)).padStart(2, "0");
+        const mins  = String(abs % 60).padStart(2, "0");
+        return `${sign}${hours}:${mins}`;
+    }
+
+    const isoOffset = getISOOffset(now);
+
+    function getOrdinalSuffix(num) {
+        if (typeof num !== "number" || isNaN(num)) return "";
+    
+        let lastDigit = num % 10;
+        let lastTwoDigits = num % 100;
+    
+        if (lastTwoDigits >= 11 && lastTwoDigits <= 13) return "th";
+    
+        switch (lastDigit) {
+            case 1: return "st";
+            case 2: return "nd";
+            case 3: return "rd";
+            default: return "th";
+        }
+    }
+
+    // totally not ai
+    const replacements = [
+        { char: 'w', value: dayOfWeekShort },
+        { char: 'W', value: dayOfWeekLong },
+
+        { char: 'Y', value: year },
+        { char: 'y', value: yearShort },
+
+        { char: 'mn', value: monthNumber },
+        { char: 'mnu', value: monthNumberUnpadded },
+        { char: "ms", value: monthShort },
+        { char: "M", value: monthLong },
+
+        { char: 'd', value: day },
+        { char: 'du', value: dayUnpadded },
+        { char: "D", value: ordinalDay },
+
+        { char: 'h', value: hour24 },
+        { char: 'hu', value: hour24Unpadded },
+        { char: 'H', value: hour12 },
+        { char: 'Hu', value: hour12Unpadded },
+
+        { char: 'm', value: minute },
+        { char: 'mu', value: minuteUnpadded },
+
+        { char: 's', value: second },
+        { char: 'su', value: secondUnpadded },
+
+        { char: 'l', value: millisecond },
+        { char: 'lu', value: millisecondUnpadded },
+
+        { char: 'a', value: ampm },
+
+        { char: 'z', value: timezone },
+        { char: 'Z', value: isoOffset },
+    ];
+
+    let replacementMap = Object.fromEntries(replacements.map(({ char, value }) => [char, value]));
+
+    let dateString = text.replace(/(?<!!)([a-zA-Z]+)/g, (match) => {
+        return replacementMap[match] ?? match
+    });
+
+    dateString = dateString.replace(/!([a-zA-Z])/g, (_, p1) => {
+        return p1;
+    });
+
+    return dateString;
+}
+
+setInterval(() => {
+    document.getElementById("bar-text").innerText = timestamp("w. Y/mn/d h:m:s");
+}, 1);
+
+</script>
