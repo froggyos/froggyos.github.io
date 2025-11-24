@@ -53,10 +53,6 @@ const configGovernor = new Governor("config", 250, () => {
 });
 
 const dateTimeGovernor = new Governor("date-time", 100, () => {
-    const root = document.querySelector(':root');
-    const userFile = parse_fSDS(FroggyFileSystem.getFile("Config:/user").getData());
-    root.style.setProperty('--terminal-width', `${userFile.terminalWidth.value}px`);
-    root.style.setProperty('--terminal-height', `${userFile.terminalHeight.value}px`);
     updateDateTime()
 });
 
@@ -1305,7 +1301,7 @@ async function sendCommand(command, args, createEditableLineAfter = true){
             createTerminalLine("T_basic_commands_intro", "");
             const filter = args[0] ?? null;
 
-            const descriptors = FroggyFileSystem.getFile(`Config:/langs/ldm`).getData().filter(line => line.startsWith("T_basic_commands_"));
+            const descriptors = languageCache.ldm.filter(line => line.startsWith("T_basic_commands_"));
 
             descriptors.shift()
 
@@ -3879,13 +3875,14 @@ function ready(){
         createTerminalLine("T_user_config_does_not_exist", config.fatalErrorText);
     }
 
+    setTerminalSize();
     updateDateTime();
 }
 
 // literally all of this is just for the animation
 
 function onStart(){
-    sendCommand("?", ["c"])
+    //sendCommand("?", ["c"])
     //sendCommand("[[BULLFROG]]recoverymode", [])
     //sendCommand("pond", ["-l", "test", "test"])
     //sendCommand("st", ["test"])

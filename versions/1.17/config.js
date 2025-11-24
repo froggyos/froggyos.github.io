@@ -3093,7 +3093,16 @@ const diagnosticsGovernor = new Governor("diagnostics", 1000, () => {
     });
 });
 
+function setTerminalSize(){
+    const root = document.querySelector(':root');
+    const userFile = parse_fSDS(FroggyFileSystem.getFile("Config:/user").getData());
+    root.style.setProperty('--terminal-width', `${userFile.terminalWidth.value || 640}px`);
+    root.style.setProperty('--terminal-height', `${userFile.terminalHeight.value || 480}px`);
+}
+
 const integrityGovernor = new Governor("integrity", 1000, () => {
+    setTerminalSize()
+
     if(!FroggyFileSystem.directoryExists("Config:")) {
         integrityGovernor.registerTrouble("ncd")
         createTerminalLine("no Config directory", config.fatalErrorText, {translate: false})
