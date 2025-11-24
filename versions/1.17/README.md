@@ -307,6 +307,11 @@ There are no set colors that you must have, but these are the color conventions.
 Recovery mode is a special mode in froggyOS that allows you to fix issues with the operating system. To enter recovery mode, run the command `[[BULLFROG]]recoverymode`. In recovery mode, you can run the following commands:
 * `regenlangfiles` - Regenerates language files.
 * `clearstate` - Clears the autoload state.
+* `regenuserfile` - Regenerates the user file.
+* `regentrustedprogramfile` - Regenerates the trusted programs file.
+* `regenconfigdir` - Regenerates the config directory.
+* `regenkey [key]` - Regenerates a specific key in the user file.
+* `unhalt [governor]` - Unhalts a specific governor.
 * `exit` - Exits recovery mode only if all governors are not troubled.
 * `help` - Lists all available recovery mode commands.
 

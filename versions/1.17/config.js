@@ -3095,9 +3095,13 @@ const diagnosticsGovernor = new Governor("diagnostics", 1000, () => {
 
 function setTerminalSize(){
     const root = document.querySelector(':root');
-    const userFile = parse_fSDS(FroggyFileSystem.getFile("Config:/user").getData());
-    root.style.setProperty('--terminal-width', `${userFile.terminalWidth.value || 640}px`);
-    root.style.setProperty('--terminal-height', `${userFile.terminalHeight.value || 480}px`);
+    const userFile = FroggyFileSystem.getFile("Config:/user")?.getData();
+
+    const width = userFile ? parse_fSDS(userFile).terminalWidth.value : 640;
+    let height = userFile ? parse_fSDS(userFile).terminalHeight.value : 480;
+
+    root.style.setProperty('--terminal-width', `${width}px`);
+    root.style.setProperty('--terminal-height', `${height}px`);
 }
 
 const integrityGovernor = new Governor("integrity", 1000, () => {
