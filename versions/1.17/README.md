@@ -244,7 +244,7 @@ Lilypad is the text editor in froggyOS. It has keybinds that you can use to make
 
 
 ## Color Palette Conventions
-There are no set colors that you must have, but these are the color conventions.
+There are no set colors that you must have, but these are the color conventions. You can create color palettes using the [color palette creator](https://froggyos.xyz/color-palette-creator).
 * `00` - black
 * `01` - blue
 * `02` - green

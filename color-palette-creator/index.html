@@ -407,6 +407,7 @@ for (let i = 0; i < 16; i++) {
     const row = document.createElement("div");
     row.className = "row";
     row.innerHTML = `<div class="picker" id="picker-${i+1}"></div>`;
+    row.title = `c${i.toString().padStart(2,'0')}`;
     baseColorsContainer.appendChild(row);
 
     const pickr = Pickr.create({
@@ -468,6 +469,7 @@ for (const { name, code } of VARIABLES) {
     row.appendChild(label);
     row.appendChild(select);
     variableMappingsContainer.appendChild(row);
+    variableMappingsContainer.appendChild(document.createElement("br"));
 
     // initialize mapping
     root.style.setProperty(`--${name}`, `var(--c${code})`);
