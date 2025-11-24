@@ -170,11 +170,8 @@ Note:
 ## Macros
 * Macros are written in the `D:/Macros` directory
 * each line in a macro file is a command that will be executed
-* to add an alias to a macro, the **first line must** be `![alias]`. You can add only one alias per macro.
-* to use file arguments inside of a macro, use `$[file argument number]` (ex. `$1`)
-
-## Settings Directory
-If you edit the `Settings:` drive directly, some settings won't apply until you reload the froggyOS state. An easy way to do this would be to run the `reload` macro.
+* to add an alias, the **first line must** be `![alias]`. You can add only one alias per macro.
+* to use file arguments, use `$[file argument number]` (ex. `$1`)
 
 ## Trusting Programs
 To trust a program, you must add its file name in the `D:/trusted_programs` file. This will allow the program to have extended control over the operating system. This must be done **manually** and cannot be done through a program.
@@ -204,28 +201,7 @@ KEY favoriteColors TYPE Array END
 ```
 
 ## User file
-The user file is located at `Config:/user`. It holds user-specific settings. Here is the default file contents, written in fSDS format:
-```
-KEY language TYPE String VALUE eng END
-KEY colorPalette TYPE String VALUE standard END
-KEY version TYPE String VALUE 1.17-indev END
-KEY showSpinner TYPE Boolean VALUE false END
-KEY currentSpinner TYPE String VALUE default END
-KEY defaultSpinner TYPE String VALUE default END
-KEY timeFormat TYPE String VALUE w. y/mn/d h:m:s END
-KEY updateStatBar TYPE Boolean VALUE true END
-KEY allowedProgramDirectories TYPE Array START
-0 TYPE String VALUE D:/Programs
-KEY allowedProgramDirectories TYPE Array END
-KEY dissallowSubdirectoriesIn TYPE Array START
-0 TYPE String VALUE D:/Programs
-1 TYPE String VALUE D:/Macros
-2 TYPE String VALUE D:/Program-Data
-3 TYPE String VALUE D:/Palettes
-4 TYPE String VALUE D:/Spinners
-KEY dissallowSubdirectoriesIn TYPE Array END
-KEY validateLanguageOnStartup TYPE Boolean VALUE true END
-```
+The user file is located at `Config:/user`. It holds user-specific settings.
 
 ## Lilypad keybinds
 Lilypad is the text editor in froggyOS. It has keybinds that you can use to make editing easier.
