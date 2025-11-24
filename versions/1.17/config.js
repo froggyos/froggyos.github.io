@@ -87,6 +87,10 @@ class Governor {
         return this.troubles.has(trouble);
     }
 
+    troubled(){
+        return !this.ok;
+    }
+
     halt(){
         this.registerTrouble("halt");
     }
@@ -811,6 +815,11 @@ const presetLanguagesMap = {
         eng: `No commands start with "{{}}"`,
         nmt: "T_no_commands_with_filter {{}}",
         jpn: "T_no_commands_with_filter {{}}"
+    },
+    "T_cannot_execute_command {{}} {{}}": {
+        eng: `Cannot execute command "{{}}" as governor "{{}}" is troubled.`,
+        nmt: `T_cannot_execute_command {{}} {{}}`,
+        jpn: "T_cannot_execute_command {{}} {{}}"
     },
 
     // pulse =====================================

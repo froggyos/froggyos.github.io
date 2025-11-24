@@ -965,6 +965,16 @@ async function sendCommand(command, args, createEditableLineAfter = true){
         if(createEditableLineAfter) createEditableTerminalLine(`${config.currentPath}>`);
     }
 
+    const requireGovernor = (governor) => {
+        if(governor.troubled()) {
+            createTerminalLine(`T_cannot_execute_command {{${command}}} {{${governor.name}}}`, config.errorText);
+            hadError = true;
+            printLn();
+            return false;
+        }
+        return true;
+    }
+
     switch(command){
         case "":
             createTerminalLine("T_froggy_doesnt_like", "");
@@ -975,6 +985,7 @@ async function sendCommand(command, args, createEditableLineAfter = true){
         // change language
         case "lang":
         case "changelanguage": {
+            if(!requireGovernor(integrityGovernor)) return;
             let langCodes = FroggyFileSystem.getDirectory("Config:/langs").map(file => file.getName())
 
             function getDisplayCodes(){ 
@@ -1037,6 +1048,7 @@ async function sendCommand(command, args, createEditableLineAfter = true){
         
         // change color palette
         case "changepalette": {
+            if(!requireGovernor(integrityGovernor)) return;
             let colorPalettes = createPalettesObject();
             function getDisplayPalettes(){
                 let palettes = FroggyFileSystem.getDirectory("D:/Palettes")
@@ -1087,6 +1099,7 @@ async function sendCommand(command, args, createEditableLineAfter = true){
 
         // copy files
         case "clone": {
+            if(!requireGovernor(integrityGovernor)) return;
             if(args.length == 0){
                 createTerminalLine("T_provide_file_name", config.errorText);
                 hadError = true;
@@ -1132,6 +1145,7 @@ async function sendCommand(command, args, createEditableLineAfter = true){
         // delete files
         case "c":
         case "croak": {
+            if(!requireGovernor(integrityGovernor)) return;
             if(args.length == 0){
                 createTerminalLine("T_provide_file_name", config.errorText);
                 hadError = true;
@@ -1156,6 +1170,7 @@ async function sendCommand(command, args, createEditableLineAfter = true){
 
         case "cdir":
         case "croakdir": {
+            if(!requireGovernor(integrityGovernor)) return;
             if(args.length == 0){
                 createTerminalLine("T_provide_directory_name", config.errorText);
                 hadError = true;
@@ -1196,8 +1211,10 @@ async function sendCommand(command, args, createEditableLineAfter = true){
             createTerminalLine("T_directory_deleted", ">")
             printLn();
         } break;
+        
         case "xf":
         case "exportfile": {
+            if(!requireGovernor(integrityGovernor)) return;
             if(args.length == 0) {
                 hadError = true;
                 createTerminalLine("T_provide_file_name", config.errorText);
@@ -1243,6 +1260,8 @@ async function sendCommand(command, args, createEditableLineAfter = true){
 
         case "ft":
         case "formattime": {
+            if(!requireGovernor(integrityGovernor)) return;
+            if(!requireGovernor(dateTimeGovernor)) return;
             if(args.length == 0){
                 createTerminalLine("T_provide_time_format", config.errorText);
                 hadError = true;
@@ -1263,6 +1282,7 @@ async function sendCommand(command, args, createEditableLineAfter = true){
         // make files
         case "ch":
         case "hatch": {
+            if(!requireGovernor(integrityGovernor)) return;
             if(args.length == 0){
                 createTerminalLine("T_provide_file_name", config.errorText);
                 hadError = true;
@@ -1293,13 +1313,14 @@ async function sendCommand(command, args, createEditableLineAfter = true){
             printLn();
         } break;
 
-        case "hello":
+        case "hello": {
             createTerminalLine("T_hello_froggy", ">");
             printLn();
-        break;
+        } break;
 
         case "?":
-        case "help":
+        case "help": {
+            if(!requireGovernor(integrityGovernor)) return;
             createTerminalLine("T_basic_commands_intro", "");
             const filter = args[0] ?? null;
 
@@ -1324,12 +1345,13 @@ async function sendCommand(command, args, createEditableLineAfter = true){
 
             }
             printLn();
-        break;
+        } break;
 
 
         // move directories
         case "h":
-        case "hop":
+        case "hop": {
+            if(!requireGovernor(integrityGovernor)) return;
             directory = args[0];
 
             if(directory == undefined){
@@ -1351,7 +1373,7 @@ async function sendCommand(command, args, createEditableLineAfter = true){
             }
 
             sendCommand("[[BULLFROG]]changepath", [directory], createEditableLineAfter);
-        break;
+        } break;
 
         // list files
         case "ls":
@@ -1426,6 +1448,7 @@ async function sendCommand(command, args, createEditableLineAfter = true){
 
         case "/":
         case "macro": {
+            if(!requireGovernor(integrityGovernor)) return;
             if(args.length == 0){
                 createTerminalLine("T_provide_macro_name", config.errorText);
                 createTerminalLine(`T_available_macros`, "");
@@ -1504,6 +1527,7 @@ async function sendCommand(command, args, createEditableLineAfter = true){
         // edit file
         case "m":
         case "meta": {
+            if(!requireGovernor(integrityGovernor)) return;
             if(args.length == 0){
                 createTerminalLine("T_provide_file_name", config.errorText);
                 hadError = true;
@@ -1551,6 +1575,7 @@ async function sendCommand(command, args, createEditableLineAfter = true){
         // edit file properties
         case "mp":
         case "metaprop":
+            if(!requireGovernor(integrityGovernor)) return;
             file = getFileWithName(config.currentPath, args[0]);
 
             let property = args[1];
@@ -1608,6 +1633,11 @@ async function sendCommand(command, args, createEditableLineAfter = true){
         } break;
 
         case "pond": {
+            if(!requireGovernor(configGovernor)) return;
+            if(!requireGovernor(dateTimeGovernor)) return;
+            if(!requireGovernor(integrityGovernor)) return;
+            if(!requireGovernor(diagnosticsGovernor)) return;
+            if(!requireGovernor(trustedProgramsGovernor)) return;
             async function ping(){
                 let returnObj;
                 const startTime = performance.now();
@@ -2105,6 +2135,7 @@ async function sendCommand(command, args, createEditableLineAfter = true){
         } break;
 
         case "rename": {
+            if(!requireGovernor(integrityGovernor)) return;
             if(args.length < 2){
                 createTerminalLine("T_provide_file_name_and_new", config.errorText);
                 hadError = true;
@@ -2158,6 +2189,7 @@ async function sendCommand(command, args, createEditableLineAfter = true){
             createTerminalLine(`T_file_renamed`, ">");
             printLn();
         } break;
+        
         case "ribbit":
             if(args.length == 0){
                 createTerminalLine("T_provide_text_to_display", config.errorText);
@@ -2184,6 +2216,7 @@ async function sendCommand(command, args, createEditableLineAfter = true){
         // make directories
         case "s":
         case "spawn":
+            if(!requireGovernor(integrityGovernor)) return;
             directory = config.currentPath + "/" + args[0];
 
             if(config.dissallowSubdirectoriesIn.includes(config.currentPath)){
@@ -2211,6 +2244,7 @@ async function sendCommand(command, args, createEditableLineAfter = true){
 
         // read file contents
         case "spy":
+            if(!requireGovernor(integrityGovernor)) return;
             if(args.length == 0){
                 createTerminalLine("T_provide_file_name", config.errorText);
                 hadError = true;
@@ -2254,6 +2288,8 @@ async function sendCommand(command, args, createEditableLineAfter = true){
 
         case "st":
         case "swimto":
+            if(!requireGovernor(integrityGovernor)) return;
+            if(!requireGovernor(trustedProgramsGovernor)) return;
             function getProgramList(){
                 let programList = [];
                 for(let directory of config.allowedProgramDirectories){
