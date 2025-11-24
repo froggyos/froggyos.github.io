@@ -426,16 +426,10 @@ for (let i = 0; i < 16; i++) {
     });
 
     pickers.push(pickr);
-
-    pickr.on("change", color => {
-        const hex = color.toHEXA().toString();
-        root.style.setProperty(`--c${i.toString().padStart(2,'0')}`, hex);
-    });
-
+    
     pickr.on("save", color => {
         const hex = color.toHEXA().toString();
         root.style.setProperty(`--c${i.toString().padStart(2,'0')}`, hex);
-        pickr.hide();
     });
 }
 
