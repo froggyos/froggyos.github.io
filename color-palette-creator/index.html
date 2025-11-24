@@ -18,6 +18,29 @@
     #styler {
         width: 550px;
         border-right: 1px black solid;
+        display: flex;
+        flex-direction: column;;
+        padding-top: 10px;
+        padding-left: 10px;
+        overflow-y: auto;
+    }
+
+    .row {
+        display: inline-flex;
+        flex-direction: row;
+        align-items: center;
+        font-family: monospace;
+        padding-bottom: 5px;
+        padding-left: 5px;
+    }
+
+    .picker {
+        min-width: 20px;
+        min-height: 20px;
+    }
+
+    .pcr-button {
+        border: 1px black solid !important
     }
 
     #fake-body {
@@ -281,6 +304,12 @@
 </head>
 <body>
     <div id="styler">
+        <h3 style="font-family: monospace;">Base Colors</h3>
+        <div id="base-colors"></div>
+
+        <h3 style="font-family: monospace; margin-top: 15px;">Variable Mappings</h3>
+        <div id="variable-mappings"></div>
+        <button id="exportPaletteBtn" style="font-family: monospace">Export Palette</button>
     </div>
     <div id="fake-body">
         <div id="color-test-bar"></div>
@@ -341,9 +370,9 @@
 </body>
 <script>
     // https://github.com/simonwep/pickr
-    document.querySelectorAll("script").forEach((script) => {
-        script.remove();
-    });
+    // document.querySelectorAll("script").forEach((script) => {
+    //     script.remove();
+    // });
 
     const defaultPalette = ["000000", "0000C4","00C400","00C4C4","C40000","C400C4","C47E00","C4C4C4","4E4E4E","4E4EDC","4EDC4E","4EF3F3","DC4E4E","F34EF3","F3F34E","FFFFFF","void-space 00","bar-background 01","bar-text 15","terminal-background 15","terminal-line-background 15","terminal-line-highlighted-background 14","terminal-line-text 02","terminal-line-selection-background 02","terminal-line-selection-text 15","error-severity-0 03","error-severity-text-0 15","error-severity-1 13","error-severity-text-1 15","error-severity-2 12","error-severity-text-2 15","error-severity-3 05","error-severity-text-3 15","error-severity-4 06","error-severity-text-4 15","error-severity-5 04","error-severity-text-5 15","error-severity-6 08","error-severity-text-6 15","prompt-selected-background 02","prompt-selected-text 15","froggyscript-number-color 09","froggyscript-string-color 02"]
 
@@ -363,6 +392,86 @@
         }
     }
 
+    const pickers = [];
+
+const VARIABLES = defaultPalette.slice(16).map(v => {
+    const [name, code] = v.split(" ");
+    return { name, code };
+});
+
+const baseColorsContainer = document.getElementById("base-colors");
+const variableMappingsContainer = document.getElementById("variable-mappings");
+
+// -------- 1. CREATE 16 PICKERS --------
+for (let i = 0; i < 16; i++) {
+    const row = document.createElement("div");
+    row.className = "row";
+    row.innerHTML = `<div class="picker" id="picker-${i+1}"></div>`;
+    baseColorsContainer.appendChild(row);
+
+    const pickr = Pickr.create({
+        el: document.getElementById(`picker-${i+1}`),
+        theme: 'classic',
+        default: getComputedStyle(root).getPropertyValue(`--c${i.toString().padStart(2,'0')}`).trim(),
+        components: {
+            preview: true,
+            opacity: false,
+            hue: true,
+            interaction: {
+                hex: true,
+                input: true,
+                save: true
+            }
+        }
+    });
+
+    pickers.push(pickr);
+
+    pickr.on("change", color => {
+        const hex = color.toHEXA().toString();
+        root.style.setProperty(`--c${i.toString().padStart(2,'0')}`, hex);
+    });
+
+    pickr.on("save", color => {
+        const hex = color.toHEXA().toString();
+        root.style.setProperty(`--c${i.toString().padStart(2,'0')}`, hex);
+        pickr.hide();
+    });
+}
+
+// -------- 2. CREATE VARIABLE → COLOR SELECTORS --------
+for (const { name, code } of VARIABLES) {
+    const row = document.createElement("div");
+    row.className = "row";
+
+    const label = document.createElement("span");
+    label.textContent = name + ":";
+
+    const select = document.createElement("select");
+    select.style.marginLeft = "10px";
+    select.style.fontFamily = "monospace";
+
+    // generate c00–c15 options
+    for (let i = 0; i < 16; i++) {
+        const opt = document.createElement("option");
+        opt.value = `c${i.toString().padStart(2,"0")}`;
+        opt.textContent = opt.value;
+        if (i == Number(code)) opt.selected = true;
+        select.appendChild(opt);
+    }
+
+    // update CSS var on change
+    select.addEventListener("change", () => {
+        root.style.setProperty(`--${name}`, `var(--${select.value})`);
+    });
+
+    row.appendChild(label);
+    row.appendChild(select);
+    variableMappingsContainer.appendChild(row);
+
+    // initialize mapping
+    root.style.setProperty(`--${name}`, `var(--c${code})`);
+}
     /**
  * @param {String} text - the time format string
  * @param {Number} timestamp - optional timestamp to use instead of current time
@@ -485,6 +594,38 @@ function timestamp(text, timestamp){
 
     return dateString;
 }
+
+document.getElementById("exportPaletteBtn").addEventListener("click", () => {
+
+    // Build text content (each color on its own line)
+    const palette = pickers.map((picker, index) => {
+        const color = getComputedStyle(root).getPropertyValue(`--c${index.toString().padStart(2,'0')}`).trim();
+        return color.startsWith("#") ? color.slice(1).toUpperCase() : color;
+    });
+
+
+    const selects = document.querySelectorAll("select");
+
+    const text = Array.from(selects)
+        .map(sel => sel.value)
+
+    const vMaps = VARIABLES.map(({ name }, index) => {
+        return `${name} ${text[index].slice(1)}`;
+    });
+
+    const finalPalette = [...palette, ...vMaps].join("\n");
+
+    const blob = new Blob([finalPalette], { type: "text/plain" });
+
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "palette.txt";
+    a.click();
+    URL.revokeObjectURL(url);
+})
+
 
 setInterval(() => {
     document.getElementById("bar-text").innerText = timestamp("w. Y/mn/d h:m:s");
