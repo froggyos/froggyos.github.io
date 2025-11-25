@@ -163,39 +163,7 @@
         background-color: var(--terminal-line-highlighted-background);
     }
 
-    ::selection {
-        background-color: var(--terminal-line-selection-background);
-        color: var(--terminal-line-selection-text);
-    }
-
     /* Debugging */
-    #froggyscript-debug-button {
-        position: absolute;
-        display: none;
-        top: 0;
-        right: 0;
-        background-color: var(--bar-background);
-        color: var(--bar-text);
-        width: 50px;
-        height: 50px;
-        cursor: pointer;
-    }
-    #debug-program-memory {
-        position: absolute;
-        display: none;
-        top: calc(48px * 2);
-        height: calc(100vh - 48px * 2);
-        width: calc(48px * 8);
-        left: 0;
-    }
-    #debug-os {
-        position: absolute;
-        display: none;
-        top: 50px;
-        right: 0;
-        height: calc(100vh - 50px);
-        width: 350px;
-    }
     #bar-text {
         display: inline-block;
     }
@@ -206,6 +174,8 @@
         padding-top: 0.5px;
         width: 8px;
         height: 8px;
+        background-color: var(--spinner-background);
+        color: var(--spinner-text);
     }
 
     #blackout {
@@ -313,7 +283,74 @@
 <script src="./index.js"></script>
 <script src="./pond.js"></script>
 <script defer>
-    document.querySelectorAll("script").forEach((script) => {
-        script.remove();
+    // document.querySelectorAll("script").forEach((script) => {
+    //     script.remove();
+    // });
+    // Create a dynamic stylesheet for the ::selection rule
+    const style = document.createElement("style");
+    style.id = "dynamic-selection-style";
+    document.head.appendChild(style);
+
+    function getRealColors(el) {
+        let current = el;
+        let bg = null;
+        let fg = null;
+
+        while (current && current !== document.documentElement) {
+            const cs = getComputedStyle(current);
+
+            // Only set bg if we haven't found a real one yet
+            if (!bg) {
+                const cBg = cs.backgroundColor;
+                if (cBg !== "transparent" && cBg !== "rgba(0, 0, 0, 0)") {
+                    bg = cBg;
+                }
+            }
+
+            // Only set fg if we haven't found one yet
+            if (!fg) {
+                const cFg = cs.color;
+                if (cFg !== "inherit") {
+                    fg = cFg;
+                }
+            }
+
+            // If we found both, stop early
+            if (bg && fg) break;
+
+            current = current.parentElement;
+        }
+
+        // fallback to body values
+        const bodyCS = getComputedStyle(document.body);
+
+        return {
+            bg: bg || bodyCS.backgroundColor,
+            fg: fg || bodyCS.color
+        };
+    }
+
+    document.addEventListener("selectionchange", () => {
+        const sel = document.getSelection();
+        if (!sel.rangeCount) return;
+
+        const anchorNode = sel.anchorNode;
+        if (!anchorNode) return;
+
+        const node = anchorNode.nodeType === 3
+            ? anchorNode.parentElement
+            : anchorNode;
+
+        const range = sel.getRangeAt(0);
+        if (range.collapsed) return;
+
+        const real = getRealColors(node);
+
+        style.textContent = `
+        ::selection {
+            background-color: ${real.fg} !important;
+            color: ${real.bg} !important;
+        }
+        `;        
     });
 </script>

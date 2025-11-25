@@ -322,6 +322,7 @@ Troubles are issues with governors that are shown inside of the `pulse` command.
 | `nldm` | no language descriptor map | The language descriptor map file is missing |
 | `halt` | halted | The governor has been halted by the user |
 | `fd` | floating directory | A directory has an invalid path |
+| `pnf` | palette not found | The color palette specified in the user config file was not found |
 
 # FroggyScript
 FroggyScript is a programming language used in froggyOS. Documentation [here](https://rus1130.github.io/projects/mdparser.html?toc=true&url=https://froggyos.github.io/versions/1.17/docs/froggyscript3.md).

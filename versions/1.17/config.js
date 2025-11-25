@@ -620,6 +620,16 @@ const presetLanguagesMap = {
         nmt: "* pesezte paleta me *",
         jpn: "* 使用可能なカラーパレット *"
     },
+    "T_palette_not_found {{}} {{}}": {
+        eng: `Palette "{{}}" not found. Using {{}} instead.`,
+        nmt: `T_palette_not_found {{}} {{}}`,
+        jpn: `T_palette_not_found {{}} {{}}`
+    },
+    "T_palette_none_found": {
+        eng: "No color palettes were found.",
+        nmt: "T_palette_none_found",
+        jpn: "T_palette_none_found"
+    },
 
     // macro =====================================
     "T_provide_macro_name": {
@@ -1689,6 +1699,12 @@ class SwagSystem {
         return Object.keys(this.#fs);
     }
 
+    getFirstFileInDirectory(location) {
+        this.#verify();
+        const fs = this.#fs;
+        return fs[location]?.find(f => f.getProperty("hidden") !== true) || undefined;
+    }
+
     getFloatingDirectories() {
         this.#verify();
         function findFloatingDirectories(paths) {
@@ -2722,8 +2738,6 @@ const FroggyFileSystem = new SwagSystem({
             "terminal-line-background 15",
             "terminal-line-highlighted-background 14",
             "terminal-line-text 02",
-            "terminal-line-selection-background 02",
-            "terminal-line-selection-text 15",
             "error-severity-0 03",
             "error-severity-text-0 15",
             "error-severity-1 13",
@@ -2742,6 +2756,8 @@ const FroggyFileSystem = new SwagSystem({
             "prompt-selected-text 15",
             "froggyscript-number-color 09",
             "froggyscript-string-color 02",
+            "spinner-background 01",
+            "spinner-text 15",
         ] },
         { name: "revised", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
             "000000",
@@ -2767,8 +2783,6 @@ const FroggyFileSystem = new SwagSystem({
             "terminal-line-background 15",
             "terminal-line-highlighted-background 14",
             "terminal-line-text 02",
-            "terminal-line-selection-background 02",
-            "terminal-line-selection-text 15",
             "error-severity-0 03",
             "error-severity-text-0 15",
             "error-severity-1 13",
@@ -2787,6 +2801,8 @@ const FroggyFileSystem = new SwagSystem({
             "prompt-selected-text 15",
             "froggyscript-number-color 09",
             "froggyscript-string-color 02",
+            "spinner-background 01",
+            "spinner-text 15",
         ] },
         { name: "standard-dark", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
             "000000", // 00 black (unchanged)
@@ -2812,8 +2828,6 @@ const FroggyFileSystem = new SwagSystem({
             "terminal-line-background 15",
             "terminal-line-highlighted-background 14",
             "terminal-line-text 02",
-            "terminal-line-selection-background 02",
-            "terminal-line-selection-text 15",
             "error-severity-0 03",
             "error-severity-text-0 15",
             "error-severity-1 13",
@@ -2832,6 +2846,8 @@ const FroggyFileSystem = new SwagSystem({
             "prompt-selected-text 15",
             "froggyscript-number-color 09",
             "froggyscript-string-color 02",
+            "spinner-background 01",
+            "spinner-text 15",
         ] },
         { name: "cherry", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
             "000000", 
@@ -2857,8 +2873,6 @@ const FroggyFileSystem = new SwagSystem({
             "terminal-line-background 15",
             "terminal-line-highlighted-background 10",
             "terminal-line-text 02",
-            "terminal-line-selection-background 02",
-            "terminal-line-selection-text 15",
             "error-severity-0 03",
             "error-severity-text-0 15",
             "error-severity-1 13",
@@ -2877,6 +2891,8 @@ const FroggyFileSystem = new SwagSystem({
             "prompt-selected-text 15",
             "froggyscript-number-color 09",
             "froggyscript-string-color 02",
+            "spinner-background 01",
+            "spinner-text 15",
         ] },
         { name: "swamp", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
             "000000",
@@ -2902,8 +2918,6 @@ const FroggyFileSystem = new SwagSystem({
             "terminal-line-background 15",
             "terminal-line-highlighted-background 10",
             "terminal-line-text 02",
-            "terminal-line-selection-background 02",
-            "terminal-line-selection-text 15",
             "error-severity-0 03",
             "error-severity-text-0 15",
             "error-severity-1 13",
@@ -2922,6 +2936,8 @@ const FroggyFileSystem = new SwagSystem({
             "prompt-selected-text 15",
             "froggyscript-number-color 01",
             "froggyscript-string-color 02",
+            "spinner-background 01",
+            "spinner-text 15",
         ] },
         { name: "swamp-revised", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
             "000000",// 00
@@ -2947,8 +2963,6 @@ const FroggyFileSystem = new SwagSystem({
             "terminal-line-background 15",
             "terminal-line-highlighted-background 14",
             "terminal-line-text 02",
-            "terminal-line-selection-background 02",
-            "terminal-line-selection-text 15",
             "error-severity-0 03",
             "error-severity-text-0 15",
             "error-severity-1 13",
@@ -2967,6 +2981,8 @@ const FroggyFileSystem = new SwagSystem({
             "prompt-selected-text 15",
             "froggyscript-number-color 01",
             "froggyscript-string-color 02",
+            "spinner-background 01",
+            "spinner-text 15",
         ] },
         { name: "neon", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
             "000000",
@@ -2992,8 +3008,6 @@ const FroggyFileSystem = new SwagSystem({
             "terminal-line-background 15",
             "terminal-line-highlighted-background 14",
             "terminal-line-text 02",
-            "terminal-line-selection-background 02",
-            "terminal-line-selection-text 15",
             "error-severity-0 03",
             "error-severity-text-0 15",
             "error-severity-1 13",
@@ -3012,6 +3026,8 @@ const FroggyFileSystem = new SwagSystem({
             "prompt-selected-text 15",
             "froggyscript-number-color 09",
             "froggyscript-string-color 02",
+            "spinner-background 01",
+            "spinner-text 15",
         ] },
     ],
     "D:/Spinners": [

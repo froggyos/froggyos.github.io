@@ -333,15 +333,13 @@ function localize(descriptor, TRANSLATE_TEXT=true){
     let translationMap = languageCache.ldm;
 
     if(translationMap == null){
-        console.log(descriptor)
-        configGovernor.registerTrouble("nldm");
-        dateTimeGovernor.registerTrouble("nldm");
         return;
     }
 
     let languageMap = languageCache.lang.map;
-    let englishData = translationMap.indexOf(descriptor);
-    let translation = languageMap[englishData];
+    if(languageMap == null) languageMap = languageCache.ldm;
+    let translatedData = translationMap.indexOf(descriptor);
+    let translation = languageMap[translatedData];
 
     if(translation == undefined) return null;
     else {
@@ -629,8 +627,24 @@ function updateDateTime() {
 
 // CSS STYLING ==============================================================================================
 function changeColorPalette(name){
+    const file = FroggyFileSystem.getFile(`D:/Palettes/${name}`)?.getData();
+
+    if(file == undefined) {
+        const availablePalette = FroggyFileSystem.getFirstFileInDirectory("D:/Palettes");
+
+        if(availablePalette) {
+            const paletteName = availablePalette.getName();
+            createTerminalLine(`T_palette_not_found {{${name}}} {{${paletteName}}}`, config.alertText);
+            changeColorPalette(paletteName);
+            return;
+        } else {
+            createTerminalLine(`T_palette_none_found`, config.fatalErrorText);
+            integrityGovernor.registerTrouble("pnf");
+            return;
+        }
+    }
+
     setSetting("colorPalette", name);
-    const file = FroggyFileSystem.getFile(`D:/Palettes/${name}`).getData();
 
     const root = document.querySelector(':root');
     root.style = "";
@@ -647,6 +661,8 @@ function changeColorPalette(name){
             root.style.setProperty(`--${variable}`, `var(--c${color})`);
         }
     }
+
+    createColorTestBar();
 }
 
 /*
@@ -691,6 +707,8 @@ function createColorTestBar(){
     squareContainer.style.position = "absolute";
     squareContainer.style.top = "0px";
     squareContainer.style.left = "0px";
+
+    if(colorPalettes[config.colorPalette] == undefined) return;
 
     for(let i = 0; i < Object.keys(colorPalettes[config.colorPalette]).length; i++){
         let color = Object.keys(colorPalettes[config.colorPalette])[i];
@@ -2612,17 +2630,7 @@ async function sendCommand(command, args, createEditableLineAfter = true){
                     config[key] = JSON.parse(state)[key];
                 }
                 FroggyFileSystem.loadFromString(fsState);
-                changeColorPalette(config.colorPalette);
-                languageCache.ldm = FroggyFileSystem.getFile("Config:/langs/ldm").getData();
-                languageCache.lang.current = config.language;
-                languageCache.lang.map = FroggyFileSystem.getFile(`Config:/langs/${config.language}`).getData();
-                createTerminalLine("T_loaded_from_mem", config.alertText);
-            } else {
-                languageCache.ldm = FroggyFileSystem.getFile("Config:/langs/ldm").getData();
-                languageCache.lang.current = config.language;
-                languageCache.lang.map = FroggyFileSystem.getFile(`Config:/langs/${config.language}`).getData();
             }
-
             printLn();
         } break;
 
@@ -3615,7 +3623,7 @@ function enterRecoveryMode(){
 
     let recommendedActions = []
 
-    out("Welcome to froggyOS recovery mode! If you're seeing this, you MESSED SOMETHING UP BIG TIME. YAY! (or you entered the command yourself. In that case, Im proud that you're trying to fix your mistakes!) Type \"help\" for a list of commands.");
+    out("Welcome to froggyOS recovery mode! If you're here, you probably messed something up BIG TIME and are trying to fix your mistakes. Type \"help\" for a list of commands.");
 
     function getAndOutputRecommendedActions(){
         Object.values(TroubleManager.governors).forEach(gov => {
@@ -3938,14 +3946,31 @@ ready();
 
 function ready(){
     setUserConfigFromFile()
+
+    languageCache.ldm = FroggyFileSystem.getFile("Config:/langs/ldm").getData();
+    languageCache.lang.current = config.language;
+    languageCache.lang.map = FroggyFileSystem.getFile(`Config:/langs/${config.language}`).getData();
+
     sendCommand('[[BULLFROG]]autoloadstate', [], false);
-    setTerminalSize();
-    document.title = `froggyOS v. ${config.version}`;
-     updateProgramList();
+
     changeColorPalette(config.colorPalette);
-    createColorTestBar();
-    sendCommand('[[BULLFROG]]validatelanguage', [], false);
+
+    let state = localStorage.getItem(`froggyOS-state-${config.version}-config`);
+    let fsState = localStorage.getItem(`froggyOS-state-${config.version}-fs`);
+    if(state && fsState){
+        createTerminalLine("T_loaded_from_mem", config.alertText);
+    }
+
     setTerminalSize();
+
+    document.title = `froggyOS v. ${config.version}`;
+
+    updateProgramList();
+
+    sendCommand('[[BULLFROG]]validatelanguage', [], false);
+
+    setTerminalSize();
+
     updateDateTime();
 }
 
