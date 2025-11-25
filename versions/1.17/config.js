@@ -209,7 +209,7 @@ const presetLanguagesMap = {
     },
     "T_intj_ok": {
         eng: "OK",
-        nmt: "OWA",
+        nmt: "YIMA",
         jpn: "T_intj_ok",
     },
     "T_intj_error": {

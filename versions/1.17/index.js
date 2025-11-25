@@ -629,13 +629,18 @@ function updateDateTime() {
 function changeColorPalette(name){
     const file = FroggyFileSystem.getFile(`D:/Palettes/${name}`)?.getData();
 
+    setSetting("colorPalette", name);
+
     if(file == undefined) {
         const availablePalette = FroggyFileSystem.getFirstFileInDirectory("D:/Palettes");
 
         if(availablePalette) {
             const paletteName = availablePalette.getName();
-            createTerminalLine(`T_palette_not_found {{${name}}} {{${paletteName}}}`, config.alertText);
-            changeColorPalette(paletteName);
+            setSetting("colorPalette", paletteName);
+            createTerminalLine(`T_palette_not_found {{${name}}} {{${paletteName}}}`, config.alertText);            
+            setTimeout(() => {
+                changeColorPalette(paletteName);
+            }, 300);
             return;
         } else {
             createTerminalLine(`T_palette_none_found`, config.fatalErrorText);
@@ -643,8 +648,6 @@ function changeColorPalette(name){
             return;
         }
     }
-
-    setSetting("colorPalette", name);
 
     const root = document.querySelector(':root');
     root.style = "";
@@ -3871,7 +3874,7 @@ function enterRecoveryMode(){
     };
 }
 
-const SKIP_ANIMATION = true;
+const SKIP_ANIMATION = false;
 const currentAnimations = []
 let animSkipped = false;
 let innerBar = document.getElementById("inner-bar");
