@@ -989,6 +989,7 @@ async function sendCommand(command, args, createEditableLineAfter = true){
         case "lang":
         case "changelanguage": {
             if(!requireGovernor(integrityGovernor)) return;
+            if(!requiredGovernor(configGovernor)) return;
             let langCodes = FroggyFileSystem.getDirectory("Config:/langs").map(file => file.getName())
 
             function getDisplayCodes(){ 
@@ -1051,7 +1052,7 @@ async function sendCommand(command, args, createEditableLineAfter = true){
         
         // change color palette
         case "changepalette": {
-            if(!requireGovernor(integrityGovernor)) return;
+            if(!requireGovernor(configGovernor)) return;
             let colorPalettes = createPalettesObject();
             function getDisplayPalettes(){
                 let palettes = FroggyFileSystem.getDirectory("D:/Palettes")
@@ -1263,8 +1264,8 @@ async function sendCommand(command, args, createEditableLineAfter = true){
 
         case "ft":
         case "formattime": {
-            if(!requireGovernor(integrityGovernor)) return;
             if(!requireGovernor(dateTimeGovernor)) return;
+            if(!requireGovernor(configGovernor)) return;
             if(args.length == 0){
                 createTerminalLine("T_provide_time_format", config.errorText);
                 hadError = true;
@@ -1381,6 +1382,8 @@ async function sendCommand(command, args, createEditableLineAfter = true){
         // list files
         case "ls":
         case "list":
+            if(!requireGovernor(integrityGovernor)) return;
+            if(!requireGovernor(configGovernor)) return;
             let currentPathWithSlash = config.currentPath.endsWith('/') ? config.currentPath : config.currentPath + '/';
 
             // Get subdirectory names under the currentPath
@@ -1412,6 +1415,8 @@ async function sendCommand(command, args, createEditableLineAfter = true){
 
         case "ld":
         case "listdrives": {
+            if(!requireGovernor(integrityGovernor)) return;
+            if(!requireGovernor(configGovernor)) return;
             let drives = Object.keys(FroggyFileSystem.getRoot()).map(drive => drive.split(":"))
             drives = [...new Set(drives.filter(drive => drive.length == 2).map(drive => drive[0]))].map(drive => drive + ":");
 
@@ -2282,7 +2287,7 @@ async function sendCommand(command, args, createEditableLineAfter = true){
             if(config.currentPath == "Config:/program_data") fileType = "T_file_info_type_program_data";
             createTerminalLine(fileType, "");
             createTerminalLine(`T_file_info_size {{${formatBytes(file.getSize())}}}`, "");
-            createTerminalLine("~".repeat(77), "~", {translate: false});
+            createTerminalLine(horizontal("~"), "~", {translate: false});
             file.getData().forEach(line => {
                 createTerminalLine(line, ">", {translate: false})
             });
