@@ -604,6 +604,12 @@ function updateDateTime() {
 
     barText.textContent = dateString;
     if(config.showSpinner == true) {
+        if(!FroggyFileSystem.fileExists(`D:/Spinners/${config.currentSpinner}`)) {
+            terminal.lastChild.lastChild.contentEditable = false;
+            createTerminalLine(`T_spinner_not_found {{${config.currentSpinner}}}`, config.fatalErrorText);
+            dateTimeGovernor.registerTrouble("snf");
+            return;
+        }
         let spinnerFrames = FroggyFileSystem.getFile(`D:/Spinners/${config.currentSpinner}`).getData();
         spinnerText.textContent = limit(spinnerFrames[config.spinnerIndex % spinnerFrames.length], 1);
         config.spinnerIndex++;
@@ -644,7 +650,7 @@ function changeColorPalette(name){
             return;
         } else {
             createTerminalLine(`T_palette_none_found`, config.fatalErrorText);
-            integrityGovernor.registerTrouble("pnf");
+            integrityGovernor.registerTrouble("npf");
             return;
         }
     }
@@ -1358,7 +1364,7 @@ async function sendCommand(command, args, createEditableLineAfter = true){
                     createTerminalLine(descriptor, ">");
                 })
             } else {
-                const filtered = descriptors.map(x => x.replace("T_basic_commands_", "")).filter(descriptor => descriptor.toLowerCase().includes(filter.toLowerCase())).map(descriptor => "T_basic_commands_" + descriptor);
+                const filtered = descriptors.map(x => x.replace("T_basic_commands_", "")).filter(descriptor => descriptor.toLowerCase().startsWith(filter.toLowerCase())).map(descriptor => "T_basic_commands_" + descriptor);
                 
                 if(filtered.length > 0){
                     filtered.forEach(descriptor => {
@@ -3643,9 +3649,9 @@ function enterRecoveryMode(){
             out("Recommended actions:")
             for(const gov in TroubleManager.getAllRecommendedActions()){
                 const actions = TroubleManager.getAllRecommendedActions()[gov];
-                out(`${gov}:`)
+                out(`${pad(1)}${gov}:`)
                 actions.forEach(action => {
-                    out(`${pad(1)}- ${action.action}: ${action.description}`)
+                    out(`${pad(2)}- ${action.action}: ${action.description}`)
                 })
             }
         }
@@ -3676,6 +3682,29 @@ function enterRecoveryMode(){
     sendCommand = function(command, args){
         if(command == "[[BULLFROG]]greeting") return;
         switch(command){
+            case "regenpalettes": {
+                if(!FroggyFileSystem.directoryExists("D:")){
+                    out("Unable to regenerate palettes: D: drive missing.", config.errorText);
+                    printLn()
+                    return;
+                }
+                if(!FroggyFileSystem.directoryExists("D:/Palettes")){
+                    FroggyFileSystem.createDirectory("D:/Palettes");
+                }
+                out("Regenerating palettes...");
+
+                FileCopies.palettes.forEach(file => {
+                    FroggyFileSystem.addFileToDirectory("D:/Palettes", file);
+                });
+
+                out(`- added all default palettes`);
+
+                clearActions("regenpalettes");
+                changeColorPalette("standard");
+                setTerminalSize();
+                out("Palettes regenerated successfully.");
+                exitRecoveryMode();
+            } break;
             case "purgefd": {
                 if(FroggyFileSystem.directoryExists("Config:") == false){
                     out("Unable to purge floating directories: Config directory missing.", config.errorText);
@@ -3695,6 +3724,7 @@ function enterRecoveryMode(){
                 });
                 config.currentPath = "Config:";
                 clearActions("purgefd");
+                out("Floating directories purged successfully.");
                 exitRecoveryMode();
             } break;
             case "forceexit": {
@@ -3721,7 +3751,7 @@ function enterRecoveryMode(){
                     return;
                 }
 
-                const keysfSDS = parse_fSDS(userFileCopy.getData());
+                const keysfSDS = parse_fSDS(FileCopies.user.getData());
                 
                 if(keysfSDS[key] == undefined){
                     out(`Unknown key: ${key}`);
@@ -3776,7 +3806,7 @@ function enterRecoveryMode(){
                     printLn()
                     return;
                 }
-                FroggyFileSystem.addFileToDirectory("Config:", userFileCopy);
+                FroggyFileSystem.addFileToDirectory("Config:", FileCopies.user);
                 out("User file regenerated successfully.");
                 clearActions("regenuserfile");  
                 exitRecoveryMode();
@@ -3874,7 +3904,7 @@ function enterRecoveryMode(){
     };
 }
 
-const SKIP_ANIMATION = false;
+const SKIP_ANIMATION = true;
 const currentAnimations = []
 let animSkipped = false;
 let innerBar = document.getElementById("inner-bar");
@@ -3987,7 +4017,9 @@ function sequence(){
 
 function onStart(){
     //sendCommand("?", ["c"])
-    //sendCommand("[[BULLFROG]]recoverymode", [])
+    sendCommand("cdir", ["D:/Spinners"])
+    sendCommand("[[BULLFROG]]showspinner", ["1"])
+    //sendCommand("regenpalettes")
     //sendCommand("pond", ["-l", "test", "test"])
     //sendCommand("st", ["test"])
 }

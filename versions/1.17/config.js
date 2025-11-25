@@ -102,61 +102,61 @@ class Governor {
     getRecommendedActions(){
         const actions = new Set();
         this.troubles.forEach(trouble => {
-            if(trouble.startsWith("tpfm")) {
-                actions.add({
+            const switchTrouble = trouble.split("-")[0];
+            switch(switchTrouble) {
+                case "tpfm": actions.add({
                     action: "regentrustedprogramfile",
                     description: "regenerate the trusted program file",
                     trouble
-                })
-            } else if (trouble.startsWith("buc/mk")) {
-                let key = trouble.split("-")[1];
-                actions.add({
-                    action: "regenkey "+key,
-                    description: `regenerate the key: ${key}`,
-                    trouble
-                })
-            } else if(trouble.startsWith("buc/gone")) {
-                actions.add({
+                }); break;
+                case "buc/mk": {
+                    let key = trouble.split("-")[1];
+                    actions.add({
+                        action: "regenkey "+key,
+                        description: `regenerate the key: ${key}`,
+                        trouble
+                    });
+                } break;
+                case "buc/gone": actions.add({
                     action: "regenuserfile",
                     description: "regenerate the user config file",
                     trouble
-                }) 
-            } else if(trouble.startsWith("buc/fe")) {
-                actions.add({
+                }); break;
+                case "buc/fe": actions.add({
                     action: "unknown",
                     description: "unknown",
                     trouble
-                }) 
-            } else if (trouble.startsWith("nldm")) {
-                actions.add({
+                }); break;
+                case "nldm": actions.add({
                     action: "regenlangfiles",
                     description: "regenerate the language files",
                     trouble
-                })
-            } else if(trouble === "halt") {
-                actions.add({
+                }); break;
+                case "halt": actions.add({
                     action: `unhalt ${this.name}`,
                     description: "unhalt the governor",
                     trouble
-                })
-            } else if(trouble === "ncd") {
-                actions.add({
+                }); break;
+                case "ncd": actions.add({
                     action: "regenconfigdir",
                     description: "regenerate the config directory",
                     trouble
-                })
-            } else if (trouble === "fd") {
-                actions.add({
+                }); break;
+                case "fd": actions.add({
                     action: "purgefd",
                     description: "purge floating directories",
                     trouble
-                })
-            } else {
-                actions.add({
+                }); break;
+                case "npf": actions.add({
+                    action: "regenpalettes",
+                    description: "regenerate the color palette file(s)",
+                    trouble
+                }); break;
+                default: actions.add({
                     action: "no recommended action for trouble",
                     description: trouble,
                     trouble
-                })
+                }); break;
             }
         })
         return Array.from(actions)
@@ -680,6 +680,11 @@ const presetLanguagesMap = {
         eng: "* Available spinners *",
         nmt: "* supinär me *",
         jpn: "* 利用可能なスピナー *"
+    },
+    "T_spinner_not_found {{}}": {
+        eng: "spinner \"{{}}\" not found.",
+        nmt: "T_spinner_not_found",
+        jpn: "T_spinner_not_found"
     },
 
     // lang =====================================
@@ -1853,7 +1858,7 @@ class FroggyFile {
      * @returns {FroggyFile}
      */
     static from(object) {
-        let file = new FroggyFile(object.name, object.properties, object.data);
+        let file = new FroggyFile(object.name, object.properties, object.data, object?.dirname);
         return file;
     }
 
@@ -1892,7 +1897,8 @@ class FroggyFile {
         return {
             name: this.#name,
             properties: this.#properties,
-            data: this.#data
+            data: this.#data,
+            dirname: this.dirname
         };
     }
 
@@ -3076,7 +3082,10 @@ const FroggyFileSystem = new SwagSystem({
     ],
 })
 
-const userFileCopy = FroggyFile.from(FroggyFileSystem.getFile("Config:/user").toJSON());
+class FileCopies {
+    static user = FroggyFile.from(FroggyFileSystem.getFile("Config:/user").toJSON());
+    static palettes = FroggyFileSystem.getDirectory("D:/Palettes").map(x => x.toJSON()).map(x => FroggyFile.from(x));
+}
 
 let config_preproxy = {
     // settings as files
