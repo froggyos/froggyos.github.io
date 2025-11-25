@@ -333,9 +333,9 @@ function localize(descriptor, TRANSLATE_TEXT=true){
     let translationMap = languageCache.ldm;
 
     if(translationMap == null){
+        console.log(descriptor)
         configGovernor.registerTrouble("nldm");
         dateTimeGovernor.registerTrouble("nldm");
-        // no ldm; off to recovery mode you go!
         return;
     }
 
@@ -989,7 +989,7 @@ async function sendCommand(command, args, createEditableLineAfter = true){
         case "lang":
         case "changelanguage": {
             if(!requireGovernor(integrityGovernor)) return;
-            if(!requiredGovernor(configGovernor)) return;
+            if(!requireGovernor(configGovernor)) return;
             let langCodes = FroggyFileSystem.getDirectory("Config:/langs").map(file => file.getName())
 
             function getDisplayCodes(){ 
@@ -2598,13 +2598,29 @@ async function sendCommand(command, args, createEditableLineAfter = true){
             let state = localStorage.getItem(`froggyOS-state-${config.version}-config`);
             let fsState = localStorage.getItem(`froggyOS-state-${config.version}-fs`);
 
+            const file = FroggyFileSystem.getFile("Config:/user");
+
+            if(file == undefined) {
+                configGovernor.registerTrouble("buc/gone");
+                dateTimeGovernor.registerTrouble("buc/gone");
+                terminal.lastChild.lastChild.contentEditable = false;
+                createTerminalLine("T_user_config_does_not_exist", config.fatalErrorText);
+            }
+
             if(state != null && fsState != null){
                 for(let key in JSON.parse(state)){
                     config[key] = JSON.parse(state)[key];
                 }
                 FroggyFileSystem.loadFromString(fsState);
                 changeColorPalette(config.colorPalette);
-                createTerminalLine("Loaded froggyOS from memory.", config.alertText, {translate: false});
+                languageCache.ldm = FroggyFileSystem.getFile("Config:/langs/ldm").getData();
+                languageCache.lang.current = config.language;
+                languageCache.lang.map = FroggyFileSystem.getFile(`Config:/langs/${config.language}`).getData();
+                createTerminalLine("T_loaded_from_mem", config.alertText);
+            } else {
+                languageCache.ldm = FroggyFileSystem.getFile("Config:/langs/ldm").getData();
+                languageCache.lang.current = config.language;
+                languageCache.lang.map = FroggyFileSystem.getFile(`Config:/langs/${config.language}`).getData();
             }
 
             printLn();
@@ -3664,7 +3680,7 @@ function enterRecoveryMode(){
                 }
                 floatingDirs.forEach(dir => {
                     FroggyFileSystem.deleteDirectory(dir);
-                    out(`Deleted floating directory: ${dir}`);
+                    out(`- ${dir}`);
                 });
                 config.currentPath = "Config:";
                 clearActions("purgefd");
@@ -3917,46 +3933,33 @@ if(SKIP_ANIMATION == false) {
     }, 100); 
 }
 
-setUserConfigFromFile()
-sendCommand('[[BULLFROG]]autoloadstate', [], false);
-document.title = `froggyOS v. ${config.version}`;
-updateProgramList();
-changeColorPalette(config.colorPalette);
-createColorTestBar();
-sendCommand('[[BULLFROG]]validatelanguage', [], false);
+
 ready();
 
 function ready(){
-    try {
-        languageCache.ldm = FroggyFileSystem.getFile("Config:/langs/ldm").getData();
-        languageCache.lang.current = config.language;
-        languageCache.lang.map = FroggyFileSystem.getFile(`Config:/langs/${config.language}`).getData();
-    } catch (e) {}
-
-    const file = FroggyFileSystem.getFile("Config:/user");
-    if(file == undefined) {
-        configGovernor.registerTrouble("buc/gone");
-        dateTimeGovernor.registerTrouble("buc/gone");
-        terminal.lastChild.lastChild.contentEditable = false;
-        createTerminalLine("T_user_config_does_not_exist", config.fatalErrorText);
-    }
-
+    setUserConfigFromFile()
+    sendCommand('[[BULLFROG]]autoloadstate', [], false);
+    setTerminalSize();
+    document.title = `froggyOS v. ${config.version}`;
+     updateProgramList();
+    changeColorPalette(config.colorPalette);
+    createColorTestBar();
+    sendCommand('[[BULLFROG]]validatelanguage', [], false);
     setTerminalSize();
     updateDateTime();
 }
 
 // literally all of this is just for the animation
 
+function sequence(){
+    document.getElementById("blackout")?.remove()
+    sendCommand('[[BULLFROG]]greeting', []);
+    onStart();
+}
+
 function onStart(){
     //sendCommand("?", ["c"])
     //sendCommand("[[BULLFROG]]recoverymode", [])
     //sendCommand("pond", ["-l", "test", "test"])
     //sendCommand("st", ["test"])
-}
-
-
-function sequence(){
-    document.getElementById("blackout")?.remove()
-    sendCommand('[[BULLFROG]]greeting', []);
-    onStart();
 }

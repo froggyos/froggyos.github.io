@@ -397,6 +397,11 @@ const presetLanguagesMap = {
         nmt: `satéte esaya mana. kana "loadstate" ma lohiәte me fene`,
         jpn: "状態をセーブしました。いくつかの変更を適用するには、状態をロードする必要があるかもしれません。"
     },
+    "T_loaded_from_mem": {
+        eng: "Loaded froggyOS from memory.",
+        nmt: "T_loaded_from_mem",
+        jpn: "T_loaded_from_mem"
+    },
 
     // file =====================================
     "T_provide_file_name": {
