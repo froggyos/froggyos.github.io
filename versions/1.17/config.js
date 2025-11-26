@@ -65,7 +65,6 @@ class Governor {
             if(!this.ok) return;
             this.fn();
         }, this.intervalMs);
-
         TroubleManager.registerGovernor(this.name, this);
     }
 
@@ -150,6 +149,11 @@ class Governor {
                 case "npf": actions.add({
                     action: "regenpalettes",
                     description: "regenerate the color palette file(s)",
+                    trouble
+                }); break;
+                case "snf": actions.add({
+                    action: "regenspinners",
+                    description: "regenerate the spinner file(s)",
                     trouble
                 }); break;
                 default: actions.add({
@@ -1908,15 +1912,48 @@ class FroggyFile {
      */
     write(data) {
         this.#data = data;
-        const loc = this.dirname + "/" + this.#name;
-        if(!SwagSystem.diagnostics.writes[loc]) SwagSystem.diagnostics.writes[loc] = {};
 
-        if(!SwagSystem.diagnostics.writes[loc].total) {
-            SwagSystem.diagnostics.writes[loc].total = 0;
-            SwagSystem.diagnostics.writes[loc].perSec = 0;
+        const stackPath = new Error().stack
+            .split("\n")
+            .slice(1, -1)
+            .reverse()
+            .map(line =>
+                line
+                    .trim()
+                    .replace(/FroggyFile\.getData/, '$')
+                    .replace(/FroggyFile\.(.*?)/, '@$1')
+                    .replace(/^(at) (.*) \((https?.*)\)$/, '$2')
+                    .replace(/^(at) (https?.*)$/, '#document')
+                    .replace(/^(at) (.*) \(<anonymous>\)$/, '$2')
+            )
+            .join("/");
+
+        const loc = this.dirname + "/" + this.#name;
+
+        // Initialize write diagnostics if needed
+        if (!SwagSystem.diagnostics.writes[loc]) {
+            SwagSystem.diagnostics.writes[loc] = {
+                total: 0,
+                perSec: 0,
+                stacks: {}
+            };
         }
 
-        SwagSystem.diagnostics.writes[loc].total = (SwagSystem.diagnostics.writes[loc].total || 0) + 1;
+        const entry = SwagSystem.diagnostics.writes[loc];
+
+        // initialize stack entry if needed
+        if (!entry.stacks[stackPath]) {
+            entry.stacks[stackPath] = {
+                total: 0,
+                last: 0,
+                avg: 0
+            };
+        }
+
+        // increment totals
+        entry.stacks[stackPath].total++;
+        entry.total++;
+
         this.updateSize();
     }
 
@@ -1933,14 +1970,47 @@ class FroggyFile {
      * @returns {String[]}
      */
     getData() {
+        const stackPath = new Error().stack
+        .split("\n")
+        .slice(1, -1)
+        .reverse()
+        .map(line => 
+            line
+                .trim()
+                .replace(/FroggyFile\.getData/, '$')
+                .replace(/FroggyFile\.(.*?)/, '@$1')
+                .replace(/^(at) (.*) \((https?.*)\)$/, '$2')
+                .replace(/^(at) (https?.*)$/, '#document')
+                .replace(/^(at) (.*) \(<anonymous>\)$/, '$2')
+            )
+        .join("/")
+
         const loc = this.dirname + "/" + this.#name;
         if(!SwagSystem.diagnostics.reads[loc]) SwagSystem.diagnostics.reads[loc] = {};
 
         if(!SwagSystem.diagnostics.reads[loc].total) {
             SwagSystem.diagnostics.reads[loc].total = 0;
             SwagSystem.diagnostics.reads[loc].perSec = 0;
+            SwagSystem.diagnostics.reads[loc].stacks = {};
         }
+
+        const stacks = SwagSystem.diagnostics.reads[loc].stacks;
+
+        // Initialize stack entry if needed
+        if (!stacks[stackPath]) {
+            stacks[stackPath] = {
+                total: 0,
+                last: 0,
+                avg: 0
+            };
+        }
+
+        //Always increment total
+        stacks[stackPath].total++;
+
         SwagSystem.diagnostics.reads[loc].total = (SwagSystem.diagnostics.reads[loc].total || 0) + 1;
+
+        //console.log(SwagSystem.diagnostics.reads[loc]);
         return this.#data;
     }
 
@@ -2695,11 +2765,6 @@ const FroggyFileSystem = new SwagSystem({
             "h Config:",
             "m user",
         ] },
-        { name: "edit-palette", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
-            "!ep",
-            "h D:/Palettes",
-            "m $1",
-        ] },
         { name: "set-froggy-time-format", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
             "!f",
             "ft w. Y/mn/d h:m:s",
@@ -2715,6 +2780,10 @@ const FroggyFileSystem = new SwagSystem({
         { name: "set-iso-time-format", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
             "!time-ISO",
             "ft Y-mn-d!T h:m:s.l!Z",
+        ] },
+        { name: "recovery-mode", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
+            "!rec",
+            "[[BULLFROG]]recoverymode",
         ] },
     ],
     // https://lospec.com/palette-list/endesga-64
@@ -3083,8 +3152,13 @@ const FroggyFileSystem = new SwagSystem({
 })
 
 class FileCopies {
-    static user = FroggyFile.from(FroggyFileSystem.getFile("Config:/user").toJSON());
-    static palettes = FroggyFileSystem.getDirectory("D:/Palettes").map(x => x.toJSON()).map(x => FroggyFile.from(x));
+    static #user = FroggyFile.from(FroggyFileSystem.getFile("Config:/user").toJSON());
+    static #palettes = FroggyFileSystem.getDirectory("D:/Palettes").map(x => x.toJSON()).map(x => FroggyFile.from(x));
+    static #spinners = FroggyFileSystem.getDirectory("D:/Spinners").map(x => x.toJSON()).map(x => FroggyFile.from(x));
+
+    static user() { return FileCopies.#user };
+    static palettes() { return FileCopies.#palettes };
+    static spinners() { return FileCopies.#spinners };
 }
 
 let config_preproxy = {
@@ -3158,9 +3232,15 @@ let prevTotals = {
     writes: {}
 };
 
+
+let privTotalsStacks = {
+    reads: {},
+    writes: {}
+};
+
 const diagnosticsGovernor = new Governor("diagnostics", 1000, () => {
     setTerminalSize();
-    diagnostics.counter++; // increment counter for this tick
+    diagnostics.counter++;
     const now = Date.now();
     diagnostics.runtime = now - diagnostics.startTime;
 
@@ -3193,6 +3273,23 @@ const diagnosticsGovernor = new Governor("diagnostics", 1000, () => {
             diagnostics.average[type][dir] = avg;
 
             prevTotals[type][dir] = total;
+
+            for(let stackName in SwagSystem.diagnostics[type][dir].stacks) {
+                let stack = SwagSystem.diagnostics[type][dir].stacks[stackName];
+
+                console.log(stack)
+
+                const total = stack.total || 0;
+                if (!(stackName in privTotalsStacks[type])) privTotalsStacks[type][stackName] = 0;
+
+                const stackDelta = total - privTotalsStacks[type][stackName];
+                const stackAvg = +(total / diagnostics.counter).toFixed(2);
+
+                stack.last = Math.max(0, stackDelta);
+                stack.avg = stackAvg;
+
+                privTotalsStacks[type][stackName] = total;
+            }
         }
     });
 });
@@ -3291,7 +3388,7 @@ function formatBytes(total) {
 const user_config_keys = Object.keys(config_preproxy).filter(key => config_preproxy[key] instanceof UserKey);
 const os_config_keys = Object.keys(config_preproxy).filter(key => !(config_preproxy[key] instanceof UserKey)).filter(key => !["trustedPrograms"].includes(key));
 
-const setLanguageFiles = () => {
+function setLanguageFiles() {
     let langs = {};
 
     // 1. Initialize language arrays based on actual files

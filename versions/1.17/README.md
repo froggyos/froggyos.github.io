@@ -161,6 +161,9 @@ The `pulse` command outputs system diagnostics information. It has 5 main sectio
 5. File Write Metrics
     * tracks file write operations
     * If a file is highlighted in red, that means it has been deleted
+Pulse can also take an argument `-s` to show stack traces of where file read/write operations occurred.
+    * `@[method]` -> `FroggyFile.[method]`
+    * `$` -> `FroggyFile.getData`
 
 Note:
 * Last: number of operations in the last second
@@ -280,16 +283,7 @@ There are no set colors that you must have, but these are the color conventions.
 * neon
 
 ## Recovery Mode
-Recovery mode is a special mode in froggyOS that allows you to fix issues with the operating system. To enter recovery mode, run the command `[[BULLFROG]]recoverymode`. In recovery mode, you can run the following commands:
-* `regenlangfiles` - Regenerates language files.
-* `clearstate` - Clears the autoload state.
-* `regenuserfile` - Regenerates the user file.
-* `regentrustedprogramfile` - Regenerates the trusted programs file.
-* `regenconfigdir` - Regenerates the config directory.
-* `regenkey [key]` - Regenerates a specific key in the user file.
-* `unhalt [governor]` - Unhalts a specific governor.
-* `exit` - Exits recovery mode only if all governors are not troubled.
-* `help` - Lists all available recovery mode commands.
+Recovery mode is a special mode in froggyOS that allows you to fix issues with the operating system. To enter recovery mode, run the command `[[BULLFROG]]recoverymode`, or `/ rec`.
 
 # Technical Information
 ## Governors

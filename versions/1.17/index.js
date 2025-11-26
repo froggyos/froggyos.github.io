@@ -78,7 +78,7 @@ function setSetting(setting, value) {
 }
 
 function getSetting(setting) {
-    let fsds = parse_fSDS(getFileWithName("Config:", "user").data);
+    let fsds = parse_fSDS(FroggyFileSystem.getFile("Config:/user").getData());
     return fsds[setting]?.value;
 }
 
@@ -391,7 +391,7 @@ function updateProgramList(){
 
     // for all the programs, if there is not a corresponding file in the D:Program-Data directory, create one
     for(let program of config.programList){
-        if(getFileWithName("Config:/program_data", program) == undefined){
+        if(!FroggyFileSystem.fileExists(`Config:/program_data/${program}`)){
             let newFile = new FroggyFile(program, undefined, undefined, "Config:/program_data");
             FroggyFileSystem.addFileToDirectory("Config:/program_data", newFile);
         }
@@ -979,7 +979,15 @@ function validateLanguageFile(code){
  * @param {Boolean} createEditableLineAfter - whether to create a new editable terminal line after executing the command (default: true)
  * @returns 
  */
-async function sendCommand(command, args, createEditableLineAfter = true){
+
+/**
+ * 
+ * @param {String} command 
+ * @param {String[]} args 
+ * @param {Boolean} createEditableLineAfter 
+ * @returns 
+ */
+async function sendCommand(command, args = [], createEditableLineAfter = true){
     if(createEditableLineAfter == undefined) createEditableLineAfter = true;
     command = command.trim();
     args = args.filter(arg => arg.trim() != "");
@@ -1500,7 +1508,7 @@ async function sendCommand(command, args, createEditableLineAfter = true){
                 }
             }
 
-            let macro = getFileWithName("D:/Macros", args[0]);
+            let macro = FroggyFileSystem.getFile(`${config.currentPath}/${args[0]}`).getData()
 
             FroggyFileSystem.getDirectory("D:/Macros").forEach(_macro => {
                 if(_macro.getData()[0].startsWith("!") && _macro.getData()[0].slice(1).trim() == args[0]){
@@ -1611,7 +1619,7 @@ async function sendCommand(command, args, createEditableLineAfter = true){
         case "mp":
         case "metaprop":
             if(!requireGovernor(integrityGovernor)) return;
-            file = getFileWithName(config.currentPath, args[0]);
+            file = FroggyFileSystem.getFile(`${config.currentPath}/${args[0]}`);
 
             let property = args[1];
             let value = args[2];
@@ -1622,7 +1630,7 @@ async function sendCommand(command, args, createEditableLineAfter = true){
                 break;
             }
 
-            let propertyTypes = Object.keys(file.properties);
+            let propertyTypes = Object.keys(file.getProperties());
 
             if(property == undefined || propertyTypes.includes(property) == false){
                 createTerminalLine("T_provide_valid_property_type", config.errorText);
@@ -1640,14 +1648,14 @@ async function sendCommand(command, args, createEditableLineAfter = true){
                 break
             }
 
-            if(file.properties.write == false){
+            if(file.getProperties().write == false){
                 createTerminalLine("T_no_permission_to_edit_file", config.errorText);
                 hadError = true;
                 printLn();
                 break;
             }
 
-            file.properties[property] = value == "1" ? true : false;
+            file.getProperties()[property] = value == "1" ? true : false;
             createTerminalLine("T_properties_updated", ">")
 
             printLn();
@@ -2024,6 +2032,10 @@ async function sendCommand(command, args, createEditableLineAfter = true){
         } break;
 
         case "pulse": {
+            let displayStacks = false;
+
+            if(args[0] == "-s") displayStacks = true;
+
             createTerminalLine("T_pulse_info_intro", "");
             spacer("~~~");
             createTerminalLine("T_pulse_system_info", pad(1));
@@ -2083,32 +2095,6 @@ async function sendCommand(command, args, createEditableLineAfter = true){
                     });
                 }
             }
-            // for (let interval in config.intervals) {
-            //     const name = config.intervalNameMap[interval];
-            //     const padding = pad(maxLength - name.length);
-
-            //     let response = config.intervals[interval]
-
-            //     if(response === true){
-            //         createTerminalLine(`${name}${padding} : ${localize("T_intj_ok")}`, pad(2), { translate: false });
-            //     } else {
-            //         const line = `${name}${padding} : ${localize("T_intj_error")} ${response}`
-            //         createTerminalLine(line, pad(2), { translate: false, formatting: [
-            //             {
-            //                 type: "range", 
-            //                 b: "c12",
-            //                 br_start: (name.length + padding.length) + 3,
-            //                 br_end: (name.length + padding.length) + localize("T_intj_error").length + 2,
-            //             }, {
-            //                 type: "range", 
-            //                 t: "c15",
-            //                 tr_start: (name.length + padding.length) + 3,
-            //                 tr_end: (name.length + padding.length) + localize("T_intj_error").length + 2,
-            //             }
-            //         ]
-            //         });
-            //     }
-            // }
             // --- Diagnostics output ---
             spacer("~~~");
             createTerminalLine("T_pulse_config", pad(1));
@@ -2160,7 +2146,24 @@ async function sendCommand(command, args, createEditableLineAfter = true){
                         });
                     }
 
-                    const line = `${dir}\n${pad(2)}${localize("T_pulse_abbr_last_second")}: ${String(last)} | ${localize("T_pulse_abbr_average")}: ${String(avg)} | ${localize("T_pulse_abbr_total")}: ${String(total)}`;
+                    let line = `${dir}\n${pad(2)}${localize("T_pulse_abbr_last_second")}: ${String(last)} | ${localize("T_pulse_abbr_average")}: ${String(avg)} | ${localize("T_pulse_abbr_total")}: ${String(total)}`;
+
+                    // console.log(type, SwagSystem.diagnostics[type][dir].stacks);
+                    if(displayStacks){
+                        for(let stack in SwagSystem.diagnostics[type][dir].stacks){
+                            const metrics = SwagSystem.diagnostics[type][dir].stacks[stack];
+                            line += `\n${pad(4)}${stack}\n${pad(6)}${localize("T_pulse_abbr_last_second")}: ${metrics.last} | ${localize("T_pulse_abbr_average")}: ${metrics.avg} | ${localize("T_pulse_abbr_total")}: ${metrics.total}`;
+                        }
+                        // SwagSystem.diagnostics[type][dir].stacks.forEach(stack => {
+                        //     if(stackIterator == 0){
+                        //         line += `\n${pad(4)}${localize("T_pulse_stack_trace")}: ${stack}`;
+                        //     } else {
+                        //         line += `\n${pad(18)}${stack}`;
+                        //     }
+                        //     stackIterator++;
+                        // });
+                    }
+
                     createTerminalLine(line, pad(2), {translate: false, formatting});
                     spacer();
                 });
@@ -3617,6 +3620,7 @@ terminal.addEventListener('wheel', (event) => {
 });
 
 function enterRecoveryMode(){
+    config.currentProgram = "recovery-mode";
     let oldSendCommand = sendCommand;
 
     onStart = function(){};
@@ -3671,6 +3675,7 @@ function enterRecoveryMode(){
         sendCommand = oldSendCommand;
         if(config.currentPath == "invalid directory") config.currentPath = "Config:"
         printLn(config.currentPath + ">");
+        config.currentProgram = "cli";
     }
 
     function clearActions(actionName){
@@ -3682,6 +3687,25 @@ function enterRecoveryMode(){
     sendCommand = function(command, args){
         if(command == "[[BULLFROG]]greeting") return;
         switch(command){
+            case "regenspinners": {
+                if(!FroggyFileSystem.directoryExists("D:")){
+                    out("Unable to regenerate spinners: D: drive missing.", config.errorText);
+                    printLn()
+                    return;
+                }
+                if(!FroggyFileSystem.directoryExists("D:/Spinners")){
+                    FroggyFileSystem.createDirectory("D:/Spinners");
+                }
+                out("Regenerating spinners...");
+                FileCopies.spinners().forEach(file => {
+                    FroggyFileSystem.addFileToDirectory("D:/Spinners", file);
+                });
+                out(`- added all default spinners`);
+                clearActions("regenspinners");
+                setTerminalSize();
+                out("Spinners regenerated successfully.");
+                exitRecoveryMode();
+            } break;
             case "regenpalettes": {
                 if(!FroggyFileSystem.directoryExists("D:")){
                     out("Unable to regenerate palettes: D: drive missing.", config.errorText);
@@ -3693,7 +3717,7 @@ function enterRecoveryMode(){
                 }
                 out("Regenerating palettes...");
 
-                FileCopies.palettes.forEach(file => {
+                FileCopies.palettes().forEach(file => {
                     FroggyFileSystem.addFileToDirectory("D:/Palettes", file);
                 });
 
@@ -3751,7 +3775,7 @@ function enterRecoveryMode(){
                     return;
                 }
 
-                const keysfSDS = parse_fSDS(FileCopies.user.getData());
+                const keysfSDS = parse_fSDS(FileCopies.user().getData());
                 
                 if(keysfSDS[key] == undefined){
                     out(`Unknown key: ${key}`);
@@ -3806,7 +3830,7 @@ function enterRecoveryMode(){
                     printLn()
                     return;
                 }
-                FroggyFileSystem.addFileToDirectory("Config:", FileCopies.user);
+                FroggyFileSystem.addFileToDirectory("Config:", FileCopies.user());
                 out("User file regenerated successfully.");
                 clearActions("regenuserfile");  
                 exitRecoveryMode();
@@ -3882,15 +3906,17 @@ function enterRecoveryMode(){
             } break;
             case "help": {
                 out("Available commands:");
-                out("regenlangfiles: Regenerates language files.");
-                out("clearstate: Clears the autoload state.");
-                out("regenuserfile: Regenerates the user configuration file.");
-                out("regentrustedprogramfile: Regenerates the trusted programs file.");
-                out("regenconfigdir: Regenerates the Config directory.");
-                out("regenkey [key]: Regenerates a specific key in the user configuration file.");
-                out("unhalt [governor]: Removes the 'halt' trouble from a governor.");
-                out("purgefd: purges floating directories");
-                out("exit: Exits recovery mode");
+                out(`regenlangfiles:\n${pad(2)}Regenerates language files.`);
+                out(`clearstate:\n${pad(2)}Clears the autoload state.`);
+                out(`regenuserfile:\n${pad(2)}Regenerates the user configuration file.`);
+                out(`regentrustedprogramfile:\n${pad(2)}Regenerates the trusted programs file.`);
+                out(`regenconfigdir:\n${pad(2)}Regenerates the Config directory.`);
+                out(`regenkey [key]:\n${pad(2)}Regenerates a specific key in the user configuration file.`);
+                out(`unhalt [governor]:\n${pad(2)}Removes the 'halt' trouble from a governor.`);
+                out(`purgefd:\n${pad(2)}purges floating directories`);
+                out(`regenpalettes:\n${pad(2)}Regenerates the palettes directory.`);
+                out(`regenspinners:\n${pad(2)}Regenerates the spinners directory.`);
+                out(`exit:\n${pad(2)}Exits recovery mode`);
                 printLn()
             } break;
             case "exit": {
@@ -3965,13 +3991,15 @@ if(SKIP_ANIMATION == false) {
     document.addEventListener("keyup", () => {
         animSkipped = true;
         currentAnimations.forEach(a => a.cancel());
-        sequence()
+        setTimeout(() => {
+            sequence()
+        }, 500); 
     }, { once: true });
 
 } else {
     setTimeout(() => {
         sequence()
-    }, 100); 
+    }, 500); 
 }
 
 
@@ -4010,15 +4038,20 @@ function ready(){
 // literally all of this is just for the animation
 
 function sequence(){
-    document.getElementById("blackout")?.remove()
-    sendCommand('[[BULLFROG]]greeting', []);
-    onStart();
+    setTimeout(() => {
+        document.getElementById("blackout")?.remove()
+        sendCommand('[[BULLFROG]]greeting', []);
+        onStart();
+    }, 500)
+
 }
 
 function onStart(){
+    //sendCommand("pulse", ["-s"])
     //sendCommand("?", ["c"])
-    sendCommand("cdir", ["D:/Spinners"])
-    sendCommand("[[BULLFROG]]showspinner", ["1"])
+    // sendCommand("cdir", ["D:/Spinners"])
+    // sendCommand("[[BULLFROG]]showspinner", ["1"])
+    // sendCommand("[[BULLFROG]]recoverymode", [])
     //sendCommand("regenpalettes")
     //sendCommand("pond", ["-l", "test", "test"])
     //sendCommand("st", ["test"])
