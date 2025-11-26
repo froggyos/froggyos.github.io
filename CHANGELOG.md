@@ -185,5 +185,7 @@ idk
     * pond - opens the Pond interface
     * export - exports a froggyOS file to your computer
     * pulse - resurrecting one of the very first commands, but it actually does something this time! Shows system diagnostics.
+    * recovery mode - [[BULLFROG]]recoverymode - boots froggyOS into recovery mode
+
 ~ redesigned the help command UI
 ```

@@ -3277,8 +3277,6 @@ const diagnosticsGovernor = new Governor("diagnostics", 1000, () => {
             for(let stackName in SwagSystem.diagnostics[type][dir].stacks) {
                 let stack = SwagSystem.diagnostics[type][dir].stacks[stackName];
 
-                console.log(stack)
-
                 const total = stack.total || 0;
                 if (!(stackName in privTotalsStacks[type])) privTotalsStacks[type][stackName] = 0;
 

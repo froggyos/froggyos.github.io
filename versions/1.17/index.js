@@ -1508,22 +1508,22 @@ async function sendCommand(command, args = [], createEditableLineAfter = true){
                 }
             }
 
-            let macro = FroggyFileSystem.getFile(`${config.currentPath}/${args[0]}`).getData()
+            let macroFile = FroggyFileSystem.getFile(`D:/Macros/${args[0]}`)
 
-            FroggyFileSystem.getDirectory("D:/Macros").forEach(_macro => {
-                if(_macro.getData()[0].startsWith("!") && _macro.getData()[0].slice(1).trim() == args[0]){
-                    macro = _macro;
+            FroggyFileSystem.getDirectory("D:/Macros").forEach(macro => {
+                if(macro.getData()[0].startsWith("!") && macro.getData()[0].slice(1).trim() == args[0]){
+                    macroFile = macro;
                 }
             });
             
-            if(macro == undefined){
+            if(macroFile == undefined){
                 createTerminalLine("T_macro_does_not_exist", config.errorText);
                 hadError = true;
                 printLn();
                 break;
             }
 
-            let macroData = structuredClone(FroggyFileSystem.getFile("D:/Macros/" + macro.getName()).getData());
+            let macroData = macroFile.getData();
             let totalFileArguments = 0;
 
             macroData.forEach(line => {
