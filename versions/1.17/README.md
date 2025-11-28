@@ -266,6 +266,7 @@ There are no set colors that you must have, but these are the color conventions.
 * `15` - white
 
 ## Error Colors
+Again, these are not set colors, but merely conventions.
 * Alert - `03`
 * Warning - `13`
 * Error - `12`
