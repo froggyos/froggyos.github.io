@@ -1634,20 +1634,7 @@ class SwagSystem {
         "#document/<static_initializer>/SwagSystem.getFile/#verify/Error",
         "#document/<static_initializer>/SwagSystem.getDirectory/#verify/Error",
         "#document/setLanguageFiles/SwagSystem.getDirectory/#verify/Error",
-        "#document/ready/setUserConfigFromFile/SwagSystem.getFile/#verify/Error",
-        "#document/ready/setUserConfigFromFile/getSetting/SwagSystem.getFile/#verify/Error",
-        "#document/ready/SwagSystem.getFile/#verify/Error",
-        "#document/ready/sendCommand/SwagSystem.getFile/#verify/Error",
-        "#document/ready/changeColorPalette/SwagSystem.getFile/#verify/Error",
-        "#document/ready/changeColorPalette/setSetting/set_fSDS/SwagSystem.getFile/#verify/Error",
-        "#document/ready/changeColorPalette/createColorTestBar/createPalettesObject/SwagSystem.getDirectory/#verify/Error",
-        "#document/ready/setTerminalSize/SwagSystem.getFile/#verify/Error",
-        "#document/ready/updateProgramList/SwagSystem.getDirectory/#verify/Error",
-        "#document/ready/updateProgramList/SwagSystem.fileExists/#verify/Error",
-        "#document/ready/updateProgramList/SwagSystem.addFileToDirectory/#verify/Error",
-        "#document/ready/sendCommand/SwagSystem.getDirectory/#verify/Error",
-        "#document/ready/sendCommand/Array.forEach/#document/validateLanguageFile/SwagSystem.getFile/#verify/Error",
-        "#document/ready/sendCommand/validateLanguageFile/SwagSystem.getFile/#verify/Error",
+        "#document/ready/*",
         "#document/Governor.fn/*",
         "#document/sendCommand/*",
         "#document/setSetting/*",
@@ -3267,7 +3254,6 @@ let privTotalsStacks = {
 };
 
 const diagnosticsGovernor = new Governor("diagnostics", 1000, () => {
-    setTerminalSize();
     diagnostics.counter++;
     const now = Date.now();
     diagnostics.runtime = now - diagnostics.startTime;
@@ -3324,8 +3310,8 @@ function setTerminalSize(){
     const root = document.querySelector(':root');
     const userFile = FroggyFileSystem.getFile("Config:/user")?.getData();
 
-    const width = userFile ? parse_fSDS(userFile).terminalWidth.value : 640;
-    let height = userFile ? parse_fSDS(userFile).terminalHeight.value : 480;
+    const width = parse_fSDS(userFile)?.terminalWidth?.value ? parse_fSDS(userFile)?.terminalWidth?.value : 640;
+    const height = parse_fSDS(userFile)?.terminalHeight?.value ? parse_fSDS(userFile)?.terminalHeight?.value : 480;
 
     root.style.setProperty('--terminal-width', `${width}px`);
     root.style.setProperty('--terminal-height', `${height}px`);

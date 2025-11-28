@@ -31,6 +31,7 @@ function maxCharsPerLine(){
 const configGovernor = new Governor("config", 250, () => {
     setUserConfigFromFile()
     updateProgramList()
+    setTerminalSize()
 
     let badConfig = false;
     let badKey = '';
@@ -407,9 +408,9 @@ function updateProgramList(){
  *   dd  - total days (2-digit padded)
  *   h   - total hours
  *   hh  - total hours (2-digit padded)
- *   m   - minutes (mod 60)
+ *   m   - minutes
  *   mm  - minutes (2-digit padded)
- *   s   - seconds (mod 60)
+ *   s   - seconds
  *   ss  - seconds (2-digit padded)
  *   ms  - milliseconds (3-digit padded)
  *
@@ -451,15 +452,8 @@ function formatDuration(text, durationMs) {
     };
 
     // REGEX RULE:
-    // - optional leading "!" to mark escape
-    // - then one of our tokens
-    // - use capturing groups to decide behavior
     return text.replace(/(!)?(dd|hh|mm|ss|ms|d|h|m|s)/g, (match, escape, token) => {
-        if (escape) {
-            // escaped → output literal token
-            return token;
-        }
-        // normal token → replace
+        if (escape) return token;
         return map[token];
     });
 }
