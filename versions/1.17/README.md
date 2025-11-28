@@ -150,7 +150,7 @@ The `pulse` command outputs system diagnostics information. It has 5 main sectio
     * current language
     * current color palette
 2. Governors
-    * tracks governor activity
+    * tracks governor status
     * see more in [Technical Information](#governors)
     * this section will also show any [troubles](#troubles) detected.
 3. Config Read/Write Metrics
