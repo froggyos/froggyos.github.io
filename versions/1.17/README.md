@@ -317,6 +317,7 @@ Troubles are issues with governors that are shown inside of the `pulse` command.
 | `halt` | halted | The governor has been halted by the user |
 | `fd` | floating directory | A directory has an invalid path |
 | `npf`| no palette file | The color palette specified in the user config file was not found |
+| `killed` | killed | The governor was killed due to an unexpected error and CANNOT be restarted |
 
 # FroggyScript
 FroggyScript is a programming language used in froggyOS. Documentation [here](https://rus1130.github.io/projects/mdparser.html?toc=true&url=https://froggyos.github.io/versions/1.17/docs/froggyscript3.md).

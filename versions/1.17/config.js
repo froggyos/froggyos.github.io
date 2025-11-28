@@ -72,12 +72,13 @@ class Governor {
      * 
      * @param {string} trouble
      */
-    registerTrouble(trouble){
+    addTrouble(trouble){
         this.troubles.add(trouble);
         if(this.ok) this.ok = false;
     }
 
     removeTrouble(trouble){
+        if(trouble == "killed") throw new Error("Cannot remove trouble.");
         this.troubles.delete(trouble);
         if(this.troubles.size === 0) this.ok = true;
     }
@@ -91,7 +92,7 @@ class Governor {
     }
 
     halt(){
-        this.registerTrouble("halt");
+        this.addTrouble("halt");
     }
 
     unhalt(){
@@ -1584,6 +1585,8 @@ function utf8ByteLength(str) {
 
 class UserKey { constructor() {} };
 
+const allowed = new Set();
+
 class SwagSystem {
     static diagnostics = {
         writes: {},
@@ -1624,56 +1627,81 @@ class SwagSystem {
     //     return this;
     // }
 
+    /**
+     * supports regex
+     */
+    #allowedPaths = new Set([
+        "#document/<static_initializer>/SwagSystem.getFile/#verify/Error",
+        "#document/<static_initializer>/SwagSystem.getDirectory/#verify/Error",
+        "#document/setLanguageFiles/SwagSystem.getDirectory/#verify/Error",
+        "#document/ready/setUserConfigFromFile/SwagSystem.getFile/#verify/Error",
+        "#document/ready/setUserConfigFromFile/getSetting/SwagSystem.getFile/#verify/Error",
+        "#document/ready/SwagSystem.getFile/#verify/Error",
+        "#document/ready/sendCommand/SwagSystem.getFile/#verify/Error",
+        "#document/ready/changeColorPalette/SwagSystem.getFile/#verify/Error",
+        "#document/ready/changeColorPalette/setSetting/set_fSDS/SwagSystem.getFile/#verify/Error",
+        "#document/ready/changeColorPalette/createColorTestBar/createPalettesObject/SwagSystem.getDirectory/#verify/Error",
+        "#document/ready/setTerminalSize/SwagSystem.getFile/#verify/Error",
+        "#document/ready/updateProgramList/SwagSystem.getDirectory/#verify/Error",
+        "#document/ready/updateProgramList/SwagSystem.fileExists/#verify/Error",
+        "#document/ready/updateProgramList/SwagSystem.addFileToDirectory/#verify/Error",
+        "#document/ready/sendCommand/SwagSystem.getDirectory/#verify/Error",
+        "#document/ready/sendCommand/Array.forEach/#document/validateLanguageFile/SwagSystem.getFile/#verify/Error",
+        "#document/ready/sendCommand/validateLanguageFile/SwagSystem.getFile/#verify/Error",
+        "#document/Governor.fn/*",
+        "#document/sendCommand/*",
+        "#document/setSetting/*",
+        "HTMLDivElement.<anonymous>/sendCommand/*",
+        "window.terminalLineKeydownHandler/*"
+    ]);
+
+    /**
+     * Verifies that the current call stack is allowed to access the file system.
+     * Throws an error and halts all governors if an illegal access is detected.
+     * @returns {boolean} true if access is allowed, otherwise throws an error.
+     */
     #verify() {
-        return;
-        let stack = new Error().stack.split("\n");
+        const stackPath = new Error().stack
+            .split("\n")
+            .reverse()
+            .map(line =>
+                line
+                    .trim()
+                    .replace(/FroggyFile\.getData/, '$')
+                    .replace(/FroggyFile\.(.*?)/, '@$1')
+                    .replace(/^(at) (.*) \((https?.*)\)$/, '$2')
+                    .replace(/^(at) (https?.*)$/, '#document')
+                    .replace(/^(at) (.*) \(<anonymous>\)/, '$2')
+                    .replace(/^at <anonymous>:\d+:\d+$/, '<anonymous>')
+                    .replace(/^at (.*?) \(<anonymous>:\d+:\d+\)$/, '<anonymous>')
+            )
+            .join("/");
 
-        const caller = stack[stack.length - 2].trim().match(/at (.+?) \(/)[1];
+        // allowed.add(stackPath);
 
-        // function verification
-        // if any index of the stack has <anonymous> in it, it means the function is anonymous and we should not allow file system access
-        if (stack.some(line => line.includes("at <anonymous>"))) throw new Error(`HAHA! NICE TRY! No.`);
+        // console.log(JSON.stringify(Array.from(allowed)))
 
-        let returnEarly = false;
+        // Allow exact matches OR wildcard pattern matches
+        for (const pattern of this.#allowedPaths) {
+            // Convert wildcard pattern into a RegExp
+            const regex = new RegExp(
+                "^" +
+                pattern
+                    .replace(/[.*+?^${}()|[\]\\]/g, '\\$&') // escape regex special chars
+                    .replace(/\\\*/g, '.*')               // convert escaped '*' to wildcard
+                + "$"
+            );
 
-        try {
-            if(eval(caller) === undefined && caller.startsWith("fs.")) return;
-        } catch {
-            function getFullPathStack(_0x_stk){
-                try{
-                    var _0x_clone = typeof structuredClone === "function" ? structuredClone(_0x_stk) : JSON.parse(JSON.stringify(_0x_stk));
-                }catch(_0xe){ var _0x_clone = JSON.parse(JSON.stringify(_0x_stk)); }
-                (function(_0xa){
-                    Array.prototype.shift.call(_0xa);
-                }(_0x_clone));
-                var _0x_joiner = String.fromCharCode(32,45,62,32); // " -> "
-                return Array.prototype.map.call(_0x_clone, function(_0y){
-                    return ("" + _0y).replace(/^\s+|\s+$/g, "").replace(/\s*\(.*?\)$/, "");
-                }).join(_0x_joiner);
-            }
-
-            const fullPathCaller = getFullPathStack(stack);
-
-            const fullPathHash = this.#cache.get(fullPathCaller) ?? this.hash(fullPathCaller);
-
-            if(this.#cache.get(fullPathCaller) === undefined) this.#cache.set(fullPathCaller, fullPathHash);
-
-            returnEarly = true;
-
-            if (!this.#fullPathHashes.includes(fullPathHash)) throw new Error(`Access denied: You may not access the file system through this method.`);
+            if (regex.test(stackPath)) return true;
         }
 
-        if(returnEarly) return;
-
-        try { eval(caller) } catch (e) { throw new Error(`Access denied: You may not access the file system through an anonymous arrow function.`) }
-
-        if(eval(caller) == undefined) throw new Error(`Access denied: You may not access the file system through an anonymous arrow function.`);
-
-        const callerHash = this.#cache.get(eval(caller).toString()) ?? this.hash(eval(caller).toString());
-
-        if(this.#cache.get(eval(caller).toString()) === undefined) this.#cache.set(eval(caller).toString(), callerHash);
-
-        if (!this.#functionHashes.includes(callerHash)) throw new Error(`Access denied: JavaScript Function "${caller}" is not allowed to access the file system.`);
+        createTerminalLine("An illegal action has been detected.", createErrorText("unnatural", "ILLEGAL"), {translate: false})
+        TroubleManager.rawGovernors().forEach(gov => {
+            if(gov.hasTrouble("killed")) return;
+            createTerminalLine(`Governor "${gov.name}" killed.`, createErrorText("unnatural", "ILLEGAL"), {translate: false})
+            gov.addTrouble("killed")
+        });
+        throw new Error(`Invalid FroggyFileSystem access location: \n${stackPath}\nAll governors have been halted.`);
     }
 
     size() {
@@ -3313,16 +3341,16 @@ const integrityGovernor = new Governor("integrity", 1000, () => {
             terminal.lastChild.lastChild.contentEditable = false;
             createTerminalLine(`Floating directory detected: ${dir}`, config.fatalErrorText, {translate: false})
         });
-        integrityGovernor.registerTrouble("fd")
+        integrityGovernor.addTrouble("fd")
     }
     
     if(!FroggyFileSystem.directoryExists("Config:")) {
-        integrityGovernor.registerTrouble("ncd")
+        integrityGovernor.addTrouble("ncd")
         createTerminalLine("no Config directory", config.fatalErrorText, {translate: false})
     }
 
     if(!FroggyFileSystem.fileExists("Config:/langs/ldm")) {
-        integrityGovernor.registerTrouble("nldm")
+        integrityGovernor.addTrouble("nldm")
         terminal.lastChild.lastChild.contentEditable = false;
         createTerminalLine("no ldm file found", config.fatalErrorText, {translate: false})
         

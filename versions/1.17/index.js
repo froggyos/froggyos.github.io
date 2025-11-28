@@ -13,7 +13,7 @@ const trustedProgramsGovernor = new Governor('trusted-programs', 100, () => {
     if(file == undefined){
         terminal.innerHTML = "";
         createTerminalLine(`T_trusted_programs_file_missing`, config.fatalErrorText);
-        trustedProgramsGovernor.registerTrouble("tpfm"); // trusted programs file missing
+        trustedProgramsGovernor.addTrouble("tpfm"); // trusted programs file missing
         return;
     }
     config.trustedPrograms = file.getData();
@@ -46,8 +46,8 @@ const configGovernor = new Governor("config", 250, () => {
         terminal.lastElementChild.lastElementChild.contentEditable = false;
         createTerminalLine(`T_missing_key_config_user {{${badKey}}}`, config.fatalErrorText);
 
-        configGovernor.registerTrouble(`buc/mk-${badKey}`); // bad user config missing key
-        dateTimeGovernor.registerTrouble(`buc/mk-${badKey}`); // bad user config missing key
+        configGovernor.addTrouble(`buc/mk-${badKey}`); // bad user config missing key
+        dateTimeGovernor.addTrouble(`buc/mk-${badKey}`); // bad user config missing key
         return;
     }
 });
@@ -89,15 +89,15 @@ function addToCommandHistory(string){
 function setUserConfigFromFile(){
     const file = FroggyFileSystem.getFile("Config:/user");
     if(file == undefined) {
-        configGovernor.registerTrouble("buc/gone");
-        dateTimeGovernor.registerTrouble("buc/gone");
+        configGovernor.addTrouble("buc/gone");
+        dateTimeGovernor.addTrouble("buc/gone");
         terminal.lastChild.lastChild.contentEditable = false;
         createTerminalLine("T_user_config_does_not_exist", config.fatalErrorText);
         return;
     }
     let fsds = parse_fSDS(file.getData());
     if(fsds.error) {
-        configGovernor.registerTrouble("buc/fe"); // bad user config fsds error
+        configGovernor.addTrouble("buc/fe"); // bad user config fsds error
         terminal.innerHTML = "";
         createTerminalLine("T_error_reading_config_file", config.fatalErrorText);
         return;
@@ -607,7 +607,7 @@ function updateDateTime() {
         if(!FroggyFileSystem.fileExists(`D:/Spinners/${config.currentSpinner}`)) {
             terminal.lastChild.lastChild.contentEditable = false;
             createTerminalLine(`T_spinner_not_found {{${config.currentSpinner}}}`, config.fatalErrorText);
-            dateTimeGovernor.registerTrouble("snf");
+            dateTimeGovernor.addTrouble("snf");
             return;
         }
         let spinnerFrames = FroggyFileSystem.getFile(`D:/Spinners/${config.currentSpinner}`).getData();
@@ -650,7 +650,7 @@ function changeColorPalette(name){
             return;
         } else {
             createTerminalLine(`T_palette_none_found`, config.fatalErrorText);
-            integrityGovernor.registerTrouble("npf");
+            integrityGovernor.addTrouble("npf");
             return;
         }
     }
@@ -2631,8 +2631,8 @@ async function sendCommand(command, args = [], createEditableLineAfter = true){
             const file = FroggyFileSystem.getFile("Config:/user");
 
             if(file == undefined) {
-                configGovernor.registerTrouble("buc/gone");
-                dateTimeGovernor.registerTrouble("buc/gone");
+                configGovernor.addTrouble("buc/gone");
+                dateTimeGovernor.addTrouble("buc/gone");
                 terminal.lastChild.lastChild.contentEditable = false;
                 createTerminalLine("T_user_config_does_not_exist", config.fatalErrorText);
             }
