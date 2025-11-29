@@ -298,11 +298,11 @@ Governors are intervals that run at set times to manage system resources. There 
 ### diagnostics
 The diagnostics governor runs every second. It tracks file read and write operations, as well as config read and write operations. It keeps track of the number of operations in the last second, the average number of operations per second since startup, and the total number of operations since startup. It is the main driver of the `pulse` command.
 ### integrity
-The integrity governor runs every second. It checks the integrity of the froggyOS installation by checking for the existence of important files and directories. If any important files or directories are missing, it registers a trouble.
+The integrity governor runs every second. It checks the integrity of the froggyOS installation by checking for the existence of important files and directories. If any important files or directories are missing, it registers a trouble. It also handles the resizing of the terminal.
 ### trusted-programs
 The trusted-programs governor runs every 100 milliseconds. It checks the list of trusted programs in the `D:/trusted_programs` file and updates the trusted status of programs accordingly.
 ### config
-The config governor runs every 250 milliseconds. It updates the user config and program list. It also handles the resizing of the terminal.
+The config governor runs every 250 milliseconds. It updates the user config and program list.
 ### date-time
 The date-time governor runs every 100 milliseconds. It updates the date and time in the stat bar, as well as the spinner in the top right corner.
 ## Troubles

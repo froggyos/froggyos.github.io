@@ -3306,20 +3306,32 @@ const diagnosticsGovernor = new Governor("diagnostics", 1000, () => {
     });
 });
 
+// document.body.clientHeight - config.terminalHeight - (48 * 4) <= 0 == invalid
 function setTerminalSize(){
     const root = document.querySelector(':root');
     const userFile = FroggyFileSystem.getFile("Config:/user")?.getData();
 
-    const width = parse_fSDS(userFile)?.terminalWidth?.value ? parse_fSDS(userFile)?.terminalWidth?.value : 640;
-    const height = parse_fSDS(userFile)?.terminalHeight?.value ? parse_fSDS(userFile)?.terminalHeight?.value : 480;
+    const parsedWidth = parse_fSDS(userFile)?.terminalWidth?.value;
+    const parsedHeight = parse_fSDS(userFile)?.terminalHeight?.value;
+
+    let width = parsedWidth ? parsedWidth : 640;
+    let height = parsedHeight ? parsedHeight : 480;
+
+    if(document.body.clientHeight - height - (48 * 4) <= 0) height = 480;
+    if(document.body.clientWidth - config.terminalWidth <= (8 * 8)) width = 640;
+
+    // make height the nerest multiple of 8
+    if(height % 8 != 0) height = Math.floor(height / 8) * 8;
+    if(width % 8 != 0) width = Math.floor(width / 8) * 8;
 
     root.style.setProperty('--terminal-width', `${width}px`);
     root.style.setProperty('--terminal-height', `${height}px`);
 }
 
 const integrityGovernor = new Governor("integrity", 1000, () => {
-    // handle "floating directories"
+    setTerminalSize()
 
+    // handle "floating directories"
     const floatingDirs = FroggyFileSystem.getFloatingDirectories()
 
     if(floatingDirs.length > 0) {

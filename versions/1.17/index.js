@@ -31,7 +31,6 @@ function maxCharsPerLine(){
 const configGovernor = new Governor("config", 250, () => {
     setUserConfigFromFile()
     updateProgramList()
-    setTerminalSize()
 
     let badConfig = false;
     let badKey = '';
@@ -112,10 +111,11 @@ function setUserConfigFromFile(){
     config.timeFormat = getSetting("timeFormat")?.slice(0, maxCharsPerLine());
     config.updateStatBar = getSetting("updateStatBar")
     config.allowedProgramDirectories = getSetting("allowedProgramDirectories");
-    // add other settings for macros, palettes, etc.
     config.dissallowSubdirectoriesIn = getSetting("dissallowSubdirectoriesIn");
     config.language = getSetting("language");
     config.validateLanguageOnStartup = getSetting("validateLanguageOnStartup");
+    config.terminalWidth = getSetting("terminalWidth");
+    config.terminalHeight = getSetting("terminalHeight");
 }
 
 const filePropertyDefaults = {
@@ -683,7 +683,7 @@ function changeColorPalette(name){
 */
 
 function createColorTestBar(){
-    const colorPalettes = createPalettesObject();
+    const colorPalette = createPalettesObject(config.colorPalette);
 
     // remove all the children of the color test bar
     document.getElementById('color-test-bar').innerHTML = "";
@@ -711,16 +711,16 @@ function createColorTestBar(){
     squareContainer.style.top = "0px";
     squareContainer.style.left = "0px";
 
-    if(colorPalettes[config.colorPalette] == undefined) return;
+    if(colorPalette[config.colorPalette] == undefined) return;
 
-    for(let i = 0; i < Object.keys(colorPalettes[config.colorPalette]).length; i++){
-        let color = Object.keys(colorPalettes[config.colorPalette])[i];
-        let text = `<br><br><br><br><br><br>${color}<br>${colorPalettes[config.colorPalette][color].replace("#","")}`
+    for(let i = 0; i < Object.keys(colorPalette[config.colorPalette]).length; i++){
+        let color = Object.keys(colorPalette[config.colorPalette])[i];
+        let text = `<br><br><br><br><br><br>${color}<br>${colorPalette[config.colorPalette][color].replace("#","")}`
         let square = document.createElement('div');
 
         square.innerHTML = text;
         square.style.backgroundColor = `var(--${color})`;
-        square.style.color = `var(--${getContrastYIQ(colorPalettes[config.colorPalette][color])})`;
+        square.style.color = `var(--${getContrastYIQ(colorPalette[config.colorPalette][color])})`;
         square.style.width = "48px";
         square.style.height = "48px";
         square.style.position = "absolute";
@@ -728,7 +728,7 @@ function createColorTestBar(){
         square.style.top = `${Math.floor(i / 8) * 48}px`;
         square.style.fontSize = "6px";
         squareContainer.appendChild(square);
-        if(i == Object.keys(colorPalettes[config.colorPalette]).length / 2){
+        if(i == Object.keys(colorPalette[config.colorPalette]).length / 2){
             squareContainer.appendChild(document.createElement('br'));
         }
     }
@@ -736,25 +736,25 @@ function createColorTestBar(){
 }
 
 // helper functions
-function createPalettesObject(){
-    let paletteDir = FroggyFileSystem.getDirectory("D:/Palettes");
-    let palettes = {};
+function createPalettesObject(paletteName){
+    let palette = {};
 
     const colorArray = ["c00", "c01", "c02", "c03", "c04", "c05", "c06", "c07", "c08", "c09", "c10", "c11", "c12", "c13", "c14", "c15"];
 
     try {
-        for(let palette of paletteDir){
-            if(palette.getProperty('hidden')) continue;
-            palettes[palette.getName()] = {};
-            for(let i = 0; i < colorArray.length; i++){
-                palettes[palette.getName()][colorArray[i]] = "#"+palette.getData()[i];
-            }
+        const file = FroggyFileSystem.getFile(`D:/Palettes/${paletteName}`)?.getData();
+
+        palette[paletteName] = {};
+
+        for(let i = 0; i < colorArray.length; i++){
+            palette[paletteName][colorArray[i]] = "#"+file[i];
         }
     } catch (err) {
+        console.log(err)
         createTerminalLine("T_could_not_create_palette", config.errorText)
     }
 
-    return palettes;
+    return palette;
 }
 
 function moveCaretToEnd(element) {
@@ -1082,30 +1082,20 @@ async function sendCommand(command, args = [], createEditableLineAfter = true){
         // change color palette
         case "changepalette": {
             if(!requireGovernor(configGovernor)) return;
-            let colorPalettes = createPalettesObject();
-            function getDisplayPalettes(){
-                let palettes = FroggyFileSystem.getDirectory("D:/Palettes")
-                    .filter(palette => {
-                        if(palette.getProperty('hidden') == true) return false;
-                        if(palette.getProperty('transparent') == true) return false;
-                        else return true;
-                    }
-                    ).map(palette => palette.getName());
-                return palettes.join(", ");
-            }
+            let colorPalettes = FroggyFileSystem.getDirectory("D:/Palettes").map(file => file.getName());
 
             if(args.length == 0){
                 createTerminalLine("T_provide_palette_name", config.errorText);
                 createTerminalLine(`T_available_color_palettes`, "");
-                createTerminalLine(getDisplayPalettes(), ">", {translate: false});
+                createTerminalLine(colorPalettes.join(", "), ">", {translate: false});
                 hadError = true;
                 printLn();
                 break;
             }
-            if(colorPalettes[args[0]] == undefined){
+            if(colorPalettes.includes(args[0]) == false){
                 createTerminalLine("T_color_palette_does_not_exist", config.errorText);
                 createTerminalLine(`T_available_color_palettes`, "");
-                createTerminalLine(getDisplayPalettes(), ">", {translate: false});
+                createTerminalLine(colorPalettes.join(", "), ">", {translate: false});
                 hadError = true;
                 printLn();
                 break;
