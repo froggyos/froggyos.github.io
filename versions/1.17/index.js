@@ -1424,10 +1424,10 @@ async function sendCommand(command, args = [], createEditableLineAfter = true){
                 break;
             }
             subdirectoryNames.forEach(subdirectory => {
-                createTerminalLine(` [DIR] ${subdirectory}`, ">", {translate: false})
+                createTerminalLine(`[DIR]${pad(1)}${subdirectory}`, ">", {translate: false})
             });
             files.forEach(file => {
-                createTerminalLine(`       ${file.getName()}`, ">", {translate: false})
+                createTerminalLine(`${pad(6)}${file.getName()}`, ">", {translate: false})
             });
             printLn();
         break;
@@ -1476,12 +1476,21 @@ async function sendCommand(command, args = [], createEditableLineAfter = true){
         case "/":
         case "macro": {
             if(!requireGovernor(integrityGovernor)) return;
+            if(FroggyFileSystem.directoryExists("D:/Macros") == false){
+                createTerminalLine("T_no_macros_directory", config.errorText);
+                hadError = true;
+                printLn();
+                break;
+            }
             if(args.length == 0){
                 createTerminalLine("T_provide_macro_name", config.errorText);
                 createTerminalLine(`T_available_macros`, "");
                 let macros = FroggyFileSystem.getDirectory("D:/Macros")
                 if(macros == undefined){
                     createTerminalLine("T_no_macros_found", config.errorText);
+                    hadError = true;
+                    printLn();
+                    break;
                 } else {
                     let macroList = macros.filter(macro => macro.getProperty('transparent') == false);
                     let macroAliases = macros.filter(macro => macro.getProperty('transparent') == false).map(macro => macro.getData()[0].startsWith("!") ? macro.getData()[0].slice(1) : "no alias");
@@ -2766,6 +2775,7 @@ function createEditableTerminalLine(path){
         if(e.key == "Enter" && e.shiftKey == false){
             e.preventDefault();
             terminalLine.setAttribute('contenteditable', 'false');
+            userInput = userInput.trim();
             let args = userInput.split(" ");
 
             terminalLine.innerHTML = terminalLine.innerHTML.replaceAll("<div><br></div>", "");
@@ -4034,7 +4044,8 @@ function onStart(){
     //sendCommand("pulse", ["-s"])
     //sendCommand("?", ["c"])
     // sendCommand("cdir", ["D:/Spinners"])
-    // sendCommand("[[BULLFROG]]showspinner", ["1"])
+    sendCommand("[[BULLFROG]]setspinner", ["unknown"])
+    sendCommand("[[BULLFROG]]showspinner", ["1"])
     // sendCommand("[[BULLFROG]]recoverymode", [])
     //sendCommand("regenpalettes")
     //sendCommand("pond", ["-l", "test", "test"])
