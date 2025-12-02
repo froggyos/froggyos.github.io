@@ -1641,7 +1641,8 @@ class SwagSystem {
         "#document/setSetting/*",
         "#document/onStart/sendCommand/*",
         "HTMLDivElement.<anonymous>/sendCommand/*",
-        "window.terminalLineKeydownHandler/*"
+        "window.terminalLineKeydownHandler/*",
+        "async HTMLDivElement.<anonymous>/async sendCommand/#document/setSetting/*",
     ]);
 
     /**
