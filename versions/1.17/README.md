@@ -141,7 +141,7 @@ Properties:
     * when a file is cloned, this property will be set to `false`.
 
 ### pulse
-The `pulse` command outputs system diagnostics information. It has 5 main sections:
+Use the flag `-s` to display stacks. The `pulse` command outputs system diagnostics information. It has 5 main sections:
 1. System Information
     * uptime
     * version

@@ -2,11 +2,11 @@
 
 
 // generate a 16 bit hex string
-const gen = (len=8, r=16) => [...Array(len)].map(()=>Math.floor(Math.random()*r).toString(r)).join("");
+const gen = (len = 8, r = 16) => [...Array(len)].map(() => Math.floor(Math.random() * r).toString(r)).join("");
 const sessionTokenFile = gen(16);
 const credentialFile = gen(16);
 
-function pad(n){
+function pad(n) {
     return FULLWIDTH.repeat(n);
 }
 
@@ -20,33 +20,33 @@ class TroubleManager {
      * @param {string} name 
      * @param {Governor} governor 
      */
-    static registerGovernor(name, governor){
+    static registerGovernor(name, governor) {
         this.governors[name] = governor;
     }
 
-    static getGovernor(name){
+    static getGovernor(name) {
         return this.governors[name];
     }
 
-    static hasTrouble(){
-        for(const govName in this.governors){
-            if(!this.governors[govName].ok) return true;
+    static hasTrouble() {
+        for (const govName in this.governors) {
+            if (!this.governors[govName].ok) return true;
         }
         return false;
     }
 
-    static rawGovernors(){
+    static rawGovernors() {
         return Object.values(this.governors);
     }
 
     /**
      * @returns {Map<string, Array<{action: string, description: string, trouble: string}>>}
      */
-    static getAllRecommendedActions(){
+    static getAllRecommendedActions() {
         const actions = {}
-        for(const govName in this.governors){
+        for (const govName in this.governors) {
             const gov = this.governors[govName];
-            if(!gov.ok){
+            if (!gov.ok) {
                 actions[govName] = gov.getRecommendedActions();
             }
         }
@@ -55,14 +55,14 @@ class TroubleManager {
 }
 
 class Governor {
-    constructor(name, intervalMs, fn){
+    constructor(name, intervalMs, fn) {
         this.name = name;
         this.intervalMs = intervalMs;
         this.fn = fn;
         this.troubles = new Set();
         this.ok = true;
         this.interval = setInterval(() => {
-            if(!this.ok) return;
+            if (!this.ok) return;
             this.fn();
         }, this.intervalMs);
         TroubleManager.registerGovernor(this.name, this);
@@ -72,38 +72,38 @@ class Governor {
      * 
      * @param {string} trouble
      */
-    addTrouble(trouble){
+    addTrouble(trouble) {
         this.troubles.add(trouble);
-        if(this.ok) this.ok = false;
+        if (this.ok) this.ok = false;
     }
 
-    removeTrouble(trouble){
-        if(trouble == "killed") throw new Error("Cannot remove trouble.");
+    removeTrouble(trouble) {
+        if (trouble == "killed") throw new Error("Cannot remove trouble.");
         this.troubles.delete(trouble);
-        if(this.troubles.size === 0) this.ok = true;
+        if (this.troubles.size === 0) this.ok = true;
     }
 
-    hasTrouble(trouble){
+    hasTrouble(trouble) {
         return this.troubles.has(trouble);
     }
 
-    troubled(){
+    troubled() {
         return !this.ok;
     }
 
-    halt(){
+    halt() {
         this.addTrouble("halt");
     }
 
-    unhalt(){
+    unhalt() {
         this.removeTrouble("halt");
     }
 
-    getRecommendedActions(){
+    getRecommendedActions() {
         const actions = new Set();
         this.troubles.forEach(trouble => {
             const switchTrouble = trouble.split("-")[0];
-            switch(switchTrouble) {
+            switch (switchTrouble) {
                 case "tpfm": actions.add({
                     action: "regentrustedprogramfile",
                     description: "regenerate the trusted program file",
@@ -112,7 +112,7 @@ class Governor {
                 case "buc/mk": {
                     let key = trouble.split("-")[1];
                     actions.add({
-                        action: "regenkey "+key,
+                        action: "regenkey " + key,
                         description: `regenerate the key: ${key}`,
                         trouble
                     });
@@ -1231,7 +1231,7 @@ const presetLanguagesMap = {
     "T_pond_server_ok": {
         eng: "Pond server is up!",
         nmt: "T_pond_server_ok",
-        jpn: "T_pond_server_ok" 
+        jpn: "T_pond_server_ok"
     },
     "T_pond_server_error": {
         eng: "Internal Pond server serror.",
@@ -1588,7 +1588,7 @@ function utf8ByteLength(str) {
     return new TextEncoder().encode(str).byteLength;
 }
 
-class UserKey { constructor() {} };
+class UserKey { constructor() { } };
 
 const allowed = new Set();
 
@@ -1600,7 +1600,7 @@ class SwagSystem {
     #fs;
 
     hash(inp) {
-    function t(k,R){const Q=j();return t=function(m,s){m=m-(-0x212*0x1+0xf3f+0x1*-0xcc5);let Y=Q[m];return Y;},t(k,R);}function F(R,Q,m,s,Y){return t(m-0x112,Q);}(function(R,Q){function I(R,Q,m,s,Y){return t(m-0x2a3,Q);}function W(R,Q,m,s,Y){return t(s-0x398,Y);}function M(R,Q,m,s,Y){return t(Q- -0x261,Y);}function E(R,Q,m,s,Y){return t(Y- -0x21c,R);}function C(R,Q,m,s,Y){return t(R-0x103,Q);}const m=R();while(!![]){try{const s=-parseInt(M(-0x1f0,-0x1f2,-0x1e5,-0x1fb,-0x1f9))/(0x1*0x1933+0xadd+-0x11*0x21f)+parseInt(I(0x304,0x305,0x30d,0x301,0x318))/(0x1*-0x279+-0x60*0x5e+0x25bb)+-parseInt(M(-0x1fa,-0x1ee,-0x1e2,-0x1f1,-0x1e6))/(-0x15ee+0x66d+0xf84)*(-parseInt(M(-0x1f5,-0x1ed,-0x1f5,-0x1f9,-0x1f9))/(-0x1d5e+0x1*-0x15e2+0x3344))+parseInt(M(-0x1de,-0x1e7,-0x1e6,-0x1f0,-0x1f3))/(0x4*0x787+-0x2195*0x1+-0x95*-0x6)*(parseInt(W(0x410,0x41b,0x40f,0x415,0x411))/(-0x54e+0x77c+-0x17*0x18))+-parseInt(C(0x182,0x178,0x178,0x18b,0x186))/(-0x129d+0x26b3*0x1+-0x140f)+parseInt(C(0x175,0x16c,0x182,0x178,0x181))/(-0x6ae+-0x1a83*0x1+0xf*0x237)+-parseInt(M(-0x1e3,-0x1f0,-0x1eb,-0x1e5,-0x1f2))/(-0x67*0x1c+-0x4f9+-0x823*-0x2)*(-parseInt(C(0x171,0x16f,0x16a,0x17b,0x16f))/(-0x17e6+-0xed4+0x2*0x1362));if(s===Q)break;else m['push'](m['shift']());}catch(Y){m['push'](m['shift']());}}}(j,0x4cc21*-0x2+0xdabdb+0x382d2),inp=inp[F(0x186,0x185,0x190,0x19d,0x197)+c(-0x1a5,-0x1b1,-0x1a1,-0x1a6,-0x1a8)](/\n|\r/g,''));function c(R,Q,m,s,Y){return t(R- -0x21c,Y);}function j(){const Z=['\x76\x62\x56\x77\x62','\x63\x65\x41\x6c\x6c','\x6d\x6b\x78\x69\x70','\x72\x65\x76\x65\x72','\x32\x30\x43\x68\x54\x65\x57\x7a','\x47\x4b\x4d\x75\x66','\x74\x72\x69\x6d','\x33\x34\x36\x35\x36\x30\x70\x56\x6b\x7a\x64\x46','\x72\x65\x70\x6c\x61','\x34\x36\x30\x33\x32\x31\x34\x77\x58\x53\x57\x7a\x74','\x4b\x48\x57\x7a\x69','\x49\x64\x46\x49\x6a','\x6a\x6f\x69\x6e','\x6c\x65\x6e\x67\x74','\x31\x33\x31\x31\x32\x33\x32\x52\x73\x6b\x66\x68\x44','\x4e\x66\x4a\x4a\x47','\x69\x44\x41\x6b\x73','\x73\x70\x6c\x69\x74','\x31\x30\x4d\x5a\x7a\x42\x69\x4b','\x36\x38\x36\x37\x30\x31\x63\x65\x49\x6c\x45\x62','\x74\x6f\x53\x74\x72','\x37\x33\x39\x31\x37\x42\x4a\x6e\x48\x77\x4b','\x34\x36\x36\x32\x31\x39\x32\x45\x54\x41\x57\x53\x74','\x33\x4d\x48\x61\x59\x79\x75','\x31\x34\x35\x35\x36\x37\x36\x62\x67\x54\x66\x73\x75','\x69\x6e\x67'];j=function(){return Z;};return j();}let k=()=>{const R={'\x49\x64\x46\x49\x6a':function(x,e,B){return x(e,B);},'\x4e\x66\x4a\x4a\x47':function(x,e){return x(e);},'\x6d\x6b\x78\x69\x70':function(x,e){return x(e);},'\x69\x44\x41\x6b\x73':function(e,B){return e>>>B;},'\x4b\x48\x57\x7a\x69':function(e,B){return e+B;},'\x47\x4b\x4d\x75\x66':function(e,B){return e^B;},'\x76\x62\x56\x77\x62':function(e,B){return e&B;}},Q=x=>x[N(-0x239,-0x242,-0x234,-0x23b,-0x239)+'\x63\x65'](/\r\n|\r/g,'\x0a')[p(-0x25b,-0x26a,-0x267,-0x26d,-0x26d)+'\x63\x65'](/\/\/.*$/gm,'')[r(0x39e,0x392,0x39f,0x397,0x39b)+'\x63\x65'](/\/\*[\s\S]*?\*\//g,'')[p(-0x263,-0x264,-0x267,-0x267,-0x267)+'\x63\x65'](/\s+/g,'\x20')[N(-0x23e,-0x23c,-0x235,-0x246,-0x239)+'\x63\x65'](/\s*([{}();,:=+\-*/<>])\s*/g,'\x24\x31')[p(-0x261,-0x262,-0x269,-0x270,-0x272)]();function N(R,Q,m,s,Y){return c(Y- -0x9b,Q-0x94,m-0x13f,s-0x1b5,s);}function r(R,Q,m,s,Y){return c(s-0x535,Q-0x13e,m-0x9c,s-0x3c,Q);}const m=R[p(-0x26a,-0x26f,-0x264,-0x268,-0x25e)](murmurhash3_32_gc,R[N(-0x256,-0x251,-0x24f,-0x242,-0x24c)](Q,inp),inp[A(-0xc,-0x20,-0x1e,-0x14,-0x19)+'\x68']),s=R[u(-0x175,-0x172,-0x17f,-0x17d,-0x179)](murmurhash3_32_gc,R[A(-0xe,-0x6,0x1,-0x4,-0xa)](Q,inp)[u(-0x193,-0x18e,-0x19e,-0x191,-0x19a)]('')[N(-0x232,-0x24b,-0x236,-0x245,-0x23e)+'\x73\x65']()[r(0x37b,0x375,0x389,0x381,0x37b)](''),inp[N(-0x244,-0x249,-0x248,-0x241,-0x24e)+'\x68']);function A(R,Q,m,s,Y){return c(Y-0x19a,Q-0xb9,m-0x16e,s-0x13e,R);}function p(R,Q,m,s,Y){return F(R-0x2a,Y,m- -0x3f7,s-0x186,Y-0xb3);}function u(R,Q,m,s,Y){return F(R-0x9b,Q,s- -0x310,s-0x15a,Y-0xb6);}const Y=R[r(0x38e,0x390,0x383,0x385,0x379)](R[u(-0x182,-0x171,-0x179,-0x17e,-0x177)](R[N(-0x23d,-0x240,-0x249,-0x247,-0x23c)](m,s),R[r(0x385,0x394,0x387,0x38f,0x388)](m,s)),0x1207+0x2543*-0x1+-0x133c*-0x1);return R[A(0x0,0x9,-0x9,0x5,-0x2)](m[N(-0x241,-0x245,-0x249,-0x23d,-0x247)+r(0x385,0x39b,0x388,0x38e,0x392)](0x10ad+0x11d8+-0x2275),Y[N(-0x246,-0x242,-0x23f,-0x247,-0x247)+A(-0x9,-0x15,-0x16,-0x9,-0xd)](0x1439+0x207+0x1*-0x1630));};return k();
+        function t(k, R) { const Q = j(); return t = function (m, s) { m = m - (-0x212 * 0x1 + 0xf3f + 0x1 * -0xcc5); let Y = Q[m]; return Y; }, t(k, R); } function F(R, Q, m, s, Y) { return t(m - 0x112, Q); } (function (R, Q) { function I(R, Q, m, s, Y) { return t(m - 0x2a3, Q); } function W(R, Q, m, s, Y) { return t(s - 0x398, Y); } function M(R, Q, m, s, Y) { return t(Q - -0x261, Y); } function E(R, Q, m, s, Y) { return t(Y - -0x21c, R); } function C(R, Q, m, s, Y) { return t(R - 0x103, Q); } const m = R(); while (!![]) { try { const s = -parseInt(M(-0x1f0, -0x1f2, -0x1e5, -0x1fb, -0x1f9)) / (0x1 * 0x1933 + 0xadd + -0x11 * 0x21f) + parseInt(I(0x304, 0x305, 0x30d, 0x301, 0x318)) / (0x1 * -0x279 + -0x60 * 0x5e + 0x25bb) + -parseInt(M(-0x1fa, -0x1ee, -0x1e2, -0x1f1, -0x1e6)) / (-0x15ee + 0x66d + 0xf84) * (-parseInt(M(-0x1f5, -0x1ed, -0x1f5, -0x1f9, -0x1f9)) / (-0x1d5e + 0x1 * -0x15e2 + 0x3344)) + parseInt(M(-0x1de, -0x1e7, -0x1e6, -0x1f0, -0x1f3)) / (0x4 * 0x787 + -0x2195 * 0x1 + -0x95 * -0x6) * (parseInt(W(0x410, 0x41b, 0x40f, 0x415, 0x411)) / (-0x54e + 0x77c + -0x17 * 0x18)) + -parseInt(C(0x182, 0x178, 0x178, 0x18b, 0x186)) / (-0x129d + 0x26b3 * 0x1 + -0x140f) + parseInt(C(0x175, 0x16c, 0x182, 0x178, 0x181)) / (-0x6ae + -0x1a83 * 0x1 + 0xf * 0x237) + -parseInt(M(-0x1e3, -0x1f0, -0x1eb, -0x1e5, -0x1f2)) / (-0x67 * 0x1c + -0x4f9 + -0x823 * -0x2) * (-parseInt(C(0x171, 0x16f, 0x16a, 0x17b, 0x16f)) / (-0x17e6 + -0xed4 + 0x2 * 0x1362)); if (s === Q) break; else m['push'](m['shift']()); } catch (Y) { m['push'](m['shift']()); } } }(j, 0x4cc21 * -0x2 + 0xdabdb + 0x382d2), inp = inp[F(0x186, 0x185, 0x190, 0x19d, 0x197) + c(-0x1a5, -0x1b1, -0x1a1, -0x1a6, -0x1a8)](/\n|\r/g, '')); function c(R, Q, m, s, Y) { return t(R - -0x21c, Y); } function j() { const Z = ['\x76\x62\x56\x77\x62', '\x63\x65\x41\x6c\x6c', '\x6d\x6b\x78\x69\x70', '\x72\x65\x76\x65\x72', '\x32\x30\x43\x68\x54\x65\x57\x7a', '\x47\x4b\x4d\x75\x66', '\x74\x72\x69\x6d', '\x33\x34\x36\x35\x36\x30\x70\x56\x6b\x7a\x64\x46', '\x72\x65\x70\x6c\x61', '\x34\x36\x30\x33\x32\x31\x34\x77\x58\x53\x57\x7a\x74', '\x4b\x48\x57\x7a\x69', '\x49\x64\x46\x49\x6a', '\x6a\x6f\x69\x6e', '\x6c\x65\x6e\x67\x74', '\x31\x33\x31\x31\x32\x33\x32\x52\x73\x6b\x66\x68\x44', '\x4e\x66\x4a\x4a\x47', '\x69\x44\x41\x6b\x73', '\x73\x70\x6c\x69\x74', '\x31\x30\x4d\x5a\x7a\x42\x69\x4b', '\x36\x38\x36\x37\x30\x31\x63\x65\x49\x6c\x45\x62', '\x74\x6f\x53\x74\x72', '\x37\x33\x39\x31\x37\x42\x4a\x6e\x48\x77\x4b', '\x34\x36\x36\x32\x31\x39\x32\x45\x54\x41\x57\x53\x74', '\x33\x4d\x48\x61\x59\x79\x75', '\x31\x34\x35\x35\x36\x37\x36\x62\x67\x54\x66\x73\x75', '\x69\x6e\x67']; j = function () { return Z; }; return j(); } let k = () => { const R = { '\x49\x64\x46\x49\x6a': function (x, e, B) { return x(e, B); }, '\x4e\x66\x4a\x4a\x47': function (x, e) { return x(e); }, '\x6d\x6b\x78\x69\x70': function (x, e) { return x(e); }, '\x69\x44\x41\x6b\x73': function (e, B) { return e >>> B; }, '\x4b\x48\x57\x7a\x69': function (e, B) { return e + B; }, '\x47\x4b\x4d\x75\x66': function (e, B) { return e ^ B; }, '\x76\x62\x56\x77\x62': function (e, B) { return e & B; } }, Q = x => x[N(-0x239, -0x242, -0x234, -0x23b, -0x239) + '\x63\x65'](/\r\n|\r/g, '\x0a')[p(-0x25b, -0x26a, -0x267, -0x26d, -0x26d) + '\x63\x65'](/\/\/.*$/gm, '')[r(0x39e, 0x392, 0x39f, 0x397, 0x39b) + '\x63\x65'](/\/\*[\s\S]*?\*\//g, '')[p(-0x263, -0x264, -0x267, -0x267, -0x267) + '\x63\x65'](/\s+/g, '\x20')[N(-0x23e, -0x23c, -0x235, -0x246, -0x239) + '\x63\x65'](/\s*([{}();,:=+\-*/<>])\s*/g, '\x24\x31')[p(-0x261, -0x262, -0x269, -0x270, -0x272)](); function N(R, Q, m, s, Y) { return c(Y - -0x9b, Q - 0x94, m - 0x13f, s - 0x1b5, s); } function r(R, Q, m, s, Y) { return c(s - 0x535, Q - 0x13e, m - 0x9c, s - 0x3c, Q); } const m = R[p(-0x26a, -0x26f, -0x264, -0x268, -0x25e)](murmurhash3_32_gc, R[N(-0x256, -0x251, -0x24f, -0x242, -0x24c)](Q, inp), inp[A(-0xc, -0x20, -0x1e, -0x14, -0x19) + '\x68']), s = R[u(-0x175, -0x172, -0x17f, -0x17d, -0x179)](murmurhash3_32_gc, R[A(-0xe, -0x6, 0x1, -0x4, -0xa)](Q, inp)[u(-0x193, -0x18e, -0x19e, -0x191, -0x19a)]('')[N(-0x232, -0x24b, -0x236, -0x245, -0x23e) + '\x73\x65']()[r(0x37b, 0x375, 0x389, 0x381, 0x37b)](''), inp[N(-0x244, -0x249, -0x248, -0x241, -0x24e) + '\x68']); function A(R, Q, m, s, Y) { return c(Y - 0x19a, Q - 0xb9, m - 0x16e, s - 0x13e, R); } function p(R, Q, m, s, Y) { return F(R - 0x2a, Y, m - -0x3f7, s - 0x186, Y - 0xb3); } function u(R, Q, m, s, Y) { return F(R - 0x9b, Q, s - -0x310, s - 0x15a, Y - 0xb6); } const Y = R[r(0x38e, 0x390, 0x383, 0x385, 0x379)](R[u(-0x182, -0x171, -0x179, -0x17e, -0x177)](R[N(-0x23d, -0x240, -0x249, -0x247, -0x23c)](m, s), R[r(0x385, 0x394, 0x387, 0x38f, 0x388)](m, s)), 0x1207 + 0x2543 * -0x1 + -0x133c * -0x1); return R[A(0x0, 0x9, -0x9, 0x5, -0x2)](m[N(-0x241, -0x245, -0x249, -0x23d, -0x247) + r(0x385, 0x39b, 0x388, 0x38e, 0x392)](0x10ad + 0x11d8 + -0x2275), Y[N(-0x246, -0x242, -0x23f, -0x247, -0x247) + A(-0x9, -0x15, -0x16, -0x9, -0xd)](0x1439 + 0x207 + 0x1 * -0x1630)); }; return k();
     }
 
 
@@ -1609,7 +1609,7 @@ class SwagSystem {
      * @param {{string:FroggyFile[]}} data - file system data
      */
     constructor(data) {
-        for(let directoryName in data){
+        for (let directoryName in data) {
             let dir = data[directoryName];
             dir.forEach((file, i) => {
                 data[directoryName][i] = new FroggyFile(file.name, file.properties, file.data, directoryName);
@@ -1632,12 +1632,22 @@ class SwagSystem {
      * supports regex
      */
     #allowedPaths = new Set([
-        "#document/<static_initializer>/SwagSystem.getFile/#verify",
-        "#document/<static_initializer>/SwagSystem.getDirectory/#verify",
-        "#document/setLanguageFiles/SwagSystem.getDirectory/#verify",
+        "#document/<static_initializer>/SwagSystem.getFile/#verify/Error",
+        "#document/<static_initializer>/SwagSystem.getDirectory/#verify/Error",
+        "#document/setLanguageFiles/SwagSystem.getDirectory/#verify/Error",
         "#document/ready/*",
         "#document/Governor.fn/*",
-        "HTMLDivElement.<anonymous>/sendCommand/*"
+        "#document/sendCommand/*",
+        "#document/setSetting/*",
+        "#document/onStart/sendCommand/*",
+        "HTMLDivElement.<anonymous>/sendCommand/*",
+        "window.terminalLineKeydownHandler/*",
+        "async HTMLDivElement.<anonymous>/async sendCommand/#document/setSetting/*",
+        // Firefox/Safari
+        "*Governor*/*", "*trustedProgramsGovernor*", "*setUserConfigFromFile*",
+        "*ready*getFile*", "*ready*getDirectory*", "*sendCommand*", "*setSetting*",
+        "*terminalLineKeydownHandler*", "#document/#document/*", "#document/getFile/*",
+        "#document/getDirectory/*", "*FileCopies*", "*setLanguageFiles*", "*languageCache*",
     ]);
 
     /**
@@ -1646,19 +1656,44 @@ class SwagSystem {
      * @returns {boolean} true if access is allowed, otherwise throws an error.
      */
     #verify() {
-        const stackPath = StackTrace.getSync().map(sf => {
-            let fnName = sf.functionName ?? "#document";
-            fnName = fnName.
-            replace("Governor/this.interval<", "Governor.fn")
-            return fnName
-        }
-        ).reverse().join("/").replaceAll("</", "/").replaceAll("setInterval handler*Governor/", "")
+        const lines = (new Error().stack || "").split("\n").filter(line => line.trim());
+        const isV8 = lines.some(line => line.trim().startsWith("at "));
+
+        const parsedLines = lines.reverse().map(line => {
+            let t = line.trim()
+                .replace(/FroggyFile\.getData/, '$')
+                .replace(/FroggyFile\.(.*?)/, '@$1');
+
+            if (isV8) {
+                return t
+                    .replace(/^(at) (.*) \(((?:https?|file):.*?):\d+:\d+\)$/, '$2')
+                    .replace(/^(at) ((?:https?|file):.*?):\d+:\d+$/, '#document')
+                    .replace(/^(at) (.*) \(<anonymous>\)/, '$2')
+                    .replace(/^at <anonymous>:\d+:\d+$/, '<anonymous>')
+                    .replace(/^at (.*?) \(<anonymous>:\d+:\d+\)$/, '<anonymous>');
+            }
+
+            if (t === "Error" || t.startsWith("Error:")) return '#document';
+            if (t.includes("@debugger eval code") || t.includes("> eval:") || t.includes("> Function:")) return '<anonymous>';
+
+            // Firefox: funcName@url:line:col - strip :line:col from end first
+            const stripped = t.replace(/:\d+:\d+$/, '').replace(/:\d+$/, '');
+            const atIndex = stripped.indexOf('@');
+            if (atIndex !== -1 && (stripped.includes('http') || stripped.includes('file://'))) {
+                const fn = stripped.substring(0, atIndex).trim();
+                if (!fn) return '#document'; // empty = top-level script
+                if (fn === "anonymous") return '<anonymous>';
+                return fn.startsWith("async*") ? 'async ' + fn.substring(6) : fn;
+            }
+
+            return (t.includes('http') || t.includes('file://')) ? '#document' : (t || '#document');
+        });
+
+        const stackPath = parsedLines.join("/");
 
         // allowed.add(stackPath);
 
         // console.log(JSON.stringify(Array.from(allowed)))
-
-        // return;
 
         // Allow exact matches OR wildcard pattern matches
         for (const pattern of this.#allowedPaths) {
@@ -1674,10 +1709,10 @@ class SwagSystem {
             if (regex.test(stackPath)) return true;
         }
 
-        createTerminalLine("An illegal action has been detected.", createErrorText("unnatural", "ILLEGAL"), {translate: false})
+        createTerminalLine("An illegal action has been detected.", createErrorText("unnatural", "ILLEGAL"), { translate: false })
         TroubleManager.rawGovernors().forEach(gov => {
-            if(gov.hasTrouble("killed")) return;
-            createTerminalLine(`Governor "${gov.name}" killed.`, createErrorText("unnatural", "ILLEGAL"), {translate: false})
+            if (gov.hasTrouble("killed")) return;
+            createTerminalLine(`Governor "${gov.name}" killed.`, createErrorText("unnatural", "ILLEGAL"), { translate: false })
             gov.addTrouble("killed")
         });
         throw new Error(`Invalid FroggyFileSystem access location: \n${stackPath}\nAll governors have been halted.`);
@@ -1746,8 +1781,8 @@ class SwagSystem {
         const fs = this.#fs;
 
         let retrievedFile = fs[path]?.find(f => f.getName() === file);
-        if(retrievedFile === undefined) return undefined;
-        if(retrievedFile.getProperty("hidden") === true) return undefined;
+        if (retrievedFile === undefined) return undefined;
+        if (retrievedFile.getProperty("hidden") === true) return undefined;
         return retrievedFile;
     }
 
@@ -1761,8 +1796,8 @@ class SwagSystem {
         this.#verify();
         const fs = this.#fs;
 
-        if(fs[location] === undefined) return undefined;
-        if(fs[location]?.find(f => f.getName() === file.getName())) return undefined;
+        if (fs[location] === undefined) return undefined;
+        if (fs[location]?.find(f => f.getName() === file.getName())) return undefined;
         file.dirname = location;
         this.#fs[location].push(file);
     }
@@ -1783,25 +1818,25 @@ class SwagSystem {
         let file = fp[fp.length - 1];
         const fs = this.#fs;
 
-        if(fs[path] === undefined) return undefined;
+        if (fs[path] === undefined) return undefined;
 
         let index = fs[path]?.findIndex(f => f.getName() === file);
-        if(index === -1 || index == undefined) return undefined;
+        if (index === -1 || index == undefined) return undefined;
 
         fs[path].splice(index, 1);
     }
 
     deleteDirectory(location) {
         this.#verify();
-        if(this.#fs[location] === undefined) return undefined;
-        for(let dir in this.#fs){
-            if(dir.startsWith(location))    delete this.#fs[dir];
+        if (this.#fs[location] === undefined) return undefined;
+        for (let dir in this.#fs) {
+            if (dir.startsWith(location)) delete this.#fs[dir];
         }
     }
 
     createDirectory(location) {
         this.#verify();
-        if(this.#fs[location] !== undefined) return undefined;
+        if (this.#fs[location] !== undefined) return undefined;
 
         this.#fs[location] = [];
     }
@@ -1812,7 +1847,7 @@ class SwagSystem {
         let path = fp.slice(0, -1).join("/");
         let file = fp[fp.length - 1];
         const fs = this.#fs;
-        if(fs[path] === undefined) return false;
+        if (fs[path] === undefined) return false;
 
         let retrievedFile = fs[path]?.find(f => f.getName() === file);
         return retrievedFile !== undefined && retrievedFile.getProperty("hidden") !== true;
@@ -1839,7 +1874,7 @@ class SwagSystem {
         this.#fs = {};
         try {
             let parsedData = JSON.parse(data);
-            for(let directoryName in parsedData){
+            for (let directoryName in parsedData) {
                 let dir = parsedData[directoryName];
                 this.createDirectory(directoryName);
                 dir.forEach(file => {
@@ -1895,8 +1930,8 @@ class FroggyFile {
      * 
      * @param {string} newName 
      */
-    rename(newName){
-        if(this.#name === "trusted_programs") throw new Error("You may not rename the 'trusted_programs' file.");
+    rename(newName) {
+        if (this.#name === "trusted_programs") throw new Error("You may not rename the 'trusted_programs' file.");
         this.#name = newName;
         this.updateSize();
     }
@@ -1904,7 +1939,7 @@ class FroggyFile {
     /**
      * @returns {{name: String, properties: FroggyFile.filePropertyDefaults, data: String[]}}
      */
-    toJSON(){
+    toJSON() {
         return {
             name: this.#name,
             properties: this.#properties,
@@ -1920,20 +1955,41 @@ class FroggyFile {
     write(data) {
         this.#data = data;
 
-        const stackPath = new Error().stack
-            .split("\n")
-            .slice(1, -1)
-            .reverse()
-            .map(line =>
-                line
-                    .trim()
-                    .replace(/FroggyFile\.getData/, '$')
-                    .replace(/FroggyFile\.(.*?)/, '@$1')
-                    .replace(/^(at) (.*) \((https?.*)\)$/, '$2')
-                    .replace(/^(at) (https?.*)$/, '#document')
-                    .replace(/^(at) (.*) \(<anonymous>\)$/, '$2')
-            )
-            .join("/");
+        // still gotta figure out why this doesnt really work on firefox
+        const lines = (new Error().stack || "").split("\n").filter(line => line.trim());
+        const isV8 = lines.some(line => line.trim().startsWith("at "));
+
+        const parsedLines = lines.reverse().map(line => {
+            let t = line.trim()
+                .replace(/FroggyFile\.getData/, '$')
+                .replace(/FroggyFile\.(.*?)/, '@$1');
+
+            if (isV8) {
+                return t
+                    .replace(/^(at) (.*) \(((?:https?|file):.*?):\d+:\d+\)$/, '$2')
+                    .replace(/^(at) ((?:https?|file):.*?):\d+:\d+$/, '#document')
+                    .replace(/^(at) (.*) \(<anonymous>\)/, '$2')
+                    .replace(/^at <anonymous>:\d+:\d+$/, '<anonymous>')
+                    .replace(/^at (.*?) \(<anonymous>:\d+:\d+\)$/, '<anonymous>');
+            }
+
+            if (t === "Error" || t.startsWith("Error:")) return '#document';
+            if (t.includes("@debugger eval code") || t.includes("> eval:") || t.includes("> Function:")) return '<anonymous>';
+
+            // Firefox: funcName@url:line:col - strip :line:col from end first
+            const stripped = t.replace(/:\d+:\d+$/, '').replace(/:\d+$/, '');
+            const atIndex = stripped.indexOf('@');
+            if (atIndex !== -1 && (stripped.includes('http') || stripped.includes('file://'))) {
+                const fn = stripped.substring(0, atIndex).trim();
+                if (!fn) return '#document'; // empty = top-level script
+                if (fn === "anonymous") return '<anonymous>';
+                return fn.startsWith("async*") ? 'async ' + fn.substring(6) : fn;
+            }
+
+            return (t.includes('http') || t.includes('file://')) ? '#document' : (t || '#document');
+        });
+
+        const stackPath = parsedLines.join("/");
 
         const loc = this.dirname + "/" + this.#name;
 
@@ -1978,24 +2034,24 @@ class FroggyFile {
      */
     getData() {
         const stackPath = new Error().stack
-        .split("\n")
-        .slice(1, -1)
-        .reverse()
-        .map(line => 
-            line
-                .trim()
-                .replace(/FroggyFile\.getData/, '$')
-                .replace(/FroggyFile\.(.*?)/, '@$1')
-                .replace(/^(at) (.*) \((https?.*)\)$/, '$2')
-                .replace(/^(at) (https?.*)$/, '#document')
-                .replace(/^(at) (.*) \(<anonymous>\)$/, '$2')
+            .split("\n")
+            .slice(1, -1)
+            .reverse()
+            .map(line =>
+                line
+                    .trim()
+                    .replace(/FroggyFile\.getData/, '$')
+                    .replace(/FroggyFile\.(.*?)/, '@$1')
+                    .replace(/^(at) (.*) \((https?.*)\)$/, '$2')
+                    .replace(/^(at) (https?.*)$/, '#document')
+                    .replace(/^(at) (.*) \(<anonymous>\)$/, '$2')
             )
-        .join("/")
+            .join("/")
 
         const loc = this.dirname + "/" + this.#name;
-        if(!SwagSystem.diagnostics.reads[loc]) SwagSystem.diagnostics.reads[loc] = {};
+        if (!SwagSystem.diagnostics.reads[loc]) SwagSystem.diagnostics.reads[loc] = {};
 
-        if(!SwagSystem.diagnostics.reads[loc].total) {
+        if (!SwagSystem.diagnostics.reads[loc].total) {
             SwagSystem.diagnostics.reads[loc].total = 0;
             SwagSystem.diagnostics.reads[loc].perSec = 0;
             SwagSystem.diagnostics.reads[loc].stacks = {};
@@ -2061,7 +2117,7 @@ class FroggyFile {
      * @returns {void|undefined}
      */
     setProperty(name, value) {
-        if(this.#name === "trusted_programs") throw new Error("You may not set properties on the 'trusted_programs' file.");
+        if (this.#name === "trusted_programs") throw new Error("You may not set properties on the 'trusted_programs' file.");
         if (this.#properties[name] !== undefined) {
             this.#properties[name] = value;
         } else return undefined;
@@ -2070,314 +2126,325 @@ class FroggyFile {
 
 const FroggyFileSystem = new SwagSystem({
     "Config:": [
-        { name: "trusted_programs", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
-            "test",
-            "fs3help",
-            "confirm"
-        ] },
-        { name: "user", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
-            "KEY language TYPE String VALUE eng END",
-            "KEY colorPalette TYPE String VALUE standard END",
-            "KEY version TYPE String VALUE 1.17-indev END",
-            "KEY showSpinner TYPE Boolean VALUE false END",
-            "KEY currentSpinner TYPE String VALUE default END",
-            "KEY defaultSpinner TYPE String VALUE default END",
-            "KEY timeFormat TYPE String VALUE w. Y/mn/d h:m:s END",
-            "KEY updateStatBar TYPE Boolean VALUE true END",
-            "KEY allowedProgramDirectories TYPE Array START",
-            "0 TYPE String VALUE D:/Programs",
-            "KEY allowedProgramDirectories TYPE Array END",
-            "KEY dissallowSubdirectoriesIn TYPE Array START",
-            "0 TYPE String VALUE D:/Programs",
-            "1 TYPE String VALUE D:/Macros",
-            "2 TYPE String VALUE D:/Program-Data",
-            "3 TYPE String VALUE D:/Palettes",
-            "4 TYPE String VALUE D:/Spinners",
-            "5 TYPE String VALUE D:/Pond",
-            "KEY dissallowSubdirectoriesIn TYPE Array END",
-            "KEY validateLanguageOnStartup TYPE Boolean VALUE true END",
-            "KEY terminalWidth TYPE Number VALUE 640 END",
-            "KEY terminalHeight TYPE Number VALUE 480 END",
-        ] },
+        {
+            name: "trusted_programs", properties: { transparent: false, read: true, write: true, hidden: false }, data: [
+                "test",
+                "fs3help",
+                "confirm"
+            ]
+        },
+        {
+            name: "user", properties: { transparent: false, read: true, write: true, hidden: false }, data: [
+                "KEY language TYPE String VALUE eng END",
+                "KEY colorPalette TYPE String VALUE standard END",
+                "KEY version TYPE String VALUE 1.17-indev END",
+                "KEY showSpinner TYPE Boolean VALUE false END",
+                "KEY currentSpinner TYPE String VALUE default END",
+                "KEY defaultSpinner TYPE String VALUE default END",
+                "KEY timeFormat TYPE String VALUE w. Y/mn/d h:m:s END",
+                "KEY updateStatBar TYPE Boolean VALUE true END",
+                "KEY allowedProgramDirectories TYPE Array START",
+                "0 TYPE String VALUE D:/Programs",
+                "KEY allowedProgramDirectories TYPE Array END",
+                "KEY dissallowSubdirectoriesIn TYPE Array START",
+                "0 TYPE String VALUE D:/Programs",
+                "1 TYPE String VALUE D:/Macros",
+                "2 TYPE String VALUE D:/Program-Data",
+                "3 TYPE String VALUE D:/Palettes",
+                "4 TYPE String VALUE D:/Spinners",
+                "5 TYPE String VALUE D:/Pond",
+                "KEY dissallowSubdirectoriesIn TYPE Array END",
+                "KEY validateLanguageOnStartup TYPE Boolean VALUE true END",
+                "KEY terminalWidth TYPE Number VALUE 640 END",
+                "KEY terminalHeight TYPE Number VALUE 480 END",
+            ]
+        },
     ],
     "Config:/langs": [
-        { name: "ldm", properties: {transparent: true,  read: true, write: true, hidden: false}, data: [] },
-        { name: "eng", properties: {transparent: false, read: true, write: true, hidden: false}, data: [] },
-        { name: "nmt", properties: {transparent: false, read: true, write: true, hidden: false}, data: [] },
-        { name: "jpn", properties: {transparent: false, read: true, write: true, hidden: false}, data: [] },
+        { name: "ldm", properties: { transparent: true, read: true, write: true, hidden: false }, data: [] },
+        { name: "eng", properties: { transparent: false, read: true, write: true, hidden: false }, data: [] },
+        { name: "nmt", properties: { transparent: false, read: true, write: true, hidden: false }, data: [] },
+        { name: "jpn", properties: { transparent: false, read: true, write: true, hidden: false }, data: [] },
     ],
     "Config:/program_data": [],
     "C:": [],
     "C:/Home": [
-        { name: "welcome", properties: {transparent: false, read: true, write: true, hidden: false}, data: ['Hello!', "Welcome to FroggyOS.", "Type 'help' for a list of commands.", "Have fun! ^v^"] },
+        { name: "welcome", properties: { transparent: false, read: true, write: true, hidden: false }, data: ['Hello!', "Welcome to FroggyOS.", "Type 'help' for a list of commands.", "Have fun! ^v^"] },
     ],
     "C:/Docs": [],
-    "D:": [], 
+    "D:": [],
     "D:/Pond": [],
     "D:/Pond/drafts": [],
     "D:/Pond/sent": [],
     "D:/Pond/secret": [
-        { name: sessionTokenFile, properties: {transparent: true, read: true, write: true, hidden: false}, data: [""] },
-        { name: credentialFile, properties: {transparent: true, read: true, write: true, hidden: false}, data: [""] }
+        { name: sessionTokenFile, properties: { transparent: true, read: true, write: true, hidden: false }, data: [""] },
+        { name: credentialFile, properties: { transparent: true, read: true, write: true, hidden: false }, data: [""] }
     ],
     "D:/Programs": [
-        { name: "cli", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["quietkill"] },
-        { name: "lilypad", properties: {transparent: false, read: false, write: false, hidden: true}, data: ["quietkill"] },
-        { name: "kaerugotchi", properties: {transparent: false, read:true, write: true, hidden: false}, data: [
-            "pfunc @display_frog ['display_head:S'] {",
-            "    if display_head>eq('default') {",
-            "        out '  o..o'",
-            "    }",
-            "    if display_head>eq('hungry') {",
-            "        out '  o..o'",
-            "    }",
-            "    if display_head>eq('drowsy') {",
-            "        out '  =..='",
-            "    }",
-            "    if display_head>eq('sleepy') {",
-            "        out '  _.._ .zZ'",
-            "    }",
-            "    if display_head>eq('happy') {",
-            "        out '  ^..^'",
-            "    }",
-            "    if display_head>eq('confused') {",
-            "        out '  @..@'",
-            "    }",
-            "    if display_head>eq('angry') {",
-            "        out '  >..<'",
-            "    }",
-            "    if display_head>eq('sad') {",
-            "        out '  q..q'",
-            "    }",
-            "    if display_head>eq('unamused') {",
-            "        out '  -..-'",
-            "    }",
-            "    if display_head>eq('dead') {",
-            "        out '  x..x'",
-            "    }",
-            "    if display_head>eq('hungry') {",
-            "        out ' (~~~~)'",
-            "    }",
-            "    else {",
-            "        out ' (----)'",
-            "    }",
-            "    if display_head>eq('dead') {",
-            "        out '( v__v )'",
-            "    }",
-            "    else {",
-            "        out '( >__< )'",
-            "    }",
-            "    out '^^    ^^'",
-            "}",
-            "func @setCurrentMood {",
-            "    if :food < 10: {",
-            "        set $currentMood = 'hungry'",
-            "        exit",
-            "    }",
-            "    if :energy < 5: {",
-            "        set $currentMood = 'sleepy'",
-            "        exit",
-            "    }",
-            "    if :energy < 15: {",
-            "        set $currentMood = 'drowsy'",
-            "        exit",
-            "    }",
-            "    if :happiness < 5: {",
-            "        set $currentMood = 'sad'",
-            "        exit",
-            "    }",
-            "    if :happiness < 15: {",
-            "        set $currentMood = 'unamused'",
-            "        exit",
-            "    }",
-            "    if :happiness > 40: {",
-            "        set $currentMood = 'happy'",
-            "        exit",
-            "    }",
-            "}",
-            "",
-            "var currentMood = 'default'",
-            "",
-            "var day = 1",
-            "var coin = 20",
-            "var energy = 40",
-            "var food = 40",
-            "var health = 50",
-            "var happiness = 20",
-            "",
-            "var selectedAction = ''",
-            "var lastChosenAction = 0",
-            "var actions = ['feed', 'play', 'sleep', 'work', 'quit']",
-            "",
-            "func @outputStatus {",
-            "    out '     coin: ' + coin",
-            "    out '   health: ' + '#'>repeat(health)",
-            "    out '   energy: ' + '#'>repeat(energy)",
-            "    out '     food: ' + '#'>repeat(food)",
-            "    out 'happiness: ' + '#'>repeat(happiness)",
-            "}",
-            "",
-            "loop :true: {",
-            "    clearterminal",
-            "    out 'Day #' + day",
-            "    out ' '",
-            "",
-            "    if :coin < 0: {",
-            "        set $coin = 0",
-            "    }",
-            "    if :energy < 0: {",
-            "        set $energy = 0",
-            "    }",
-            "    if :food < 0: {",
-            "        set $food = 0",
-            "    }",
-            "    if :happiness < 0: {",
-            "        set $happiness = 0",
-            "    }",
-            "    if :health < 0: {",
-            "        set $health = 0",
-            "    }",
-            "",
-            "    call @outputStatus",
-            "    call @setCurrentMood",
-            "    pcall @display_frog [currentMood]",
-            "",
-            "    prompt $selectedAction lastChosenAction actions",
-            "    set $lastChosenAction = actions>indexOf(selectedAction)",
-            "    if selectedAction>eq('quit') {",
-            "        quietkill",
-            "    }",
-            "",
-            "    if :health == 0: {",
-            "        clearterminal",
-            "        out 'Day #' + day",
-            "        out ' '",
-            "        pcall @display_frog [currentMood]",
-            "        wait 2000",
-            "        clearterminal",
-            "        out 'Day #' + day",
-            "        out ' '",
-            "        pcall @display_frog ['dead']",
-            "        out 'Your frog has died...'",
-            "        quietkill",
-            "    }",
-            "",
-            "    if selectedAction>eq('feed') {",
-            "        if :coin > 5: {",
-            "            set $food = food>add(10)",
-            "            set $happiness = happiness>add(1)",
-            "            set $energy = energy>add(5)",
-            "            set $coin = coin>sub(5)",
-            "        }",
-            "        else {",
-            "            continue",
-            "        }",
-            "    }",
-            "",
-            "    if selectedAction>eq('play') {",
-            "        if :energy > 5: {",
-            "            set $happiness = happiness>add(5)",
-            "            set $energy = energy>sub(5)",
-            "            set $food = food>sub(2)",
-            "        }",
-            "        else {",
-            "            continue",
-            "        }",
-            "    }",
-            "",
-            "    if selectedAction>eq('sleep') {",
-            "        set $energy = energy>add(15)",
-            "    }",
-            "",
-            "    if selectedAction>eq('work') {",
-            "        if :energy > 10: {",
-            "            set $coin = coin>add(15)",
-            "            set $energy = energy>sub(10)",
-            "            set $food = food>sub(5)",
-            "            set $happiness = happiness>sub(5)",
-            "            set $health = health>sub(5)",
-            "        }",
-            "        else {",
-            "            continue",
-            "        }",
-            "    }",
-            "",
-            "    set $day = day>inc",
-            "    set $food = food>sub(4)",
-            "",
-            "    if :food > 60: {",
-            "        set $food = 60",
-            "    }",
-            "    if :energy > 60: {",
-            "        set $energy = 60",
-            "    }",
-            "    if :happiness > 60: {",
-            "        set $happiness = 60",
-            "    }",
-            "    if :health > 60: {",
-            "        set $health = 60",
-            "    }",
-            "}"
+        { name: "cli", properties: { transparent: false, read: false, write: false, hidden: true }, data: ["quietkill"] },
+        { name: "lilypad", properties: { transparent: false, read: false, write: false, hidden: true }, data: ["quietkill"] },
+        {
+            name: "kaerugotchi", properties: { transparent: false, read: true, write: true, hidden: false }, data: [
+                "pfunc @display_frog ['display_head:S'] {",
+                "    if display_head>eq('default') {",
+                "        out '  o..o'",
+                "    }",
+                "    if display_head>eq('hungry') {",
+                "        out '  o..o'",
+                "    }",
+                "    if display_head>eq('drowsy') {",
+                "        out '  =..='",
+                "    }",
+                "    if display_head>eq('sleepy') {",
+                "        out '  _.._ .zZ'",
+                "    }",
+                "    if display_head>eq('happy') {",
+                "        out '  ^..^'",
+                "    }",
+                "    if display_head>eq('confused') {",
+                "        out '  @..@'",
+                "    }",
+                "    if display_head>eq('angry') {",
+                "        out '  >..<'",
+                "    }",
+                "    if display_head>eq('sad') {",
+                "        out '  q..q'",
+                "    }",
+                "    if display_head>eq('unamused') {",
+                "        out '  -..-'",
+                "    }",
+                "    if display_head>eq('dead') {",
+                "        out '  x..x'",
+                "    }",
+                "    if display_head>eq('hungry') {",
+                "        out ' (~~~~)'",
+                "    }",
+                "    else {",
+                "        out ' (----)'",
+                "    }",
+                "    if display_head>eq('dead') {",
+                "        out '( v__v )'",
+                "    }",
+                "    else {",
+                "        out '( >__< )'",
+                "    }",
+                "    out '^^    ^^'",
+                "}",
+                "func @setCurrentMood {",
+                "    if :food < 10: {",
+                "        set $currentMood = 'hungry'",
+                "        exit",
+                "    }",
+                "    if :energy < 5: {",
+                "        set $currentMood = 'sleepy'",
+                "        exit",
+                "    }",
+                "    if :energy < 15: {",
+                "        set $currentMood = 'drowsy'",
+                "        exit",
+                "    }",
+                "    if :happiness < 5: {",
+                "        set $currentMood = 'sad'",
+                "        exit",
+                "    }",
+                "    if :happiness < 15: {",
+                "        set $currentMood = 'unamused'",
+                "        exit",
+                "    }",
+                "    if :happiness > 40: {",
+                "        set $currentMood = 'happy'",
+                "        exit",
+                "    }",
+                "}",
+                "",
+                "var currentMood = 'default'",
+                "",
+                "var day = 1",
+                "var coin = 20",
+                "var energy = 40",
+                "var food = 40",
+                "var health = 50",
+                "var happiness = 20",
+                "",
+                "var selectedAction = ''",
+                "var lastChosenAction = 0",
+                "var actions = ['feed', 'play', 'sleep', 'work', 'quit']",
+                "",
+                "func @outputStatus {",
+                "    out '     coin: ' + coin",
+                "    out '   health: ' + '#'>repeat(health)",
+                "    out '   energy: ' + '#'>repeat(energy)",
+                "    out '     food: ' + '#'>repeat(food)",
+                "    out 'happiness: ' + '#'>repeat(happiness)",
+                "}",
+                "",
+                "loop :true: {",
+                "    clearterminal",
+                "    out 'Day #' + day",
+                "    out ' '",
+                "",
+                "    if :coin < 0: {",
+                "        set $coin = 0",
+                "    }",
+                "    if :energy < 0: {",
+                "        set $energy = 0",
+                "    }",
+                "    if :food < 0: {",
+                "        set $food = 0",
+                "    }",
+                "    if :happiness < 0: {",
+                "        set $happiness = 0",
+                "    }",
+                "    if :health < 0: {",
+                "        set $health = 0",
+                "    }",
+                "",
+                "    call @outputStatus",
+                "    call @setCurrentMood",
+                "    pcall @display_frog [currentMood]",
+                "",
+                "    prompt $selectedAction lastChosenAction actions",
+                "    set $lastChosenAction = actions>indexOf(selectedAction)",
+                "    if selectedAction>eq('quit') {",
+                "        quietkill",
+                "    }",
+                "",
+                "    if :health == 0: {",
+                "        clearterminal",
+                "        out 'Day #' + day",
+                "        out ' '",
+                "        pcall @display_frog [currentMood]",
+                "        wait 2000",
+                "        clearterminal",
+                "        out 'Day #' + day",
+                "        out ' '",
+                "        pcall @display_frog ['dead']",
+                "        out 'Your frog has died...'",
+                "        quietkill",
+                "    }",
+                "",
+                "    if selectedAction>eq('feed') {",
+                "        if :coin > 5: {",
+                "            set $food = food>add(10)",
+                "            set $happiness = happiness>add(1)",
+                "            set $energy = energy>add(5)",
+                "            set $coin = coin>sub(5)",
+                "        }",
+                "        else {",
+                "            continue",
+                "        }",
+                "    }",
+                "",
+                "    if selectedAction>eq('play') {",
+                "        if :energy > 5: {",
+                "            set $happiness = happiness>add(5)",
+                "            set $energy = energy>sub(5)",
+                "            set $food = food>sub(2)",
+                "        }",
+                "        else {",
+                "            continue",
+                "        }",
+                "    }",
+                "",
+                "    if selectedAction>eq('sleep') {",
+                "        set $energy = energy>add(15)",
+                "    }",
+                "",
+                "    if selectedAction>eq('work') {",
+                "        if :energy > 10: {",
+                "            set $coin = coin>add(15)",
+                "            set $energy = energy>sub(10)",
+                "            set $food = food>sub(5)",
+                "            set $happiness = happiness>sub(5)",
+                "            set $health = health>sub(5)",
+                "        }",
+                "        else {",
+                "            continue",
+                "        }",
+                "    }",
+                "",
+                "    set $day = day>inc",
+                "    set $food = food>sub(4)",
+                "",
+                "    if :food > 60: {",
+                "        set $food = 60",
+                "    }",
+                "    if :energy > 60: {",
+                "        set $energy = 60",
+                "    }",
+                "    if :happiness > 60: {",
+                "        set $happiness = 60",
+                "    }",
+                "    if :health > 60: {",
+                "        set $health = 60",
+                "    }",
+                "}"
 
-        ]},
+            ]
+        },
         // x = 78
         // y = 59
-        { name: "test", properties: {transparent: true, read: true, write: true, hidden: false }, data: [
-            // "var object = {",
-            // "    'name' = 'froggyOS'",
-            // "    'version' = '1.17-indev'",
-            // "    'meow' = {",
-            // "        'name' = 'woof'",
-            // "    }",
-            // "}",
-            // "out 10 + 'meow'",
-            // // "var meow = {",
-            // // "    'name' = 'meow'",
-            // // "}",
-            "translate_out 'T_hello_froggy'",
-            // "if :1: {",
-            // "    try {",
-            // "       out notAVariable",
-            // "    }",
-            // "    catch {",
-            // "       out 'An error occured: ' + __error__.'message'",
-            // "        quietkill",
-            // "    }",
-            // "}",
-            // "out 'what.'"
-            // "out 'meow'",
-            // "wait 10000",
-            // "out 'wa'",
-            // "wait 1000",
-            // "out 'agaga'",
-            // "wait 500",
-            // "out 'gagagaga'",
-        ] },
-        { name: "terminal_confirm", properties: {transparent: true, read: true, write: false, hidden: false}, data: [
-            "import 'filesys'",
-            "writeProgramData 'confirmed' 0",
-            "var question = ''",
-            "var yes = ''",
-            "var no = ''",
-            "var response = ''",
-            "var answer_for_decline = ''",
-            "filearg $question 1",
-            "filearg $yes 2",
-            "filearg $no 3",
-            "filearg $answer_for_decline 4",
-            "out question",
-            "prompt $response 1 [yes, no]",
-            "if response>eq(yes) {",
-            "    writeProgramData 'confirmed' 1",
-            "}",
-            "else {",
-            "    writeProgramData 'confirmed' 0",
-            "    if answer_for_decline>neq('') {",
-            "        out answer_for_decline",
-            "    }",
-            "}",
-        ] },
-            { name: "fs3help", properties: {transparent: false, read: true, write: false, hidden: false }, data: [
+        {
+            name: "test", properties: { transparent: true, read: true, write: true, hidden: false }, data: [
+                // "var object = {",
+                // "    'name' = 'froggyOS'",
+                // "    'version' = '1.17-indev'",
+                // "    'meow' = {",
+                // "        'name' = 'woof'",
+                // "    }",
+                // "}",
+                // "out 10 + 'meow'",
+                // // "var meow = {",
+                // // "    'name' = 'meow'",
+                // // "}",
+                "translate_out 'T_hello_froggy'",
+                // "if :1: {",
+                // "    try {",
+                // "       out notAVariable",
+                // "    }",
+                // "    catch {",
+                // "       out 'An error occured: ' + __error__.'message'",
+                // "        quietkill",
+                // "    }",
+                // "}",
+                // "out 'what.'"
+                // "out 'meow'",
+                // "wait 10000",
+                // "out 'wa'",
+                // "wait 1000",
+                // "out 'agaga'",
+                // "wait 500",
+                // "out 'gagagaga'",
+            ]
+        },
+        {
+            name: "terminal_confirm", properties: { transparent: true, read: true, write: false, hidden: false }, data: [
+                "import 'filesys'",
+                "writeProgramData 'confirmed' 0",
+                "var question = ''",
+                "var yes = ''",
+                "var no = ''",
+                "var response = ''",
+                "var answer_for_decline = ''",
+                "filearg $question 1",
+                "filearg $yes 2",
+                "filearg $no 3",
+                "filearg $answer_for_decline 4",
+                "out question",
+                "prompt $response 1 [yes, no]",
+                "if response>eq(yes) {",
+                "    writeProgramData 'confirmed' 1",
+                "}",
+                "else {",
+                "    writeProgramData 'confirmed' 0",
+                "    if answer_for_decline>neq('') {",
+                "        out answer_for_decline",
+                "    }",
+                "}",
+            ]
+        },
+        {
+            name: "fs3help", properties: { transparent: false, read: true, write: false, hidden: false }, data: [
                 "out ''",
                 "out 'FroggyScript3 Help Program'",
                 "var command = ''",
@@ -2554,633 +2621,706 @@ const FroggyFileSystem = new SwagSystem({
                 "out 'Visit the documentation (docs command) to get more detailed information.'",
                 "out 'Available commands:'",
                 "out commandObject>keys>join(', ')",
-        ] },
-        { name: "snake", properties: {transparent: false, read: true, write: true, hidden: false }, data: [
-            "import 'keyboard'",
-            "import 'math'",
-            "",
-            "clearterminal",
-            "",
-            "var snakeX = [5, 5, 5, 5]",
-            "var snakeY = [5, 6, 7, 8]",
-            "",
-            "var drawY = 0",
-            "",
-            "var row = ''",
-            "",
-            "var width = 15",
-            "var height = 15",
-            "",
-            "var headX = 0",
-            "var headY = 0",
-            "",
-            "var applesX = []",
-            "var applesY = []",
-            "",
-            "loop 5 {",
-            "     set $applesX = applesX>push(math>random(1, width>sub(2)))",
-            "     set $applesY = applesY>push(math>random(1, height>sub(2)))",
-            "}",
-            "",
-            "var direction = 'right'",
-            "",
-            "keydown 'd' {",
-            "    if direction>neq('left') {",
-            "       set $direction = 'right'",
-            "    }",
-            "}", 
-            "keydown 'a' {",
-            "    if direction>neq('right') {",
-            "       set $direction = 'left'",
-            "    }",
-            "}",
-            "keydown 's' {",
-            "    if direction>neq('up') {",
-            "       set $direction = 'down'",
-            "    }",
-            "}",
-            "keydown 'w' {",
-            "    if direction>neq('down') {",
-            "        set $direction = 'up'",
-            "    }",
-            "}",
-            "var score = 0",
-            "",
-            "var snakeXDraw = 0",
-            "var snakeYDraw = 0",
-            "",
-            "var appleX = 0",
-            "var appleY = 0",
-            "",
-            "var ate = false",
-            "var collision = false",
-            "var dudX = 0",
-            "var dudY = 0",
-            "",
-            "loop :true: {",
-            "    clearterminal",
-            "    out 'WASD to move'",
-            "    set $drawY = 0",
-            "    set $headX = snakeX>last",
-            "    set $headY = snakeY>last",
-            "",
-            "    if direction>eq('right') {",
-            "        set $headX = headX>inc",
-            "        if :headX >= width: {",
-            "            set $headX = 0",
-            "        }",
-            "    }",
-            "    if direction>eq('left') {",
-            "        set $headX = headX>dec",
-            "        if :headX < 0: {",
-            "            set $headX = width>dec",
-            "        }",
-            "    }",
-            "    if direction>eq('down') {",
-            "        set $headY = headY>inc",
-            "        if :headY > height: {",
-            "            set $headY = 0",
-            "        }",
-            "    }",
-            "    if direction>eq('up') {",
-            "        set $headY = headY>dec",
-            "        if :headY < 1: {",
-            "            set $headY = height",
-            "        }",
-            "    }",
-            "",
-            "    loop applesX>length {",
-            "        set $appleX = applesX>index(__index__)",
-            "        set $appleY = applesY>index(__index__)",
-            "        if :headX == appleX & headY == appleY: {",
-            "            set $ate = true",
-            "            set $score = score>inc",
-            "            set $applesX = applesX>splice(__index__, 1)",
-            "            set $applesY = applesY>splice(__index__, 1)",
-            "            set $applesX = applesX>push(math>random(1, width>sub(2)))",
-            "            set $applesY = applesY>push(math>random(1, height>sub(2)))",
-            "        }",
-            "    }",
-            "",
-            "    if :ate == false: {",
-            "        set $snakeX = snakeX>shift",
-            "        set $snakeY = snakeY>shift",
-            "    }",
-            "",
-            "    set $snakeX = snakeX>push(headX)",
-            "    set $snakeY = snakeY>push(headY)",
-            "",
-            "    loop height {",
-            "        set $row = '.'>repeat(width)",
-            "",
-            "        set $drawY = drawY>inc",
-            "",
-            "        loop snakeX>length {",
-            "            set $snakeXDraw = snakeX>index(__index__)",
-            "            set $snakeYDraw = snakeY>index(__index__)",
-            "            if :snakeYDraw == drawY: {",
-            "                set $row = row>replaceAt(snakeXDraw, '#')", 
-            "            }",
-            "            set $dudX = snakeX>length>dec",
-            "            if :(__index__ < dudX) & headX == snakeXDraw & headY == snakeYDraw: {",
-            "                set $collision = true",
-            "            }",
-            "        }",
+            ]
+        },
+        {
+            name: "snake", properties: { transparent: false, read: true, write: true, hidden: false }, data: [
+                "import 'keyboard'",
+                "import 'math'",
+                "",
+                "clearterminal",
+                "",
+                "var snakeX = [5, 5, 5, 5]",
+                "var snakeY = [5, 6, 7, 8]",
+                "",
+                "var drawY = 0",
+                "",
+                "var row = ''",
+                "",
+                "var width = 15",
+                "var height = 15",
+                "",
+                "var headX = 0",
+                "var headY = 0",
+                "",
+                "var applesX = []",
+                "var applesY = []",
+                "",
+                "loop 5 {",
+                "     set $applesX = applesX>push(math>random(1, width>sub(2)))",
+                "     set $applesY = applesY>push(math>random(1, height>sub(2)))",
+                "}",
+                "",
+                "var direction = 'right'",
+                "",
+                "keydown 'd' {",
+                "    if direction>neq('left') {",
+                "       set $direction = 'right'",
+                "    }",
+                "}",
+                "keydown 'a' {",
+                "    if direction>neq('right') {",
+                "       set $direction = 'left'",
+                "    }",
+                "}",
+                "keydown 's' {",
+                "    if direction>neq('up') {",
+                "       set $direction = 'down'",
+                "    }",
+                "}",
+                "keydown 'w' {",
+                "    if direction>neq('down') {",
+                "        set $direction = 'up'",
+                "    }",
+                "}",
+                "var score = 0",
+                "",
+                "var snakeXDraw = 0",
+                "var snakeYDraw = 0",
+                "",
+                "var appleX = 0",
+                "var appleY = 0",
+                "",
+                "var ate = false",
+                "var collision = false",
+                "var dudX = 0",
+                "var dudY = 0",
+                "",
+                "loop :true: {",
+                "    clearterminal",
+                "    out 'WASD to move'",
+                "    set $drawY = 0",
+                "    set $headX = snakeX>last",
+                "    set $headY = snakeY>last",
+                "",
+                "    if direction>eq('right') {",
+                "        set $headX = headX>inc",
+                "        if :headX >= width: {",
+                "            set $headX = 0",
+                "        }",
+                "    }",
+                "    if direction>eq('left') {",
+                "        set $headX = headX>dec",
+                "        if :headX < 0: {",
+                "            set $headX = width>dec",
+                "        }",
+                "    }",
+                "    if direction>eq('down') {",
+                "        set $headY = headY>inc",
+                "        if :headY > height: {",
+                "            set $headY = 0",
+                "        }",
+                "    }",
+                "    if direction>eq('up') {",
+                "        set $headY = headY>dec",
+                "        if :headY < 1: {",
+                "            set $headY = height",
+                "        }",
+                "    }",
+                "",
+                "    loop applesX>length {",
+                "        set $appleX = applesX>index(__index__)",
+                "        set $appleY = applesY>index(__index__)",
+                "        if :headX == appleX & headY == appleY: {",
+                "            set $ate = true",
+                "            set $score = score>inc",
+                "            set $applesX = applesX>splice(__index__, 1)",
+                "            set $applesY = applesY>splice(__index__, 1)",
+                "            set $applesX = applesX>push(math>random(1, width>sub(2)))",
+                "            set $applesY = applesY>push(math>random(1, height>sub(2)))",
+                "        }",
+                "    }",
+                "",
+                "    if :ate == false: {",
+                "        set $snakeX = snakeX>shift",
+                "        set $snakeY = snakeY>shift",
+                "    }",
+                "",
+                "    set $snakeX = snakeX>push(headX)",
+                "    set $snakeY = snakeY>push(headY)",
+                "",
+                "    loop height {",
+                "        set $row = '.'>repeat(width)",
+                "",
+                "        set $drawY = drawY>inc",
+                "",
+                "        loop snakeX>length {",
+                "            set $snakeXDraw = snakeX>index(__index__)",
+                "            set $snakeYDraw = snakeY>index(__index__)",
+                "            if :snakeYDraw == drawY: {",
+                "                set $row = row>replaceAt(snakeXDraw, '#')",
+                "            }",
+                "            set $dudX = snakeX>length>dec",
+                "            if :(__index__ < dudX) & headX == snakeXDraw & headY == snakeYDraw: {",
+                "                set $collision = true",
+                "            }",
+                "        }",
 
-            "        loop applesX>length {",
-            "            set $appleX = applesX>index(__index__)",
-            "            set $appleY = applesY>index(__index__)",
-            "            if :appleY == drawY: {",
-            "                set $row = row>replaceAt(appleX, '@')",
-            "            }",
-            "        }",
-            "",
-            "        if :headY == drawY: {",
-            "            set $row = row>replaceAt(headX, 'O')",
-            "        }",
-            "",
-            "        set $ate = false",
-            "        out row",
-            "    }",
-            "    if :collision == true: {",
-            "        out 'Game Over! Final Score: '>concat(score>s)",
-            "        break",
-            "    }",
-            "    wait 200",
-            "}",
-        ] },
-        { name: "error-levels", properties: {transparent: false, read: true, write: true, hidden: true}, data: [
-            // "error 0, 'alert', 'hey look here! read me!'",
-            // "error 1, 'warning', 'something might be wrong'",
-            // "error 2, 'error', 'something went wrong'",
-            // "error 3, 'important warning', 'something is wrong but its not too bad'",
-            // "error 4, 'important error', 'something is wrong and it is bad'",
-            // "error 5, 'critical error', 'something is wrong and it is very bad'",
-            // "error 6, 'fatal error', 'the frog is dead'",
-        ] },
-        { name: "outf-test", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
-            // "arr meow = $4, 48$",
-            // 'outf "t=c01,i=1" , "this is blue text"',
-            // 'outf "b=c00" , "this is a black background"',
-            // 'outf "t=c06, b=c01" , "this is brown text on a blue background"',
-            // 'outf "t=c01, tr=0-21" , "from char 0 to char 21, the text will be blue" ',
-            // 'outf "t=c01, tr=meow>index(0)-meow>index(1) | b=c04, br=57-91" , "from the char 4 to char 48, the text will be blue. AND from char 57 to char 91 the background will be red" ',
-            // "clearterminal",
-        ] },
-        { name: "fibonacci", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
-            "var a = 0",
-            "var b = 1",
-            "var temp = 0",
-            "var times = ''",
-            "",
-            "ask $times 'How many Fibonacci numbers would you like to generate?'",
-            "",
-            "loop times>toNumber {",
-            "   out a",
-            "   set $b = a>add(b)",
-            "   set $a = temp",
-            "   set $temp = b",
-            "}"
-        ] },
+                "        loop applesX>length {",
+                "            set $appleX = applesX>index(__index__)",
+                "            set $appleY = applesY>index(__index__)",
+                "            if :appleY == drawY: {",
+                "                set $row = row>replaceAt(appleX, '@')",
+                "            }",
+                "        }",
+                "",
+                "        if :headY == drawY: {",
+                "            set $row = row>replaceAt(headX, 'O')",
+                "        }",
+                "",
+                "        set $ate = false",
+                "        out row",
+                "    }",
+                "    if :collision == true: {",
+                "        out 'Game Over! Final Score: '>concat(score>s)",
+                "        break",
+                "    }",
+                "    wait 200",
+                "}",
+            ]
+        },
+        {
+            name: "error-levels", properties: { transparent: false, read: true, write: true, hidden: true }, data: [
+                // "error 0, 'alert', 'hey look here! read me!'",
+                // "error 1, 'warning', 'something might be wrong'",
+                // "error 2, 'error', 'something went wrong'",
+                // "error 3, 'important warning', 'something is wrong but its not too bad'",
+                // "error 4, 'important error', 'something is wrong and it is bad'",
+                // "error 5, 'critical error', 'something is wrong and it is very bad'",
+                // "error 6, 'fatal error', 'the frog is dead'",
+            ]
+        },
+        {
+            name: "outf-test", properties: { transparent: true, read: true, write: true, hidden: false }, data: [
+                // "arr meow = $4, 48$",
+                // 'outf "t=c01,i=1" , "this is blue text"',
+                // 'outf "b=c00" , "this is a black background"',
+                // 'outf "t=c06, b=c01" , "this is brown text on a blue background"',
+                // 'outf "t=c01, tr=0-21" , "from char 0 to char 21, the text will be blue" ',
+                // 'outf "t=c01, tr=meow>index(0)-meow>index(1) | b=c04, br=57-91" , "from the char 4 to char 48, the text will be blue. AND from char 57 to char 91 the background will be red" ',
+                // "clearterminal",
+            ]
+        },
+        {
+            name: "fibonacci", properties: { transparent: false, read: true, write: true, hidden: false }, data: [
+                "var a = 0",
+                "var b = 1",
+                "var temp = 0",
+                "var times = ''",
+                "",
+                "ask $times 'How many Fibonacci numbers would you like to generate?'",
+                "",
+                "loop times>toNumber {",
+                "   out a",
+                "   set $b = a>add(b)",
+                "   set $a = temp",
+                "   set $temp = b",
+                "}"
+            ]
+        },
     ],
     "D:/Macros": [
-        { name: "meow", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
-            "ribbit Meow! ^v^",
-        ] },
-        { name: "create-program", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
-            "!c",
-            "h D:/Programs",
-            "ch $1",
-            "m $1"
-        ] },
-        { name: "edit-program", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
-            "!e",
-            "h D:/Programs",
-            "m $1"
-        ] },
-        { name: "reload", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
-            "!r",
-            "[[BULLFROG]]urgentsavestate",
-            "[[BULLFROG]]urgentloadstate",
-            "[[BULLFROG]]urgentclearstate",
-            "clear",
-            "ribbit OS state reloaded",
-            "[[BULLFROG]]changepath C:/Home"
-        ] },
-        { name: "edit-settings", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
-            "!es",
-            "h Config:",
-            "m user",
-        ] },
-        { name: "set-froggy-time-format", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
-            "!f",
-            "ft w. Y/mn/d h:m:s",
-        ] },
-        { name: "set-US-time-format", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
-            "!time-US",
-            "ft w. mn/d/y H:m:s a",
-        ] },
-        { name: "set-EU-time-format", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
-            "!time-EU",
-            "ft w. d/mn/y h:m:s",
-        ] },
-        { name: "set-iso-time-format", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
-            "!time-ISO",
-            "ft Y-mn-d!T h:m:s.l!Z",
-        ] },
-        { name: "recovery-mode", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
-            "!rec",
-            "[[BULLFROG]]recoverymode",
-        ] },
+        {
+            name: "meow", properties: { transparent: true, read: true, write: true, hidden: false }, data: [
+                "ribbit Meow! ^v^",
+            ]
+        },
+        {
+            name: "create-program", properties: { transparent: false, read: true, write: true, hidden: false }, data: [
+                "!c",
+                "h D:/Programs",
+                "ch $1",
+                "m $1"
+            ]
+        },
+        {
+            name: "edit-program", properties: { transparent: false, read: true, write: true, hidden: false }, data: [
+                "!e",
+                "h D:/Programs",
+                "m $1"
+            ]
+        },
+        {
+            name: "reload", properties: { transparent: false, read: true, write: true, hidden: false }, data: [
+                "!r",
+                "[[BULLFROG]]urgentsavestate",
+                "[[BULLFROG]]urgentloadstate",
+                "[[BULLFROG]]urgentclearstate",
+                "clear",
+                "ribbit OS state reloaded",
+                "[[BULLFROG]]changepath C:/Home"
+            ]
+        },
+        {
+            name: "edit-settings", properties: { transparent: false, read: true, write: true, hidden: false }, data: [
+                "!es",
+                "h Config:",
+                "m user",
+            ]
+        },
+        {
+            name: "set-froggy-time-format", properties: { transparent: false, read: true, write: true, hidden: false }, data: [
+                "!f",
+                "ft w. Y/mn/d h:m:s",
+            ]
+        },
+        {
+            name: "set-US-time-format", properties: { transparent: false, read: true, write: true, hidden: false }, data: [
+                "!time-US",
+                "ft w. mn/d/y H:m:s a",
+            ]
+        },
+        {
+            name: "set-EU-time-format", properties: { transparent: false, read: true, write: true, hidden: false }, data: [
+                "!time-EU",
+                "ft w. d/mn/y h:m:s",
+            ]
+        },
+        {
+            name: "set-iso-time-format", properties: { transparent: false, read: true, write: true, hidden: false }, data: [
+                "!time-ISO",
+                "ft Y-mn-d!T h:m:s.l!Z",
+            ]
+        },
+        {
+            name: "recovery-mode", properties: { transparent: false, read: true, write: true, hidden: false }, data: [
+                "!rec",
+                "[[BULLFROG]]recoverymode",
+            ]
+        },
     ],
     // https://lospec.com/palette-list/endesga-64
     "D:/Palettes": [
         // standard and revised palettes:  https://int10h.org/blog/2022/06/ibm-5153-color-true-cga-palette/
-        { name: "standard", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
-            "000000", // 00 black
-            "0000AA", // 01 blue
-            "00AA00", // 02 green
-            "00AAAA", // 03 cyan
-            "AA0000", // 04 red
-            "AA00AA", // 05 magenta
-            "AA5500", // 06 brown
-            "AAAAAA", // 07 light grey
-            "555555", // 08 dark grey
-            "5555FF", // 09 light blue
-            "55FF55", // 10 light green
-            "55FFFF", // 11 light cyan
-            "FF5555", // 12 light red
-            "FF55FF", // 13 light magenta
-            "FFFF55", // 14 yellow
-            "FFFFFF", // 15 white
-            "void-space 00",
-            "bar-background 01",
-            "bar-text 15",
-            "terminal-background 15",
-            "terminal-line-background 15",
-            "terminal-line-highlighted-background 14",
-            "terminal-line-text 02",
-            "error-severity-0 03",
-            "error-severity-text-0 15",
-            "error-severity-1 13",
-            "error-severity-text-1 15",
-            "error-severity-2 12",
-            "error-severity-text-2 15",
-            "error-severity-3 05",
-            "error-severity-text-3 15",
-            "error-severity-4 06",
-            "error-severity-text-4 15",
-            "error-severity-5 04",
-            "error-severity-text-5 15",
-            "error-severity-6 08",
-            "error-severity-text-6 15",
-            "prompt-selected-background 02",
-            "prompt-selected-text 15",
-            "froggyscript-number-color 09",
-            "froggyscript-string-color 02",
-            "spinner-background 01",
-            "spinner-text 15",
-        ] },
-        { name: "revised", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
-            "000000",
-            "0000C4",
-            "00C400",
-            "00C4C4",
-            "C40000",
-            "C400C4",
-            "C47E00",
-            "C4C4C4",
-            "4E4E4E",
-            "4E4EDC",
-            "4EDC4E",
-            "4EF3F3",
-            "DC4E4E",
-            "F34EF3",
-            "F3F34E",
-            "FFFFFF",
-            "void-space 00",
-            "bar-background 01",
-            "bar-text 15",
-            "terminal-background 15",
-            "terminal-line-background 15",
-            "terminal-line-highlighted-background 14",
-            "terminal-line-text 02",
-            "error-severity-0 03",
-            "error-severity-text-0 15",
-            "error-severity-1 13",
-            "error-severity-text-1 15",
-            "error-severity-2 12",
-            "error-severity-text-2 15",
-            "error-severity-3 05",
-            "error-severity-text-3 15",
-            "error-severity-4 06",
-            "error-severity-text-4 15",
-            "error-severity-5 04",
-            "error-severity-text-5 15",
-            "error-severity-6 08",
-            "error-severity-text-6 15",
-            "prompt-selected-background 02",
-            "prompt-selected-text 15",
-            "froggyscript-number-color 09",
-            "froggyscript-string-color 02",
-            "spinner-background 01",
-            "spinner-text 15",
-        ] },
-        { name: "standard-dark", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
-            "000000", // 00 black (unchanged)
-            "000066", // 01 dark blue
-            "006600", // 02 dark green
-            "006666", // 03 dark cyan
-            "660000", // 04 dark red
-            "660066", // 05 dark magenta
-            "664400", // 06 dark brown
-            "666666", // 07 grey
-            "222222", // 08 darker grey
-            "222288", // 09 deep blue
-            "228822", // 10 deep green
-            "228888", // 11 deep cyan
-            "882222", // 12 deep red
-            "882288", // 13 deep magenta
-            "888822", // 14 deep yellow
-            "AAAAAA", // 15 light grey (less bright than white)
-            "void-space 00",
-            "bar-background 01",
-            "bar-text 15",
-            "terminal-background 15",
-            "terminal-line-background 15",
-            "terminal-line-highlighted-background 14",
-            "terminal-line-text 02",
-            "error-severity-0 03",
-            "error-severity-text-0 15",
-            "error-severity-1 13",
-            "error-severity-text-1 15",
-            "error-severity-2 12",
-            "error-severity-text-2 15",
-            "error-severity-3 05",
-            "error-severity-text-3 15",
-            "error-severity-4 06",
-            "error-severity-text-4 15",
-            "error-severity-5 04",
-            "error-severity-text-5 15",
-            "error-severity-6 08",
-            "error-severity-text-6 15",
-            "prompt-selected-background 02",
-            "prompt-selected-text 15",
-            "froggyscript-number-color 09",
-            "froggyscript-string-color 02",
-            "spinner-background 01",
-            "spinner-text 15",
-        ] },
-        { name: "cherry", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
-            "000000", 
-            "1C219F", 
-            "289E42", 
-            "17ABAE", 
-            "831326", 
-            "980C6C", 
-            "BC3517", 
-            "C2C5C6", 
-            "464C50", 
-            "5790E4", 
-            "B7EA8A", 
-            "68DCCD", 
-            "E48579", 
-            "D97BC7", 
-            "FF9F58", 
-            "FFFFFF", 
-            "void-space 00",
-            "bar-background 01",
-            "bar-text 15",
-            "terminal-background 15",
-            "terminal-line-background 15",
-            "terminal-line-highlighted-background 10",
-            "terminal-line-text 02",
-            "error-severity-0 03",
-            "error-severity-text-0 15",
-            "error-severity-1 13",
-            "error-severity-text-1 15",
-            "error-severity-2 12",
-            "error-severity-text-2 15",
-            "error-severity-3 05",
-            "error-severity-text-3 15",
-            "error-severity-4 06",
-            "error-severity-text-4 15",
-            "error-severity-5 04",
-            "error-severity-text-5 15",
-            "error-severity-6 08",
-            "error-severity-text-6 15",
-            "prompt-selected-background 02",
-            "prompt-selected-text 15",
-            "froggyscript-number-color 09",
-            "froggyscript-string-color 02",
-            "spinner-background 01",
-            "spinner-text 15",
-        ] },
-        { name: "swamp", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
-            "000000",
-            "4B71AF",
-            "3F9A44",
-            "3B9994",
-            "984547",
-            "9A3F95",
-            "C27E4B",
-            "B2B2B2",
-            "6C6C6C",
-            "96A2CF",
-            "93C495",
-            "AECFCD",
-            "DEA4A5",
-            "D7ABD4",
-            "D6B87B",
-            "FFFFFF",
-            "void-space 00",
-            "bar-background 01",
-            "bar-text 15",
-            "terminal-background 15",
-            "terminal-line-background 15",
-            "terminal-line-highlighted-background 10",
-            "terminal-line-text 02",
-            "error-severity-0 03",
-            "error-severity-text-0 15",
-            "error-severity-1 13",
-            "error-severity-text-1 15",
-            "error-severity-2 12",
-            "error-severity-text-2 15",
-            "error-severity-3 05",
-            "error-severity-text-3 15",
-            "error-severity-4 06",
-            "error-severity-text-4 15",
-            "error-severity-5 04",
-            "error-severity-text-5 15",
-            "error-severity-6 08",
-            "error-severity-text-6 15",
-            "prompt-selected-background 02",
-            "prompt-selected-text 15",
-            "froggyscript-number-color 01",
-            "froggyscript-string-color 02",
-            "spinner-background 01",
-            "spinner-text 15",
-        ] },
-        { name: "swamp-revised", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
-            "000000",// 00
-            "31618D",// 01
-            "298B27",// 02
-            "268B67",// 03
-            "753B29",// 04
-            "773669",// 05
-            "BF833A",// 06
-            "97A791",// 07
-            "465C3F",// 08
-            "8DBDD5",// 09
-            "81CB7D",// 10
-            "91C9B9",// 11
-            "D3977F",// 12
-            "CBA9DB",// 13
-            "D7D357",// 14
-            "FFFFFF",// 15
-            "void-space 00",
-            "bar-background 01",
-            "bar-text 15",
-            "terminal-background 15",
-            "terminal-line-background 15",
-            "terminal-line-highlighted-background 14",
-            "terminal-line-text 02",
-            "error-severity-0 03",
-            "error-severity-text-0 15",
-            "error-severity-1 13",
-            "error-severity-text-1 15",
-            "error-severity-2 12",
-            "error-severity-text-2 15",
-            "error-severity-3 05",
-            "error-severity-text-3 15",
-            "error-severity-4 06",
-            "error-severity-text-4 15",
-            "error-severity-5 04",
-            "error-severity-text-5 15",
-            "error-severity-6 08",
-            "error-severity-text-6 15",
-            "prompt-selected-background 02",
-            "prompt-selected-text 15",
-            "froggyscript-number-color 01",
-            "froggyscript-string-color 02",
-            "spinner-background 01",
-            "spinner-text 15",
-        ] },
-        { name: "neon", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
-            "000000",
-            "0000FF",
-            "00FF00",
-            "00FFFF",
-            "FF0000",
-            "FF00FF",
-            "FFA500",
-            "ABABAB",
-            "757575",
-            "5555FF",
-            "55FF55",
-            "55FFFF",
-            "FF5555",
-            "FF55FF",
-            "FFFF55",
-            "FFFFFF",
-            "void-space 00",
-            "bar-background 01",
-            "bar-text 15",
-            "terminal-background 15",
-            "terminal-line-background 15",
-            "terminal-line-highlighted-background 14",
-            "terminal-line-text 02",
-            "error-severity-0 03",
-            "error-severity-text-0 15",
-            "error-severity-1 13",
-            "error-severity-text-1 15",
-            "error-severity-2 12",
-            "error-severity-text-2 15",
-            "error-severity-3 05",
-            "error-severity-text-3 15",
-            "error-severity-4 06",
-            "error-severity-text-4 15",
-            "error-severity-5 04",
-            "error-severity-text-5 15",
-            "error-severity-6 08",
-            "error-severity-text-6 15",
-            "prompt-selected-background 02",
-            "prompt-selected-text 15",
-            "froggyscript-number-color 09",
-            "froggyscript-string-color 02",
-            "spinner-background 01",
-            "spinner-text 15",
-        ] },
+        {
+            name: "standard", properties: { transparent: false, read: true, write: true, hidden: false }, data: [
+                "000000", // 00 black
+                "0000AA", // 01 blue
+                "00AA00", // 02 green
+                "00AAAA", // 03 cyan
+                "AA0000", // 04 red
+                "AA00AA", // 05 magenta
+                "AA5500", // 06 brown
+                "AAAAAA", // 07 light grey
+                "555555", // 08 dark grey
+                "5555FF", // 09 light blue
+                "55FF55", // 10 light green
+                "55FFFF", // 11 light cyan
+                "FF5555", // 12 light red
+                "FF55FF", // 13 light magenta
+                "FFFF55", // 14 yellow
+                "FFFFFF", // 15 white
+                "void-space 00",
+                "bar-background 01",
+                "bar-text 15",
+                "terminal-background 15",
+                "terminal-line-background 15",
+                "terminal-line-highlighted-background 14",
+                "terminal-line-text 02",
+                "error-severity-0 03",
+                "error-severity-text-0 15",
+                "error-severity-1 13",
+                "error-severity-text-1 15",
+                "error-severity-2 12",
+                "error-severity-text-2 15",
+                "error-severity-3 05",
+                "error-severity-text-3 15",
+                "error-severity-4 06",
+                "error-severity-text-4 15",
+                "error-severity-5 04",
+                "error-severity-text-5 15",
+                "error-severity-6 08",
+                "error-severity-text-6 15",
+                "prompt-selected-background 02",
+                "prompt-selected-text 15",
+                "froggyscript-number-color 09",
+                "froggyscript-string-color 02",
+                "spinner-background 01",
+                "spinner-text 15",
+            ]
+        },
+        {
+            name: "revised", properties: { transparent: false, read: true, write: true, hidden: false }, data: [
+                "000000",
+                "0000C4",
+                "00C400",
+                "00C4C4",
+                "C40000",
+                "C400C4",
+                "C47E00",
+                "C4C4C4",
+                "4E4E4E",
+                "4E4EDC",
+                "4EDC4E",
+                "4EF3F3",
+                "DC4E4E",
+                "F34EF3",
+                "F3F34E",
+                "FFFFFF",
+                "void-space 00",
+                "bar-background 01",
+                "bar-text 15",
+                "terminal-background 15",
+                "terminal-line-background 15",
+                "terminal-line-highlighted-background 14",
+                "terminal-line-text 02",
+                "error-severity-0 03",
+                "error-severity-text-0 15",
+                "error-severity-1 13",
+                "error-severity-text-1 15",
+                "error-severity-2 12",
+                "error-severity-text-2 15",
+                "error-severity-3 05",
+                "error-severity-text-3 15",
+                "error-severity-4 06",
+                "error-severity-text-4 15",
+                "error-severity-5 04",
+                "error-severity-text-5 15",
+                "error-severity-6 08",
+                "error-severity-text-6 15",
+                "prompt-selected-background 02",
+                "prompt-selected-text 15",
+                "froggyscript-number-color 09",
+                "froggyscript-string-color 02",
+                "spinner-background 01",
+                "spinner-text 15",
+            ]
+        },
+        {
+            name: "standard-dark", properties: { transparent: false, read: true, write: true, hidden: false }, data: [
+                "000000", // 00 black (unchanged)
+                "000066", // 01 dark blue
+                "006600", // 02 dark green
+                "006666", // 03 dark cyan
+                "660000", // 04 dark red
+                "660066", // 05 dark magenta
+                "664400", // 06 dark brown
+                "666666", // 07 grey
+                "222222", // 08 darker grey
+                "222288", // 09 deep blue
+                "228822", // 10 deep green
+                "228888", // 11 deep cyan
+                "882222", // 12 deep red
+                "882288", // 13 deep magenta
+                "888822", // 14 deep yellow
+                "AAAAAA", // 15 light grey (less bright than white)
+                "void-space 00",
+                "bar-background 01",
+                "bar-text 15",
+                "terminal-background 15",
+                "terminal-line-background 15",
+                "terminal-line-highlighted-background 14",
+                "terminal-line-text 02",
+                "error-severity-0 03",
+                "error-severity-text-0 15",
+                "error-severity-1 13",
+                "error-severity-text-1 15",
+                "error-severity-2 12",
+                "error-severity-text-2 15",
+                "error-severity-3 05",
+                "error-severity-text-3 15",
+                "error-severity-4 06",
+                "error-severity-text-4 15",
+                "error-severity-5 04",
+                "error-severity-text-5 15",
+                "error-severity-6 08",
+                "error-severity-text-6 15",
+                "prompt-selected-background 02",
+                "prompt-selected-text 15",
+                "froggyscript-number-color 09",
+                "froggyscript-string-color 02",
+                "spinner-background 01",
+                "spinner-text 15",
+            ]
+        },
+        {
+            name: "cherry", properties: { transparent: false, read: true, write: true, hidden: false }, data: [
+                "000000",
+                "1C219F",
+                "289E42",
+                "17ABAE",
+                "831326",
+                "980C6C",
+                "BC3517",
+                "C2C5C6",
+                "464C50",
+                "5790E4",
+                "B7EA8A",
+                "68DCCD",
+                "E48579",
+                "D97BC7",
+                "FF9F58",
+                "FFFFFF",
+                "void-space 00",
+                "bar-background 01",
+                "bar-text 15",
+                "terminal-background 15",
+                "terminal-line-background 15",
+                "terminal-line-highlighted-background 10",
+                "terminal-line-text 02",
+                "error-severity-0 03",
+                "error-severity-text-0 15",
+                "error-severity-1 13",
+                "error-severity-text-1 15",
+                "error-severity-2 12",
+                "error-severity-text-2 15",
+                "error-severity-3 05",
+                "error-severity-text-3 15",
+                "error-severity-4 06",
+                "error-severity-text-4 15",
+                "error-severity-5 04",
+                "error-severity-text-5 15",
+                "error-severity-6 08",
+                "error-severity-text-6 15",
+                "prompt-selected-background 02",
+                "prompt-selected-text 15",
+                "froggyscript-number-color 09",
+                "froggyscript-string-color 02",
+                "spinner-background 01",
+                "spinner-text 15",
+            ]
+        },
+        {
+            name: "swamp", properties: { transparent: false, read: true, write: true, hidden: false }, data: [
+                "000000",
+                "4B71AF",
+                "3F9A44",
+                "3B9994",
+                "984547",
+                "9A3F95",
+                "C27E4B",
+                "B2B2B2",
+                "6C6C6C",
+                "96A2CF",
+                "93C495",
+                "AECFCD",
+                "DEA4A5",
+                "D7ABD4",
+                "D6B87B",
+                "FFFFFF",
+                "void-space 00",
+                "bar-background 01",
+                "bar-text 15",
+                "terminal-background 15",
+                "terminal-line-background 15",
+                "terminal-line-highlighted-background 10",
+                "terminal-line-text 02",
+                "error-severity-0 03",
+                "error-severity-text-0 15",
+                "error-severity-1 13",
+                "error-severity-text-1 15",
+                "error-severity-2 12",
+                "error-severity-text-2 15",
+                "error-severity-3 05",
+                "error-severity-text-3 15",
+                "error-severity-4 06",
+                "error-severity-text-4 15",
+                "error-severity-5 04",
+                "error-severity-text-5 15",
+                "error-severity-6 08",
+                "error-severity-text-6 15",
+                "prompt-selected-background 02",
+                "prompt-selected-text 15",
+                "froggyscript-number-color 01",
+                "froggyscript-string-color 02",
+                "spinner-background 01",
+                "spinner-text 15",
+            ]
+        },
+        {
+            name: "swamp-revised", properties: { transparent: false, read: true, write: true, hidden: false }, data: [
+                "000000",// 00
+                "31618D",// 01
+                "298B27",// 02
+                "268B67",// 03
+                "753B29",// 04
+                "773669",// 05
+                "BF833A",// 06
+                "97A791",// 07
+                "465C3F",// 08
+                "8DBDD5",// 09
+                "81CB7D",// 10
+                "91C9B9",// 11
+                "D3977F",// 12
+                "CBA9DB",// 13
+                "D7D357",// 14
+                "FFFFFF",// 15
+                "void-space 00",
+                "bar-background 01",
+                "bar-text 15",
+                "terminal-background 15",
+                "terminal-line-background 15",
+                "terminal-line-highlighted-background 14",
+                "terminal-line-text 02",
+                "error-severity-0 03",
+                "error-severity-text-0 15",
+                "error-severity-1 13",
+                "error-severity-text-1 15",
+                "error-severity-2 12",
+                "error-severity-text-2 15",
+                "error-severity-3 05",
+                "error-severity-text-3 15",
+                "error-severity-4 06",
+                "error-severity-text-4 15",
+                "error-severity-5 04",
+                "error-severity-text-5 15",
+                "error-severity-6 08",
+                "error-severity-text-6 15",
+                "prompt-selected-background 02",
+                "prompt-selected-text 15",
+                "froggyscript-number-color 01",
+                "froggyscript-string-color 02",
+                "spinner-background 01",
+                "spinner-text 15",
+            ]
+        },
+        {
+            name: "neon", properties: { transparent: false, read: true, write: true, hidden: false }, data: [
+                "000000",
+                "0000FF",
+                "00FF00",
+                "00FFFF",
+                "FF0000",
+                "FF00FF",
+                "FFA500",
+                "ABABAB",
+                "757575",
+                "5555FF",
+                "55FF55",
+                "55FFFF",
+                "FF5555",
+                "FF55FF",
+                "FFFF55",
+                "FFFFFF",
+                "void-space 00",
+                "bar-background 01",
+                "bar-text 15",
+                "terminal-background 15",
+                "terminal-line-background 15",
+                "terminal-line-highlighted-background 14",
+                "terminal-line-text 02",
+                "error-severity-0 03",
+                "error-severity-text-0 15",
+                "error-severity-1 13",
+                "error-severity-text-1 15",
+                "error-severity-2 12",
+                "error-severity-text-2 15",
+                "error-severity-3 05",
+                "error-severity-text-3 15",
+                "error-severity-4 06",
+                "error-severity-text-4 15",
+                "error-severity-5 04",
+                "error-severity-text-5 15",
+                "error-severity-6 08",
+                "error-severity-text-6 15",
+                "prompt-selected-background 02",
+                "prompt-selected-text 15",
+                "froggyscript-number-color 09",
+                "froggyscript-string-color 02",
+                "spinner-background 01",
+                "spinner-text 15",
+            ]
+        },
     ],
     "D:/Spinners": [
-        { name: "default", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
-            '-', '\\', '|', '/'
-        ] },
-        { name: "dots", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
-            ".", ":", "¨", ":"
-        ] },
-        { name: "circles", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
-            ".", "o", "O", "°", "O", "o"
-        ] },
-        { name: "cross", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
-            "×", "+"
-        ] },
-        { name: "wave", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
-            "~", "–"
-        ] },
-        { name: "arrows", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
-            "<", "^", ">", "v"
-        ] },
-        { name: "shade", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
-            "·", ":", "!", "+", "x", "%", "#", "%", "x", "+", "!", ":"
-        ] },
-        { name: "spring", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
-            "-", "=", "Ξ", "="
-        ] },
-        { name: "fire", properties: {transparent: false, read: true, write: true, hidden: false}, data: [
-            "s", "§", "¿"
-        ] },
-        { name: "quickloop-in-progress", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
-            "Q"
-        ] },
-        { name: "ask-in-progress", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
-            "?"
-        ] },
-        { name: "prompt-in-progress", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
-            "¶"
-        ] },
-        { name: "securing-in-progress", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
-            "§"
-        ] },
-        { name: "unsaved", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
-            "*"
-        ] },
-        { name: "unknown", properties: {transparent: true, read: true, write: true, hidden: false}, data: [
-            "×"," ", // dot
-            "×"," ", // dot
-            "—","—"," ", // dash
-            " "," "," ", // space
-            "—","—"," ", // dash
-            "×"," ", // dot
-            " "," "," ", // space
-            "—","—"," ", // dash
-            "×"," ", // dot
-            "—","—"," ", // dash
-            " "," "," ", // space
-            "—","—"," ", // dash
-            "×"," ", // dot
-            " "," "," ", // space
-            "—","—"," ", // dash
-            "—","—"," ", // dash
-            "—","—"," ", // dash
-            " "," "," ", // space
-            "×"," ", // dot
-            "—","—"," ", // dash
-            "—","—"," ", // dash
-            " "," "," ", // space
-            "—","—"," ", // dash
-            "×"," ", // dot
-        ] },
+        {
+            name: "default", properties: { transparent: false, read: true, write: true, hidden: false }, data: [
+                '-', '\\', '|', '/'
+            ]
+        },
+        {
+            name: "dots", properties: { transparent: false, read: true, write: true, hidden: false }, data: [
+                ".", ":", "¨", ":"
+            ]
+        },
+        {
+            name: "circles", properties: { transparent: false, read: true, write: true, hidden: false }, data: [
+                ".", "o", "O", "°", "O", "o"
+            ]
+        },
+        {
+            name: "cross", properties: { transparent: false, read: true, write: true, hidden: false }, data: [
+                "×", "+"
+            ]
+        },
+        {
+            name: "wave", properties: { transparent: false, read: true, write: true, hidden: false }, data: [
+                "~", "–"
+            ]
+        },
+        {
+            name: "arrows", properties: { transparent: false, read: true, write: true, hidden: false }, data: [
+                "<", "^", ">", "v"
+            ]
+        },
+        {
+            name: "shade", properties: { transparent: false, read: true, write: true, hidden: false }, data: [
+                "·", ":", "!", "+", "x", "%", "#", "%", "x", "+", "!", ":"
+            ]
+        },
+        {
+            name: "spring", properties: { transparent: false, read: true, write: true, hidden: false }, data: [
+                "-", "=", "Ξ", "="
+            ]
+        },
+        {
+            name: "fire", properties: { transparent: false, read: true, write: true, hidden: false }, data: [
+                "s", "§", "¿"
+            ]
+        },
+        {
+            name: "quickloop-in-progress", properties: { transparent: true, read: true, write: true, hidden: false }, data: [
+                "Q"
+            ]
+        },
+        {
+            name: "ask-in-progress", properties: { transparent: true, read: true, write: true, hidden: false }, data: [
+                "?"
+            ]
+        },
+        {
+            name: "prompt-in-progress", properties: { transparent: true, read: true, write: true, hidden: false }, data: [
+                "¶"
+            ]
+        },
+        {
+            name: "securing-in-progress", properties: { transparent: true, read: true, write: true, hidden: false }, data: [
+                "§"
+            ]
+        },
+        {
+            name: "unsaved", properties: { transparent: true, read: true, write: true, hidden: false }, data: [
+                "*"
+            ]
+        },
+        {
+            name: "unknown", properties: { transparent: true, read: true, write: true, hidden: false }, data: [
+                "×", " ", // dot
+                "×", " ", // dot
+                "—", "—", " ", // dash
+                " ", " ", " ", // space
+                "—", "—", " ", // dash
+                "×", " ", // dot
+                " ", " ", " ", // space
+                "—", "—", " ", // dash
+                "×", " ", // dot
+                "—", "—", " ", // dash
+                " ", " ", " ", // space
+                "—", "—", " ", // dash
+                "×", " ", // dot
+                " ", " ", " ", // space
+                "—", "—", " ", // dash
+                "—", "—", " ", // dash
+                "—", "—", " ", // dash
+                " ", " ", " ", // space
+                "×", " ", // dot
+                "—", "—", " ", // dash
+                "—", "—", " ", // dash
+                " ", " ", " ", // space
+                "—", "—", " ", // dash
+                "×", " ", // dot
+            ]
+        },
     ],
 })
 
@@ -3244,16 +3384,14 @@ const config = new Proxy(config_preproxy, {
     },
     set: (target, prop, value) => {
         diagnostics.total.configWrite++;
-        let stack = new Error().stack.split("\n").slice(2).map(line => line.trim());
-        if(stack.some(line => line.includes("at #verify"))) {
-            return true;
-        }
+        let stack = new Error().stack || "";
+        if (stack.includes("#verify")) return true;
         target[prop] = value;
         return true;
     }
 });
 
-function createErrorText(severity, message){
+function createErrorText(severity, message) {
     return `<span class='error'><span class='error-severity-${severity}'>${message}</span> -</span>`
 }
 
@@ -3306,7 +3444,7 @@ const diagnosticsGovernor = new Governor("diagnostics", 1000, () => {
 
             prevTotals[type][dir] = total;
 
-            for(let stackName in SwagSystem.diagnostics[type][dir].stacks) {
+            for (let stackName in SwagSystem.diagnostics[type][dir].stacks) {
                 let stack = SwagSystem.diagnostics[type][dir].stacks[stackName];
 
                 const total = stack.total || 0;
@@ -3325,7 +3463,7 @@ const diagnosticsGovernor = new Governor("diagnostics", 1000, () => {
 });
 
 // document.body.clientHeight - config.terminalHeight - (48 * 4) <= 0 == invalid
-function setTerminalSize(){
+function setTerminalSize() {
     const root = document.querySelector(':root');
     const userFile = FroggyFileSystem.getFile("Config:/user")?.getData();
 
@@ -3335,12 +3473,12 @@ function setTerminalSize(){
     let width = parsedWidth ? parsedWidth : 640;
     let height = parsedHeight ? parsedHeight : 480;
 
-    if(document.body.clientHeight - height - (48 * 4) <= 0) height = 480;
-    if(document.body.clientWidth - config.terminalWidth <= (8 * 8)) width = 640;
+    if (document.body.clientHeight - height - (48 * 4) <= 0) height = 480;
+    if (document.body.clientWidth - config.terminalWidth <= (8 * 8)) width = 640;
 
     // make height the nerest multiple of 8
-    if(height % 8 != 0) height = Math.floor(height / 8) * 8;
-    if(width % 8 != 0) width = Math.floor(width / 8) * 8;
+    if (height % 8 != 0) height = Math.floor(height / 8) * 8;
+    if (width % 8 != 0) width = Math.floor(width / 8) * 8;
 
     root.style.setProperty('--terminal-width', `${width}px`);
     root.style.setProperty('--terminal-height', `${height}px`);
@@ -3352,31 +3490,31 @@ const integrityGovernor = new Governor("integrity", 1000, () => {
     // handle "floating directories"
     const floatingDirs = FroggyFileSystem.getFloatingDirectories()
 
-    if(floatingDirs.length > 0) {
+    if (floatingDirs.length > 0) {
         floatingDirs.forEach(dir => {
             terminal.lastChild.lastChild.contentEditable = false;
-            createTerminalLine(`Floating directory detected: ${dir}`, config.fatalErrorText, {translate: false})
+            createTerminalLine(`Floating directory detected: ${dir}`, config.fatalErrorText, { translate: false })
         });
         integrityGovernor.addTrouble("fd")
     }
-    
-    if(!FroggyFileSystem.directoryExists("Config:")) {
+
+    if (!FroggyFileSystem.directoryExists("Config:")) {
         integrityGovernor.addTrouble("ncd")
-        createTerminalLine("no Config directory", config.fatalErrorText, {translate: false})
+        createTerminalLine("no Config directory", config.fatalErrorText, { translate: false })
     }
 
-    if(!FroggyFileSystem.fileExists("Config:/langs/ldm")) {
+    if (!FroggyFileSystem.fileExists("Config:/langs/ldm")) {
         integrityGovernor.addTrouble("nldm")
         terminal.lastChild.lastChild.contentEditable = false;
-        createTerminalLine("no ldm file found", config.fatalErrorText, {translate: false})
-        
+        createTerminalLine("no ldm file found", config.fatalErrorText, { translate: false })
+
     }
 });
 
-function outputDiagnosticInformation(){
+function outputDiagnosticInformation() {
     // --- Console Output ---
     console.clear();
-    console.log(`--- Diagnostics (Runtime: ${(diagnostics.runtime/1000).toFixed(2)}s) ---`);
+    console.log(`--- Diagnostics (Runtime: ${(diagnostics.runtime / 1000).toFixed(2)}s) ---`);
 
     // Config table
     console.log("Config:");
