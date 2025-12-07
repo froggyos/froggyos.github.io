@@ -1632,17 +1632,12 @@ class SwagSystem {
      * supports regex
      */
     #allowedPaths = new Set([
-        "#document/<static_initializer>/SwagSystem.getFile/#verify/Error",
-        "#document/<static_initializer>/SwagSystem.getDirectory/#verify/Error",
-        "#document/setLanguageFiles/SwagSystem.getDirectory/#verify/Error",
+        "#document/<static_initializer>/SwagSystem.getFile/#verify",
+        "#document/<static_initializer>/SwagSystem.getDirectory/#verify",
+        "#document/setLanguageFiles/SwagSystem.getDirectory/#verify",
         "#document/ready/*",
         "#document/Governor.fn/*",
-        "#document/sendCommand/*",
-        "#document/setSetting/*",
-        "#document/onStart/sendCommand/*",
-        "HTMLDivElement.<anonymous>/sendCommand/*",
-        "window.terminalLineKeydownHandler/*",
-        "async HTMLDivElement.<anonymous>/async sendCommand/#document/setSetting/*",
+        "HTMLDivElement.<anonymous>/sendCommand/*"
     ]);
 
     /**
@@ -1651,25 +1646,19 @@ class SwagSystem {
      * @returns {boolean} true if access is allowed, otherwise throws an error.
      */
     #verify() {
-        const stackPath = new Error().stack
-            .split("\n")
-            .reverse()
-            .map(line =>
-                line
-                    .trim()
-                    .replace(/FroggyFile\.getData/, '$')
-                    .replace(/FroggyFile\.(.*?)/, '@$1')
-                    .replace(/^(at) (.*) \((https?.*)\)$/, '$2')
-                    .replace(/^(at) (https?.*)$/, '#document')
-                    .replace(/^(at) (.*) \(<anonymous>\)/, '$2')
-                    .replace(/^at <anonymous>:\d+:\d+$/, '<anonymous>')
-                    .replace(/^at (.*?) \(<anonymous>:\d+:\d+\)$/, '<anonymous>')
-            )
-            .join("/");
+        const stackPath = StackTrace.getSync().map(sf => {
+            let fnName = sf.functionName ?? "#document";
+            fnName = fnName.
+            replace("Governor/this.interval<", "Governor.fn")
+            return fnName
+        }
+        ).reverse().join("/").replaceAll("</", "/").replaceAll("setInterval handler*Governor/", "")
 
         // allowed.add(stackPath);
 
         // console.log(JSON.stringify(Array.from(allowed)))
+
+        // return;
 
         // Allow exact matches OR wildcard pattern matches
         for (const pattern of this.#allowedPaths) {
