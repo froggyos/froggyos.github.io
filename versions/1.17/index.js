@@ -3924,7 +3924,7 @@ function enterRecoveryMode(){
     };
 }
 
-const SKIP_ANIMATION = true;
+const SKIP_ANIMATION = false;
 const currentAnimations = []
 let animSkipped = false;
 let innerBar = document.getElementById("inner-bar");
