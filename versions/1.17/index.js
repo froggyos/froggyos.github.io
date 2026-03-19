@@ -1398,6 +1398,91 @@ async function sendCommand(command, args = [], createEditableLineAfter = true){
             sendCommand("[[BULLFROG]]changepath", [directory], createEditableLineAfter);
         } break;
 
+        case "lsa":
+        case "listall": {
+            if(!requireGovernor(integrityGovernor)) return;
+            if(!requireGovernor(configGovernor)) return;
+
+            const dirs = Object.keys(FroggyFileSystem.getRoot())
+    .filter(p => !p.split("/").some(x => x.startsWith("%"))) // skip hidden
+    .sort((a, b) => a.localeCompare(b));                    // ensure nesting order
+
+for (let path of dirs) {
+    let displayPath = path;
+
+    if (displayPath.length > maxCharsPerLine()) {
+        displayPath = "..." + displayPath.slice(-maxCharsPerLine() + 3);
+    }
+
+    const split = displayPath.split("/");
+    let indent = "  ".repeat(split.length - 1);
+
+    createTerminalLine(indent + split.at(-1), ">", { translate: false });
+
+    // print files directly inside THIS path
+    const files = FroggyFileSystem.getDirectory(path) ?? [];
+    for (const file of files) {
+        let name = file.getName();
+        if (name.length > maxCharsPerLine() - indent.length - 2) {
+            name = "..." + name.slice(-(maxCharsPerLine() - indent.length - 5));
+        }
+        createTerminalLine(indent + "  " + name, ">", { translate: false });
+    }
+}
+
+            // for(let path in FroggyFileSystem.getRoot()){
+            //     let displayPath = path;
+
+            //     if(displayPath.length > maxCharsPerLine()){
+            //         displayPath = "..." + displayPath.slice(-maxCharsPerLine() + 3);
+            //     }
+
+            //     let split = displayPath.split("/");
+
+            //     let indentControl = structuredClone(split);
+
+            //     // for every index that isnt the last one in indentControl, replace that index with 2 spaces
+            //     for(let i = 0; i < indentControl.length - 1; i++){
+            //         indentControl[i] = "  ";
+            //     }
+
+            //     console.log(displayPath)
+
+            //     createTerminalLine(indentControl.join(""), ">", {translate: false});
+
+
+            //     const files = FroggyFileSystem.getDirectory(path) ?? [];
+            //     files.forEach(file => {
+            //         let fileDisplay = file.getName();
+            //         if(fileDisplay.length > maxCharsPerLine() - 2){
+            //             fileDisplay = "..." + fileDisplay.slice(-maxCharsPerLine() + 5);
+            //         }
+            //         createTerminalLine(`  ${fileDisplay}`, ">", {translate: false});
+            //     });
+            // }
+
+            // // list all files, directories, and contents
+
+            // let allPaths = Object.keys(FroggyFileSystem.getRoot());
+
+            // if(allPaths.length == 0){
+            //     createTerminalLine("T_no_files_found", config.errorText);
+            //     hadError = true;
+            //     printLn();
+            //     break;
+            // }
+
+            // allPaths.forEach(path => {
+            //     let displayPath = path;
+            //     if(displayPath.length > maxCharsPerLine()){
+            //         displayPath = "..." + displayPath.slice(-maxCharsPerLine() + 3);
+            //     }
+            //     createTerminalLine(displayPath, ">", {translate: false});
+            // });
+            // printLn();
+
+        } break;
+
         // list files
         case "ls":
         case "list":
@@ -4059,6 +4144,7 @@ function sequence(){
 }
 
 function onStart(){
+    sendCommand("listall", []);
     //sendCommand("pulse", ["-s"])
     //sendCommand("?", ["c"])
     // sendCommand("cdir", ["D:/Spinners"])

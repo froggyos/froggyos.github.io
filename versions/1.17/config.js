@@ -299,6 +299,11 @@ const presetLanguagesMap = {
         nmt: "list:nl::sp2:seyaya fiyala me nam dilekatülilala me ilo dilekatüli wa",
         jpn: "list:nl::sp2:現在のディレクトリ内のファイルとサブディレクトリを表示する",
     },
+    "T_basic_commands_listall": {
+        eng: "listall:nl::sp2:List all files and directories.",
+        nmt: "listall:nl::sp2:seyaya fiyala me dilekatüli me",
+        jpn: "T_basic_commands_listall",
+    },
     "T_basic_commands_listdrives": {
         eng: "listdrives:nl::sp2:List all drives.",
         nmt: "listdrives:nl::sp2:seyaya ká'ono dalayavu me",
@@ -1578,7 +1583,7 @@ const presetLanguagesMap = {
 
     // uncategorized messages ==========================
     "T_test {{}} {{}}": {
-        eng: "This is a test message with {{}} and {{}}.",
+        eng: "This is a test message with {{}}.",
         nmt: "T_test {{}} {{}}",
         jpn: "T_test {{}} {{}}"
     },
@@ -1765,6 +1770,39 @@ class SwagSystem {
             });
         }
         return findFloatingDirectories(Object.keys(this.#fs));
+    }
+
+    getStructuredFS() {
+
+        function ensurePath(root, parts) {
+            let node = root;
+
+            for (let part of parts) {
+                if (!node[part]) node[part] = {};
+                node = node[part];
+            }
+
+            return node; // final directory object
+        }
+
+        let tree = {};
+
+        for (let dir in this.#fs) {
+            // split the directory path into parts
+            let parts = dir.split("/").filter(Boolean);
+
+            // ensure nested directory structure exists
+            let node = ensurePath(tree, parts);
+
+            // attach files (names only, or full objects if you want)
+            if (this.#fs[dir].length > 0) {
+                node.files = this.#fs[dir]
+                    .filter(f => f.getProperty("hidden") !== true)
+                    .map(f => f.getName());
+            }
+        }
+
+        return tree;
     }
 
     /**
@@ -2176,7 +2214,7 @@ const FroggyFileSystem = new SwagSystem({
     "D:/Pond": [],
     "D:/Pond/drafts": [],
     "D:/Pond/sent": [],
-    "D:/Pond/secret": [
+    "D:/Pond/%secret": [
         { name: sessionTokenFile, properties: { transparent: true, read: true, write: true, hidden: false }, data: [""] },
         { name: credentialFile, properties: { transparent: true, read: true, write: true, hidden: false }, data: [""] }
     ],
@@ -2821,11 +2859,6 @@ const FroggyFileSystem = new SwagSystem({
         },
     ],
     "D:/Macros": [
-        {
-            name: "meow", properties: { transparent: true, read: true, write: true, hidden: false }, data: [
-                "ribbit Meow! ^v^",
-            ]
-        },
         {
             name: "create-program", properties: { transparent: false, read: true, write: true, hidden: false }, data: [
                 "!c",

@@ -179,7 +179,7 @@ function createPondMenu(object) {
             prefixElements[index] = prefix;
 
         } else if (value === "text") {
-            key = key.replace(/☼{{USERNAME}}☼/, FroggyFileSystem.getFile(`D:/Pond/secret/${sessionTokenFile}`).getData()[1]);
+            key = key.replace(/☼{{USERNAME}}☼/, FroggyFileSystem.getFile(`D:/Pond/%secret/${sessionTokenFile}`).getData()[1]);
             terminalLine.innerHTML = key;
             terminalLine.classList.add("pond-menu-text");
             lineContainer.appendChild(terminalLine);
@@ -287,7 +287,7 @@ function resolveReport(reportID){
         method: "POST",
         headers: {
             "Content-Type": "application/json",
-            "Session-Token": FroggyFileSystem.getFile(`D:/Pond/secret/${sessionTokenFile}`).getData()[0]
+            "Session-Token": FroggyFileSystem.getFile(`D:/Pond/%secret/${sessionTokenFile}`).getData()[0]
         },
         body: JSON.stringify({
             reportID: reportID
@@ -329,7 +329,7 @@ const mainMenu = {
             throw new Error("Blocked attempt to open Pond from unauthorized context.");
         }
 
-        const sessionToken = FroggyFileSystem.getFile(`D:/Pond/secret/${sessionTokenFile}`).getData()[0];
+        const sessionToken = FroggyFileSystem.getFile(`D:/Pond/%secret/${sessionTokenFile}`).getData()[0];
 
         handleRequest("/inbox", {
                 method: "GET",
@@ -731,7 +731,7 @@ const mainMenu = {
 
                         const error = new Error().stack.split("\n").map(line => line.trim()).some(line => line.startsWith("at <anonymous>"))
                         if(error) throw new Error("Blocked attempt to open Pond from unauthorized context.");
-                        const sessionToken = FroggyFileSystem.getFile(`D:/Pond/secret/${sessionTokenFile}`).getData()[0];
+                        const sessionToken = FroggyFileSystem.getFile(`D:/Pond/%secret/${sessionTokenFile}`).getData()[0];
 
                         handleRequest("/usernames", {
                             method: "GET",
@@ -792,7 +792,7 @@ const mainMenu = {
                     method: "GET",
                     headers: {
                         "Content-Type": "application/json",
-                        "Session-Token": FroggyFileSystem.getFile(`D:/Pond/secret/${sessionTokenFile}`).getData()[0]
+                        "Session-Token": FroggyFileSystem.getFile(`D:/Pond/%secret/${sessionTokenFile}`).getData()[0]
                     }
                 }, {
                     200: (response, data) => {
@@ -863,7 +863,7 @@ const mainMenu = {
             method: "GET",
             headers: {
                 "Content-Type": "application/json",
-                "Session-Token": FroggyFileSystem.getFile(`D:/Pond/secret/${sessionTokenFile}`).getData()[0]
+                "Session-Token": FroggyFileSystem.getFile(`D:/Pond/%secret/${sessionTokenFile}`).getData()[0]
             }
         }, {
             200: (response, data) => {
@@ -880,7 +880,7 @@ const mainMenu = {
                             method: "POST",
                             headers: {
                                 "Content-Type": "application/json",
-                                "Session-Token": FroggyFileSystem.getFile(`D:/Pond/secret/${sessionTokenFile}`).getData()[0]
+                                "Session-Token": FroggyFileSystem.getFile(`D:/Pond/%secret/${sessionTokenFile}`).getData()[0]
                             },
                             body: JSON.stringify({
                                 appearInSearches: document.getElementById("pond-checkbox-appearInSearches").dataset.checked === "true"
@@ -1007,7 +1007,7 @@ async function openPond(userRoles = []) {
                         return false;
                     }
 
-                    const sessionToken = FroggyFileSystem.getFile(`D:/Pond/secret/${sessionTokenFile}`).getData()[0];
+                    const sessionToken = FroggyFileSystem.getFile(`D:/Pond/%secret/${sessionTokenFile}`).getData()[0];
 
                     // if ip banned, send request to /ip-ban as well
                     //
@@ -1102,7 +1102,7 @@ async function openPond(userRoles = []) {
                         method: "POST",
                         headers: {
                             "Content-Type": "application/json",
-                            "Session-Token": FroggyFileSystem.getFile(`D:/Pond/secret/${sessionTokenFile}`).getData()[0]
+                            "Session-Token": FroggyFileSystem.getFile(`D:/Pond/%secret/${sessionTokenFile}`).getData()[0]
                         },
                         body: JSON.stringify({
                             username,
@@ -1181,7 +1181,7 @@ async function openPond(userRoles = []) {
                                 method: "POST",
                                 headers: {
                                     "Content-Type": "application/json",
-                                    "Session-Token": FroggyFileSystem.getFile(`D:/Pond/secret/${sessionTokenFile}`).getData()[0]
+                                    "Session-Token": FroggyFileSystem.getFile(`D:/Pond/%secret/${sessionTokenFile}`).getData()[0]
                                 },
                                 body: JSON.stringify({
                                     username
@@ -1253,7 +1253,7 @@ async function openPond(userRoles = []) {
                         method: "GET",
                         headers: {
                             "Content-Type": "application/json",
-                            "Session-Token": FroggyFileSystem.getFile(`D:/Pond/secret/${sessionTokenFile}`).getData()[0]
+                            "Session-Token": FroggyFileSystem.getFile(`D:/Pond/%secret/${sessionTokenFile}`).getData()[0]
                         }
                     }, {
                         200: (response, data) => {
@@ -1317,7 +1317,7 @@ async function openPond(userRoles = []) {
                                                             method: "POST",
                                                             headers: {
                                                                 "Content-Type": "application/json",
-                                                                "Session-Token": FroggyFileSystem.getFile(`D:/Pond/secret/${sessionTokenFile}`).getData()[0]
+                                                                "Session-Token": FroggyFileSystem.getFile(`D:/Pond/%secret/${sessionTokenFile}`).getData()[0]
                                                             },
                                                             body: JSON.stringify({
                                                                 recipient: report.reporter,
@@ -1417,7 +1417,7 @@ async function openPond(userRoles = []) {
                                                             method: "POST",
                                                             headers: {
                                                                 "Content-Type": "application/json",
-                                                                "Session-Token": FroggyFileSystem.getFile(`D:/Pond/secret/${sessionTokenFile}`).getData()[0]
+                                                                "Session-Token": FroggyFileSystem.getFile(`D:/Pond/%secret/${sessionTokenFile}`).getData()[0]
                                                             },
                                                             body: JSON.stringify({
                                                                 recipient: report.reporter,
@@ -1514,7 +1514,7 @@ async function openPond(userRoles = []) {
                                                     method: "POST",
                                                     headers: {
                                                         "Content-Type": "application/json",
-                                                        "Session-Token": FroggyFileSystem.getFile(`D:/Pond/secret/${sessionTokenFile}`).getData()[0]
+                                                        "Session-Token": FroggyFileSystem.getFile(`D:/Pond/%secret/${sessionTokenFile}`).getData()[0]
                                                     },
                                                     body: JSON.stringify({
                                                         reportID: report.reportID
@@ -1607,7 +1607,7 @@ async function openPond(userRoles = []) {
                         method: "GET",
                         headers: {
                             "Content-Type": "application/json",
-                            "Session-Token": FroggyFileSystem.getFile(`D:/Pond/secret/${sessionTokenFile}`).getData()[0]
+                            "Session-Token": FroggyFileSystem.getFile(`D:/Pond/%secret/${sessionTokenFile}`).getData()[0]
                         }
                     }, {
                         200: (response, data) => {
@@ -1698,13 +1698,13 @@ async function openPond(userRoles = []) {
 
     // const iframe = document.createElement("iframe");
 
-    // const sessionToken = encodeURIComponent(FroggyFileSystem.getFile(`D:/Pond/secret/${sessionTokenFile}`).getData()[0]);
+    // const sessionToken = encodeURIComponent(FroggyFileSystem.getFile(`D:/Pond/%secret/${sessionTokenFile}`).getData()[0]);
 
     // const palette = FroggyFileSystem.getFile(
     //             `D:/Palettes/${config.colorPalette}`
     //         ).getData()
 
-    // const username = encodeURIComponent(FroggyFileSystem.getFile(`D:/Pond/secret/${credentialFile}`).getData()[0]);
+    // const username = encodeURIComponent(FroggyFileSystem.getFile(`D:/Pond/%secret/${credentialFile}`).getData()[0]);
 
     // iframe.src = `${pondLink}/embed/home?username=${username}&token=${sessionToken}`;
     // iframe.classList.add("pond-iframe");

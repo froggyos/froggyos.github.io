@@ -63,11 +63,6 @@ text       = This is a test message with {{}} and {{}}.
 usage      = T_test {{one}} {{two}}
 result     = This is a test message with one and two.
 
-descriptor = T_test {{}} {{}}
-text       = This is a test message with {{}}.
-usage      = T_test {{one}}
-result     = This is a test message with one.
-
 Errors:
 descriptor = T_test {{}} {{}}
 text       = This is a test message with {{}} and {{}}.
