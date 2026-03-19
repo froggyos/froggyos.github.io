@@ -4059,9 +4059,6 @@ function sequence(){
 }
 
 function onStart(){
-    sendCommand("lang", ["jpn"]);
-    sendCommand("ga");
-    sendCommand("?");
     //sendCommand("pulse", ["-s"])
     //sendCommand("?", ["c"])
     // sendCommand("cdir", ["D:/Spinners"])
