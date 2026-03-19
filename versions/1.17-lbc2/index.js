@@ -2104,7 +2104,7 @@ async function sendCommand(command, args = [], createEditableLineAfter = true){
 
                 const lineElement = document.querySelectorAll(`div[data-program="lilypad-session-${config.programSession}"]`).item(line);
 
-                unhilight(previousHighlightedLine)
+                unhighlight(previousHighlightedLine)
                 moveCaretToPosition(lineElement, pos);
                 highlight(lineElement);
             }
@@ -2374,19 +2374,6 @@ function createEditableTerminalLine(path){
 /*
 PROGRAM SPECIFIC: for program LILYPAD ===============================================================================================
 */
-
-
-function highlight(e){
-    let highlightedLines = document.querySelectorAll('.highlighted-line');
-    highlightedLines.forEach(line => {
-        unhilight(line);
-    });
-    e.classList.add('highlighted-line');
-}
-
-function unhilight(e){
-    e.classList.remove('highlighted-line');
-}
 
 function createLilypadLine(path, linetype, filename){
     config.currentProgram = "lilypad";
@@ -3120,6 +3107,18 @@ function sequence(){
         onStart();
     }, 500)
 
+}
+
+function highlight(e){
+    let highlightedLines = document.querySelectorAll('.highlighted-line');
+    highlightedLines.forEach(line => {
+        unhighlight(line);
+    });
+    e.classList.add('highlighted-line');
+}
+
+function unhighlight(e){
+    e.classList.remove('highlighted-line');
 }
 
 /**

@@ -2483,7 +2483,7 @@ async function sendCommand(command, args = [], createEditableLineAfter = true){
             }
 
             if(programFile.getProperty('write') == false){
-                createTerminalLine("T_no_permission_to_edit_program", config.errorText);
+                createTerminalLine("T_no_permission_to_edit_file", config.errorText);
                 hadError = true;
                 printLn();
                 break;
@@ -2492,7 +2492,19 @@ async function sendCommand(command, args = [], createEditableLineAfter = true){
 
             if(hadError == false){
                 openLilypad(programFile.getName(), programFile.getData(), createEditableLineAfter);
-                const lines = document.querySelectorAll("[data-program='lilypad-session-3']");
+
+                const lines = document.querySelectorAll(`div[data-program^="lilypad-session-"]`)
+                const linesArray = Array.from(lines);
+                const previousHighlightedLine = linesArray[linesArray.length - 1];
+
+                const line = parseInt(args[1]);
+                const pos = parseInt(args[2]);
+
+                const lineElement = document.querySelectorAll(`div[data-program="lilypad-session-${config.programSession}"]`).item(line);
+
+                unhighlight(previousHighlightedLine)
+                moveCaretToPosition(lineElement, pos);
+                highlight(lineElement);
             }
             
             
@@ -2831,18 +2843,6 @@ function createLilypadLine(path, linetype, filename){
     terminalPath.textContent = path;
     terminalLine.textContent = "";
 
-    function highlight(e){
-        let highlightedLines = document.querySelectorAll('.highlighted-line');
-        highlightedLines.forEach(line => {
-            unhilight(line);
-        });
-        e.classList.add('highlighted-line');
-    }
-
-    function unhilight(e){
-        e.classList.remove('highlighted-line');
-    }
-
     function updateLinePrefixes(linetype){
         let lines = document.querySelectorAll(`[data-program='lilypad-session-${config.programSession}']`);
         lines.forEach((line, index) => {
@@ -3166,18 +3166,6 @@ async function createLilypadLinePondDerivative(path, filename, options){
 
     terminalPath.textContent = path;
     terminalLine.textContent = "";
-
-    function highlight(e){
-        let highlightedLines = document.querySelectorAll('.highlighted-line');
-        highlightedLines.forEach(line => {
-            unhilight(line);
-        });
-        e.classList.add('highlighted-line');
-    }
-
-    function unhilight(e){
-        e.classList.remove('highlighted-line');
-    }
 
     function updateLinePrefixes(){
         let lines = document.querySelectorAll(`[data-program='lilypad-pond-session-${config.programSession}']`);
@@ -3613,6 +3601,36 @@ terminal.addEventListener('wheel', (event) => {
     else terminal.scrollTop += 8 * direction;
 });
 
+function highlight(e){
+    let highlightedLines = document.querySelectorAll('.highlighted-line');
+    highlightedLines.forEach(line => {
+        unhighlight(line);
+    });
+    e.classList.add('highlighted-line');
+}
+
+function unhighlight(e){
+    e.classList.remove('highlighted-line');
+}
+
+function openLilypad(fileName, fileData, createEditableLineAfter){
+    for(let i = 0; i < fileData.length; i++){
+        if(config.allowedProgramDirectories.includes(config.currentPath)){
+            createLilypadLine(String(i+1).padStart(3, "0"), "code", fileName);
+        } else if (config.currentPath == "D:/Palettes") {
+            createLilypadLine(String(i).padStart(2, "0"), "palette", fileName);
+        } else createLilypadLine(">", undefined ,fileName);
+        let lines = document.querySelectorAll(`[data-program='lilypad-session-${config.programSession}']`);
+        lines[i].textContent = fileData[i];
+        moveCaretToEnd(lines[i]);
+    }
+
+    // get the last lilypad line and highlight it
+    let lines = document.querySelectorAll(`[data-program='lilypad-session-${config.programSession}']`)
+    lines[lines.length - 1].classList.add("highlighted-line");
+}
+
+
 function enterRecoveryMode(){
     config.currentProgram = "recovery-mode";
     let oldSendCommand = sendCommand;
@@ -3924,7 +3942,7 @@ function enterRecoveryMode(){
     };
 }
 
-const SKIP_ANIMATION = false;
+const SKIP_ANIMATION = true;
 const currentAnimations = []
 let animSkipped = false;
 let innerBar = document.getElementById("inner-bar");
@@ -4041,6 +4059,9 @@ function sequence(){
 }
 
 function onStart(){
+    sendCommand("lang", ["jpn"]);
+    sendCommand("ga");
+    sendCommand("?");
     //sendCommand("pulse", ["-s"])
     //sendCommand("?", ["c"])
     // sendCommand("cdir", ["D:/Spinners"])
