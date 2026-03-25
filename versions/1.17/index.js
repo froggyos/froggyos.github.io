@@ -1404,8 +1404,8 @@ async function sendCommand(command, args = [], createEditableLineAfter = true){
             if(!requireGovernor(configGovernor)) return;
 
             const dirs = Object.keys(FroggyFileSystem.getRoot())
-    .filter(p => !p.split("/").some(x => x.startsWith("%"))) // skip hidden
-    .sort((a, b) => a.localeCompare(b));                    // ensure nesting order
+                .filter(p => !p.split("/").some(x => x.startsWith("%"))) // skip hidden
+                .sort((a, b) => a.localeCompare(b));                    // ensure nesting order
 
             for (let path of dirs) {
                 let displayPath = path;
@@ -1429,6 +1429,8 @@ async function sendCommand(command, args = [], createEditableLineAfter = true){
                     createTerminalLine(indent + "  " + name, ">", { translate: false });
                 }
             }
+
+            printLn();
         } break;
 
         // list files
