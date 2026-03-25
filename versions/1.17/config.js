@@ -205,22 +205,22 @@ const presetLanguagesMap = {
     "T_intj_yes": {
         eng: "Yes",
         nmt: "owa",
-        jpn: "T_intj_yes",
+        jpn: "はい",
     },
     "T_intj_no": {
         eng: "No",
         nmt: "ge",
-        jpn: "T_intj_no",
+        jpn: "いいえ",
     },
     "T_intj_ok": {
         eng: "OK",
         nmt: "YIMA",
-        jpn: "T_intj_ok",
+        jpn: "OK",
     },
     "T_intj_error": {
         eng: "ERROR",
         nmt: "GOGOWA",
-        jpn: "T_intj_error",
+        jpn: "エラー",
     },
 
     // basic command help ====================
