@@ -1648,6 +1648,7 @@ class SwagSystem {
         "HTMLDivElement.<anonymous>/sendCommand/*",
         "window.terminalLineKeydownHandler/*",
         "async HTMLDivElement.<anonymous>/async sendCommand/#document/setSetting/*",
+        "HTMLDivElement.<anonymous>/getSetting/SwagSystem.getFile/#verify/Error",
         // Firefox/Safari
         "*Governor*/*", "*trustedProgramsGovernor*", "*setUserConfigFromFile*",
         "*ready*getFile*", "*ready*getDirectory*", "*sendCommand*", "*setSetting*",
